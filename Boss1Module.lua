@@ -57,12 +57,23 @@ function Boss1.Init(zombie, humanoid, config, executeHardWipe, SpawnerModule)
 	-- === TIMER & WIPE MECHANIC ===
 	local bossStartTime = tick()
 	local specialTimeout = config.SpecialTimeout or 300
-	BossTimerEvent:FireAllClients(specialTimeout, specialTimeout)
+	local bossName = config.Name or "Boss"
+	local function getPhaseName()
+		if currentState == "Phase1" then
+			return "PHASE 1"
+		elseif currentState == "Phase2" then
+			return "PHASE 2"
+		else
+			return "TRANSITION"
+		end
+	end
+
+	BossTimerEvent:FireAllClients(specialTimeout, specialTimeout, bossName, getPhaseName())
 	local timerCoroutine = task.spawn(function()
 		while zombie.Parent and humanoid.Health > 0 do
 			local elapsed = tick() - bossStartTime
 			local remaining = math.max(0, specialTimeout - elapsed)
-			BossTimerEvent:FireAllClients(remaining, specialTimeout)
+			BossTimerEvent:FireAllClients(remaining, specialTimeout, bossName, getPhaseName())
 			if remaining <= 0 then
 				executeHardWipe(zombie, humanoid)
 				break
@@ -383,7 +394,7 @@ function Boss1.Init(zombie, humanoid, config, executeHardWipe, SpawnerModule)
 
 	-- === CLEANUP ===
 	humanoid.Died:Connect(function()
-		BossTimerEvent:FireAllClients(0, 0)
+		BossTimerEvent:FireAllClients(0, 0, bossName, "DEFEATED")
 		task.cancel(timerCoroutine)
 		task.cancel(radiationCoroutine)
 		task.cancel(attackCoroutine)
