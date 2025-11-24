@@ -155,7 +155,17 @@ function Boss2.Init(zombie, humanoid, config, executeHardWipe)
 
 	local bossStartTime = tick()
 	local specialTimeout = config.SpecialTimeout or 300
-	BossTimerEvent:FireAllClients(specialTimeout, specialTimeout)
+	local bossName = config.Name or "Boss"
+	local function getPhaseName()
+		if currentState == "Phase1" then
+			return "PHASE 1"
+		elseif currentState == "Phase2" then
+			return "PHASE 2"
+		else
+			return "TRANSITION"
+		end
+	end
+	BossTimerEvent:FireAllClients(specialTimeout, specialTimeout, bossName, getPhaseName())
 
 	local timeoutOrb = createTimerOrb(arenaCenterPoint + Vector3.new(0, 90, 0), specialTimeout)
 
@@ -163,7 +173,7 @@ function Boss2.Init(zombie, humanoid, config, executeHardWipe)
 		while zombie.Parent and humanoid.Health > 0 do
 			local elapsed = tick() - bossStartTime
 			local remaining = math.max(0, specialTimeout - elapsed)
-			BossTimerEvent:FireAllClients(remaining, specialTimeout)
+			BossTimerEvent:FireAllClients(remaining, specialTimeout, bossName, getPhaseName())
 			if remaining <= 0 then
 				local wipeOrigin = arenaCenterPoint
 				if timeoutOrb and timeoutOrb.PrimaryPart then
@@ -388,7 +398,7 @@ function Boss2.Init(zombie, humanoid, config, executeHardWipe)
 		local tweenInfo = TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
 		local goals = { Ambient = originalAmbient, OutdoorAmbient = originalOutdoorAmbient, Brightness = originalBrightness }
 		TweenService:Create(Lighting, tweenInfo, goals):Play()
-		BossTimerEvent:FireAllClients(0, 0)
+		BossTimerEvent:FireAllClients(0, 0, bossName, "DEFEATED")
 
 		if timeoutOrb and timeoutOrb.Parent then timeoutOrb:Destroy() end
 
