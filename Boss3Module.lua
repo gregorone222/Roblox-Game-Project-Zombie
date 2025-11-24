@@ -72,12 +72,13 @@ function Boss3.Init(zombie, humanoid, config, executeHardWipe, spawnerModuleRef)
 	-- === TIMER & WIPE MECHANIC ===
 	local bossStartTime = tick()
 	local specialTimeout = config.SpecialTimeout or 300
-	BossTimerEvent:FireAllClients(specialTimeout, specialTimeout)
+	local bossName = config.Name or "Boss"
+	BossTimerEvent:FireAllClients(specialTimeout, specialTimeout, bossName, "PHASE " .. currentPhase)
 	local timerCoroutine = task.spawn(function()
 		while zombie.Parent and humanoid.Health > 0 do
 			local elapsed = tick() - bossStartTime
 			local remaining = math.max(0, specialTimeout - elapsed)
-			BossTimerEvent:FireAllClients(remaining, specialTimeout)
+			BossTimerEvent:FireAllClients(remaining, specialTimeout, bossName, "PHASE " .. currentPhase)
 			if remaining <= 0 then
 				executeHardWipe(zombie, humanoid)
 				break
@@ -254,7 +255,7 @@ function Boss3.Init(zombie, humanoid, config, executeHardWipe, spawnerModuleRef)
 
 	-- === CLEANUP ===
 	humanoid.Died:Connect(function()
-		BossTimerEvent:FireAllClients(0, 0)
+		BossTimerEvent:FireAllClients(0, 0, bossName, "DEFEATED")
 		task.cancel(timerCoroutine)
 		task.cancel(attackCoroutine)
 		task.cancel(phaseManagerCoroutine)
