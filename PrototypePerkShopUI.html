@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roblox Perk Shop UI Prototype</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700;800&family=Teko:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --panel-bg: rgba(20, 25, 35, 0.95);
+            --accent: #f59e0b;
+            --text-main: #f8fafc;
+            --text-dim: #64748b;
+        }
+
+        body {
+            background-color: #000;
+            background-image: url('https://images.unsplash.com/photo-1519669556878-63bd78aa2592?q=80&w=2070&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Rajdhani', sans-serif;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* Overlay Scanline Effect */
+        .scanlines {
+            position: fixed;
+            top: 0; left: 0; w: 100%; h: 100%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2));
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 10;
+            opacity: 0.3;
+        }
+
+        /* Main Container */
+        .shop-container {
+            width: 1000px;
+            height: 650px;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+            display: flex;
+            overflow: hidden;
+            position: relative;
+            animation: slideIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        /* Left Sidebar (Perk List) */
+        .sidebar {
+            width: 400px;
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .header {
+            padding: 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .perk-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        /* Custom Scrollbar */
+        .perk-list::-webkit-scrollbar { width: 6px; }
+        .perk-list::-webkit-scrollbar-track { background: transparent; }
+        .perk-list::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 3px; }
+
+        /* Perk Card Item */
+        .perk-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid transparent;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .perk-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateX(5px);
+        }
+
+        .perk-item.active {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .perk-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 4px;
+            background: var(--perk-color, #fff);
+            box-shadow: 0 0 10px var(--perk-color);
+        }
+
+        .perk-icon-small {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-right: 16px;
+            color: var(--perk-color);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .perk-status {
+            margin-left: auto;
+            font-size: 0.8rem;
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+        
+        .status-owned { color: #4ade80; background: rgba(74, 222, 128, 0.1); }
+        .status-buy { color: #fbbf24; background: rgba(251, 191, 36, 0.1); }
+        .status-locked { color: #94a3b8; background: rgba(148, 163, 184, 0.1); }
+
+        /* Right Content (Details) */
+        .detail-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background: radial-gradient(circle at top right, rgba(255,255,255,0.03), transparent 60%);
+        }
+
+        .preview-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Large Icon Glow Animation */
+        .large-icon-container {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .large-icon {
+            font-size: 6rem;
+            color: var(--perk-color);
+            filter: drop-shadow(0 0 20px var(--perk-color));
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .perk-title {
+            font-family: 'Teko', sans-serif;
+            font-size: 4rem;
+            line-height: 0.9;
+            text-transform: uppercase;
+            color: white;
+            text-shadow: 0 0 30px rgba(0,0,0,0.5);
+            margin-bottom: 1rem;
+        }
+
+        .perk-desc {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            text-align: center;
+            max-width: 80%;
+            line-height: 1.6;
+        }
+
+        /* Action Bar */
+        .action-bar {
+            padding: 32px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .cost-display {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .cost-label { font-size: 0.9rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+        .cost-value { font-size: 2rem; font-weight: 800; color: #fbbf24; font-family: 'Rajdhani'; }
+
+        .buy-btn {
+            padding: 16px 48px;
+            background: var(--perk-color);
+            color: #000;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 800;
+            font-size: 1.5rem;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 0 20px var(--perk-color-dim);
+            text-transform: uppercase;
+            clip-path: polygon(10% 0, 100% 0, 100% 90%, 90% 100%, 0 100%, 0 10%);
+        }
+
+        .buy-btn:hover:not(:disabled) {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 0 40px var(--perk-color-dim);
+        }
+
+        .buy-btn:active:not(:disabled) { transform: scale(0.95); }
+        
+        .buy-btn:disabled {
+            background: #334155;
+            color: #94a3b8;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* Currency Widget */
+        .currency-widget {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 8px 16px;
+            border-radius: 50px;
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="scanlines"></div>
+
+    <div class="shop-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="header">
+                <h1 class="text-2xl font-bold text-white tracking-widest uppercase border-l-4 border-amber-500 pl-3">
+                    Perk Station
+                </h1>
+                <p class="text-xs text-slate-400 mt-1 ml-4">Enhance Your Biological Capabilities</p>
+            </div>
+
+            <div class="perk-list" id="perkListContainer">
+                <!-- JS will populate this -->
+            </div>
+        </div>
+
+        <!-- Detail Panel -->
+        <div class="detail-panel">
+            <!-- Currency -->
+            <div class="currency-widget">
+                <i class="fa-solid fa-dna text-amber-500"></i>
+                <span class="text-white font-bold text-lg" id="playerPoints">5,400 BP</span>
+            </div>
+
+            <div class="preview-area" id="previewArea">
+                <!-- Dynamic Content -->
+                <div class="large-icon-container">
+                    <i class="fa-solid fa-heart-pulse large-icon"></i>
+                </div>
+                <h2 class="perk-title">Juggernaut</h2>
+                <p class="perk-desc">Meningkatkan Max Health sebesar 30%. Menjadi tank yang tak terhentikan di medan perang.</p>
+            </div>
+
+            <div class="action-bar">
+                <div class="cost-display">
+                    <span class="cost-label">Upgrade Cost</span>
+                    <span class="cost-value" id="costValue">4,000 BP</span>
+                </div>
+                <button class="buy-btn" id="buyButton" onclick="attemptPurchase()">
+                    Purchase
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA SIMULATION (Based on your Lua Config) ---
+        const perks = [
+            {
+                id: "HPPlus",
+                name: "Juggernaut Vitality",
+                desc: "Meningkatkan Max Health sebesar 30%. Menjadi tank yang tak terhentikan.",
+                icon: "fa-heart-pulse",
+                color: "#ef4444", // Red
+                cost: 4000,
+                owned: false
+            },
+            {
+                id: "StaminaPlus",
+                name: "Adrenaline Rush",
+                desc: "Meningkatkan Max Stamina sebesar 30%. Lari lebih lama, hindari kematian.",
+                icon: "fa-bolt",
+                color: "#eab308", // Yellow
+                cost: 4000,
+                owned: true
+            },
+            {
+                id: "ReloadPlus",
+                name: "Speed Loader",
+                desc: "Waktu Reload 30% lebih cepat. Jangan biarkan senjata kosong terlalu lama.",
+                icon: "fa-rotate",
+                color: "#3b82f6", // Blue
+                cost: 4000,
+                owned: false
+            },
+            {
+                id: "RevivePlus",
+                name: "Quick Revive",
+                desc: "Waktu Revive rekan tim 50% lebih cepat. Jadilah malaikat penyelamat.",
+                icon: "fa-hand-holding-medical",
+                color: "#06b6d4", // Cyan
+                cost: 2000,
+                owned: false
+            },
+            {
+                id: "RateBoost",
+                name: "Rapid Fire",
+                desc: "Kecepatan tembak meningkat 30%. Hujani musuh dengan peluru.",
+                icon: "fa-gun",
+                color: "#f97316", // Orange
+                cost: 6000,
+                owned: false
+            },
+            {
+                id: "Medic",
+                name: "Field Medic",
+                desc: "Rekan yang di-revive mendapatkan 30% HP ekstra saat bangkit.",
+                icon: "fa-user-doctor",
+                color: "#22c55e", // Green
+                cost: 2000,
+                owned: false
+            },
+            {
+                id: "ExplosiveRounds",
+                name: "Explosive Rounds",
+                desc: "10% peluang tembakan meledak. Memberikan splash damage area.",
+                icon: "fa-bomb",
+                color: "#a855f7", // Purple
+                cost: 6000,
+                owned: false
+            }
+        ];
+
+        let playerPoints = 5400;
+        let selectedIndex = 0;
+
+        // --- RENDERING ---
+        const perkListContainer = document.getElementById('perkListContainer');
+        const previewArea = document.getElementById('previewArea');
+        const costValue = document.getElementById('costValue');
+        const buyButton = document.getElementById('buyButton');
+        const pointsDisplay = document.getElementById('playerPoints');
+
+        function renderList() {
+            perkListContainer.innerHTML = '';
+            perks.forEach((perk, index) => {
+                const item = document.createElement('div');
+                item.className = `perk-item ${index === selectedIndex ? 'active' : ''}`;
+                item.style.setProperty('--perk-color', perk.color);
+                item.onclick = () => selectPerk(index);
+
+                // Status Logic
+                let statusHtml = '';
+                if (perk.owned) {
+                    statusHtml = '<span class="perk-status status-owned"><i class="fa-solid fa-check"></i> Owned</span>';
+                } else if (playerPoints >= perk.cost) {
+                    statusHtml = '<span class="perk-status status-buy">Available</span>';
+                } else {
+                    statusHtml = '<span class="perk-status status-locked"><i class="fa-solid fa-lock"></i> Locked</span>';
+                }
+
+                item.innerHTML = `
+                    <div class="perk-icon-small">
+                        <i class="fa-solid ${perk.icon}"></i>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-white font-bold uppercase text-sm font-display tracking-wide">${perk.name}</span>
+                        <span class="text-slate-500 text-xs font-mono">${perk.owned ? 'Active' : perk.cost + ' BP'}</span>
+                    </div>
+                    ${statusHtml}
+                `;
+                perkListContainer.appendChild(item);
+            });
+        }
+
+        function updatePreview() {
+            const perk = perks[selectedIndex];
+            
+            // Set CSS variable for the detail panel dynamic coloring
+            document.documentElement.style.setProperty('--perk-color', perk.color);
+            document.documentElement.style.setProperty('--perk-color-dim', perk.color + '40'); // 25% opacity hex
+
+            previewArea.innerHTML = `
+                <div class="large-icon-container">
+                    <i class="fa-solid ${perk.icon} large-icon"></i>
+                </div>
+                <h2 class="perk-title" style="color: ${perk.color}">${perk.name}</h2>
+                <p class="perk-desc">${perk.desc}</p>
+            `;
+
+            costValue.innerText = perk.owned ? "OWNED" : perk.cost.toLocaleString() + " BP";
+            costValue.style.color = perk.owned ? "#4ade80" : "#fbbf24";
+
+            // Update Button State
+            if (perk.owned) {
+                buyButton.innerText = "EQUIPPED";
+                buyButton.disabled = true;
+                buyButton.style.background = "#334155";
+            } else {
+                if (playerPoints >= perk.cost) {
+                    buyButton.innerText = "PURCHASE";
+                    buyButton.disabled = false;
+                    buyButton.style.background = perk.color;
+                } else {
+                    buyButton.innerText = "INSUFFICIENT BP";
+                    buyButton.disabled = true;
+                    buyButton.style.background = "#334155";
+                }
+            }
+        }
+
+        function selectPerk(index) {
+            selectedIndex = index;
+            renderList();
+            updatePreview();
+        }
+
+        function attemptPurchase() {
+            const perk = perks[selectedIndex];
+            if (!perk.owned && playerPoints >= perk.cost) {
+                // Simulate Purchase
+                playerPoints -= perk.cost;
+                perk.owned = true;
+                
+                // Update UI
+                pointsDisplay.innerText = playerPoints.toLocaleString() + " BP";
+                
+                // Visual Feedback
+                buyButton.innerText = "PURCHASING...";
+                setTimeout(() => {
+                    renderList();
+                    updatePreview();
+                }, 500);
+            }
+        }
+
+        // Initial Load
+        renderList();
+        updatePreview();
+
+    </script>
+</body>
+</html>
