@@ -30,7 +30,7 @@ end
 local elementsData = {
 	Fire = {
 		name = "Fire",
-		icon = "??",
+		icon = "🔥",
 		type = "Damage",
 		cost = 1500,
 		duration = 10,
@@ -40,7 +40,7 @@ local elementsData = {
 	},
 	Ice = {
 		name = "Ice",
-		icon = "??",
+		icon = "❄️",
 		type = "Control",
 		cost = 1500,
 		duration = 20,
@@ -50,7 +50,7 @@ local elementsData = {
 	},
 	Poison = {
 		name = "Poison",
-		icon = "??",
+		icon = "☠️",
 		type = "DoT",
 		cost = 1500,
 		duration = 10,
@@ -60,7 +60,7 @@ local elementsData = {
 	},
 	Shock = {
 		name = "Shock",
-		icon = "?",
+		icon = "⚡",
 		type = "AoE",
 		cost = 1500,
 		duration = 10,
@@ -70,7 +70,7 @@ local elementsData = {
 	},
 	Wind = {
 		name = "Wind",
-		icon = "??",
+		icon = "💨",
 		type = "Utility",
 		cost = 1500,
 		duration = 10,
@@ -80,7 +80,7 @@ local elementsData = {
 	},
 	Earth = {
 		name = "Earth",
-		icon = "??",
+		icon = "🌍",
 		type = "Defense",
 		cost = 1500,
 		duration = 10,
@@ -90,7 +90,7 @@ local elementsData = {
 	},
 	Light = {
 		name = "Light",
-		icon = "?",
+		icon = "✨",
 		type = "Ultimate",
 		cost = 3000,
 		duration = 3,
@@ -100,7 +100,7 @@ local elementsData = {
 	},
 	Dark = {
 		name = "Dark",
-		icon = "??",
+		icon = "🌑",
 		type = "Sustain",
 		cost = 5000,
 		duration = 5,
@@ -305,7 +305,7 @@ orbStroke.Parent = orbContainer
 
 local previewIcon = Instance.new("TextLabel")
 previewIcon.Name = "Icon"
-previewIcon.Text = "??"
+previewIcon.Text = "❄️"
 previewIcon.TextSize = 64
 previewIcon.BackgroundTransparency = 1
 previewIcon.Size = UDim2.new(1, 0, 1, 0)
@@ -760,7 +760,7 @@ closeButton.MouseButton1Click:Connect(closeElementShop)
 -- Setup Prompt Connection
 local function setupPrompt()
 	print("Setup Prompt...")
-	if workspace:FindFirstChild("Elements") then
+	if workspace:WaitForChild("Elements") then
 		local attachment = workspace.Elements:FindFirstChild("Attachment")
 		if attachment then
 			elementsPrompt = attachment:FindFirstChild("ElementsPrompt")
