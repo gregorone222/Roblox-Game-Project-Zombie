@@ -7,8 +7,17 @@ local CorrosiveSlamVFX = {}
 -- Dependencies
 local Debris = game:GetService("Debris")
 local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
 
 local VFX_FOLDER_NAME = "VFX_CorrosiveSlam"
+
+-- Color Palette
+local COLORS = {
+	Core = Color3.fromHex("ecfccb"),   -- Almost white green
+	Mid = Color3.fromHex("84cc16"),    -- Lime
+	Dark = Color3.fromHex("3f6212"),   -- Dark swamp
+	Glow = Color3.fromHex("a3e635")    -- Neon Glow
+}
 
 local function getVfxFolder()
 	local folder = workspace:FindFirstChild(VFX_FOLDER_NAME)
@@ -19,228 +28,298 @@ local function getVfxFolder()
 	return folder
 end
 
--- Fungsi efek ledakan yang dapat digunakan kembali
-local function createExplosionEffect(position, radius, color, duration)
-	local vfxFolder = getVfxFolder()
-	local explosionPart = Instance.new("Part")
-	explosionPart.Anchored = true
-	explosionPart.CanCollide = false
-	explosionPart.Material = Enum.Material.ForceField
-	explosionPart.Color = color
-	explosionPart.Shape = Enum.PartType.Ball
-	explosionPart.Size = Vector3.new(0.1, 0.1, 0.1)
-	explosionPart.Position = position
-	explosionPart.Transparency = 0.6
-	explosionPart.Parent = vfxFolder
+-- Utility: Create a jagged path using Beams
+-- CHANGED: Now accepts a parent Model and creates relative positions (since we will move the model)
+local function createJaggedCrack(parentModel, angle, length, duration)
+	-- Determine "Root" position based on current Parent Model PrimaryPart
+	-- But since we are parenting to the Model, and the Model's PrimaryPart is at (0,0,0) relative to itself?
+	-- No, we just parent parts to the Model. If we move the Model via SetPrimaryPartCFrame, all parts move.
 
-	local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-	local goal = {
-		Size = Vector3.new(radius * 2, radius * 2, radius * 2),
-		Transparency = 1
-	}
-	TweenService:Create(explosionPart, tweenInfo, goal):Play()
-	Debris:AddItem(explosionPart, duration + 0.1)
+	-- We assume the crack starts at the center of the Model (RootPart)
+	local origin = parentModel.PrimaryPart.Position
 
-	-- Partikel cipratan
-	local particleEmitter = Instance.new("ParticleEmitter", explosionPart)
-	particleEmitter.Color = ColorSequence.new(color)
-	particleEmitter.LightEmission = 0.5
-	particleEmitter.Size = NumberSequence.new(1, 4)
-	particleEmitter.Speed = NumberRange.new(20, 30)
-	particleEmitter.Lifetime = NumberRange.new(0.5, 1.0)
-	particleEmitter:Emit(50)
-end
+	local numSegments = 5
+	local segmentLength = length / numSegments
 
--- Fungsi untuk membuat titik nexus yang berdenyut
-local function createNexusPoint(position, config)
-	local vfxFolder = getVfxFolder()
-	local nexusPart = Instance.new("Part")
-	nexusPart.Anchored = true
-	nexusPart.CanCollide = false
-	nexusPart.Material = Enum.Material.Neon
-	nexusPart.Color = Color3.fromRGB(175, 255, 0) -- Hijau-limau neon
-	nexusPart.Shape = Enum.PartType.Ball
-	nexusPart.Size = Vector3.new(0.1, 0.1, 0.1) -- Mulai kecil
-	nexusPart.Position = position
-	nexusPart.Parent = vfxFolder
-	nexusPart.Transparency = 0
+	local currentPos = origin
 
-	local attachment = Instance.new("Attachment", nexusPart)
-	attachment.Name = "BeamAttachment"
+	-- Root Attachment for this crack branch
+	local branchRoot = Instance.new("Part")
+	branchRoot.Transparency = 1
+	branchRoot.Anchored = true -- Needs to be anchored to move with SetPrimaryPartCFrame? 
+	-- Actually, if we use SetPrimaryPartCFrame on the Model, ALL parts inside should be moved.
+	-- If parts are Anchored, SetPrimaryPartCFrame WILL move them if they are part of the assembly or just children?
+	-- Roblox Model:SetPrimaryPartCFrame moves all parts in the model, maintaining relative offsets, even if Anchored.
+	branchRoot.CanCollide = false
+	branchRoot.Size = Vector3.new(0.1, 0.1, 0.1)
+	branchRoot.Position = currentPos
+	branchRoot.Parent = parentModel
+	-- No Debris here, parent model handles lifetime
 
-	-- Spawn animation: scale dari 0 ke 1 dalam 0.3s
-	local spawnTween = TweenService:Create(nexusPart, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = Vector3.new(1, 1, 1)})
-	spawnTween:Play()
+	local lastAtt = Instance.new("Attachment", branchRoot)
 
-	-- Pulse animation: scale antara 1 dan 1.3 setiap 0.7s, mulai setelah web travel time
-	local pulseTweenInfo = TweenInfo.new(0.7, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
-	local pulseTween = TweenService:Create(nexusPart, pulseTweenInfo, {Size = Vector3.new(1.3, 1.3, 1.3)})
-	task.delay(config.WebTravelTime, function()
-		pulseTween:Play()
-	end)
+	for i = 1, numSegments do
+		local segmentAngle = angle + (math.random() - 0.5) * 1 -- Jitter angle
+		local nextX = currentPos.X + math.cos(segmentAngle) * segmentLength
+		local nextZ = currentPos.Z + math.sin(segmentAngle) * segmentLength
+		local nextPos = Vector3.new(nextX, origin.Y, nextZ)
 
-	-- Tidak menggunakan Debris di sini, akan dibersihkan secara manual saat impact
-	return nexusPart, pulseTween
-end
+		local p = Instance.new("Part")
+		p.Transparency = 1
+		p.Anchored = true
+		p.CanCollide = false
+		p.Size = Vector3.new(0.1, 0.1, 0.1)
+		p.Position = nextPos
+		p.Parent = parentModel
 
--- Fungsi utama
-function CorrosiveSlamVFX.createTelegraph(bossModel, config)
-	local vfxFolder = getVfxFolder()
-	local initialBossPos = bossModel.PrimaryPart.Position
-	local groundY = initialBossPos.Y
-
-	local telegraphAssets = {}
-	telegraphAssets.nexusPoints = {}
-	telegraphAssets.nexusTweens = {}
-	telegraphAssets.beams = {}
-
-	local centerPosition = Vector3.new(initialBossPos.X, groundY, initialBossPos.Z)
-	local centerNexus, centerTween = createNexusPoint(centerPosition, config)
-	table.insert(telegraphAssets.nexusPoints, centerNexus)
-	table.insert(telegraphAssets.nexusTweens, centerTween)
-
-	for i = 1, config.NexusPointCount do
-		local angle = (i / config.NexusPointCount) * 2 * math.pi
-		local x = centerPosition.X + config.NexusRadius * math.cos(angle)
-		local z = centerPosition.Z + config.NexusRadius * math.sin(angle)
-		local nexusPosition = Vector3.new(x, groundY, z)
-
-		local nexusPart, nexusTween = createNexusPoint(nexusPosition, config)
-		table.insert(telegraphAssets.nexusPoints, nexusPart)
-		table.insert(telegraphAssets.nexusTweens, nexusTween)
+		local nextAtt = Instance.new("Attachment", p)
 
 		local beam = Instance.new("Beam")
-		beam.Attachment0 = centerNexus:FindFirstChild("BeamAttachment")
-		beam.Attachment1 = nexusPart:FindFirstChild("BeamAttachment")
-		beam.Color = ColorSequence.new(Color3.fromRGB(158, 255, 0)) -- Beam color
+		beam.Attachment0 = lastAtt
+		beam.Attachment1 = nextAtt
+		beam.Color = ColorSequence.new(COLORS.Glow)
+		beam.Width0 = 0.5
+		beam.Width1 = 0.5
 		beam.FaceCamera = true
-		beam.LightEmission = 0.5
+		beam.Parent = branchRoot -- Attach beam to branch root to keep organized
+
+		-- Animate Beam appearing
 		beam.Width0 = 0
 		beam.Width1 = 0
-		beam.Parent = vfxFolder
-		table.insert(telegraphAssets.beams, beam)
+		local tween = TweenService:Create(beam, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			Width0 = 0.3 + (math.random() * 0.2), 
+			Width1 = 0.1
+		})
+		tween:Play()
 
-		-- Beam stretches over WebTravelTime (1.2s)
-		local beamTween = TweenService:Create(beam, TweenInfo.new(config.WebTravelTime, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Width0 = 0.2, Width1 = 0.2})
-		beamTween:Play()
+		lastAtt = nextAtt
+		currentPos = nextPos
+	end
+end
+
+-- Utility: Create BillboardGui Text Particle
+local function createTextParticle(position, text, color, size, lifetime, velocityY, parent)
+	local p = Instance.new("Part")
+	p.Transparency = 1
+	p.Anchored = false
+	p.CanCollide = false
+	p.Size = Vector3.new(0.1, 0.1, 0.1)
+	p.Position = position
+	p.Parent = parent
+
+	local bg = Instance.new("BillboardGui")
+	bg.Size = UDim2.new(size, 0, size, 0)
+	bg.Adornee = p
+	bg.AlwaysOnTop = true
+	bg.Parent = p
+
+	local label = Instance.new("TextLabel")
+	label.BackgroundTransparency = 1
+	label.Size = UDim2.new(1, 0, 1, 0)
+	label.Text = text
+	label.TextColor3 = color
+	label.TextScaled = true
+	label.Font = Enum.Font.FredokaOne
+	label.Parent = bg
+
+	-- Physics
+	local bodyVel = Instance.new("BodyVelocity")
+	bodyVel.MaxForce = Vector3.new(100, 100, 100)
+	bodyVel.Velocity = Vector3.new((math.random()-0.5)*2, velocityY, (math.random()-0.5)*2)
+	bodyVel.Parent = p
+
+	Debris:AddItem(p, lifetime)
+
+	-- Fade out
+	local tween = TweenService:Create(label, TweenInfo.new(lifetime, Enum.EasingStyle.Linear), {TextTransparency = 1})
+	tween:Play()
+end
+
+-- Utility: Create Splash Particle (Part)
+local function createSplashParticle(position, color, parent)
+	local p = Instance.new("Part")
+	p.Size = Vector3.new(0.5, 0.5, 0.5)
+	p.Shape = Enum.PartType.Ball
+	p.Color = color
+	p.Material = Enum.Material.Neon
+	p.Position = position
+	p.CanCollide = true
+	p.Parent = parent
+
+	local vec = Vector3.new((math.random()-0.5)*30, math.random(20, 40), (math.random()-0.5)*30)
+	p.AssemblyLinearVelocity = vec
+
+	Debris:AddItem(p, 2)
+end
+
+-- === PUBLIC API ===
+
+function CorrosiveSlamVFX.createTelegraph(bossModel, config)
+	local vfxFolder = getVfxFolder()
+
+	-- Determine Initial Ground Position via Raycast
+	local bossPos = bossModel.PrimaryPart.Position
+	local rayOrigin = bossPos + Vector3.new(0, 5, 0)
+	local rayDir = Vector3.new(0, -50, 0)
+	local params = RaycastParams.new()
+	params.FilterDescendantsInstances = {bossModel, vfxFolder}
+	params.FilterType = Enum.RaycastFilterType.Exclude
+
+	local res = workspace:Raycast(rayOrigin, rayDir, params)
+	local groundPos = res and res.Position or (bossPos - Vector3.new(0, 2.5, 0))
+
+	-- Create Main Model Container
+	local telegraphModel = Instance.new("Model")
+	telegraphModel.Name = "TelegraphModel"
+	telegraphModel.Parent = vfxFolder
+	Debris:AddItem(telegraphModel, config.TelegraphDuration + 2) -- Cleanup backup
+
+	-- Create Root Part for Model
+	local root = Instance.new("Part")
+	root.Name = "Root"
+	root.Transparency = 1
+	root.CanCollide = false
+	root.Anchored = true
+	root.Size = Vector3.new(1, 1, 1)
+	root.Position = groundPos
+	root.Parent = telegraphModel
+	telegraphModel.PrimaryPart = root
+
+	local telegraphAssets = {
+		model = telegraphModel,
+		updateConn = nil
+	}
+
+	-- Generate Cracks (inside the model)
+	local numCracks = 8
+	local radius = config.Radius or 20
+
+	for i = 1, numCracks do
+		local angle = (i / numCracks) * math.pi * 2
+		createJaggedCrack(telegraphModel, angle, radius, config.TelegraphDuration)
 	end
 
-	-- Position tracking loop for nexus points during TelegraphDuration
-	local updateCoroutine = task.spawn(function()
-		local startTime = tick()
-		while tick() - startTime < config.TelegraphDuration do
-			local currentBossPos = bossModel.PrimaryPart.Position
-			-- Update center nexus
-			telegraphAssets.nexusPoints[1].Position = Vector3.new(currentBossPos.X, groundY, currentBossPos.Z)
-			-- Update peripheral nexus points
-			for i = 2, #telegraphAssets.nexusPoints do
-				local angle = ((i - 1) / config.NexusPointCount) * 2 * math.pi
-				local x = currentBossPos.X + config.NexusRadius * math.cos(angle)
-				local z = currentBossPos.Z + config.NexusRadius * math.sin(angle)
-				telegraphAssets.nexusPoints[i].Position = Vector3.new(x, groundY, z)
-			end
-			task.wait(0.1)
+	-- Update Loop: Follow Boss
+	telegraphAssets.updateConn = RunService.Heartbeat:Connect(function()
+		if not bossModel or not bossModel.Parent or not bossModel.PrimaryPart then
+			if telegraphAssets.updateConn then telegraphAssets.updateConn:Disconnect() end
+			return
+		end
+
+		-- Raycast every frame to find ground under boss
+		local currPos = bossModel.PrimaryPart.Position
+		local rOrigin = currPos + Vector3.new(0, 5, 0)
+		local hit = workspace:Raycast(rOrigin, rayDir, params)
+		local targetPos = hit and hit.Position or (currPos - Vector3.new(0, 2.5, 0))
+
+		if telegraphModel and telegraphModel.PrimaryPart then
+			telegraphModel:SetPrimaryPartCFrame(CFrame.new(targetPos))
+		else
+			if telegraphAssets.updateConn then telegraphAssets.updateConn:Disconnect() end
 		end
 	end)
-	telegraphAssets.updateCoroutine = updateCoroutine
 
 	return telegraphAssets
 end
 
 function CorrosiveSlamVFX.triggerImpact(bossModel, config, telegraphAssets)
 	local vfxFolder = getVfxFolder()
-	local initialBossPos = bossModel.PrimaryPart.Position
 
-	-- Ledakan utama
-	local mainExplosion = createExplosionEffect(initialBossPos, config.Radius, Color3.fromRGB(207, 255, 80), 0.4) -- Explosion color
-
-	-- Buat bekas hangus utama
-	local mainScorchMark = Instance.new("Part", vfxFolder)
-	mainScorchMark.Anchored = true
-	mainScorchMark.CanCollide = false
-	mainScorchMark.Material = Enum.Material.Plastic
-	mainScorchMark.Color = Color3.fromRGB(17, 17, 17) -- Scorch color
-	mainScorchMark.Shape = Enum.PartType.Ball
-	mainScorchMark.Size = Vector3.new(config.Radius * 2, 0.1, config.Radius * 2)
-	mainScorchMark.Position = initialBossPos - Vector3.new(0, 0.05, 0) -- Slightly below ground
-	mainScorchMark.Transparency = 0.3
-
-	-- Hapus beam setelah ledakan utama
-	if telegraphAssets then
-		for _, beam in ipairs(telegraphAssets.beams) do
-			beam:Destroy()
-		end
-		-- Cancel the position tracking coroutine
-		if telegraphAssets.updateCoroutine then
-			task.cancel(telegraphAssets.updateCoroutine)
-		end
+	-- Stop Following
+	if telegraphAssets and telegraphAssets.updateConn then
+		telegraphAssets.updateConn:Disconnect()
 	end
 
-	-- Ledakan sekunder di setiap titik nexus dengan delay 0.25s
-	if telegraphAssets and telegraphAssets.nexusPoints then
-		task.delay(config.SecondaryExplosionDelay, function()
-			local scorchMarks = {mainScorchMark} -- Include main scorch for cleanup
-
-			for i, nexusPart in ipairs(telegraphAssets.nexusPoints) do
-				if nexusPart and nexusPart.Parent then
-					-- Secondary explosion
-					createExplosionEffect(nexusPart.Position, 7.5, Color3.fromRGB(207, 255, 80), 0.4)
-
-					-- Secondary scorch marks (except for center)
-					if i > 1 then
-						local secondaryScorch = Instance.new("Part", vfxFolder)
-						secondaryScorch.Anchored = true
-						secondaryScorch.CanCollide = false
-						secondaryScorch.Material = Enum.Material.Plastic
-						secondaryScorch.Color = Color3.fromRGB(17, 17, 17)
-						secondaryScorch.Shape = Enum.PartType.Ball
-						secondaryScorch.Size = Vector3.new(15, 0.1, 15)
-						secondaryScorch.Position = nexusPart.Position - Vector3.new(0, 0.05, 0)
-						secondaryScorch.Transparency = 0.3
-						table.insert(scorchMarks, secondaryScorch)
-					end
-
-					-- Remove nexus point
-					nexusPart:Destroy()
-				end
-			end
-
-			-- Position tracking for scorch marks during fade-out
-			local scorchUpdateCoroutine = task.spawn(function()
-				local startTime = tick()
-				while tick() - startTime < 1 do
-					local currentBossPos = bossModel.PrimaryPart.Position
-					-- Update main scorch mark position
-					mainScorchMark.Position = currentBossPos - Vector3.new(0, 0.05, 0)
-					-- Update secondary scorch marks relative to boss position
-					for i = 2, #scorchMarks do
-						local scorch = scorchMarks[i]
-						if scorch and scorch.Parent then
-							local angle = ((i - 1) / config.NexusPointCount) * 2 * math.pi
-							local x = currentBossPos.X + config.NexusRadius * math.cos(angle)
-							local z = currentBossPos.Z + config.NexusRadius * math.sin(angle)
-							scorch.Position = Vector3.new(x, currentBossPos.Y - 0.05, z)
-						end
-					end
-					task.wait(0.1)
-				end
-			end)
-
-			-- Cleanup scorch marks with fade-out after 1s
-			task.delay(1, function()
-				task.cancel(scorchUpdateCoroutine)
-				for _, scorch in ipairs(scorchMarks) do
-					if scorch and scorch.Parent then
-						local fadeTween = TweenService:Create(scorch, TweenInfo.new(1, Enum.EasingStyle.Linear), {Transparency = 1})
-						fadeTween:Play()
-						fadeTween.Completed:Connect(function()
-							scorch:Destroy()
-						end)
-					end
-				end
-			end)
-		end)
+	-- Cleanup Telegraph Visuals
+	if telegraphAssets and telegraphAssets.model then
+		telegraphAssets.model:Destroy()
 	end
+
+	-- Determine Final Impact Position (Static)
+	local bossPos = bossModel.PrimaryPart.Position
+	local rayOrigin = bossPos + Vector3.new(0, 5, 0)
+	local rayDir = Vector3.new(0, -50, 0)
+	local params = RaycastParams.new()
+	params.FilterDescendantsInstances = {bossModel, vfxFolder}
+	params.FilterType = Enum.RaycastFilterType.Exclude
+
+	local res = workspace:Raycast(rayOrigin, rayDir, params)
+	local groundPos = res and res.Position or (bossPos - Vector3.new(0, 2.5, 0))
+
+	-- 1. Shockwave (Expanding Cylinder)
+	local shockwave = Instance.new("Part")
+	shockwave.Anchored = true
+	shockwave.CanCollide = false
+	shockwave.Shape = Enum.PartType.Cylinder
+	-- Cylinder orientation is sideways by default, need to rotate
+	shockwave.CFrame = CFrame.new(groundPos) * CFrame.Angles(0, 0, math.pi/2)
+	shockwave.Size = Vector3.new(1, 1, 1) -- Height(X), Radius(Y), Radius(Z)
+	shockwave.Color = COLORS.Mid
+	shockwave.Material = Enum.Material.Neon
+	shockwave.Parent = vfxFolder
+
+	local targetSize = config.Radius * 2
+	local swTween = TweenService:Create(shockwave, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		Size = Vector3.new(1, targetSize, targetSize),
+		Transparency = 1
+	})
+	swTween:Play()
+	Debris:AddItem(shockwave, 0.5)
+
+	-- 2. Puddle (Growing Flat Cylinder)
+	local puddle = Instance.new("Part")
+	puddle.Anchored = true
+	puddle.CanCollide = false
+	puddle.Shape = Enum.PartType.Cylinder
+	puddle.CFrame = CFrame.new(groundPos) * CFrame.Angles(0, 0, math.pi/2)
+	puddle.Size = Vector3.new(0.2, 1, 1)
+	puddle.Color = COLORS.Dark
+	puddle.Material = Enum.Material.SmoothPlastic
+	puddle.Parent = vfxFolder
+
+	local puddleTween = TweenService:Create(puddle, TweenInfo.new(1.0, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out), {
+		Size = Vector3.new(0.2, targetSize * 0.8, targetSize * 0.8)
+	})
+	puddleTween:Play()
+
+	-- Fade out puddle after some time (simulating cleanup or long duration)
+	task.delay(3, function()
+		if puddle.Parent then
+			TweenService:Create(puddle, TweenInfo.new(1), {Transparency = 1}):Play()
+			Debris:AddItem(puddle, 1)
+		end
+	end)
+
+	-- 3. Splash Particles (Parts)
+	for i = 1, 30 do
+		createSplashParticle(groundPos, COLORS.Mid, vfxFolder)
+	end
+
+	-- 4. Gas & Bubbles (Unicode TextLabels)
+	task.spawn(function()
+		for i = 1, 10 do
+			-- Gas
+			local offset = Vector3.new((math.random()-0.5)*targetSize/2, 2, (math.random()-0.5)*targetSize/2)
+			createTextParticle(groundPos + offset, "☁", COLORS.Dark, 4, 3, 2, vfxFolder)
+			task.wait(0.1)
+		end
+	end)
+
+	-- Bubbles loop
+	task.spawn(function()
+		local startTime = tick()
+		while tick() - startTime < 3 do -- Puddle duration approx
+			if not puddle.Parent then break end
+			local r = math.random() * (targetSize * 0.4) -- Radius
+			local theta = math.random() * math.pi * 2
+			local bx = groundPos.X + math.cos(theta) * r
+			local bz = groundPos.Z + math.sin(theta) * r
+			local bPos = Vector3.new(bx, groundPos.Y + 0.5, bz)
+
+			createTextParticle(bPos, "●", COLORS.Glow, 2, 1, 1, vfxFolder)
+			task.wait(0.2)
+		end
+	end)
 end
 
 return CorrosiveSlamVFX
