@@ -98,7 +98,7 @@ function ViewmodelModule:calculateBob(dt)
 	local hrp = char:FindFirstChild("HumanoidRootPart")
 	if not hrp then return Vector3.new() end
 
-	local velocity = hrp.Velocity
+	local velocity = hrp.AssemblyLinearVelocity
 	local speed = Vector3.new(velocity.X, 0, velocity.Z).Magnitude
 	local maxSpeed = humanoid.WalkSpeed
 
