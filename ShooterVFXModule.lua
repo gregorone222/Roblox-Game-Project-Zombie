@@ -163,7 +163,7 @@ function ShooterVFXModule.ShootAcidProjectile(fromPos, targetPos, speed, shooter
 	proj.Material = Enum.Material.Neon
 	proj.Color = Color3.fromRGB(80, 200, 80)
 	proj.Name = "AcidProjectile"
-	proj.Velocity = dir * speed
+	proj.AssemblyLinearVelocity = dir * speed
 	proj.Parent = workspace
 
 	local trail = Instance.new("Trail")
