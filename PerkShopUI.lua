@@ -1,546 +1,756 @@
 -- PerkShopUI.lua (LocalScript)
--- Path: StarterGui/PerkShopUI.lua
+-- Path: PerkShopUI.lua (Repository Root -> StarterGui in-game)
 -- Script Place: ACT 1: Village
+-- Theme: Modern Slate & Amber (Matching Prototype)
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local ProximityPromptService = game:GetService("ProximityPromptService")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
 
-local RemoteEvents = game.ReplicatedStorage.RemoteEvents
-local RemoteFunctions = ReplicatedStorage.RemoteFunctions
-local ModuleScriptReplicatedStorage = ReplicatedStorage.ModuleScript
+local RemoteEvents = ReplicatedStorage:WaitForChild("RemoteEvents")
+local RemoteFunctions = ReplicatedStorage:WaitForChild("RemoteFunctions")
 
 local openEv = RemoteEvents:WaitForChild("OpenPerkShop")
 local perkUpdateEv = RemoteEvents:WaitForChild("PerkUpdate")
 local requestOpenEvent = RemoteEvents:WaitForChild("RequestOpenPerkShop")
 local closeShopEvent = RemoteEvents:WaitForChild("ClosePerkShop")
+local pointsUpdateEv = RemoteEvents:WaitForChild("PointsUpdate")
 
 local purchaseRF = RemoteFunctions:WaitForChild("PurchasePerk")
 
-local perksPart = workspace:WaitForChild("Perks")
-local perksPrompt = perksPart:WaitForChild("Attachment"):WaitForChild("PerksPrompt")
+local perksPart = workspace:WaitForChild("Perks", 10) -- Wait for map to load
+local perksPrompt = perksPart and perksPart:WaitForChild("Attachment", 5) and perksPart.Attachment:WaitForChild("PerksPrompt", 5)
+
 local isMobile = UserInputService.TouchEnabled
+
+-- State for CoreGui
 local originalCoreGuiStates = {}
 local hasStoredCoreGuiStates = false
 
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "PerkShopUI"
-screenGui.Parent = player:WaitForChild("PlayerGui")
-screenGui.IgnoreGuiInset = true
-screenGui.Enabled = false
+-- State for UI
+local currentPerksConfig = {}
+local hasActiveDiscount = false
+local selectedPerkIndex = 0
+local perkList = {} -- Array of {Key=..., Data=...}
+local ownedPerksCache = {}
+local currentPlayerPoints = 0
 
-local overlay = Instance.new("Frame")
-overlay.Size = UDim2.new(1, 0, 1, 0)
-overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-overlay.BackgroundTransparency = 0.5
-overlay.BorderSizePixel = 0
-overlay.ZIndex = 1
-overlay.Parent = screenGui
+-- UI Constants
+local COLORS = {
+	BG_DARK = Color3.fromRGB(15, 23, 42),    -- Slate 900
+	BG_PANEL = Color3.fromRGB(30, 41, 59),   -- Slate 800
+	BG_HOVER = Color3.fromRGB(51, 65, 85),   -- Slate 700
+	ACCENT = Color3.fromRGB(245, 158, 11),   -- Amber 500
+	TEXT_MAIN = Color3.fromRGB(248, 250, 252),
+	TEXT_DIM = Color3.fromRGB(100, 116, 139),
+	GREEN = Color3.fromRGB(74, 222, 128),
+	RED = Color3.fromRGB(239, 68, 68),
+	YELLOW = Color3.fromRGB(251, 191, 36),
+	LOCKED = Color3.fromRGB(148, 163, 184)
+}
 
--- Ukuran container utama untuk mobile
-local mainContainer = Instance.new("Frame")
-mainContainer.AnchorPoint = Vector2.new(0.5, 0.5)
-mainContainer.Position = UDim2.new(0.5, 0, 0.5, 0)
-mainContainer.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-mainContainer.BorderSizePixel = 0
-mainContainer.ZIndex = 2
-mainContainer.Parent = screenGui
+-- Perk Metadata (Client-Side Override for Visuals)
+local PERK_VISUALS = {
+	HPPlus = { Icon = "❤️", Color = Color3.fromRGB(239, 68, 68), Name = "Juggernaut" },
+	StaminaPlus = { Icon = "⚡", Color = Color3.fromRGB(234, 179, 8), Name = "Adrenaline" },
+	ReloadPlus = { Icon = "🔄", Color = Color3.fromRGB(59, 130, 246), Name = "Speed Loader" },
+	RevivePlus = { Icon = "🚑", Color = Color3.fromRGB(6, 182, 212), Name = "Quick Revive" },
+	RateBoost = { Icon = "🔥", Color = Color3.fromRGB(249, 115, 22), Name = "Rapid Fire" },
+	Medic = { Icon = "💊", Color = Color3.fromRGB(34, 197, 94), Name = "Field Medic" },
+	ExplosiveRounds = { Icon = "💣", Color = Color3.fromRGB(168, 85, 247), Name = "Explosive" },
+}
 
--- Responsive sizing untuk mobile
-if isMobile then
-	mainContainer.Size = UDim2.new(0.9, 0, 0.85, 0)
-else
-	mainContainer.Size = UDim2.new(0.8, 0, 0.7, 0)
+-- UI Objects
+local screenGui
+local mainContainer
+local listContainer
+local detailPanel
+
+-- Helper Functions
+local function create(className, properties)
+	local instance = Instance.new(className)
+	for k, v in pairs(properties) do
+		instance[k] = v
+	end
+	return instance
 end
 
-local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 12)
-UICorner.Parent = mainContainer
-
-local UIStroke = Instance.new("UIStroke")
-UIStroke.Color = Color3.fromRGB(80, 80, 100)
-UIStroke.Thickness = 3
-UIStroke.Parent = mainContainer
-
-local header = Instance.new("Frame")
-header.Size = UDim2.new(1, 0, 0.12, 0)
-header.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-header.BorderSizePixel = 0
-header.ZIndex = 3
-header.Parent = mainContainer
-
-local headerCorner = Instance.new("UICorner")
-headerCorner.CornerRadius = UDim.new(0, 12)
-headerCorner.Parent = header
-
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(0.7, 0, 1, 0)
-title.Position = UDim2.new(0.15, 0, 0, 0)
-title.BackgroundTransparency = 1
-title.Text = "PERK SHOP"
-title.TextColor3 = Color3.fromRGB(255, 215, 0)
-title.TextScaled = true
-title.Font = Enum.Font.GothamBlack
-title.ZIndex = 4
-title.Parent = header
-
-local closeBtn = Instance.new("ImageButton")
-closeBtn.Size = UDim2.new(0, 30, 0, 30)
-closeBtn.Position = UDim2.new(0.93, 0, 0.35, 0)
-closeBtn.BackgroundTransparency = 1
-closeBtn.Image = "rbxassetid://3926305904"
-closeBtn.ImageRectOffset = Vector2.new(924, 724)
-closeBtn.ImageRectSize = Vector2.new(36, 36)
-closeBtn.ZIndex = 4
-closeBtn.Parent = header
-
--- Perbesar close button untuk mobile
-if isMobile then
-	closeBtn.Size = UDim2.new(0, 40, 0, 40)
-	closeBtn.Position = UDim2.new(0.92, 0, 0.3, 0)
+local function addCorner(parent, radius)
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, radius)
+	corner.Parent = parent
+	return corner
 end
 
-local scrollFrame = Instance.new("ScrollingFrame")
-scrollFrame.Size = UDim2.new(0.95, 0, 0.8, 0)
-scrollFrame.Position = UDim2.new(0.025, 0, 0.15, 0)
-scrollFrame.BackgroundTransparency = 1
-scrollFrame.BorderSizePixel = 0
-scrollFrame.ScrollBarThickness = isMobile and 6 or 0
-scrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-scrollFrame.ZIndex = 3
-scrollFrame.Parent = mainContainer
+local function addPadding(parent, amount)
+	local pad = Instance.new("UIPadding")
+	pad.PaddingTop = UDim.new(0, amount)
+	pad.PaddingBottom = UDim.new(0, amount)
+	pad.PaddingLeft = UDim.new(0, amount)
+	pad.PaddingRight = UDim.new(0, amount)
+	pad.Parent = parent
+	return pad
+end
 
--- === Keyboard navigation (desktop) ===
-local ContextActionService = game:GetService("ContextActionService")
-local ARROW_ACTION = "PerkShop_Arrows"
-local ENTER_ACTION = "PerkShop_Enter"
+local function addStroke(parent, color, thickness)
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = color or COLORS.TEXT_DIM
+	stroke.Thickness = thickness or 1
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	stroke.Parent = parent
+	return stroke
+end
 
-local perkButtons = {}      -- list Frame tombol perk, urut sesuai build
-local selectedIndex = 0     -- 0 = belum ada
+local function formatNumber(n)
+	return tostring(n):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "")
+end
 
--- Fungsi untuk menyembunyikan CoreGui elements di mobile
 local function hideCoreGuiOnMobile()
 	if not isMobile then return end
-
-	-- Simpan state asli CoreGui jika belum disimpan
 	if not hasStoredCoreGuiStates then
 		originalCoreGuiStates.Backpack = game.StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Backpack)
 		originalCoreGuiStates.Health = game.StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Health)
 		originalCoreGuiStates.PlayerList = game.StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList)
 		hasStoredCoreGuiStates = true
 	end
-
-	-- Sembunyikan CoreGui elements
 	game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
 	game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health, false)
 	game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
 end
 
--- Fungsi untuk mengembalikan CoreGui elements ke state semula
 local function restoreCoreGuiOnMobile()
 	if not isMobile or not hasStoredCoreGuiStates then return end
-
-	-- Kembalikan ke state asli
 	game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, originalCoreGuiStates.Backpack)
 	game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health, originalCoreGuiStates.Health)
 	game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, originalCoreGuiStates.PlayerList)
 end
 
-local function setSelected(i)
-	if selectedIndex > 0 and perkButtons[selectedIndex] and perkButtons[selectedIndex].Parent then
-		local prev = perkButtons[selectedIndex]
-		local stroke = prev:FindFirstChildOfClass("UIStroke")
-		if stroke then
-			stroke.Thickness = 2
-			stroke.Color = Color3.fromRGB(100, 100, 120)
-		end
-		prev.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+-- Forward declarations
+local closeShop, updateDetailPanel, selectPerk, buildList, attemptPurchase, updateListStatus
+
+-- UI Construction
+local function createUI()
+	if playerGui:FindFirstChild("PerkShopUI") then
+		playerGui.PerkShopUI:Destroy()
 	end
 
-	selectedIndex = math.clamp(i, 1, #perkButtons)
-	local btn = perkButtons[selectedIndex]
-	if not btn then return end
+	screenGui = create("ScreenGui", {
+		Name = "PerkShopUI",
+		Parent = playerGui,
+		IgnoreGuiInset = false,
+		Enabled = false,
+		ResetOnSpawn = false
+	})
 
-	local stroke = btn:FindFirstChildOfClass("UIStroke")
-	if stroke then
-		stroke.Thickness = 3
-		stroke.Color = Color3.fromRGB(255, 215, 0)
-	end
-	btn.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+	-- Main Container
+	mainContainer = create("Frame", {
+		Name = "MainContainer",
+		Size = UDim2.new(0, 1000, 0, 650),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5, 0, 0.5, 0),
+		BackgroundColor3 = COLORS.BG_DARK,
+		BorderSizePixel = 0,
+		ClipsDescendants = true,
+		Parent = screenGui
+	})
+	addCorner(mainContainer, 24)
+	addStroke(mainContainer, Color3.new(1, 1, 1), 1).Transparency = 0.9
 
-	-- auto-scroll agar tombol terpilih terlihat
-	local topY = btn.AbsolutePosition.Y
-	local bottomY = topY + btn.AbsoluteSize.Y
-	local viewTop = scrollFrame.AbsolutePosition.Y
-	local viewBottom = viewTop + scrollFrame.AbsoluteWindowSize.Y
-
-	if topY < viewTop then
-		scrollFrame.CanvasPosition = Vector2.new(
-			scrollFrame.CanvasPosition.X,
-			math.max(0, scrollFrame.CanvasPosition.Y - (viewTop - topY) - 12)
-		)
-	elseif bottomY > viewBottom then
-		scrollFrame.CanvasPosition = Vector2.new(
-			scrollFrame.CanvasPosition.X,
-			scrollFrame.CanvasPosition.Y + (bottomY - viewBottom) + 12
-		)
-	end
-end
-
-local function unbindDesktopControls()
-	ContextActionService:UnbindAction(ARROW_ACTION)
-	ContextActionService:UnbindAction(ENTER_ACTION)
-end
-
-local function closeShop()
-	screenGui.Enabled = false
-	if not isMobile then
-		unbindDesktopControls()
+	if isMobile then
+		mainContainer.Size = UDim2.new(0.95, 0, 0.9, 0)
 	end
 
-	-- Kembalikan CoreGui elements di mobile
-	restoreCoreGuiOnMobile()
+	-- Layout: Sidebar (Left) + Detail (Right)
+	local contentLayout = create("UIListLayout", {
+		FillDirection = Enum.FillDirection.Horizontal,
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Padding = UDim.new(0, 0),
+		Parent = mainContainer
+	})
 
-	game:GetService("UserInputService").MouseIconEnabled = false
-end
+	-- Sidebar
+	local sidebar = create("Frame", {
+		Name = "Sidebar",
+		Size = UDim2.new(0.35, 0, 1, 0),
+		BackgroundColor3 = Color3.new(0, 0, 0),
+		BackgroundTransparency = 0.8,
+		BorderSizePixel = 0,
+		Parent = mainContainer
+	})
+	local sideStroke = create("Frame", { -- Right border
+		Size = UDim2.new(0, 1, 1, 0),
+		Position = UDim2.new(1, 0, 0, 0),
+		BackgroundColor3 = Color3.new(1, 1, 1),
+		BackgroundTransparency = 0.95,
+		Parent = sidebar
+	})
 
-local function purchaseSelected()
-	local btn = perkButtons[selectedIndex]
-	if not btn then return end
-	local perkName = btn:GetAttribute("perkName")
-	if not perkName then return end
+	-- Header inside Sidebar
+	local header = create("Frame", {
+		Name = "Header",
+		Size = UDim2.new(1, 0, 0, 80),
+		BackgroundTransparency = 1,
+		Parent = sidebar
+	})
+	addPadding(header, 24)
 
-	local ok, result = pcall(function()
-		return purchaseRF:InvokeServer(perkName)
-	end)
-	if ok and result and result.Success then
-		-- notifikasi sudah ditangani existing code di createPerkButton; cukup tutup
+	local titleLabel = create("TextLabel", {
+		Text = "PERK STATION",
+		Size = UDim2.new(1, 0, 0, 30),
+		Font = Enum.Font.GothamBlack,
+		TextSize = 24,
+		TextColor3 = COLORS.TEXT_MAIN,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		BackgroundTransparency = 1,
+		Parent = header
+	})
+
+	create("Frame", { -- Accent Line
+		Size = UDim2.new(0, 4, 0, 24),
+		Position = UDim2.new(0, -12, 0, 3),
+		BackgroundColor3 = COLORS.ACCENT,
+		Parent = titleLabel
+	})
+
+	create("TextLabel", {
+		Text = "Enhance Your Biological Capabilities",
+		Size = UDim2.new(1, 0, 0, 20),
+		Position = UDim2.new(0, 0, 0, 30),
+		Font = Enum.Font.Gotham,
+		TextSize = 12,
+		TextColor3 = COLORS.TEXT_DIM,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		BackgroundTransparency = 1,
+		Parent = header
+	})
+
+	-- Perk List Container
+	listContainer = create("ScrollingFrame", {
+		Name = "PerkList",
+		Size = UDim2.new(1, 0, 1, -80),
+		Position = UDim2.new(0, 0, 0, 80),
+		CanvasSize = UDim2.new(0, 0, 0, 0),
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ScrollBarThickness = 4,
+		ScrollBarImageColor3 = Color3.new(1, 1, 1),
+		ScrollBarImageTransparency = 0.9,
+		Parent = sidebar
+	})
+	addPadding(listContainer, 16)
+	create("UIListLayout", {
+		Padding = UDim.new(0, 8),
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Parent = listContainer
+	})
+
+	-- Detail Panel (Right)
+	detailPanel = create("Frame", {
+		Name = "DetailPanel",
+		LayoutOrder = 2,
+		Size = UDim2.new(0.65, 0, 1, 0),
+		BackgroundTransparency = 1,
+		Parent = mainContainer
+	})
+
+	local detailGradient = create("UIGradient", {
+		Color = ColorSequence.new(COLORS.BG_PANEL),
+		Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.9),
+			NumberSequenceKeypoint.new(1, 0)
+		}),
+		Rotation = -45,
+		Parent = detailPanel
+	})
+
+
+	-- Close Button
+	local closeButton = create("TextButton", {
+		Text = "✕",
+		Size = UDim2.new(0, 40, 0, 40),
+		Position = UDim2.new(1, -24, 0, 24),
+		AnchorPoint = Vector2.new(1, 0),
+		BackgroundTransparency = 1,
+		TextColor3 = COLORS.TEXT_DIM,
+		TextSize = 24,
+		Font = Enum.Font.GothamBold,
+		Parent = detailPanel
+	})
+	closeButton.MouseButton1Click:Connect(function()
 		closeShop()
-	end
-end
-
-local function handleArrowAction(actionName, inputState, inputObj)
-	if inputState ~= Enum.UserInputState.Begin then return end
-	if #perkButtons == 0 then return end
-
-	local cols = 2  -- Selalu 2 kolom untuk semua platform
-	local cur = (selectedIndex > 0) and selectedIndex or 1
-
-	if inputObj.KeyCode == Enum.KeyCode.Right then
-		cur = math.clamp(cur + 1, 1, #perkButtons)
-	elseif inputObj.KeyCode == Enum.KeyCode.Left then
-		cur = math.clamp(cur - 1, 1, #perkButtons)
-	elseif inputObj.KeyCode == Enum.KeyCode.Down then
-		cur = math.clamp(cur + cols, 1, #perkButtons)
-	elseif inputObj.KeyCode == Enum.KeyCode.Up then
-		cur = math.clamp(cur - cols, 1, #perkButtons)
-	else
-		return
-	end
-	setSelected(cur)
-end
-
-local function bindDesktopControls()
-	if isMobile then return end
-	ContextActionService:BindActionAtPriority(
-		ARROW_ACTION,
-		function(_, state, input) handleArrowAction(ARROW_ACTION, state, input) end,
-		false, 10000,
-		Enum.KeyCode.Up, Enum.KeyCode.Down, Enum.KeyCode.Left, Enum.KeyCode.Right
-	)
-	ContextActionService:BindActionAtPriority(
-		ENTER_ACTION,
-		function(_, state, input)
-			if state == Enum.UserInputState.Begin
-				and (input.KeyCode == Enum.KeyCode.Return or input.KeyCode == Enum.KeyCode.KeypadEnter) then
-				purchaseSelected()
-			end
-		end,
-		false, 10000, Enum.KeyCode.Return, Enum.KeyCode.KeypadEnter
-	)
-end
-
--- Selalu gunakan UIGridLayout dengan 2 kolom untuk semua platform
-local UIGridLayout = Instance.new("UIGridLayout")
-if isMobile then
-	UIGridLayout.CellSize = UDim2.new(0.48, 0, 0, 200)  -- Perbesar tinggi sel untuk mobile
-else
-	UIGridLayout.CellSize = UDim2.new(0.48, 0, 0, 160)  -- Tingkatkan tinggi sel untuk desktop agar ada ruang margin bawah
-end
-UIGridLayout.CellPadding = UDim2.new(0.02, 0, 0, 15)
-UIGridLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-UIGridLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIGridLayout.StartCorner = Enum.StartCorner.TopLeft
-UIGridLayout.Parent = scrollFrame
-
-local function createPerkButton(perkName, config, hasDiscount)
-	local button = Instance.new("Frame")
-	button.Size = UDim2.new(1, 0, 1, 0)  -- Mengisi seluruh cell grid
-	button.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-	button.BorderSizePixel = 0
-	button.ZIndex = 4
-
-	local buttonCorner = Instance.new("UICorner")
-	buttonCorner.CornerRadius = UDim.new(0, 10)
-	buttonCorner.Parent = button
-
-	local buttonStroke = Instance.new("UIStroke")
-	buttonStroke.Color = Color3.fromRGB(100, 100, 120)
-	buttonStroke.Thickness = 2
-	buttonStroke.Parent = button
-
-	-- Sesuaikan ukuran icon untuk mobile
-	local iconSize = isMobile and 40 or 50
-	local icon = Instance.new("TextLabel")
-	icon.Size = UDim2.new(0, iconSize, 0, iconSize)
-	icon.Position = UDim2.new(0.05, 0, 0.05, 0)
-	icon.BackgroundTransparency = 1
-	icon.Text = config.Icon or "?"
-	icon.TextColor3 = Color3.fromRGB(255, 215, 0)
-	icon.TextScaled = true
-	icon.ZIndex = 5
-	icon.Parent = button
-
-	local nameLabel = Instance.new("TextLabel")
-	nameLabel.Size = UDim2.new(isMobile and 0.6 or 0.5, 0, 0.2, 0)
-	nameLabel.Position = UDim2.new(isMobile and 0.25 or 0.2, 0, 0.05, 0)
-	nameLabel.BackgroundTransparency = 1
-	nameLabel.Text = perkName
-	nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	nameLabel.TextScaled = true
-	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-	nameLabel.Font = Enum.Font.GothamBold
-	nameLabel.ZIndex = 5
-	nameLabel.Parent = button
-
-	-- Ubah posisi costLabel untuk mobile
-	local costLabel = Instance.new("TextLabel")
-	if isMobile then
-		-- Posisi untuk mobile: di atas tombol beli
-		costLabel.Size = UDim2.new(0.9, 0, 0.1, 0)
-		costLabel.Position = UDim2.new(0.05, 0, 0.65, 0)
-		costLabel.TextXAlignment = Enum.TextXAlignment.Center
-	else
-		-- Posisi untuk desktop: di pojok kanan atas
-		costLabel.Size = UDim2.new(0.3, 0, 0.2, 0)
-		costLabel.Position = UDim2.new(0.7, 0, 0.05, 0)
-		costLabel.TextXAlignment = Enum.TextXAlignment.Left
-	end
-	costLabel.BackgroundTransparency = 1
-	local finalCost = config.Cost
-	if hasDiscount then
-		finalCost = math.floor(finalCost / 2)
-		costLabel.TextColor3 = Color3.fromRGB(100, 255, 100) -- Green for discount
-	else
-		costLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-	end
-	costLabel.Text = finalCost .. " BP"
-	costLabel.TextScaled = true
-	costLabel.Font = Enum.Font.GothamBold
-	costLabel.ZIndex = 5
-	costLabel.Parent = button
-
-	local descLabel = Instance.new("TextLabel")
-	-- Perbaikan: Ubah posisi deskripsi untuk desktop agar tidak terlalu dekat dengan icon
-	if isMobile then
-		descLabel.Size = UDim2.new(0.9, 0, 0.35, 0)
-		descLabel.Position = UDim2.new(0.05, 0, 0.3, 0)
-	else
-		-- Untuk desktop: turunkan posisi deskripsi dan perkecil tinggi
-		descLabel.Size = UDim2.new(0.9, 0, 0.3, 0)
-		descLabel.Position = UDim2.new(0.05, 0, 0.35, 0)
-	end
-	descLabel.BackgroundTransparency = 1
-	descLabel.Text = config.Description or "No description available."
-	descLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-	descLabel.TextWrapped = true
-	descLabel.TextScaled = true
-	descLabel.TextXAlignment = Enum.TextXAlignment.Left
-	descLabel.TextYAlignment = Enum.TextYAlignment.Top
-	descLabel.Font = Enum.Font.Gotham
-	descLabel.ZIndex = 5
-	descLabel.Parent = button
-
-	-- Sesuaikan tombol purchase untuk mobile
-	local purchaseBtn = Instance.new("TextButton")
-	if isMobile then
-		purchaseBtn.Size = UDim2.new(0.4, 0, 0.15, 0)
-		purchaseBtn.Position = UDim2.new(0.3, 0, 0.8, 0)  -- Posisi lebih bawah untuk mobile
-	else
-		purchaseBtn.Size = UDim2.new(0.4, 0, 0.15, 0)  -- Perkecil tinggi tombol
-		-- Perbaikan: Turunkan posisi tombol untuk desktop dan tambahkan margin bawah
-		purchaseBtn.Position = UDim2.new(0.3, 0, 0.75, 0)  -- Ubah dari 0.78 menjadi 0.75
-	end
-	purchaseBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
-	purchaseBtn.Text = "BUY"
-	purchaseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	purchaseBtn.TextScaled = true
-	purchaseBtn.Font = Enum.Font.GothamBold
-	purchaseBtn.ZIndex = 5
-	purchaseBtn.Parent = button
-
-	local btnCorner = Instance.new("UICorner")
-	btnCorner.CornerRadius = UDim.new(0, 6)
-	btnCorner.Parent = purchaseBtn
-
-	purchaseBtn.MouseEnter:Connect(function()
-		game:GetService("TweenService"):Create(purchaseBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0, 200, 0)}):Play()
 	end)
 
-	purchaseBtn.MouseLeave:Connect(function()
-		game:GetService("TweenService"):Create(purchaseBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0, 170, 0)}):Play()
-	end)
+	-- Preview Area
+	local previewArea = create("Frame", {
+		Name = "PreviewArea",
+		Size = UDim2.new(1, 0, 0.7, 0),
+		Position = UDim2.new(0, 0, 0, 0),
+		BackgroundTransparency = 1,
+		Parent = detailPanel
+	})
 
-	purchaseBtn.MouseButton1Click:Connect(function()
-		local ok, result = pcall(function()
-			return purchaseRF:InvokeServer(perkName)
-		end)
+	local bigIconContainer = create("Frame", {
+		Name = "BigIconContainer",
+		Size = UDim2.new(0, 200, 0, 200),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5, 0, 0.45, 0),
+		BackgroundColor3 = Color3.new(1, 1, 1),
+		BackgroundTransparency = 0.95,
+		Parent = previewArea
+	})
+	addCorner(bigIconContainer, 100)
 
-		if not ok then
-			-- Show error notification
-			local notification = Instance.new("TextLabel")
-			notification.Size = UDim2.new(0.8, 0, 0, 40)
-			notification.Position = UDim2.new(0.1, 0, 0.9, 0)
-			notification.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
-			notification.Text = "Purchase failed (network)"
-			notification.TextColor3 = Color3.fromRGB(255, 255, 255)
-			notification.TextScaled = true
-			notification.ZIndex = 10
-			notification.Parent = mainContainer
-			local corner = Instance.new("UICorner"); corner.Parent = notification
-			game:GetService("TweenService"):Create(notification, TweenInfo.new(0.5), {Position = UDim2.new(0.1, 0, 0.8, 0)}):Play()
-			task.wait(2)
-			game:GetService("TweenService"):Create(notification, TweenInfo.new(0.5), {Position = UDim2.new(0.1, 0, 0.9, 0)}):Play()
-			task.wait(0.5)
-			notification:Destroy()
-			return
+	create("TextLabel", {
+		Name = "BigIcon",
+		Text = "❤️",
+		Size = UDim2.new(1, 0, 1, 0),
+		BackgroundTransparency = 1,
+		TextSize = 100,
+		Font = Enum.Font.Gotham,
+		Parent = bigIconContainer
+	})
+
+	local tInfo = TweenInfo.new(3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+	TweenService:Create(bigIconContainer, tInfo, {Position = UDim2.new(0.5, 0, 0.42, 0)}):Play()
+
+	create("TextLabel", {
+		Name = "DetailTitle",
+		Text = "JUGGERNAUT",
+		Size = UDim2.new(1, 0, 0, 50),
+		Position = UDim2.new(0, 0, 0.65, 0),
+		BackgroundTransparency = 1,
+		Font = Enum.Font.GothamBlack,
+		TextSize = 48,
+		TextColor3 = COLORS.TEXT_MAIN,
+		Parent = previewArea
+	})
+
+	create("TextLabel", {
+		Name = "DetailDesc",
+		Text = "Increases Max Health by 30%.",
+		Size = UDim2.new(0.8, 0, 0, 60),
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0.75, 0),
+		BackgroundTransparency = 1,
+		Font = Enum.Font.Gotham,
+		TextSize = 18,
+		TextColor3 = COLORS.TEXT_DIM,
+		TextWrapped = true,
+		Parent = previewArea
+	})
+
+	-- Action Bar
+	local actionBar = create("Frame", {
+		Name = "ActionBar",
+		Size = UDim2.new(1, 0, 0.25, 0),
+		Position = UDim2.new(0, 0, 0.75, 0),
+		BackgroundColor3 = Color3.new(0, 0, 0),
+		BackgroundTransparency = 0.4,
+		Parent = detailPanel
+	})
+	addPadding(actionBar, 32)
+	addStroke(actionBar, Color3.new(1, 1, 1), 1).Transparency = 0.95
+
+	local costDisplay = create("Frame", {
+		Name = "CostDisplay",
+		Size = UDim2.new(0.4, 0, 1, 0),
+		BackgroundTransparency = 1,
+		Parent = actionBar
+	})
+
+	create("TextLabel", {
+		Text = "UPGRADE COST",
+		Size = UDim2.new(1, 0, 0, 20),
+		BackgroundTransparency = 1,
+		Font = Enum.Font.GothamBold,
+		TextSize = 14,
+		TextColor3 = COLORS.TEXT_DIM,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = costDisplay
+	})
+
+	create("TextLabel", {
+		Name = "CostValue",
+		Text = "4,000 BP",
+		Size = UDim2.new(1, 0, 0, 40),
+		Position = UDim2.new(0, 0, 0, 20),
+		BackgroundTransparency = 1,
+		Font = Enum.Font.GothamBlack,
+		TextSize = 36,
+		TextColor3 = COLORS.YELLOW,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = costDisplay
+	})
+
+	local buyButton = create("TextButton", {
+		Name = "BuyButton",
+		Text = "PURCHASE",
+		Size = UDim2.new(0, 220, 0, 60),
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, 0, 0.5, 0),
+		BackgroundColor3 = COLORS.ACCENT,
+		Font = Enum.Font.GothamBlack,
+		TextSize = 24,
+		TextColor3 = COLORS.BG_DARK,
+		Parent = actionBar
+	})
+	addCorner(buyButton, 12)
+
+	buyButton.MouseEnter:Connect(function()
+		if buyButton.Active then
+			TweenService:Create(buyButton, TweenInfo.new(0.2), {BackgroundColor3 = COLORS.TEXT_MAIN}):Play()
 		end
+	end)
+	buyButton.MouseLeave:Connect(function()
+		if buyButton.Active then
+			local color = COLORS.ACCENT
+			if perkList[selectedPerkIndex] then
+				local key = perkList[selectedPerkIndex].Key
+				local vis = PERK_VISUALS[key]
+				if vis then color = vis.Color end
+			end
+			TweenService:Create(buyButton, TweenInfo.new(0.2), {BackgroundColor3 = color}):Play()
+		end
+	end)
 
-		if result.Success then
-			-- Show success notification
-			local notification = Instance.new("TextLabel")
-			notification.Size = UDim2.new(0.8, 0, 0, 40)
-			notification.Position = UDim2.new(0.1, 0, 0.9, 0)
-			notification.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-			notification.Text = result.Message or "Perk purchased!"
-			notification.TextColor3 = Color3.fromRGB(255, 255, 255)
-			notification.TextScaled = true
-			notification.ZIndex = 10
-			notification.Parent = mainContainer
-			local corner = Instance.new("UICorner"); corner.Parent = notification
-			game:GetService("TweenService"):Create(notification, TweenInfo.new(0.5), {Position = UDim2.new(0.1, 0, 0.8, 0)}):Play()
-			task.wait(2)
-			game:GetService("TweenService"):Create(notification, TweenInfo.new(0.5), {Position = UDim2.new(0.1, 0, 0.9, 0)}):Play()
-			task.wait(0.5)
-			notification:Destroy()
+	buyButton.MouseButton1Click:Connect(function() attemptPurchase() end)
+end
 
-			-- Close shop after purchase
-			if type(closeShop) == "function" then
-				closeShop()
+function closeShop()
+	if screenGui then
+		screenGui.Enabled = false
+	end
+	restoreCoreGuiOnMobile()
+	closeShopEvent:FireServer()
+end
+
+function updateDetailPanel(index)
+	if not index or not perkList[index] then return end
+	local item = perkList[index]
+	local key = item.Key
+	local config = item.Data
+	local vis = PERK_VISUALS[key] or { Icon = "?", Color = COLORS.TEXT_MAIN, Name = key }
+
+	local previewArea = detailPanel.PreviewArea
+	local actionBar = detailPanel.ActionBar
+
+	previewArea.DetailTitle.Text = vis.Name
+	previewArea.DetailTitle.TextColor3 = vis.Color
+	previewArea.DetailDesc.Text = config.Description or "No description."
+	previewArea.BigIconContainer.BigIcon.Text = vis.Icon
+	previewArea.BigIconContainer.BigIcon.TextColor3 = vis.Color
+
+	local cost = config.Cost or 0
+	if hasActiveDiscount then cost = math.floor(cost / 2) end
+
+	local costLabel = actionBar.CostDisplay.CostValue
+	local buyButton = actionBar.BuyButton
+
+	costLabel.Text = formatNumber(cost) .. " BP"
+	costLabel.TextColor3 = COLORS.YELLOW
+
+	local isOwned = false
+	if table.find(ownedPerksCache, key) then
+		isOwned = true
+	end
+
+	if isOwned then
+		buyButton.Text = "EQUIPPED"
+		buyButton.BackgroundColor3 = COLORS.BG_PANEL
+		buyButton.TextColor3 = COLORS.TEXT_DIM
+		buyButton.Active = false
+		costLabel.Text = "OWNED"
+		costLabel.TextColor3 = COLORS.GREEN
+	else
+		buyButton.Text = "PURCHASE"
+		buyButton.BackgroundColor3 = vis.Color
+		buyButton.TextColor3 = COLORS.BG_DARK
+		buyButton.Active = true
+	end
+end
+
+function selectPerk(index)
+	selectedPerkIndex = index
+	for i, item in ipairs(perkList) do
+		local btn = item.Button
+		if i == index then
+			btn.BackgroundColor3 = Color3.new(1, 1, 1)
+			btn.BackgroundTransparency = 0.9
+			if not btn:FindFirstChild("ActiveBar") then
+				local bar = Instance.new("Frame")
+				bar.Name = "ActiveBar"
+				bar.Size = UDim2.new(0, 4, 1, 0)
+				bar.BackgroundColor3 = PERK_VISUALS[item.Key] and PERK_VISUALS[item.Key].Color or COLORS.ACCENT
+				bar.Parent = btn
 			end
 		else
-			-- Show error notification
-			local notification = Instance.new("TextLabel")
-			notification.Size = UDim2.new(0.8, 0, 0, 40)
-			notification.Position = UDim2.new(0.1, 0, 0.9, 0)
-			notification.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
-			notification.Text = result.Message or "Purchase failed"
-			notification.TextColor3 = Color3.fromRGB(255, 255, 255)
-			notification.TextScaled = true
-			notification.ZIndex = 10
-			notification.Parent = mainContainer
-			local corner = Instance.new("UICorner"); corner.Parent = notification
-			game:GetService("TweenService"):Create(notification, TweenInfo.new(0.5), {Position = UDim2.new(0.1, 0, 0.8, 0)}):Play()
-			task.wait(2)
-			game:GetService("TweenService"):Create(notification, TweenInfo.new(0.5), {Position = UDim2.new(0.1, 0, 0.9, 0)}):Play()
-			task.wait(0.5)
-			notification:Destroy()
+			btn.BackgroundColor3 = Color3.new(1, 1, 1)
+			btn.BackgroundTransparency = 0.97
+			if btn:FindFirstChild("ActiveBar") then btn.ActiveBar:Destroy() end
 		end
+	end
+	updateDetailPanel(index)
+end
+
+function buildList()
+	for _, c in ipairs(listContainer:GetChildren()) do
+		if c:IsA("TextButton") then c:Destroy() end
+	end
+	perkList = {}
+
+	for key, data in pairs(currentPerksConfig) do
+		table.insert(perkList, {Key = key, Data = data})
+	end
+
+	table.sort(perkList, function(a,b) return (a.Data.Cost or 0) < (b.Data.Cost or 0) end)
+
+	for i, item in ipairs(perkList) do
+		local key = item.Key
+		local data = item.Data
+		local vis = PERK_VISUALS[key] or { Icon = "?", Color = COLORS.TEXT_MAIN, Name = key }
+		local cost = data.Cost or 0
+		if hasActiveDiscount then cost = math.floor(cost / 2) end
+
+		local btn = create("TextButton", {
+			Name = key,
+			Size = UDim2.new(1, 0, 0, 72),
+			BackgroundColor3 = Color3.new(1, 1, 1),
+			BackgroundTransparency = 0.97,
+			AutoButtonColor = false,
+			Text = "",
+			LayoutOrder = i, -- Ensure explicit order
+			Parent = listContainer
+		})
+		addCorner(btn, 12)
+
+		local iconContainer = create("Frame", {
+			Size = UDim2.new(0, 48, 0, 48),
+			Position = UDim2.new(0, 12, 0.5, 0),
+			AnchorPoint = Vector2.new(0, 0.5),
+			BackgroundColor3 = Color3.new(0, 0, 0),
+			BackgroundTransparency = 0.5,
+			Parent = btn
+		})
+		addCorner(iconContainer, 8)
+		addStroke(iconContainer, Color3.new(1, 1, 1), 1).Transparency = 0.9
+
+		create("TextLabel", {
+			Text = vis.Icon,
+			Size = UDim2.new(1, 0, 1, 0),
+			BackgroundTransparency = 1,
+			TextSize = 24,
+			TextColor3 = vis.Color,
+			Parent = iconContainer
+		})
+
+		local infoCol = create("Frame", {
+			Size = UDim2.new(1, -70, 1, 0),
+			Position = UDim2.new(0, 72, 0, 0),
+			BackgroundTransparency = 1,
+			Parent = btn
+		})
+
+		create("TextLabel", {
+			Text = vis.Name,
+			Size = UDim2.new(1, 0, 0, 20),
+			Position = UDim2.new(0, 0, 0.25, 0),
+			BackgroundTransparency = 1,
+			Font = Enum.Font.GothamBold,
+			TextSize = 14,
+			TextColor3 = COLORS.TEXT_MAIN,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			Parent = infoCol
+		})
+
+		local priceLabel = create("TextLabel", {
+			Name = "PriceLabel",
+			Text = formatNumber(cost) .. " BP",
+			Size = UDim2.new(1, 0, 0, 16),
+			Position = UDim2.new(0, 0, 0.55, 0),
+			BackgroundTransparency = 1,
+			Font = Enum.Font.Gotham,
+			TextSize = 12,
+			TextColor3 = COLORS.TEXT_DIM,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			Parent = infoCol
+		})
+
+		-- STATUS LABEL (Right Side)
+		local statusLabel = create("Frame", {
+			Name = "StatusLabel",
+			Size = UDim2.new(0, 80, 0, 24),
+			AnchorPoint = Vector2.new(1, 0.5),
+			Position = UDim2.new(1, -12, 0.5, 0),
+			BackgroundColor3 = COLORS.BG_DARK,
+			Parent = btn
+		})
+		addCorner(statusLabel, 6)
+
+		create("TextLabel", {
+			Name = "Text",
+			Text = "...",
+			Size = UDim2.new(1, 0, 1, 0),
+			BackgroundTransparency = 1,
+			Font = Enum.Font.GothamBold,
+			TextSize = 10,
+			TextColor3 = COLORS.TEXT_MAIN,
+			Parent = statusLabel
+		})
+
+		btn.MouseButton1Click:Connect(function()
+			selectPerk(i)
+		end)
+
+		item.Button = btn
+		item.PriceLabel = priceLabel
+		item.StatusFrame = statusLabel
+	end
+
+	updateListStatus()
+end
+
+function updateListStatus()
+	for _, item in ipairs(perkList) do
+		local key = item.Key
+		local cost = item.Data.Cost or 0
+		if hasActiveDiscount then cost = math.floor(cost / 2) end
+
+		local isOwned = false
+		if table.find(ownedPerksCache, key) then isOwned = true end
+
+		local statusFrame = item.StatusFrame
+		local statusText = statusFrame.Text
+		local priceLabel = item.PriceLabel
+
+		if isOwned then
+			statusFrame.BackgroundColor3 = Color3.fromRGB(74, 222, 128, 50) -- Green tint
+			statusFrame.BackgroundTransparency = 0.8
+			statusText.Text = "OWNED"
+			statusText.TextColor3 = COLORS.GREEN
+			priceLabel.Text = "Active"
+			priceLabel.TextColor3 = COLORS.GREEN
+		elseif currentPlayerPoints >= cost then
+			statusFrame.BackgroundColor3 = Color3.fromRGB(251, 191, 36, 50) -- Yellow tint
+			statusFrame.BackgroundTransparency = 0.8
+			statusText.Text = "AVAILABLE"
+			statusText.TextColor3 = COLORS.YELLOW
+			priceLabel.Text = formatNumber(cost) .. " BP"
+			priceLabel.TextColor3 = COLORS.TEXT_DIM
+		else
+			statusFrame.BackgroundColor3 = Color3.fromRGB(148, 163, 184, 50) -- Gray tint
+			statusFrame.BackgroundTransparency = 0.8
+			statusText.Text = "LOCKED"
+			statusText.TextColor3 = COLORS.LOCKED
+			priceLabel.Text = formatNumber(cost) .. " BP"
+			priceLabel.TextColor3 = COLORS.TEXT_DIM
+		end
+	end
+end
+
+function attemptPurchase()
+	if not selectedPerkIndex or not perkList[selectedPerkIndex] then return end
+	local item = perkList[selectedPerkIndex]
+
+	local btn = detailPanel.ActionBar.BuyButton
+	btn.Text = "PROCESSING..."
+
+	local success, result = pcall(function()
+		return purchaseRF:InvokeServer(item.Key)
 	end)
-	button:SetAttribute("perkName", perkName)
-	return button
-end
 
-local function buildShop(config, hasDiscount)
-	-- Clear existing elements
-	for _, child in ipairs(scrollFrame:GetChildren()) do
-		if child:IsA("Frame") then
-			child:Destroy()
-		end
-	end
+	if success and result.Success then
+		table.insert(ownedPerksCache, item.Key)
 
-	-- Create perk buttons
-	perkButtons = {}
-	selectedIndex = 0
-	for name, cfg in pairs(config) do
-		local perkBtn = createPerkButton(name, cfg, hasDiscount)
-		perkBtn.Parent = scrollFrame
-		perkBtn:SetAttribute("perkName", name)
-		table.insert(perkButtons, perkBtn)
+		-- Assume points deducted correctly by server, update local optimistic value?
+		-- Or wait for pointsUpdateEv.
+		-- Optimistic update:
+		local cost = item.Data.Cost or 0
+		if hasActiveDiscount then cost = math.floor(cost / 2) end
+		currentPlayerPoints = math.max(0, currentPlayerPoints - cost)
+
+		updateDetailPanel(selectedPerkIndex)
+		updateListStatus()
+	else
+		btn.Text = "FAILED"
+		btn.BackgroundColor3 = COLORS.RED
+		task.wait(1)
+		updateDetailPanel(selectedPerkIndex)
 	end
 end
 
-local function openShop(config, hasDiscount)
-	buildShop(config or {}, hasDiscount)
+-- Event Connections
+openEv.OnClientEvent:Connect(function(config, hasDiscount)
+	createUI()
+	currentPerksConfig = config or {}
+	hasActiveDiscount = hasDiscount
 	screenGui.Enabled = true
-
-	-- Sembunyikan CoreGui elements di mobile
 	hideCoreGuiOnMobile()
 
-	if not isMobile then
-		if #perkButtons > 0 then
-			setSelected(1)
-		end
-		bindDesktopControls()
+	-- Try to get current points from leaderstats if available
+	if player:FindFirstChild("leaderstats") and player.leaderstats:FindFirstChild("BP") then
+		currentPlayerPoints = player.leaderstats.BP.Value
 	end
-	game:GetService("UserInputService").MouseIconEnabled = true
+
+	buildList()
+
+	if #perkList > 0 then
+		selectPerk(1)
+	end
+end)
+
+perkUpdateEv.OnClientEvent:Connect(function(owned)
+	ownedPerksCache = owned or {}
+	if screenGui and screenGui.Enabled then
+		updateListStatus()
+		if selectedPerkIndex > 0 then
+			updateDetailPanel(selectedPerkIndex)
+		end
+	end
+end)
+
+pointsUpdateEv.OnClientEvent:Connect(function(points)
+	currentPlayerPoints = points
+	if screenGui and screenGui.Enabled then
+		updateListStatus()
+		if selectedPerkIndex > 0 then
+			updateDetailPanel(selectedPerkIndex)
+		end
+	end
+end)
+
+local function onPromptTrigger(prompt, plr)
+	-- Check if triggered by local player and matches our target prompt
+	if plr ~= player then return end
+
+	-- Robust check: match specific instance if found, or fallback to name check logic
+	if (perksPrompt and prompt == perksPrompt) or (prompt.Name == "PerksPrompt" and prompt.Parent and prompt.Parent.Parent and prompt.Parent.Parent.Name == "Perks") then
+		requestOpenEvent:FireServer()
+	end
 end
+ProximityPromptService.PromptTriggered:Connect(onPromptTrigger)
 
-closeBtn.MouseButton1Click:Connect(closeShop)
-
-game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
-	if input.KeyCode == Enum.KeyCode.Escape and screenGui.Enabled then
+UserInputService.InputBegan:Connect(function(input)
+	if input.KeyCode == Enum.KeyCode.Escape and screenGui and screenGui.Enabled then
 		closeShop()
 	end
 end)
 
--- Listen for shop open event
-openEv.OnClientEvent:Connect(openShop)
-
--- Close when moving away from perk machine
-game:GetService("RunService").RenderStepped:Connect(function()
-	if screenGui.Enabled then
+RunService.RenderStepped:Connect(function()
+	if screenGui and screenGui.Enabled then
 		local char = player.Character
-		if char and char:FindFirstChild("HumanoidRootPart") then
-			local perkPart = workspace:FindFirstChild("Perks")
-			if perkPart and perkPart:IsA("BasePart") then
-				local dist = (char.HumanoidRootPart.Position - perkPart.Position).Magnitude
-				if dist > 12 then
-					closeShop()
-				end
+		if char and char:FindFirstChild("HumanoidRootPart") and perksPart then
+			if (char.HumanoidRootPart.Position - perksPart.Position).Magnitude > 15 then
+				closeShop()
 			end
 		end
 	end
 end)
 
--- Perk update handler
-perkUpdateEv.OnClientEvent:Connect(function(perks)
-	-- Update UI untuk menampilkan perk yang sudah dimiliki
-	-- (Bisa ditambahkan indikator pada tombol perk yang sudah dimiliki)
-end)
-
--- Pastikan CoreGui dikembalikan jika GUI dihancurkan
-screenGui.Destroying:Connect(function()
-	restoreCoreGuiOnMobile()
-end)
-
--- Handler untuk ProximityPrompt
-ProximityPromptService.PromptTriggered:Connect(function(prompt, plr)
-	if prompt ~= perksPrompt or plr ~= player then return end
-
-	-- Kirim event ke server untuk membuka toko perk
-	requestOpenEvent:FireServer()
-end)
+screenGui = nil -- Will be created in openEv
