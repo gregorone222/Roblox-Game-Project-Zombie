@@ -188,7 +188,7 @@ function SyringeVolleyVFX.CreateSyringeVolleyProjectile(startPos, endPos, config
 	end
 
 	-- Terapkan kecepatan awal
-	projectile.Velocity = (horizontalDir * horizontalSpeed) + Vector3.new(0, verticalSpeed, 0)
+	projectile.AssemblyLinearVelocity = (horizontalDir * horizontalSpeed) + Vector3.new(0, verticalSpeed, 0)
 
 	-- Atur agar proyektil hancur setelah 5 detik (waktu aman)
 	Debris:AddItem(projectile, 5.0)
@@ -270,4 +270,4 @@ function SyringeVolleyVFX.FireSyringeVolley(bossModel, targetPosition, config)
 	end
 end
 
-return SyringeVolleyVFX
+return SyringeVolleyVFX		
