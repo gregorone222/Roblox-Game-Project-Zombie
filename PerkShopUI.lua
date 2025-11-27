@@ -302,10 +302,24 @@ local function createUI()
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.new(0.5, 0, 0.45, 0),
 		BackgroundColor3 = Color3.new(1, 1, 1),
-		BackgroundTransparency = 0.95,
+		BackgroundTransparency = 1, -- Removed background
 		Parent = previewArea
 	})
-	addCorner(bigIconContainer, 100)
+	-- Removed circle (addCorner)
+
+	-- Glow Effect
+	local glow = create("ImageLabel", {
+		Name = "Glow",
+		Image = "rbxassetid://130424513",
+		ImageColor3 = COLORS.ACCENT,
+		ImageTransparency = 0.5,
+		Size = UDim2.new(1.5, 0, 1.5, 0),
+		Position = UDim2.new(0.5, 0, 0.5, 0),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		BackgroundTransparency = 1,
+		ZIndex = 0,
+		Parent = bigIconContainer
+	})
 
 	create("TextLabel", {
 		Name = "BigIcon",
@@ -314,6 +328,7 @@ local function createUI()
 		BackgroundTransparency = 1,
 		TextSize = 100,
 		Font = Enum.Font.Gotham,
+		ZIndex = 2,
 		Parent = bigIconContainer
 	})
 
@@ -446,6 +461,11 @@ function updateDetailPanel(index)
 	previewArea.DetailDesc.Text = config.Description or "No description."
 	previewArea.BigIconContainer.BigIcon.Text = vis.Icon
 	previewArea.BigIconContainer.BigIcon.TextColor3 = vis.Color
+
+	-- Update Glow Color
+	if previewArea.BigIconContainer:FindFirstChild("Glow") then
+		previewArea.BigIconContainer.Glow.ImageColor3 = vis.Color
+	end
 
 	local cost = config.Cost or 0
 	if hasActiveDiscount then cost = math.floor(cost / 2) end
@@ -585,7 +605,7 @@ function buildList()
 		-- STATUS LABEL (Right Side)
 		local statusLabel = create("Frame", {
 			Name = "StatusLabel",
-			Size = UDim2.new(0, 80, 0, 24),
+			Size = UDim2.new(0, 100, 0, 24),
 			AnchorPoint = Vector2.new(1, 0.5),
 			Position = UDim2.new(1, -12, 0.5, 0),
 			BackgroundColor3 = COLORS.BG_DARK,
@@ -593,14 +613,26 @@ function buildList()
 		})
 		addCorner(statusLabel, 6)
 
+		local statusIcon = create("ImageLabel", {
+			Name = "StatusIcon",
+			Size = UDim2.new(0, 16, 0, 16),
+			Position = UDim2.new(0, 6, 0.5, 0),
+			AnchorPoint = Vector2.new(0, 0.5),
+			BackgroundTransparency = 1,
+			Image = "",
+			Parent = statusLabel
+		})
+
 		create("TextLabel", {
 			Name = "Text",
 			Text = "...",
-			Size = UDim2.new(1, 0, 1, 0),
+			Size = UDim2.new(1, -26, 1, 0),
+			Position = UDim2.new(0, 26, 0, 0),
 			BackgroundTransparency = 1,
 			Font = Enum.Font.GothamBold,
 			TextSize = 10,
 			TextColor3 = COLORS.TEXT_MAIN,
+			TextXAlignment = Enum.TextXAlignment.Left,
 			Parent = statusLabel
 		})
 
@@ -627,6 +659,7 @@ function updateListStatus()
 
 		local statusFrame = item.StatusFrame
 		local statusText = statusFrame.Text
+		local statusIcon = statusFrame:FindFirstChild("StatusIcon")
 		local priceLabel = item.PriceLabel
 
 		if isOwned then
@@ -634,6 +667,10 @@ function updateListStatus()
 			statusFrame.BackgroundTransparency = 0.8
 			statusText.Text = "OWNED"
 			statusText.TextColor3 = COLORS.GREEN
+			if statusIcon then
+				statusIcon.Image = "rbxassetid://3926305518" -- Checkmark
+				statusIcon.ImageColor3 = COLORS.GREEN
+			end
 			priceLabel.Text = "Active"
 			priceLabel.TextColor3 = COLORS.GREEN
 		elseif currentPlayerPoints >= cost then
@@ -641,6 +678,10 @@ function updateListStatus()
 			statusFrame.BackgroundTransparency = 0.8
 			statusText.Text = "AVAILABLE"
 			statusText.TextColor3 = COLORS.YELLOW
+			if statusIcon then
+				statusIcon.Image = "rbxassetid://3926307971" -- Shopping Bag
+				statusIcon.ImageColor3 = COLORS.YELLOW
+			end
 			priceLabel.Text = formatNumber(cost) .. " BP"
 			priceLabel.TextColor3 = COLORS.TEXT_DIM
 		else
@@ -648,6 +689,10 @@ function updateListStatus()
 			statusFrame.BackgroundTransparency = 0.8
 			statusText.Text = "LOCKED"
 			statusText.TextColor3 = COLORS.LOCKED
+			if statusIcon then
+				statusIcon.Image = "rbxassetid://3926305904" -- Lock
+				statusIcon.ImageColor3 = COLORS.LOCKED
+			end
 			priceLabel.Text = formatNumber(cost) .. " BP"
 			priceLabel.TextColor3 = COLORS.TEXT_DIM
 		end
