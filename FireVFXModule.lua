@@ -61,7 +61,7 @@ function FireVFX.SpawnImpact(part, life)
 		ColorSequenceKeypoint.new(1, Color3.fromRGB(150, 30, 5))
 	})
 	explosion.LightEmission = 1
-	explosion.VelocitySpread = 360
+	explosion.SpreadAngle = Vector2.new(360, 360)
 	explosion.Rotation = NumberRange.new(-180, 180)
 	explosion.Parent = flash
 
@@ -81,7 +81,7 @@ function FireVFX.SpawnImpact(part, life)
 		Color3.fromRGB(20, 20, 20)
 	)
 	smoke.LightEmission = 0.1
-	smoke.VelocitySpread = 180
+	smoke.SpreadAngle = Vector2.new(180, 180)
 	smoke.Acceleration = Vector3.new(0, 5, 0)
 	smoke.Parent = flash
 
@@ -143,7 +143,7 @@ function FireVFX.AttachEffect(zombieModel, dur)
 		ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 50, 10))
 	})
 	embers.LightEmission = 1
-	embers.VelocitySpread = 45
+	embers.SpreadAngle = Vector2.new(45, 45)
 	embers.Rotation = NumberRange.new(-180, 180)
 	embers.Parent = fireContainer
 
@@ -163,7 +163,7 @@ function FireVFX.AttachEffect(zombieModel, dur)
 		Color3.fromRGB(30, 30, 30)
 	)
 	smoke.LightEmission = 0.2
-	smoke.VelocitySpread = 180
+	smoke.SpreadAngle = Vector2.new(180, 180)
 	smoke.Acceleration = Vector3.new(0, 4, 0)
 	smoke.Parent = fireContainer
 
