@@ -213,7 +213,7 @@ function CorrosiveSlamVFX.createTelegraph(bossModel, config)
 		local targetPos = hit and hit.Position or (currPos - Vector3.new(0, 2.5, 0))
 
 		if telegraphModel and telegraphModel.PrimaryPart then
-			telegraphModel:SetPrimaryPartCFrame(CFrame.new(targetPos))
+			telegraphModel:PivotTo(CFrame.new(targetPos))
 		else
 			if telegraphAssets.updateConn then telegraphAssets.updateConn:Disconnect() end
 		end
