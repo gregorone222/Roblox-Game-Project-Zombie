@@ -36,6 +36,7 @@ WeaponModule.Weapons = {
 			CostMultiplier = 1.5,
 			CostExpo = 1.3,
 			DamagePerLevel = 6,
+			AmmoPerLevel = 3,
 			MaxLevel = 10
 		},
 		Skins = {
@@ -102,6 +103,7 @@ WeaponModule.Weapons = {
 			CostMultiplier = 1.5,
 			CostExpo = 1.3,
 			DamagePerLevel = 6,
+			AmmoPerLevel = 5,
 			MaxLevel = 10
 		},
 		Skins = {
@@ -168,6 +170,7 @@ WeaponModule.Weapons = {
 			CostMultiplier = 1.5,
 			CostExpo = 1.3,
 			DamagePerLevel = 6,
+			AmmoPerLevel = 8,
 			MaxLevel = 10
 		},
 		Skins = {
@@ -235,6 +238,7 @@ WeaponModule.Weapons = {
 			CostMultiplier = 1.5,
 			CostExpo = 1.3,
 			DamagePerLevel = 6,
+			AmmoPerLevel = 2,
 			MaxLevel = 10
 		},
 		Skins = {
@@ -301,6 +305,7 @@ WeaponModule.Weapons = {
 			CostMultiplier = 1.5,
 			CostExpo = 1.3,
 			DamagePerLevel = 6,
+			AmmoPerLevel = 1,
 			MaxLevel = 10
 		},
 		Skins = {
@@ -367,6 +372,7 @@ WeaponModule.Weapons = {
 			CostMultiplier = 1.6,
 			CostExpo = 1.3,
 			DamagePerLevel = 8,
+			AmmoPerLevel = 3,
 			MaxLevel = 10
 		},
 		Skins = {
@@ -433,6 +439,7 @@ WeaponModule.Weapons = {
 			CostMultiplier = 1.4,
 			CostExpo = 1.2,
 			DamagePerLevel = 4,
+			AmmoPerLevel = 3,
 			MaxLevel = 10
 		},
 		Skins = {
@@ -499,6 +506,7 @@ WeaponModule.Weapons = {
 			CostMultiplier = 1.5,
 			CostExpo = 1.3,
 			DamagePerLevel = 5,
+			AmmoPerLevel = 8,
 			MaxLevel = 10
 		},
 		Skins = {
@@ -565,6 +573,7 @@ WeaponModule.Weapons = {
 			CostMultiplier = 1.4,
 			CostExpo = 1.2,
 			DamagePerLevel = 4,
+			AmmoPerLevel = 8,
 			MaxLevel = 10
 		},
 		Skins = {
@@ -631,6 +640,7 @@ WeaponModule.Weapons = {
 			CostMultiplier = 1.6,
 			CostExpo = 1.3,
 			DamagePerLevel = 7,
+			AmmoPerLevel = 5,
 			MaxLevel = 10
 		},
 		Skins = {
@@ -697,6 +707,7 @@ WeaponModule.Weapons = {
 			CostMultiplier = 1.5,
 			CostExpo = 1.3,
 			DamagePerLevel = 6,
+			AmmoPerLevel = 5,
 			MaxLevel = 10
 		},
 		Skins = {
@@ -764,6 +775,7 @@ WeaponModule.Weapons = {
 			CostMultiplier = 1.7,
 			CostExpo = 1.4,
 			DamagePerLevel = 4,
+			AmmoPerLevel = 2,
 			MaxLevel = 10
 		},
 		Skins = {
@@ -831,6 +843,7 @@ WeaponModule.Weapons = {
 			CostMultiplier = 1.6,
 			CostExpo = 1.3,
 			DamagePerLevel = 5,
+			AmmoPerLevel = 2,
 			MaxLevel = 10
 		},
 		Skins = {
@@ -897,6 +910,7 @@ WeaponModule.Weapons = {
 			CostMultiplier = 1.8,
 			CostExpo = 1.4,
 			DamagePerLevel = 12,
+			AmmoPerLevel = 1,
 			MaxLevel = 10
 		},
 		Skins = {
@@ -963,6 +977,7 @@ WeaponModule.Weapons = {
 			CostMultiplier = 2.0,
 			CostExpo = 1.5,
 			DamagePerLevel = 15,
+			AmmoPerLevel = 1,
 			MaxLevel = 10
 		},
 		Skins = {
@@ -1029,6 +1044,7 @@ WeaponModule.Weapons = {
 			CostMultiplier = 1.7,
 			CostExpo = 1.4,
 			DamagePerLevel = 6,
+			AmmoPerLevel = 12,
 			MaxLevel = 10
 		},
 		Skins = {
@@ -1095,6 +1111,7 @@ WeaponModule.Weapons = {
 			CostMultiplier = 1.8,
 			CostExpo = 1.4,
 			DamagePerLevel = 7,
+			AmmoPerLevel = 12,
 			MaxLevel = 10
 		},
 		Skins = {
@@ -1161,6 +1178,7 @@ WeaponModule.Weapons = {
 			CostMultiplier = 1.9,
 			CostExpo = 1.5,
 			DamagePerLevel = 5,
+			AmmoPerLevel = 12,
 			MaxLevel = 10
 		},
 		Skins = {
@@ -1227,6 +1245,7 @@ WeaponModule.Weapons = {
 			CostMultiplier = 1.9,
 			CostExpo = 1.5,
 			DamagePerLevel = 5,
+			AmmoPerLevel = 0,
 			MaxLevel = 10
 		},
 		Skins = {

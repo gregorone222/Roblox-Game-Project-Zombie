@@ -91,7 +91,7 @@ upgradeRF.OnServerInvoke = function(player, tool)
 	end
 
 	local points = PointsSystem.GetPoints(player) or 0
-	if points < cost then return { success = false, message = "Tidak cukup poin" } end
+	-- Check removed to allow UI to open even if insufficient points
 
 	return {
 		success = true,
@@ -140,16 +140,6 @@ confirmUpgradeEvent.OnServerEvent:Connect(function(player, tool, confirm)
 
 		if hasDiscount then
 			BoosterModule.UseActiveBooster(player)
-		end
-
-		if currentLevel == 0 and newLevel == 1 then
-			local mult = 1.5
-			local oldMax = weaponDef.MaxAmmo or 0
-			local oldReserve = weaponDef.ReserveAmmo or 0
-			local newMax = math.floor(oldMax * mult + 0.5)
-			local newReserve = math.floor(oldReserve * mult + 0.5)
-			tool:SetAttribute("CustomMaxAmmo", newMax)
-			tool:SetAttribute("CustomReserveAmmo", newReserve)
 		end
 
 		upgradeEvent:FireClient(player, weaponName, newLevel)

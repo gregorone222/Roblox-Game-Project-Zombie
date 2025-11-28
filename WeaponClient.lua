@@ -438,7 +438,10 @@ local function fireFromCenterOnce()
 
 	-- REMOVED: -- REMOVED: AudioManager.playSound(weaponStats.Sounds.Fire, currentWeapon) -- Now handled server-side -- Now handled server-side
 	local recoilFactor = isAiming and 0.5 or 1
-	currentRecoil = math.min(10, currentRecoil + (weaponStats.Recoil * recoilFactor))
+	local currentLevel = currentWeapon:GetAttribute("UpgradeLevel") or 0
+	local baseRecoil = weaponStats.Recoil or 1
+	local effectiveRecoil = math.max(0, baseRecoil - (currentLevel * 0.1))
+	currentRecoil = math.min(10, currentRecoil + (effectiveRecoil * recoilFactor))
 end
 
 local function handleStartAutoFire(touchObj)

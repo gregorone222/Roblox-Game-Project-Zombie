@@ -147,6 +147,35 @@ local function ensureToolHasId(tool)
 	return tool:GetAttribute("WeaponId")
 end
 
+-- Helper function to calculate weapon stats based on upgrades and attributes
+local function calculateWeaponStats(tool, weaponStats)
+	local defaultMax = weaponStats.MaxAmmo or 0
+	local defaultReserve = weaponStats.ReserveAmmo or 0
+
+	-- Calculate dynamic stats based on UpgradeLevel
+	local level = tool:GetAttribute("UpgradeLevel") or 0
+
+	-- Level 1+: MaxAmmo increases by 50%
+	if level >= 1 then
+		defaultMax = math.floor(defaultMax * 1.5)
+	end
+
+	-- Level 2+: ReserveAmmo increases by flat amount per level
+	if level >= 2 then
+		local cfg = weaponStats.UpgradeConfig
+		local ammoPerLevel = cfg and cfg.AmmoPerLevel or 0
+		defaultReserve = defaultReserve + ((level - 1) * ammoPerLevel)
+	end
+
+	local customMax = tool:GetAttribute("CustomMaxAmmo")
+	local customReserve = tool:GetAttribute("CustomReserveAmmo")
+
+	local initMax = customMax or defaultMax
+	local initReserve = customReserve or defaultReserve
+
+	return initMax, initReserve
+end
+
 local function setupToolAmmoForPlayer(player, tool)
 	if not tool or not tool:IsA("Tool") then return end
 	local weaponName = tool.Name
@@ -157,14 +186,7 @@ local function setupToolAmmoForPlayer(player, tool)
 	playerReserveAmmo[player] = playerReserveAmmo[player] or {}
 
 	local weaponStats = WeaponModule.Weapons[weaponName]
-	local defaultMax = weaponStats and weaponStats.MaxAmmo or 0
-	local defaultReserve = weaponStats and weaponStats.ReserveAmmo or 0
-
-	local customMax = tool:GetAttribute("CustomMaxAmmo")
-	local customReserve = tool:GetAttribute("CustomReserveAmmo")
-
-	local initMax = customMax or defaultMax
-	local initReserve = customReserve or defaultReserve
+	local initMax, initReserve = calculateWeaponStats(tool, weaponStats)
 
 	if playerAmmo[player][id] == nil then
 		playerAmmo[player][id] = initMax
@@ -176,9 +198,8 @@ local function setupToolAmmoForPlayer(player, tool)
 	if not tool:GetAttribute("_AmmoListenerAttached") then
 		tool:SetAttribute("_AmmoListenerAttached", true)
 		tool.AttributeChanged:Connect(function(attr)
-			if attr == "CustomMaxAmmo" or attr == "CustomReserveAmmo" then
-				local newMax = tool:GetAttribute("CustomMaxAmmo") or (weaponStats and weaponStats.MaxAmmo) or 0
-				local newReserve = tool:GetAttribute("CustomReserveAmmo") or (weaponStats and weaponStats.ReserveAmmo) or 0
+			if attr == "CustomMaxAmmo" or attr == "CustomReserveAmmo" or attr == "UpgradeLevel" then
+				local newMax, newReserve = calculateWeaponStats(tool, weaponStats)
 
 				playerAmmo[player] = playerAmmo[player] or {}
 				playerReserveAmmo[player] = playerReserveAmmo[player] or {}
@@ -278,13 +299,13 @@ ShootEvent.OnServerEvent:Connect(function(player, tool, cameraDirection, isAimin
 	local origin = char.Head.Position
 	if char:FindFirstChild("HumanoidRootPart") then
 		-- We use camera cframe rotation logic implicitly by transforming the offset via RootPart or Camera
-		-- Ideally, we want the exact muzzle position. Since the server doesn't have the Viewmodel, 
+		-- Ideally, we want the exact muzzle position. Since the server doesn't have the Viewmodel,
 		-- we approximate it using the RootPart's CFrame translated by the MuzzleOffset.
 		-- However, MuzzleOffset in WeaponModule is often relative to camera/viewmodel.
-		-- A safer bet for gameplay consistency (so you don't shoot walls in front of you) 
+		-- A safer bet for gameplay consistency (so you don't shoot walls in front of you)
 		-- is to offset slightly from the Head in the direction of the camera.
 
-		-- BETTER APPROACH: Use the visual muzzle position logic if possible, 
+		-- BETTER APPROACH: Use the visual muzzle position logic if possible,
 		-- but fallback to a simpler "Head + Offset" to avoid shooting from inside the body.
 
 		local muzzleOffset = weaponStats.MuzzleOffset or Vector3.new(0, 0, -2)
@@ -321,8 +342,20 @@ ShootEvent.OnServerEvent:Connect(function(player, tool, cameraDirection, isAimin
 		end
 	end
 
+	local currentLevel = tool:GetAttribute("UpgradeLevel") or 0
+	local baseRecoil = weaponStats.Recoil or 1
+	-- Recoil reduction: 0.1 per level
+	local effectiveRecoil = math.max(0, baseRecoil - (currentLevel * 0.1))
+
+	-- Use effective recoil to influence spread (Server-Authoritative)
+	-- Multiplier: Lower recoil = Lower spread (more accurate)
+	-- We normalize base recoil around 1.0 to keep spread predictable
+	local spreadMultiplier = math.max(0.2, effectiveRecoil) -- Prevent 0 spread absolute laser
+
 	if weaponStats.Pellets then
-		local spread = isAiming and weaponStats.ADS_Spread or weaponStats.Spread
+		local baseSpread = isAiming and weaponStats.ADS_Spread or weaponStats.Spread
+		local spread = baseSpread * spreadMultiplier
+
 		for i = 1, weaponStats.Pellets do
 			local pelletSpread = Vector3.new(
 				(math.random() - 0.5) * spread,
@@ -425,7 +458,9 @@ ShootEvent.OnServerEvent:Connect(function(player, tool, cameraDirection, isAimin
 			end
 		end
 	else
-		local spread = isAiming and weaponStats.ADS_Spread or weaponStats.Spread
+		local baseSpread = isAiming and weaponStats.ADS_Spread or weaponStats.Spread
+		local spread = baseSpread * spreadMultiplier
+
 		local spreadOffset = Vector3.new(
 			(math.random() - 0.5) * spread,
 			(math.random() - 0.5) * spread,
@@ -542,7 +577,8 @@ ReloadEvent.OnServerEvent:Connect(function(player, tool)
 
 	local currentAmmo = playerAmmo[player][id] or weaponStats.MaxAmmo
 	local reserveAmmo = playerReserveAmmo[player][id] or weaponStats.ReserveAmmo
-	local maxAmmo = tool:GetAttribute("CustomMaxAmmo") or weaponStats.MaxAmmo
+
+	local maxAmmo, _ = calculateWeaponStats(tool, weaponStats)
 
 	local ammoNeeded = maxAmmo - currentAmmo
 	local ammoToReload = math.min(ammoNeeded, reserveAmmo)
