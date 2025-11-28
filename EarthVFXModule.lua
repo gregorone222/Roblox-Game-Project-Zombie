@@ -71,7 +71,7 @@ function EarthVFX.SpawnForPlayer(player)
 	})
 	earthParticles.LightEmission = 0.4
 	earthParticles.Transparency = NumberSequence.new(0.5)
-	earthParticles.VelocitySpread = 360
+	earthParticles.SpreadAngle = Vector2.new(360, 360)
 	earthParticles.Rotation = NumberRange.new(-180, 180)
 	earthParticles.Parent = earthAura
 
@@ -155,7 +155,7 @@ function EarthVFX.SpawnForPlayer(player)
 	)
 	groundParticles.LightEmission = 0.3
 	groundParticles.Transparency = NumberSequence.new(0.6)
-	groundParticles.VelocitySpread = 90
+	groundParticles.SpreadAngle = Vector2.new(90, 90)
 	groundParticles.Parent = groundCrack
 
 	-- Earth light source
@@ -215,7 +215,7 @@ function EarthVFX.SpawnImpact(part, life)
 	})
 	rocks.LightEmission = 0.5
 	rocks.Transparency = NumberSequence.new(0.4)
-	rocks.VelocitySpread = 360
+	rocks.SpreadAngle = Vector2.new(360, 360)
 	rocks.Rotation = NumberRange.new(-180, 180)
 	rocks.Parent = earthImpact
 
@@ -236,7 +236,7 @@ function EarthVFX.SpawnImpact(part, life)
 	)
 	dust.LightEmission = 0.4
 	dust.Transparency = NumberSequence.new(0.7)
-	dust.VelocitySpread = 180
+	dust.SpreadAngle = Vector2.new(180, 180)
 	dust.Parent = earthImpact
 
 	-- Stone spikes effect
