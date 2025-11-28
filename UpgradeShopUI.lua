@@ -33,345 +33,633 @@ screenGui.Name = "UpgradeShopUI"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 screenGui.IgnoreGuiInset = true
+screenGui.Enabled = false -- Hidden by default
 
--- Background overlay with blur effect
+-- Constants for Colors
+local COLORS = {
+	Background = Color3.fromRGB(15, 23, 42), -- Slate 900
+	Panel = Color3.fromRGB(30, 41, 59),      -- Slate 800
+	PanelBorder = Color3.fromRGB(51, 65, 85),-- Slate 700
+	TextMain = Color3.fromRGB(241, 245, 249),-- Slate 100
+	TextDim = Color3.fromRGB(148, 163, 184), -- Slate 400
+	Accent = Color3.fromRGB(234, 179, 8),    -- Yellow 500
+	Success = Color3.fromRGB(34, 197, 94),   -- Green 500
+	Danger = Color3.fromRGB(239, 68, 68),    -- Red 500
+	Blue = Color3.fromRGB(59, 130, 246),     -- Blue 500
+	Orange = Color3.fromRGB(249, 115, 22),   -- Orange 500
+}
+
+local FONTS = {
+	Heading = Enum.Font.Michroma, -- Close to prototype (Rajdhani substitute)
+	Body = Enum.Font.Gotham,
+	Bold = Enum.Font.GothamBold,
+}
+
+-- Background overlay
 local overlay = Instance.new("Frame")
 overlay.Size = UDim2.new(1, 0, 1, 0)
-overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-overlay.BackgroundTransparency = 0.7
+overlay.BackgroundColor3 = Color3.new(0, 0, 0)
+overlay.BackgroundTransparency = 0.6
 overlay.BorderSizePixel = 0
-overlay.Visible = false
-overlay.ZIndex = 1
 overlay.Parent = screenGui
 
--- Main upgrade container with modern design - Responsive size for mobile
-local isMobile = UserInputService.TouchEnabled
-local mainContainerWidth = isMobile and 280 or 300
-local mainContainerHeight = isMobile and 300 or 380
-
+-- Main Container (Glass Panel)
 local mainContainer = Instance.new("Frame")
-mainContainer.Size = UDim2.new(0, mainContainerWidth, 0, mainContainerHeight)
-mainContainer.Position = UDim2.new(0.5, -mainContainerWidth/2, 0.5, -mainContainerHeight/2)
-mainContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+mainContainer.Name = "MainContainer"
+mainContainer.Size = UDim2.new(0, 800, 0, 500)
+mainContainer.Position = UDim2.new(0.5, 0, 0.5, 0)
+mainContainer.AnchorPoint = Vector2.new(0.5, 0.5)
+mainContainer.BackgroundColor3 = COLORS.Panel
+mainContainer.BackgroundTransparency = 0.1
 mainContainer.BorderSizePixel = 0
-mainContainer.Visible = false
-mainContainer.ZIndex = 2
-mainContainer.Parent = screenGui
+mainContainer.Parent = overlay
 
-local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 15)
-UICorner.Parent = mainContainer
+local containerCorner = Instance.new("UICorner")
+containerCorner.CornerRadius = UDim.new(0, 16)
+containerCorner.Parent = mainContainer
 
-local UIStroke = Instance.new("UIStroke")
-UIStroke.Color = Color3.fromRGB(80, 80, 120)
-UIStroke.Thickness = 3
-UIStroke.Parent = mainContainer
+local containerStroke = Instance.new("UIStroke")
+containerStroke.Color = COLORS.PanelBorder
+containerStroke.Thickness = 1
+containerStroke.Parent = mainContainer
 
--- Header with gradient effect
+-- HEADER
 local header = Instance.new("Frame")
-header.Size = UDim2.new(1, 0, 0, isMobile and 35 or 50)
-header.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+header.Name = "Header"
+header.Size = UDim2.new(1, 0, 0, 60)
+header.BackgroundColor3 = Color3.fromRGB(20, 30, 45)
+header.BackgroundTransparency = 0.5
 header.BorderSizePixel = 0
-header.ZIndex = 3
 header.Parent = mainContainer
 
-local headerCorner = Instance.new("UICorner")
-headerCorner.CornerRadius = UDim.new(0, 15)
-headerCorner.Parent = header
+local headerPadding = Instance.new("UIPadding")
+headerPadding.PaddingLeft = UDim.new(0, 24)
+headerPadding.PaddingRight = UDim.new(0, 24)
+headerPadding.Parent = header
 
-local headerGradient = Instance.new("UIGradient")
-headerGradient.Color = ColorSequence.new{
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(60, 60, 80)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 40, 60))
-}
-headerGradient.Rotation = 90
-headerGradient.Parent = header
+local headerLayout = Instance.new("UIListLayout")
+headerLayout.FillDirection = Enum.FillDirection.Horizontal
+headerLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+headerLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+headerLayout.Padding = UDim.new(0, 12)
+headerLayout.Parent = header
 
-local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(0.7, 0, 1, 0)
-titleLabel.Position = UDim2.new(0.15, 0, 0, 0)
-titleLabel.BackgroundTransparency = 1
-titleLabel.Text = "WEAPON UPGRADE"
-titleLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-titleLabel.TextScaled = true
-titleLabel.Font = Enum.Font.GothamBlack
-titleLabel.TextStrokeTransparency = 0.8
-titleLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-titleLabel.ZIndex = 4
-titleLabel.Parent = header
+local headerIcon = Instance.new("TextLabel")
+headerIcon.Size = UDim2.new(0, 32, 0, 32)
+headerIcon.BackgroundTransparency = 1
+headerIcon.Text = "⚡" -- Icon
+headerIcon.TextSize = 24
+headerIcon.TextColor3 = COLORS.Accent
+headerIcon.Font = FONTS.Heading
+headerIcon.Parent = header
 
-local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0, isMobile and 25 or 30, 0, isMobile and 25 or 30)
-closeBtn.Position = UDim2.new(0.92, 0, 0.1, 0)
-closeBtn.Text = "X"
-closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-closeBtn.TextScaled = true
-closeBtn.Font = Enum.Font.GothamBold
-closeBtn.ZIndex = 4
-closeBtn.Parent = header
+local headerTitle = Instance.new("TextLabel")
+headerTitle.AutomaticSize = Enum.AutomaticSize.X
+headerTitle.Size = UDim2.new(0, 0, 1, 0)
+headerTitle.BackgroundTransparency = 1
+headerTitle.Text = "WEAPON UPGRADE"
+headerTitle.TextSize = 20
+headerTitle.TextColor3 = COLORS.TextMain
+headerTitle.Font = FONTS.Bold
+headerTitle.TextXAlignment = Enum.TextXAlignment.Left
+headerTitle.Parent = header
 
-local closeCorner = Instance.new("UICorner")
-closeCorner.CornerRadius = UDim.new(0, 8)
-closeCorner.Parent = closeBtn
+local headerSub = Instance.new("TextLabel")
+headerSub.AutomaticSize = Enum.AutomaticSize.X
+headerSub.Size = UDim2.new(0, 0, 1, 0)
+headerSub.BackgroundTransparency = 1
+headerSub.Text = "STATION TERMINAL V2.0"
+headerSub.TextSize = 12
+headerSub.TextColor3 = COLORS.TextDim
+headerSub.Font = FONTS.Body
+headerSub.TextXAlignment = Enum.TextXAlignment.Left
+headerSub.Parent = header
 
--- Upgrade info area with modern layout
-local upgradeInfo = Instance.new("Frame")
-upgradeInfo.Size = UDim2.new(0.9, 0, 0, isMobile and 170 or 240)
-upgradeInfo.Position = UDim2.new(0.05, 0, 0.15, 0)
-upgradeInfo.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-upgradeInfo.BorderSizePixel = 0
-upgradeInfo.ZIndex = 3
-upgradeInfo.Parent = mainContainer
+local closeButton = Instance.new("TextButton")
+closeButton.Size = UDim2.new(0, 32, 0, 32)
+closeButton.Position = UDim2.new(1, -32, 0.5, -16) -- Manually positioning close button relative to container, not layout
+closeButton.AnchorPoint = Vector2.new(0, 0) -- Reset anchor
+closeButton.BackgroundTransparency = 1
+closeButton.Text = "✕"
+closeButton.TextSize = 20
+closeButton.TextColor3 = COLORS.TextDim
+closeButton.Font = FONTS.Bold
+closeButton.Parent = mainContainer -- Parent to container so it ignores header layout
 
-local infoCorner = Instance.new("UICorner")
-infoCorner.CornerRadius = UDim.new(0, 10)
-infoCorner.Parent = upgradeInfo
+-- Reposition Close Button manually
+closeButton.Position = UDim2.new(1, -44, 0, 14)
 
-local infoStroke = Instance.new("UIStroke")
-infoStroke.Color = Color3.fromRGB(90, 90, 130)
-infoStroke.Thickness = 2
-infoStroke.Parent = upgradeInfo
+-- GRID CONTENT
+local contentGrid = Instance.new("Frame")
+contentGrid.Name = "ContentGrid"
+contentGrid.Size = UDim2.new(1, 0, 1, -60)
+contentGrid.Position = UDim2.new(0, 0, 0, 60)
+contentGrid.BackgroundTransparency = 1
+contentGrid.Parent = mainContainer
 
-local weaponNameLabel = Instance.new("TextLabel")
-weaponNameLabel.Size = UDim2.new(0.8, 0, 0.1, 0)
-weaponNameLabel.Position = UDim2.new(0.1, 0, 0.05, 0)
-weaponNameLabel.BackgroundTransparency = 1
-weaponNameLabel.Text = "WEAPON"
-weaponNameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-weaponNameLabel.TextScaled = true
-weaponNameLabel.Font = Enum.Font.GothamBold
-weaponNameLabel.ZIndex = 4
-weaponNameLabel.Parent = upgradeInfo
+-- LEFT PANEL (Visuals)
+local leftPanel = Instance.new("Frame")
+leftPanel.Name = "LeftPanel"
+leftPanel.Size = UDim2.new(0.4, 0, 1, 0)
+leftPanel.BackgroundColor3 = Color3.fromRGB(15, 23, 42)
+leftPanel.BackgroundTransparency = 0.5
+leftPanel.BorderSizePixel = 0
+leftPanel.Parent = contentGrid
 
-local function createInfoRow(yPosition, icon, text, value, color)
-	local row = Instance.new("Frame")
-	row.Size = UDim2.new(0.9, 0, 0, isMobile and 18 or 20)
-	row.Position = UDim2.new(0.05, 0, yPosition, 0)
-	row.BackgroundTransparency = 1
-	row.ZIndex = 4
-	row.Parent = upgradeInfo
+local leftStroke = Instance.new("Frame") -- Border right
+leftStroke.Size = UDim2.new(0, 1, 1, 0)
+leftStroke.Position = UDim2.new(1, -1, 0, 0)
+leftStroke.BackgroundColor3 = COLORS.PanelBorder
+leftStroke.BorderSizePixel = 0
+leftStroke.Parent = leftPanel
 
-	local iconLabel = Instance.new("TextLabel")
-	iconLabel.Size = UDim2.new(0, isMobile and 18 or 20, 0, isMobile and 18 or 20)
-	iconLabel.Position = UDim2.new(0, 0, 0, 0)
-	iconLabel.BackgroundTransparency = 1
-	iconLabel.Text = icon
-	iconLabel.TextColor3 = color or Color3.fromRGB(200, 200, 200)
-	iconLabel.TextScaled = true
-	iconLabel.ZIndex = 4
-	iconLabel.Parent = row
+local weaponNameDisplay = Instance.new("TextLabel")
+weaponNameDisplay.Size = UDim2.new(1, 0, 0, 40)
+weaponNameDisplay.Position = UDim2.new(0, 0, 0.1, 0)
+weaponNameDisplay.BackgroundTransparency = 1
+weaponNameDisplay.Text = "AK-47"
+weaponNameDisplay.TextColor3 = COLORS.TextMain
+weaponNameDisplay.TextSize = 32
+weaponNameDisplay.Font = FONTS.Heading
+weaponNameDisplay.Parent = leftPanel
 
-	local textLabel = Instance.new("TextLabel")
-	textLabel.Size = UDim2.new(0.5, 0, 1, 0)
-	textLabel.Position = UDim2.new(0.2, 0, 0, 0)
-	textLabel.BackgroundTransparency = 1
-	textLabel.Text = text
-	textLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-	textLabel.TextScaled = true
-	textLabel.TextXAlignment = Enum.TextXAlignment.Left
-	textLabel.Font = Enum.Font.Gotham
-	textLabel.ZIndex = 4
-	textLabel.Parent = row
+local weaponTypeContainer = Instance.new("Frame")
+weaponTypeContainer.Size = UDim2.new(0, 120, 0, 24)
+weaponTypeContainer.Position = UDim2.new(0.5, -60, 0.2, 0)
+weaponTypeContainer.BackgroundColor3 = COLORS.Panel
+weaponTypeContainer.BorderSizePixel = 0
+weaponTypeContainer.Parent = leftPanel
 
-	local valueLabel = Instance.new("TextLabel")
-	valueLabel.Size = UDim2.new(0.4, 0, 1, 0)
-	valueLabel.Position = UDim2.new(0.6, 0, 0, 0)
-	valueLabel.BackgroundTransparency = 1
-	valueLabel.Text = value
-	valueLabel.TextColor3 = color or Color3.fromRGB(255, 255, 255)
-	valueLabel.TextScaled = true
-	valueLabel.TextXAlignment = Enum.TextXAlignment.Right
-	valueLabel.Font = Enum.Font.GothamBold
-	valueLabel.ZIndex = 4
-	valueLabel.Parent = row
+local typeCorner = Instance.new("UICorner")
+typeCorner.CornerRadius = UDim.new(1, 0)
+typeCorner.Parent = weaponTypeContainer
 
-	return valueLabel
+local typeStroke = Instance.new("UIStroke")
+typeStroke.Color = COLORS.PanelBorder
+typeStroke.Parent = weaponTypeContainer
+
+local weaponTypeLabel = Instance.new("TextLabel")
+weaponTypeLabel.Size = UDim2.new(1, 0, 1, 0)
+weaponTypeLabel.BackgroundTransparency = 1
+weaponTypeLabel.Text = "ASSAULT RIFLE"
+weaponTypeLabel.TextColor3 = COLORS.Accent
+weaponTypeLabel.TextSize = 10
+weaponTypeLabel.Font = FONTS.Bold
+weaponTypeLabel.Parent = weaponTypeContainer
+
+local weaponViewport = Instance.new("ViewportFrame")
+weaponViewport.Name = "WeaponViewport"
+weaponViewport.Size = UDim2.new(1, 0, 0.6, 0)
+weaponViewport.Position = UDim2.new(0, 0, 0.25, 0)
+weaponViewport.BackgroundTransparency = 1
+weaponViewport.Parent = leftPanel
+
+-- Rotation Animation for Viewport
+local rotationAngle = 0
+RunService.RenderStepped:Connect(function(dt)
+	if screenGui.Enabled and weaponViewport.CurrentCamera then
+		rotationAngle = rotationAngle + dt * 0.5 -- Rotate speed
+		local cam = weaponViewport.CurrentCamera
+		-- Assume model is at 0,0,0. Rotate camera around it.
+		local distance = 4 -- Adjust distance as needed
+		local x = math.sin(rotationAngle) * distance
+		local z = math.cos(rotationAngle) * distance
+		cam.CFrame = CFrame.lookAt(Vector3.new(x, 1, z), Vector3.new(0, 0, 0))
+	end
+end)
+
+-- Level Transition
+local levelContainer = Instance.new("Frame")
+levelContainer.Size = UDim2.new(1, 0, 0, 50)
+levelContainer.Position = UDim2.new(0, 0, 0.8, 0)
+levelContainer.BackgroundTransparency = 1
+levelContainer.Parent = leftPanel
+
+local levelLayout = Instance.new("UIListLayout")
+levelLayout.FillDirection = Enum.FillDirection.Horizontal
+levelLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+levelLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+levelLayout.Padding = UDim.new(0, 20)
+levelLayout.Parent = levelContainer
+
+local function createLevelDisplay(label, color)
+	local f = Instance.new("Frame")
+	f.Size = UDim2.new(0, 80, 0, 50)
+	f.BackgroundTransparency = 1
+
+	local lbl = Instance.new("TextLabel")
+	lbl.Size = UDim2.new(1, 0, 0, 15)
+	lbl.BackgroundTransparency = 1
+	lbl.Text = label:upper()
+	lbl.TextColor3 = COLORS.TextDim
+	lbl.TextSize = 10
+	lbl.Font = FONTS.Bold
+	lbl.Parent = f
+
+	local val = Instance.new("TextLabel")
+	val.Size = UDim2.new(1, 0, 0, 30)
+	val.Position = UDim2.new(0, 0, 0, 15)
+	val.BackgroundTransparency = 1
+	val.Text = "LV. 5"
+	val.TextColor3 = color
+	val.TextSize = 24
+	val.Font = FONTS.Heading
+	val.Parent = f
+	return f, val
 end
 
-local rowHeight = isMobile and 0.14 or 0.15
-local currentLevelValue = createInfoRow(rowHeight * 1, "??", "Current Level", "Lv.0", Color3.fromRGB(200, 200, 255))
-local nextLevelValue = createInfoRow(rowHeight * 2, "??", "Next Level", "Lv.1", Color3.fromRGB(100, 255, 100))
-local damageValue = createInfoRow(rowHeight * 3, "??", "Damage", "0 ? 0", Color3.fromRGB(255, 150, 100))
-local ammoValue = createInfoRow(rowHeight * 4, "??", "Ammo", "+0%", Color3.fromRGB(100, 200, 255))
-local costValue = createInfoRow(rowHeight * 5, "??", "Cost", "0 BP", Color3.fromRGB(255, 215, 0))
+local currentLvlFrame, currentLvlVal = createLevelDisplay("Current", COLORS.TextMain)
+currentLvlFrame.Parent = levelContainer
 
-local buttonContainer = Instance.new("Frame")
-buttonContainer.Size = UDim2.new(0.9, 0, 0, isMobile and 45 or 60)
-buttonContainer.Position = UDim2.new(0.05, 0, isMobile and 0.72 or 0.8, 0)
-buttonContainer.BackgroundTransparency = 1
-buttonContainer.ZIndex = 3
-buttonContainer.Parent = mainContainer
+local arrowLabel = Instance.new("TextLabel")
+arrowLabel.Size = UDim2.new(0, 20, 0, 20)
+arrowLabel.BackgroundTransparency = 1
+arrowLabel.Text = "→"
+arrowLabel.TextColor3 = COLORS.TextDim
+arrowLabel.TextSize = 24
+arrowLabel.Parent = levelContainer
 
-local confirmButton = Instance.new("TextButton")
-confirmButton.Size = UDim2.new(0.45, 0, 0.8, 0)
-confirmButton.Position = UDim2.new(0, 0, 0.1, 0)
-confirmButton.Text = "UPGRADE"
-confirmButton.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
-confirmButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-confirmButton.Font = Enum.Font.GothamBold
-confirmButton.TextScaled = true
-confirmButton.ZIndex = 4
-confirmButton.Parent = buttonContainer
+local nextLvlFrame, nextLvlVal = createLevelDisplay("Next", COLORS.Success)
+nextLvlFrame.Parent = levelContainer
+
+
+-- RIGHT PANEL (Stats & Action)
+local rightPanel = Instance.new("Frame")
+rightPanel.Name = "RightPanel"
+rightPanel.Size = UDim2.new(0.6, 0, 1, 0)
+rightPanel.Position = UDim2.new(0.4, 0, 0, 0)
+rightPanel.BackgroundTransparency = 1
+rightPanel.Parent = contentGrid
+
+local rightPadding = Instance.new("UIPadding")
+rightPadding.PaddingTop = UDim.new(0, 24)
+rightPadding.PaddingBottom = UDim.new(0, 24)
+rightPadding.PaddingLeft = UDim.new(0, 32)
+rightPadding.PaddingRight = UDim.new(0, 32)
+rightPadding.Parent = rightPanel
+
+local sectionTitle = Instance.new("TextLabel")
+sectionTitle.Size = UDim2.new(1, 0, 0, 20)
+sectionTitle.BackgroundTransparency = 1
+sectionTitle.Text = "PERFORMANCE ANALYSIS"
+sectionTitle.TextColor3 = COLORS.TextDim
+sectionTitle.TextSize = 12
+sectionTitle.Font = FONTS.Bold
+sectionTitle.TextXAlignment = Enum.TextXAlignment.Left
+sectionTitle.Parent = rightPanel
+
+local separator = Instance.new("Frame")
+separator.Size = UDim2.new(1, 0, 0, 1)
+separator.Position = UDim2.new(0, 0, 0, 25)
+separator.BackgroundColor3 = COLORS.PanelBorder
+separator.BorderSizePixel = 0
+separator.Parent = rightPanel
+
+-- Stats Container
+local statsContainer = Instance.new("Frame")
+statsContainer.Size = UDim2.new(1, 0, 0, 200)
+statsContainer.Position = UDim2.new(0, 0, 0, 40)
+statsContainer.BackgroundTransparency = 1
+statsContainer.Parent = rightPanel
+
+local statsLayout = Instance.new("UIListLayout")
+statsLayout.Padding = UDim.new(0, 16)
+statsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+statsLayout.Parent = statsContainer
+
+local function createStatRow(icon, name, barColor, order)
+	local row = Instance.new("Frame")
+	row.Size = UDim2.new(1, 0, 0, 50)
+	row.BackgroundTransparency = 1
+
+	-- Header: Icon + Name ... Values
+	local headerRow = Instance.new("Frame")
+	headerRow.Size = UDim2.new(1, 0, 0, 24)
+	headerRow.BackgroundTransparency = 1
+	headerRow.Parent = row
+
+	local iconLbl = Instance.new("TextLabel")
+	iconLbl.Size = UDim2.new(0, 20, 1, 0)
+	iconLbl.BackgroundTransparency = 1
+	iconLbl.Text = icon
+	iconLbl.TextColor3 = barColor
+	iconLbl.TextSize = 14
+	iconLbl.Parent = headerRow
+
+	local nameLbl = Instance.new("TextLabel")
+	nameLbl.Size = UDim2.new(0, 100, 1, 0)
+	nameLbl.Position = UDim2.new(0, 24, 0, 0)
+	nameLbl.BackgroundTransparency = 1
+	nameLbl.Text = name
+	nameLbl.TextColor3 = COLORS.TextDim
+	nameLbl.TextSize = 14
+	nameLbl.Font = FONTS.Bold
+	nameLbl.TextXAlignment = Enum.TextXAlignment.Left
+	nameLbl.Parent = headerRow
+
+	local valContainer = Instance.new("Frame")
+	valContainer.Size = UDim2.new(0, 150, 1, 0)
+	valContainer.AnchorPoint = Vector2.new(1, 0)
+	valContainer.Position = UDim2.new(1, 0, 0, 0)
+	valContainer.BackgroundTransparency = 1
+	valContainer.Parent = headerRow
+
+	local currentVal = Instance.new("TextLabel")
+	currentVal.Size = UDim2.new(0, 40, 1, 0)
+	currentVal.Position = UDim2.new(0, 0, 0, 0)
+	currentVal.BackgroundTransparency = 1
+	currentVal.Text = "28"
+	currentVal.TextColor3 = COLORS.TextMain
+	currentVal.TextSize = 16
+	currentVal.Font = FONTS.Heading
+	currentVal.Parent = valContainer
+
+	local arrow = Instance.new("TextLabel")
+	arrow.Size = UDim2.new(0, 20, 1, 0)
+	arrow.Position = UDim2.new(0, 45, 0, 0)
+	arrow.BackgroundTransparency = 1
+	arrow.Text = "→"
+	arrow.TextColor3 = COLORS.TextDim
+	arrow.TextSize = 14
+	arrow.Parent = valContainer
+
+	local nextVal = Instance.new("TextLabel")
+	nextVal.Size = UDim2.new(0, 40, 1, 0)
+	nextVal.Position = UDim2.new(0, 70, 0, 0)
+	nextVal.BackgroundTransparency = 1
+	nextVal.Text = "32"
+	nextVal.TextColor3 = COLORS.Success
+	nextVal.TextSize = 16
+	nextVal.Font = FONTS.Bold
+	nextVal.Parent = valContainer
+
+	local diff = Instance.new("TextLabel")
+	diff.Size = UDim2.new(0, 40, 1, 0)
+	diff.Position = UDim2.new(0, 115, 0, 0)
+	diff.BackgroundTransparency = 1
+	diff.Text = "(+4)"
+	diff.TextColor3 = COLORS.Success
+	diff.TextSize = 12
+	diff.Parent = valContainer
+
+	-- Bar
+	local barBg = Instance.new("Frame")
+	barBg.Size = UDim2.new(1, 0, 0, 6)
+	barBg.Position = UDim2.new(0, 0, 1, -6)
+	barBg.BackgroundColor3 = COLORS.PanelBorder
+	barBg.BorderSizePixel = 0
+	barBg.Parent = row
+
+	local barCorner = Instance.new("UICorner")
+	barCorner.CornerRadius = UDim.new(1, 0)
+	barCorner.Parent = barBg
+
+	local fill = Instance.new("Frame")
+	fill.Size = UDim2.new(0.5, 0, 1, 0) -- 50% default
+	fill.BackgroundColor3 = barColor
+	fill.BorderSizePixel = 0
+	fill.Parent = barBg
+
+	local fillCorner = Instance.new("UICorner")
+	fillCorner.CornerRadius = UDim.new(1, 0)
+	fillCorner.Parent = fill
+
+	local row = Instance.new("Frame")
+	row.Size = UDim2.new(1, 0, 0, 50)
+	row.BackgroundTransparency = 1
+	row.LayoutOrder = order or 0
+
+	-- Header: Icon + Name ... Values
+	local headerRow = Instance.new("Frame")
+	headerRow.Size = UDim2.new(1, 0, 0, 24)
+	headerRow.BackgroundTransparency = 1
+	headerRow.Parent = row
+
+	local iconLbl = Instance.new("TextLabel")
+	iconLbl.Size = UDim2.new(0, 20, 1, 0)
+	iconLbl.BackgroundTransparency = 1
+	iconLbl.Text = icon
+	iconLbl.TextColor3 = barColor
+	iconLbl.TextSize = 14
+	iconLbl.Parent = headerRow
+
+	local nameLbl = Instance.new("TextLabel")
+	nameLbl.Size = UDim2.new(0, 100, 1, 0)
+	nameLbl.Position = UDim2.new(0, 24, 0, 0)
+	nameLbl.BackgroundTransparency = 1
+	nameLbl.Text = name
+	nameLbl.TextColor3 = COLORS.TextDim
+	nameLbl.TextSize = 14
+	nameLbl.Font = FONTS.Bold
+	nameLbl.TextXAlignment = Enum.TextXAlignment.Left
+	nameLbl.Parent = headerRow
+
+	local valContainer = Instance.new("Frame")
+	valContainer.Size = UDim2.new(0, 150, 1, 0)
+	valContainer.AnchorPoint = Vector2.new(1, 0)
+	valContainer.Position = UDim2.new(1, 0, 0, 0)
+	valContainer.BackgroundTransparency = 1
+	valContainer.Parent = headerRow
+
+	local currentVal = Instance.new("TextLabel")
+	currentVal.Size = UDim2.new(0, 40, 1, 0)
+	currentVal.Position = UDim2.new(0, 0, 0, 0)
+	currentVal.BackgroundTransparency = 1
+	currentVal.Text = "28"
+	currentVal.TextColor3 = COLORS.TextMain
+	currentVal.TextSize = 16
+	currentVal.Font = FONTS.Heading
+	currentVal.Parent = valContainer
+
+	local arrow = Instance.new("TextLabel")
+	arrow.Size = UDim2.new(0, 20, 1, 0)
+	arrow.Position = UDim2.new(0, 45, 0, 0)
+	arrow.BackgroundTransparency = 1
+	arrow.Text = "→"
+	arrow.TextColor3 = COLORS.TextDim
+	arrow.TextSize = 14
+	arrow.Parent = valContainer
+
+	local nextVal = Instance.new("TextLabel")
+	nextVal.Size = UDim2.new(0, 40, 1, 0)
+	nextVal.Position = UDim2.new(0, 70, 0, 0)
+	nextVal.BackgroundTransparency = 1
+	nextVal.Text = "32"
+	nextVal.TextColor3 = COLORS.Success
+	nextVal.TextSize = 16
+	nextVal.Font = FONTS.Bold
+	nextVal.Parent = valContainer
+
+	local diff = Instance.new("TextLabel")
+	diff.Size = UDim2.new(0, 40, 1, 0)
+	diff.Position = UDim2.new(0, 115, 0, 0)
+	diff.BackgroundTransparency = 1
+	diff.Text = "(+4)"
+	diff.TextColor3 = COLORS.Success
+	diff.TextSize = 12
+	diff.Parent = valContainer
+
+	-- Bar
+	local barBg = Instance.new("Frame")
+	barBg.Size = UDim2.new(1, 0, 0, 6)
+	barBg.Position = UDim2.new(0, 0, 1, -6)
+	barBg.BackgroundColor3 = COLORS.PanelBorder
+	barBg.BorderSizePixel = 0
+	barBg.Parent = row
+
+	local barCorner = Instance.new("UICorner")
+	barCorner.CornerRadius = UDim.new(1, 0)
+	barCorner.Parent = barBg
+
+	local fill = Instance.new("Frame")
+	fill.Size = UDim2.new(0.5, 0, 1, 0) -- 50% default
+	fill.BackgroundColor3 = barColor
+	fill.BorderSizePixel = 0
+	fill.Parent = barBg
+
+	local fillCorner = Instance.new("UICorner")
+	fillCorner.CornerRadius = UDim.new(1, 0)
+	fillCorner.Parent = fill
+
+	return row, currentVal, nextVal, diff, fill
+end
+
+local damageRow, currDmg, nextDmg, diffDmg, barDmg = createStatRow("⚔", "Damage", COLORS.Danger, 1)
+damageRow.Parent = statsContainer
+
+local ammoRow, currAmmo, nextAmmo, diffAmmo, barAmmo = createStatRow("🔋", "Ammo Capacity", COLORS.Blue, 2)
+ammoRow.Parent = statsContainer
+
+local reloadRow, currRel, nextRel, diffRel, barRel = createStatRow("🔄", "Reload Speed", COLORS.Orange, 3)
+reloadRow.Parent = statsContainer
+
+-- Cost & Action
+local actionArea = Instance.new("Frame")
+actionArea.Size = UDim2.new(1, 0, 0, 140)
+actionArea.AnchorPoint = Vector2.new(0, 1)
+actionArea.Position = UDim2.new(0, 0, 1, 0)
+actionArea.BackgroundTransparency = 1
+actionArea.Parent = rightPanel
+
+local costFrame = Instance.new("Frame")
+costFrame.Size = UDim2.new(1, 0, 0, 60)
+costFrame.BackgroundColor3 = Color3.fromRGB(20, 30, 45)
+costFrame.BorderSizePixel = 0
+costFrame.Parent = actionArea
+
+local costCorner = Instance.new("UICorner")
+costCorner.CornerRadius = UDim.new(0, 12)
+costCorner.Parent = costFrame
+
+local costStroke = Instance.new("UIStroke")
+costStroke.Color = COLORS.PanelBorder
+costStroke.Parent = costFrame
+
+local costLabel = Instance.new("TextLabel")
+costLabel.Size = UDim2.new(0.5, 0, 1, 0)
+costLabel.Position = UDim2.new(0, 16, 0, 0)
+costLabel.BackgroundTransparency = 1
+costLabel.Text = "UPGRADE COST\nPOINTS (BP)"
+costLabel.TextColor3 = COLORS.TextDim
+costLabel.TextSize = 10
+costLabel.Font = FONTS.Bold
+costLabel.TextXAlignment = Enum.TextXAlignment.Left
+costLabel.Parent = costFrame
+
+local costValue = Instance.new("TextLabel")
+costValue.Size = UDim2.new(0.5, 0, 1, 0)
+costValue.Position = UDim2.new(0.5, -16, 0, 0)
+costValue.BackgroundTransparency = 1
+costValue.Text = "1,500 BP"
+costValue.TextColor3 = COLORS.Accent
+costValue.TextSize = 24
+costValue.Font = FONTS.Heading
+costValue.TextXAlignment = Enum.TextXAlignment.Right
+costValue.Parent = costFrame
+
+local buttonsGrid = Instance.new("Frame")
+buttonsGrid.Size = UDim2.new(1, 0, 0, 50)
+buttonsGrid.Position = UDim2.new(0, 0, 1, -50)
+buttonsGrid.BackgroundTransparency = 1
+buttonsGrid.Parent = actionArea
 
 local cancelButton = Instance.new("TextButton")
-cancelButton.Size = UDim2.new(0.45, 0, 0.8, 0)
-cancelButton.Position = UDim2.new(0.55, 0, 0.1, 0)
+cancelButton.Size = UDim2.new(0.48, 0, 1, 0)
+cancelButton.BackgroundColor3 = COLORS.PanelBorder
 cancelButton.Text = "CANCEL"
-cancelButton.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-cancelButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-cancelButton.Font = Enum.Font.GothamBold
-cancelButton.TextScaled = true
-cancelButton.ZIndex = 4
-cancelButton.Parent = buttonContainer
+cancelButton.TextColor3 = COLORS.TextMain
+cancelButton.Font = FONTS.Bold
+cancelButton.TextSize = 14
+cancelButton.Parent = buttonsGrid
 
-local buttonCorner = Instance.new("UICorner")
-buttonCorner.CornerRadius = UDim.new(0, 10)
-buttonCorner.Parent = confirmButton
-buttonCorner:Clone().Parent = cancelButton
+local cancelCorner = Instance.new("UICorner")
+cancelCorner.CornerRadius = UDim.new(0, 12)
+cancelCorner.Parent = cancelButton
 
-local function addButtonHoverEffect(button, hoverColor)
-	if UserInputService.TouchEnabled then return end
-	local originalColor = button.BackgroundColor3
-	button.MouseEnter:Connect(function()
-		game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {BackgroundColor3 = hoverColor}):Play()
-	end)
-	button.MouseLeave:Connect(function()
-		game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {BackgroundColor3 = originalColor}):Play()
-	end)
-end
+local confirmButton = Instance.new("TextButton")
+confirmButton.Size = UDim2.new(0.48, 0, 1, 0)
+confirmButton.Position = UDim2.new(0.52, 0, 0, 0)
+confirmButton.BackgroundColor3 = Color3.fromRGB(34, 197, 94) -- Green 500 (Brighter)
+confirmButton.Text = "CONFIRM UPGRADE"
+confirmButton.TextColor3 = COLORS.TextMain
+confirmButton.Font = FONTS.Bold
+confirmButton.TextSize = 14
+confirmButton.Parent = buttonsGrid
 
-addButtonHoverEffect(confirmButton, Color3.fromRGB(0, 220, 0))
-addButtonHoverEffect(cancelButton, Color3.fromRGB(220, 0, 0))
-addButtonHoverEffect(closeBtn, Color3.fromRGB(220, 80, 80))
+local confirmCorner = Instance.new("UICorner")
+confirmCorner.CornerRadius = UDim.new(0, 12)
+confirmCorner.Parent = confirmButton
 
-local UIS = game:GetService("UserInputService")
-local CAS = game:GetService("ContextActionService")
-local UPG_ARROW_ACTION = "UpgradeUI_Arrows"
-local UPG_ENTER_ACTION = "UpgradeUI_Enter"
-local upgSelected = "confirm"
+local confirmGradient = Instance.new("UIGradient")
+confirmGradient.Color = ColorSequence.new(Color3.fromRGB(34, 197, 94), Color3.fromRGB(52, 211, 153)) -- Brighter gradient
+confirmGradient.Parent = confirmButton
 
-local function styleUpgButton(btn, active)
-	if not btn then return end
-	local stroke = btn:FindFirstChildOfClass("UIStroke")
-	if not stroke then
-		stroke = Instance.new("UIStroke")
-		stroke.Parent = btn
-	end
-	stroke.Thickness = active and 3 or 0
-	stroke.Color = Color3.fromRGB(255, 215, 0)
-end
+-- Progress Bar Overlay (Inside Action Area)
+local progressOverlay = Instance.new("Frame")
+progressOverlay.Name = "ProgressOverlay"
+progressOverlay.Size = UDim2.new(1, 0, 1, 0)
+progressOverlay.BackgroundTransparency = 1
+progressOverlay.Visible = false
+progressOverlay.Parent = buttonsGrid
 
-local function setUpgSelected(which)
-	if which ~= "confirm" and which ~= "cancel" then return end
-	upgSelected = which
-	styleUpgButton(confirmButton, upgSelected == "confirm")
-	styleUpgButton(cancelButton,  upgSelected == "cancel")
-end
+local progLabel = Instance.new("TextLabel")
+progLabel.Size = UDim2.new(1, 0, 0, 20)
+progLabel.Position = UDim2.new(0, 0, -0.5, 0)
+progLabel.BackgroundTransparency = 1
+progLabel.Text = "INSTALLING UPGRADE..."
+progLabel.TextColor3 = COLORS.TextDim
+progLabel.TextSize = 12
+progLabel.Font = FONTS.Bold
+progLabel.Parent = progressOverlay
 
-local function handleUpgArrows(_, state, input)
-	if state ~= Enum.UserInputState.Begin then return Enum.ContextActionResult.Pass end
-	if UIS:GetFocusedTextBox() then return Enum.ContextActionResult.Pass end
-	if input.KeyCode == Enum.KeyCode.Left or input.KeyCode == Enum.KeyCode.Up then
-		setUpgSelected("confirm")
-	elseif input.KeyCode == Enum.KeyCode.Right or input.KeyCode == Enum.KeyCode.Down then
-		setUpgSelected("cancel")
-	else
-		return Enum.ContextActionResult.Pass
-	end
-	return Enum.ContextActionResult.Sink
-end
+local progBarBg = Instance.new("Frame")
+progBarBg.Size = UDim2.new(1, 0, 0, 20)
+progBarBg.Position = UDim2.new(0, 0, 0.2, 0)
+progBarBg.BackgroundColor3 = COLORS.PanelBorder
+progBarBg.BorderSizePixel = 0
+progBarBg.Parent = progressOverlay
 
-local notificationFrame = Instance.new("Frame")
-notificationFrame.Size = UDim2.new(0, isMobile and 250 or 300, 0, isMobile and 50 or 60)
-notificationFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-notificationFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-notificationFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-notificationFrame.BorderSizePixel = 0
-notificationFrame.Visible = false
-notificationFrame.ZIndex = 10
-notificationFrame.Parent = screenGui
+local progBarCorner = Instance.new("UICorner")
+progBarCorner.CornerRadius = UDim.new(1, 0)
+progBarCorner.Parent = progBarBg
 
-local notifCorner = Instance.new("UICorner")
-notifCorner.CornerRadius = UDim.new(0, 12)
-notifCorner.Parent = notificationFrame
+local progFill = Instance.new("Frame")
+progFill.Size = UDim2.new(0, 0, 1, 0)
+progFill.BackgroundColor3 = COLORS.Success
+progFill.BorderSizePixel = 0
+progFill.Parent = progBarBg
 
-local notifStroke = Instance.new("UIStroke")
-notifStroke.Color = Color3.fromRGB(80, 80, 120)
-notifStroke.Thickness = 2
-notifStroke.Parent = notificationFrame
+local progFillCorner = Instance.new("UICorner")
+progFillCorner.CornerRadius = UDim.new(1, 0)
+progFillCorner.Parent = progFill
 
-local notifLabel = Instance.new("TextLabel")
-notifLabel.Size = UDim2.new(1, 0, 1, 0)
-notifLabel.BackgroundTransparency = 1
-notifLabel.Text = ""
-notifLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-notifLabel.TextScaled = true
-notifLabel.Font = Enum.Font.GothamBold
-notifLabel.ZIndex = 11
-notifLabel.Parent = notificationFrame
 
-local progressContainer = Instance.new("Frame")
-progressContainer.Size = UDim2.new(0.9, 0, 0, isMobile and 12 or 15)
-progressContainer.Position = isMobile and UDim2.new(0.05, 0, 0.9, 0) or UDim2.new(0.05, 0, 0.95, 0)
-progressContainer.BackgroundTransparency = 1
-progressContainer.Visible = false
-progressContainer.ZIndex = 5
-progressContainer.Parent = mainContainer
-
-local progressBg = Instance.new("Frame")
-progressBg.Size = UDim2.new(1, 0, 0.5, 0)
-progressBg.Position = UDim2.new(0, 0, 0.25, 0)
-progressBg.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-progressBg.BorderSizePixel = 0
-progressBg.ZIndex = 4
-progressBg.Parent = progressContainer
-
-local progressBar = Instance.new("Frame")
-progressBar.Size = UDim2.new(0, 0, 1, 0)
-progressBar.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
-progressBar.BorderSizePixel = 0
-progressBar.ZIndex = 5
-progressBar.Parent = progressBg
-
-local progressLabel = Instance.new("TextLabel")
-progressLabel.Size = UDim2.new(1, 0, 1, 0)
-progressLabel.BackgroundTransparency = 1
-progressLabel.Text = "UPGRADING..."
-progressLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-progressLabel.TextScaled = true
-progressLabel.Font = Enum.Font.Gotham
-progressLabel.ZIndex = 6
-progressLabel.Parent = progressContainer
-
-local progressCorner = Instance.new("UICorner")
-progressCorner.CornerRadius = UDim.new(1, 0)
-progressCorner.Parent = progressBg
-progressCorner:Clone().Parent = progressBar
-
+-- Logic Variables
 local currentTool = nil
 local upgradeData = nil
 local isUIOpen = false
 
-local function setBackpackVisible(visible)
-	if isMobile then
-		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, visible)
-	end
-end
-
-local function showNotification(message, color, duration)
-	notifLabel.Text = message
-	notifLabel.TextColor3 = color or Color3.fromRGB(255, 255, 255)
-	notificationFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-	notificationFrame.Visible = true
-	notificationFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-	local tweenIn = TweenService:Create(notificationFrame, TweenInfo.new(0.3), {Position = UDim2.new(0.5, 0, 0.45, 0)})
-	tweenIn:Play()
-	task.wait(duration or 3)
-	local tweenOut = TweenService:Create(notificationFrame, TweenInfo.new(0.3), {Position = UDim2.new(0.5, 0, 0.55, 0)})
-	tweenOut:Play()
-	task.wait(0.3)
-	notificationFrame.Visible = false
-end
+-- Functions
 
 local function calculateDamage(weaponName, level)
 	local weaponStats = WeaponModule.Weapons[weaponName]
@@ -382,227 +670,295 @@ local function calculateDamage(weaponName, level)
 	return baseDamage + (damagePerLevel * level)
 end
 
-local function calculateAmmoIncrease(level)
-	if level == 0 then return 50 end
-	return 0
+local function calculateAmmo(weaponName, level)
+	-- Assumes weapon has base ammo. Logic might need tweaking if level affects ammo.
+	local weaponStats = WeaponModule.Weapons[weaponName]
+	if not weaponStats then return 0 end
+	return weaponStats.MaxAmmo or 30
 end
 
-local function unbindUpgradeControls()
-	CAS:UnbindAction(UPG_ARROW_ACTION)
-	CAS:UnbindAction(UPG_ENTER_ACTION)
+local function calculateReload(weaponName, level)
+	local weaponStats = WeaponModule.Weapons[weaponName]
+	if not weaponStats then return 0 end
+	return weaponStats.ReloadTime or 2
+end
+
+local function updateStats(weaponName, currentLevel, nextLevel)
+	-- Damage
+	local cDmg = calculateDamage(weaponName, currentLevel)
+	local nDmg = calculateDamage(weaponName, nextLevel)
+	currDmg.Text = tostring(cDmg)
+	nextDmg.Text = tostring(nDmg)
+	diffDmg.Text = "(+" .. (nDmg - cDmg) .. ")"
+	-- Visual Bar (Assuming 100 max damage for visual scaling)
+	barDmg.Size = UDim2.new(math.clamp(cDmg / 100, 0.1, 1), 0, 1, 0)
+
+	-- Ammo
+	-- Currently ammo doesn't scale with level in previous logic except a +50% conditional
+	-- I will use static values for now unless logic exists
+	local cAmmo = calculateAmmo(weaponName, currentLevel)
+	currAmmo.Text = tostring(cAmmo)
+	nextAmmo.Text = tostring(cAmmo) -- Placeholder if no change
+	diffAmmo.Text = ""
+	barAmmo.Size = UDim2.new(math.clamp(cAmmo / 100, 0.1, 1), 0, 1, 0)
+
+	if currentLevel == 0 then -- Logic from old script: level 0 -> 1 might give ammo?
+		-- Old script said: calculateAmmoIncrease(level) -> if level == 0 then return 50 end
+		-- So if current is 0, next is 1, so +50% ammo?
+		-- Visualizing that might be complex if dynamic. I will keep it simple.
+		nextAmmo.Text = tostring(math.floor(cAmmo * 1.5))
+		diffAmmo.Text = "(+50%)"
+	end
+
+	-- Reload
+	local cRel = calculateReload(weaponName, currentLevel)
+	currRel.Text = cRel .. "s"
+	nextRel.Text = cRel .. "s"
+	diffRel.Text = ""
+	barRel.Size = UDim2.new(math.clamp(1 - (cRel / 5), 0.1, 1), 0, 1, 0) -- Inverse bar (faster is better)
+end
+
+local function setBackpackVisible(visible)
+	-- Only for mobile usually
+	if UserInputService.TouchEnabled then
+		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, visible)
+	end
 end
 
 local function closeUpgradeUI()
 	if not isUIOpen then return end
 	setBackpackVisible(true)
+
+	-- Animation
 	local tween = TweenService:Create(mainContainer, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
-		Position = UDim2.new(0.5, -mainContainerWidth/2, 0.7, -mainContainerHeight/2),
-		Size = UDim2.new(0, mainContainerWidth, 0, 0)
+		Position = UDim2.new(0.5, 0, 0.6, 0),
+		BackgroundTransparency = 1
 	})
 	tween:Play()
+	local overlayTween = TweenService:Create(overlay, TweenInfo.new(0.3), {BackgroundTransparency = 1})
+	overlayTween:Play()
+
 	task.wait(0.3)
-	mainContainer.Visible = false
-	overlay.Visible = false
+	screenGui.Enabled = false
 	isUIOpen = false
-	ContextActionService:UnbindAction("CloseUpgradeUI")
-	unbindUpgradeControls()
 end
 
 local function performUpgrade()
 	if not currentTool or not upgradeData then return end
-	progressContainer.Visible = true
-	progressBar.Size = UDim2.new(0, 0, 1, 0)
-	local tween = TweenService:Create(progressBar, TweenInfo.new(1.5, Enum.EasingStyle.Linear), {Size = UDim2.new(1, 0, 1, 0)})
-	tween:Play()
-	confirmButton.AutoButtonColor = false
-	confirmButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-	cancelButton.AutoButtonColor = false
-	cancelButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-	task.wait(1.5)
+
+	-- UI State
+	cancelButton.Visible = false
+	confirmButton.Visible = false
+	progressOverlay.Visible = true
+	progFill.Size = UDim2.new(0, 0, 1, 0)
+	progLabel.Text = "INSTALLING UPGRADE... 0%"
+
+	-- Custom loop for progress bar and percentage text
+	local duration = 1.5
+	local startTime = tick()
+	while tick() - startTime < duration do
+		local alpha = (tick() - startTime) / duration
+		alpha = math.clamp(alpha, 0, 1)
+
+		progFill.Size = UDim2.new(alpha, 0, 1, 0)
+		progLabel.Text = "INSTALLING UPGRADE... " .. math.floor(alpha * 100) .. "%"
+
+		RunService.RenderStepped:Wait()
+	end
+
+	-- Ensure 100% at the end
+	progFill.Size = UDim2.new(1, 0, 1, 0)
+	progLabel.Text = "INSTALLING UPGRADE... 100%"
+	task.wait(0.2)
+
 	confirmUpgradeEvent:FireServer(currentTool, true)
-	progressContainer.Visible = false
-	confirmButton.AutoButtonColor = true
-	confirmButton.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
-	cancelButton.AutoButtonColor = true
-	cancelButton.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+
+	-- Reset State
+	progressOverlay.Visible = false
+	cancelButton.Visible = true
+	confirmButton.Visible = true
+
 	closeUpgradeUI()
 end
 
-local function handleUpgEnter(_, state, input)
-	if state ~= Enum.UserInputState.Begin then return Enum.ContextActionResult.Pass end
-	if input.KeyCode ~= Enum.KeyCode.Return and input.KeyCode ~= Enum.KeyCode.KeypadEnter then
-		return Enum.ContextActionResult.Pass
-	end
-	if upgSelected == "confirm" then
-		performUpgrade()
-	else
-		closeUpgradeUI()
-	end
-	return Enum.ContextActionResult.Sink
-end
+local function updateWeaponPreview(tool)
+	weaponViewport:ClearAllChildren()
+	if not tool then return end
 
-local function bindUpgradeControls()
-	if UIS.TouchEnabled then return end
-	setUpgSelected("confirm")
-	CAS:BindActionAtPriority(
-		UPG_ARROW_ACTION, handleUpgArrows, false,
-		Enum.ContextActionPriority.High.Value,
-		Enum.KeyCode.Left, Enum.KeyCode.Right, Enum.KeyCode.Up, Enum.KeyCode.Down
-	)
-	CAS:BindActionAtPriority(
-		UPG_ENTER_ACTION, handleUpgEnter, false,
-		Enum.ContextActionPriority.High.Value,
-		Enum.KeyCode.Return, Enum.KeyCode.KeypadEnter
-	)
+	local worldModel = Instance.new("WorldModel")
+	worldModel.Parent = weaponViewport
+
+	local model = tool:Clone()
+	model.Parent = worldModel
+
+	-- Strip scripts and unrelated parts for the preview
+	for _, v in pairs(model:GetDescendants()) do
+		if v:IsA("Script") or v:IsA("LocalScript") or v:IsA("Sound") then
+			v:Destroy()
+		end
+		if v:IsA("BasePart") then
+			v.Anchored = true -- Fix for invisible model
+		end
+	end
+
+	local handle = model:FindFirstChild("Handle") or model:FindFirstChild("PrimaryPart")
+	if not handle then
+		-- Fallback to finding any part
+		handle = model:FindFirstChildWhichIsA("BasePart")
+	end
+
+	if handle then
+		-- Setup Camera
+		local cam = Instance.new("Camera")
+		cam.Parent = weaponViewport
+		weaponViewport.CurrentCamera = cam
+
+		-- Position Model at 0,0,0
+		if model:IsA("Model") then
+			if not model.PrimaryPart then
+				model.PrimaryPart = handle
+			end
+			if model.PrimaryPart then
+				model:SetPrimaryPartCFrame(CFrame.new(0, 0, 0))
+			else
+				-- Last resort if PrimaryPart can't be set
+				handle.CFrame = CFrame.new(0, 0, 0)
+			end
+		elseif model:IsA("BasePart") then
+			model.CFrame = CFrame.new(0, 0, 0)
+		end
+
+		-- Initial Camera Pos
+		cam.CFrame = CFrame.lookAt(Vector3.new(3, 1, 3), Vector3.new(0, 0, 0))
+	end
 end
 
 local function showUpgradeUI(tool, data)
 	if isUIOpen then return end
 	isUIOpen = true
+	screenGui.Enabled = true
 	setBackpackVisible(false)
+
 	currentTool = tool
 	upgradeData = data
-	weaponNameLabel.Text = data.weaponName:upper()
-	currentLevelValue.Text = "Lv." .. data.currentLevel
-	nextLevelValue.Text = "Lv." .. data.nextLevel
-	local currentDamage = calculateDamage(data.weaponName, data.currentLevel)
-	local nextDamage = calculateDamage(data.weaponName, data.nextLevel)
-	damageValue.Text = currentDamage .. " ? " .. nextDamage
-	local ammoIncrease = calculateAmmoIncrease(data.currentLevel)
-	if ammoIncrease > 0 then
-		ammoValue.Text = "+" .. ammoIncrease .. "%"
-		ammoValue.Visible = true
-	else
-		ammoValue.Visible = false
-	end
 
-	costValue.Text = data.cost .. " BP"
+	-- Update Info
+	weaponNameDisplay.Text = data.weaponName:upper()
+
+	updateWeaponPreview(tool)
+
+	-- Try to get weapon type
+	local weaponStats = WeaponModule.Weapons[data.weaponName]
+	local wType = "WEAPON"
+	if weaponStats and weaponStats.Category then
+		wType = weaponStats.Category:upper()
+	end
+	weaponTypeLabel.Text = wType
+
+	-- Update Levels
+	currentLvlVal.Text = "LV. " .. data.currentLevel
+	nextLvlVal.Text = "LV. " .. data.nextLevel
+
+	-- Update Stats
+	updateStats(data.weaponName, data.currentLevel, data.nextLevel)
+
+	-- Update Cost
+	costValue.Text = tostring(data.cost) .. " BP"
 	if data.hasDiscount then
-		costValue.TextColor3 = Color3.fromRGB(100, 255, 100) -- Green for discount
+		costValue.TextColor3 = COLORS.Success
 	else
-		costValue.TextColor3 = Color3.fromRGB(255, 215, 0) -- Default yellow
+		costValue.TextColor3 = COLORS.Accent
 	end
 
-	overlay.Visible = true
-	mainContainer.Visible = true
-	mainContainer.Position = UDim2.new(0.5, -mainContainerWidth/2, 0.7, -mainContainerHeight/2)
-	mainContainer.Size = UDim2.new(0, mainContainerWidth, 0, 0)
-	local tween = TweenService:Create(mainContainer, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-		Position = UDim2.new(0.5, -mainContainerWidth/2, 0.5, -mainContainerHeight/2),
-		Size = UDim2.new(0, mainContainerWidth, 0, mainContainerHeight)
+	-- Animation In
+	mainContainer.Position = UDim2.new(0.5, 0, 0.6, 0)
+	mainContainer.BackgroundTransparency = 1
+	overlay.BackgroundTransparency = 1
+
+	local tween = TweenService:Create(mainContainer, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Position = UDim2.new(0.5, 0, 0.5, 0),
+		BackgroundTransparency = 0.1
 	})
 	tween:Play()
-	ContextActionService:BindAction("CloseUpgradeUI", function(_, inputState, inputObject)
-		if inputState == Enum.UserInputState.Begin and inputObject.KeyCode == Enum.KeyCode.Escape then
-			closeUpgradeUI()
-		end
-	end, false, Enum.KeyCode.Escape)
-	bindUpgradeControls()
+
+	local overlayTween = TweenService:Create(overlay, TweenInfo.new(0.4), {BackgroundTransparency = 0.6})
+	overlayTween:Play()
 end
 
-local function getEquippedToolName()
-	if player.Character then
-		local t = player.Character:FindFirstChildOfClass("Tool")
-		if t then return t.Name end
-	end
-	return nil
-end
+-- Event Connections
+closeButton.MouseButton1Click:Connect(closeUpgradeUI)
+cancelButton.MouseButton1Click:Connect(closeUpgradeUI)
+confirmButton.MouseButton1Click:Connect(performUpgrade)
 
 upgradeEvent.OnClientEvent:Connect(function(weaponName, newLevel)
-	local current = getEquippedToolName()
-	if current == weaponName then
-		local tool = player.Character:FindFirstChildOfClass("Tool")
-		if tool then
-			tool:SetAttribute("UpgradeLevel", newLevel)
-		end
-		showNotification(weaponName .. " upgraded to Level " .. newLevel, Color3.fromRGB(0, 255, 0), 3)
-	end
+	-- Notification logic could go here
+	-- For now we just close UI on successful upgrade in performUpgrade,
+	-- but this event is for confirmation.
 end)
 
-confirmButton.MouseButton1Click:Connect(performUpgrade)
-cancelButton.MouseButton1Click:Connect(closeUpgradeUI)
-closeBtn.MouseButton1Click:Connect(closeUpgradeUI)
-
-local function onEquipped(tool)
-	if not tool then return end
-	local ok, lvl = pcall(function() return getLevelRF:InvokeServer(tool) end)
-	if ok and type(lvl) == "number" then
-		tool:SetAttribute("UpgradeLevel", lvl)
+-- Interaction Logic (Proximity Prompt)
+local ProximityPromptService = game:GetService("ProximityPromptService")
+-- Assuming the prompt exists in workspace
+task.spawn(function()
+	local upgradePrompt = nil
+	-- Wait for it safely
+	local upgPart = workspace:WaitForChild("Upgrade", 10)
+	if upgPart then
+		local att = upgPart:WaitForChild("Attachment", 10)
+		if att then
+			upgradePrompt = att:WaitForChild("UpgradePrompt", 10)
+		end
 	end
-end
 
-local function onUnequipped()
-end
+	if upgradePrompt then
+		ProximityPromptService.PromptTriggered:Connect(function(prompt, plr)
+			if prompt ~= upgradePrompt or plr ~= player then return end
+			if isUIOpen then return end
 
-local function watchTools()
-	if player.Character then
-		player.Character.ChildAdded:Connect(function(child)
-			if child:IsA("Tool") then
-				child.Equipped:Connect(function() onEquipped(child) end)
-				child.Unequipped:Connect(onUnequipped)
+			local equippedTool = player.Character and player.Character:FindFirstChildOfClass("Tool")
+			if not equippedTool then
+				-- Notification: "Equip a weapon first!"
+				return
+			end
+
+			local ok, result = pcall(function()
+				return upgradeRF:InvokeServer(equippedTool)
+			end)
+
+			if ok and result.success then
+				showUpgradeUI(equippedTool, result)
 			end
 		end)
-		for _,v in pairs(player.Character:GetChildren()) do
-			if v:IsA("Tool") then
-				v.Equipped:Connect(function() onEquipped(v) end)
-				v.Unequipped:Connect(onUnequipped)
-			end
-		end
 	end
-	local backpack = player:WaitForChild("Backpack")
-	backpack.ChildAdded:Connect(function(child)
-		if child:IsA("Tool") then
-			child.Equipped:Connect(function() onEquipped(child) end)
-			child.Unequipped:Connect(onUnequipped)
-		end
-	end)
-	for _,v in pairs(backpack:GetChildren()) do
-		if v:IsA("Tool") then
-			v.Equipped:Connect(function() onEquipped(v) end)
-			v.Unequipped:Connect(onUnequipped)
-		end
+end)
+
+-- Mobile/Responsive check
+local function updateLayout()
+	if screenGui.AbsoluteSize.X < 600 then
+		-- Mobile layout adjustments
+		mainContainer.Size = UDim2.new(0.9, 0, 0.8, 0)
+		-- Stack columns
+		contentGrid.Position = UDim2.new(0, 0, 0, 50)
+		leftPanel.Size = UDim2.new(1, 0, 0.3, 0)
+		rightPanel.Size = UDim2.new(1, 0, 0.7, 0)
+		rightPanel.Position = UDim2.new(0, 0, 0.3, 0)
+
+		weaponViewport.Visible = false -- Hide icon to save space
+		weaponNameDisplay.TextSize = 24
+
+		leftStroke.Visible = false -- Remove divider
+	else
+		-- Desktop layout
+		mainContainer.Size = UDim2.new(0, 800, 0, 500)
+		leftPanel.Size = UDim2.new(0.4, 0, 1, 0)
+		rightPanel.Size = UDim2.new(0.6, 0, 1, 0)
+		rightPanel.Position = UDim2.new(0.4, 0, 0, 0)
+
+		weaponViewport.Visible = true
+		weaponNameDisplay.TextSize = 32
+		leftStroke.Visible = true
 	end
 end
 
-player.CharacterAdded:Connect(function()
-	task.wait(0.2)
-	watchTools()
-end)
-if player.Character then watchTools() end
-
-RunService.RenderStepped:Connect(function()
-	if isUIOpen then
-		local char = player.Character
-		if char and char:FindFirstChild("HumanoidRootPart") and upgradePart then
-			local dist = (char.HumanoidRootPart.Position - upgradePart.Position).Magnitude
-			if dist > 8 then
-				closeUpgradeUI()
-			end
-		end
-	end
-end)
-
-local ProximityPromptService = game:GetService("ProximityPromptService")
-local upgradePrompt = workspace.Upgrade:WaitForChild("Attachment"):WaitForChild("UpgradePrompt")
-
-ProximityPromptService.PromptTriggered:Connect(function(prompt, plr)
-	if prompt ~= upgradePrompt or plr ~= player then return end
-	if isUIOpen then return end
-	local equippedTool = player.Character and player.Character:FindFirstChildOfClass("Tool")
-	if not equippedTool then
-		showNotification("Weapon not ready", Color3.fromRGB(255, 100, 100), 2)
-		return
-	end
-	local ok, result = pcall(function()
-		return upgradeRF:InvokeServer(equippedTool)
-	end)
-	if not ok then
-		showNotification("Upgrade system error", Color3.fromRGB(255, 100, 100), 2)
-		return
-	end
-	if result.success then
-		showUpgradeUI(equippedTool, result)
-	else
-		showNotification(result.message, Color3.fromRGB(255, 100, 100), 3)
-	end
-end)
+screenGui:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateLayout)
+updateLayout() -- Initial call
