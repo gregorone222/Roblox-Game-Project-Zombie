@@ -262,7 +262,7 @@ local function spawnDrop(dropName, position)
 	else
 		-- jika template berupa Model
 		if drop.PrimaryPart then
-			drop:SetPrimaryPartCFrame(CFrame.new(position + Vector3.new(0, 1.2, 0)))
+			drop:PivotTo(CFrame.new(position + Vector3.new(0, 1.2, 0)))
 		else
 			-- coba set posisi tiap part
 			for _, v in pairs(drop:GetDescendants()) do
@@ -316,7 +316,7 @@ local function spawnDrop(dropName, position)
 					part.CFrame = newCFrame
 				else
 					-- animasikan keseluruhan model melalui PrimaryPart
-					instance:SetPrimaryPartCFrame(newCFrame)
+					instance:PivotTo(newCFrame)
 				end
 			end
 		end)
