@@ -50,8 +50,7 @@ function BossVFXModule.ApplyPlayerPoisonEffect(character, isSpecial, duration)
 	})
 	poisonParticles.Lifetime = NumberRange.new(1.5, 3)
 	poisonParticles.Rate = 80
-	poisonParticles.SpreadAngle = Vector2.new(60, 60)
-	poisonParticles.VelocitySpread = 360
+	poisonParticles.SpreadAngle = Vector2.new(360, 360)
 	poisonParticles.Speed = NumberRange.new(1, 4)
 	poisonParticles.Rotation = NumberRange.new(0, 360)
 	poisonParticles.RotSpeed = NumberRange.new(-45, 45)
@@ -78,9 +77,8 @@ function BossVFXModule.ApplyPlayerPoisonEffect(character, isSpecial, duration)
 	})
 	bubbleParticles.Lifetime = NumberRange.new(1, 2.5)
 	bubbleParticles.Rate = 25
-	bubbleParticles.SpreadAngle = Vector2.new(35, 35)
+	bubbleParticles.SpreadAngle = Vector2.new(180, 180)
 	bubbleParticles.Shape = Enum.ParticleEmitterShape.Sphere
-	bubbleParticles.VelocitySpread = 180
 	bubbleParticles.Speed = NumberRange.new(0.5, 2)
 	bubbleParticles.Acceleration = Vector3.new(0, 3, 0) -- Bubbles rise up
 	bubbleParticles.Drag = 1
@@ -101,8 +99,7 @@ function BossVFXModule.ApplyPlayerPoisonEffect(character, isSpecial, duration)
 	})
 	dripParticles.Lifetime = NumberRange.new(0.5, 1.2)
 	dripParticles.Rate = 15
-	dripParticles.SpreadAngle = Vector2.new(15, 15)
-	dripParticles.VelocitySpread = 90
+	dripParticles.SpreadAngle = Vector2.new(90, 90)
 	dripParticles.Speed = NumberRange.new(1, 3)
 	dripParticles.Acceleration = Vector3.new(0, -10, 0) -- Drips fall down
 	dripParticles.Drag = 0.5
@@ -209,9 +206,8 @@ function BossVFXModule.CreateBossPoisonAura(bossModel)
 	})
 	mainParticles.Lifetime = NumberRange.new(2, 4)
 	mainParticles.Rate = 150
-	mainParticles.SpreadAngle = Vector2.new(180, 180)
+	mainParticles.SpreadAngle = Vector2.new(360, 360)
 	mainParticles.Shape = Enum.ParticleEmitterShape.Sphere
-	mainParticles.VelocitySpread = 360
 	mainParticles.Speed = NumberRange.new(1, 5)
 	mainParticles.Rotation = NumberRange.new(0, 360)
 	mainParticles.RotSpeed = NumberRange.new(-30, 30)
@@ -238,9 +234,8 @@ function BossVFXModule.CreateBossPoisonAura(bossModel)
 	})
 	bubbleParticles.Lifetime = NumberRange.new(1.5, 3)
 	bubbleParticles.Rate = 60
-	bubbleParticles.SpreadAngle = Vector2.new(120, 120)
+	bubbleParticles.SpreadAngle = Vector2.new(270, 270)
 	bubbleParticles.Shape = Enum.ParticleEmitterShape.Sphere
-	bubbleParticles.VelocitySpread = 270
 	bubbleParticles.Speed = NumberRange.new(0.5, 3)
 	bubbleParticles.Acceleration = Vector3.new(0, 2, 0)
 	bubbleParticles.Drag = 1
@@ -262,9 +257,8 @@ function BossVFXModule.CreateBossPoisonAura(bossModel)
 	})
 	mistParticles.Lifetime = NumberRange.new(3, 6)
 	mistParticles.Rate = 40
-	mistParticles.SpreadAngle = Vector2.new(30, 30)
+	mistParticles.SpreadAngle = Vector2.new(45, 45)
 	mistParticles.Shape = Enum.ParticleEmitterShape.Cylinder
-	mistParticles.VelocitySpread = 45
 	mistParticles.Speed = NumberRange.new(1, 3)
 	mistParticles.LockedToPart = true
 	mistParticles.Acceleration = Vector3.new(0, 1, 0)
@@ -350,9 +344,8 @@ function BossVFXModule.CreateBossPoisonEffect(position, isSpecial, duration)
 	})
 	gasParticles.Lifetime = NumberRange.new(2.5, 5)
 	gasParticles.Rate = 200 * scale
-	gasParticles.SpreadAngle = Vector2.new(180, 180)
+	gasParticles.SpreadAngle = Vector2.new(360, 360)
 	gasParticles.Shape = Enum.ParticleEmitterShape.Sphere
-	gasParticles.VelocitySpread = 360
 	gasParticles.Speed = NumberRange.new(0.5, 3)
 	gasParticles.Rotation = NumberRange.new(0, 360)
 	gasParticles.RotSpeed = NumberRange.new(-20, 20)
@@ -379,9 +372,8 @@ function BossVFXModule.CreateBossPoisonEffect(position, isSpecial, duration)
 	})
 	mistParticles.Lifetime = NumberRange.new(2, 4) -- Mengurangi lifetime agar pudar lebih cepat
 	mistParticles.Rate = 100 * scale
-	mistParticles.SpreadAngle = Vector2.new(60, 60)
+	mistParticles.SpreadAngle = Vector2.new(120, 120)
 	mistParticles.Shape = Enum.ParticleEmitterShape.Cylinder
-	mistParticles.VelocitySpread = 120
 	mistParticles.Speed = NumberRange.new(1, 4)
 	mistParticles.LockedToPart = true
 	mistParticles.Acceleration = Vector3.new(0, 0.5, 0)
@@ -404,8 +396,7 @@ function BossVFXModule.CreateBossPoisonEffect(position, isSpecial, duration)
 	})
 	dripParticles.Lifetime = NumberRange.new(1, 2.5)
 	dripParticles.Rate = 50 * scale
-	dripParticles.SpreadAngle = Vector2.new(90, 90)
-	dripParticles.VelocitySpread = 180
+	dripParticles.SpreadAngle = Vector2.new(180, 180)
 	dripParticles.Speed = NumberRange.new(2, 6)
 	dripParticles.Acceleration = Vector3.new(0, -15, 0)
 	dripParticles.Drag = 0.3
@@ -550,26 +541,231 @@ function BossVFXModule.CreateBossPoisonEffectFollow(targetCharacter, isSpecial, 
 	return cloud
 end
 
--- === FUNGSI VFX BARU UNTUK BOSS 1 V2 ===
+-- === REVISED VFX FOR PROTOTYPE-MATCHING TOXIC LOB ===
+
+-- Helper: Find nearest Boss
+local function getBossPosition(targetPos)
+	local bestPos = targetPos + Vector3.new(0, 50, 0) -- Fallback: Sky
+	local minDist = math.huge
+
+	for _, child in ipairs(Workspace:GetChildren()) do
+		if child:IsA("Model") and child:FindFirstChild("IsBoss") then
+			local pp = child.PrimaryPart
+			if pp then
+				local dist = (pp.Position - targetPos).Magnitude
+				if dist < minDist then
+					minDist = dist
+					bestPos = pp.Position + Vector3.new(0, 4, 0) -- From "mouth" height
+				end
+			end
+		end
+	end
+	return bestPos
+end
 
 function BossVFXModule.CreateToxicLobTelegraph(position, config)
-	local telegraphPart = Instance.new("Part")
-	telegraphPart.Shape = Enum.PartType.Cylinder
-	telegraphPart.Size = Vector3.new(0.5, config.PuddleRadius * 2, config.PuddleRadius * 2)
-	telegraphPart.CFrame = CFrame.new(position) * CFrame.Angles(0,0,math.rad(90))
-	telegraphPart.Anchored = true
-	telegraphPart.CanCollide = false
-	telegraphPart.Material = Enum.Material.ForceField
-	telegraphPart.Color = Color3.fromRGB(50, 200, 50)
-	telegraphPart.Transparency = 0.5
-	telegraphPart.Name = "LobTelegraph"
-	telegraphPart.Parent = Workspace
+	local duration = config.TelegraphDuration or 1.5
+	local radius = config.PuddleRadius or 8
 
-	Debris:AddItem(telegraphPart, config.TelegraphDuration)
+	-- 1. Create Filling Circle (Inner)
+	local fill = Instance.new("Part")
+	fill.Shape = Enum.PartType.Cylinder
+	fill.Size = Vector3.new(0.1, 0.1, 0.1) -- Start small
+	fill.CFrame = CFrame.new(position + Vector3.new(0, 0.15, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	fill.Anchored = true
+	fill.CanCollide = false
+	fill.Material = Enum.Material.Neon
+	fill.Color = Color3.fromRGB(255, 100, 50)
+	fill.Transparency = 0.5
+	fill.Name = "ToxicLobFill"
+	fill.Parent = Workspace
+
+	-- Animate Fill
+	local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear)
+	local tweenFill = TweenService:Create(fill, tweenInfo, { Size = Vector3.new(0.1, radius * 2, radius * 2) })
+	tweenFill:Play()
+
+	-- 2. Launch Projectile (Timed to land at end of duration)
+	task.spawn(function()
+		local startPos = getBossPosition(position)
+		local endPos = position
+
+		-- Projectile Mesh
+		local projectile = Instance.new("Part")
+		projectile.Shape = Enum.PartType.Ball
+		projectile.Size = Vector3.new(2, 2, 2)
+		projectile.Material = Enum.Material.Neon
+		projectile.Color = Color3.fromRGB(57, 255, 20) -- Toxic Green
+		projectile.Anchored = true
+		projectile.CanCollide = false
+		projectile.CFrame = CFrame.new(startPos)
+		projectile.Parent = Workspace
+
+		-- Add Trail (No Asset ID, just Attachment + Trail)
+		local att0 = Instance.new("Attachment", projectile)
+		att0.Position = Vector3.new(0, 0.5, 0)
+		local att1 = Instance.new("Attachment", projectile)
+		att1.Position = Vector3.new(0, -0.5, 0)
+
+		local trail = Instance.new("Trail")
+		trail.Attachment0 = att0
+		trail.Attachment1 = att1
+		trail.Lifetime = 0.3
+		trail.Color = ColorSequence.new(Color3.fromRGB(57, 255, 20), Color3.fromRGB(0, 100, 0))
+		trail.Transparency = NumberSequence.new(0.2, 1)
+		trail.FaceCamera = true
+		trail.Parent = projectile
+
+		-- Parabolic Movement Loop
+		local startTime = tick()
+		local height = 15 -- Arc height
+
+		while true do
+			local elapsed = tick() - startTime
+			local t = elapsed / duration
+			if t >= 1 then break end
+
+			-- Parabola Math: P(t) = Lerp(S, E, t) + VerticalOffset
+			local currentPos = startPos:Lerp(endPos, t)
+			-- Height offset: 4 * h * t * (1-t)
+			local yOffset = 4 * height * t * (1 - t)
+
+			projectile.Position = currentPos + Vector3.new(0, yOffset, 0)
+
+			RunService.Heartbeat:Wait()
+		end
+
+		projectile:Destroy()
+	end)
+
+	-- Cleanup Telegraph
+	Debris:AddItem(fill, duration)
 end
 
 function BossVFXModule.ExecuteToxicLob(position, config)
-	BossVFXModule.CreateBossPoisonEffect(position, false, config.PuddleDuration)
+	local duration = config.PuddleDuration or 5
+	local radius = config.PuddleRadius or 8
+
+	-- Container for the puddle parts
+	local puddleModel = Instance.new("Model")
+	puddleModel.Name = "ToxicPuddleModel"
+	puddleModel.Parent = Workspace
+
+	-- 1. Create Core Puddle (Bright Neon)
+	local puddleCore = Instance.new("Part")
+	puddleCore.Shape = Enum.PartType.Cylinder
+	puddleCore.Size = Vector3.new(0.2, radius * 1.6, radius * 1.6) -- Slightly smaller
+	puddleCore.CFrame = CFrame.new(position + Vector3.new(0, 0.12, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	puddleCore.Anchored = true
+	puddleCore.CanCollide = false
+	puddleCore.Material = Enum.Material.Neon
+	puddleCore.Color = Color3.fromRGB(80, 255, 50) -- Brighter Green
+	puddleCore.Transparency = 0.3
+	puddleCore.Name = "Core"
+	puddleCore.Parent = puddleModel
+
+	-- 2. Create Outer Rim (Darker/Transparent)
+	local puddleRim = Instance.new("Part")
+	puddleRim.Shape = Enum.PartType.Cylinder
+	puddleRim.Size = Vector3.new(0.1, radius * 2, radius * 2)
+	puddleRim.CFrame = CFrame.new(position + Vector3.new(0, 0.1, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	puddleRim.Anchored = true
+	puddleRim.CanCollide = false
+	puddleRim.Material = Enum.Material.SmoothPlastic
+	puddleRim.Color = Color3.fromRGB(40, 150, 20) -- Darker Green
+	puddleRim.Transparency = 0.6
+	puddleRim.Name = "Rim"
+	puddleRim.Parent = puddleModel
+
+	-- 3. Toxic Mist (Low lying fog)
+	local mist = Instance.new("ParticleEmitter")
+	mist.Name = "ToxicMist"
+	mist.Color = ColorSequence.new(Color3.fromRGB(100, 255, 100))
+	mist.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 2),
+		NumberSequenceKeypoint.new(0.5, 4),
+		NumberSequenceKeypoint.new(1, 2)
+	})
+	mist.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 1),
+		NumberSequenceKeypoint.new(0.2, 0.7),
+		NumberSequenceKeypoint.new(0.8, 0.7),
+		NumberSequenceKeypoint.new(1, 1)
+	})
+	mist.Lifetime = NumberRange.new(2, 3)
+	mist.Rate = 20
+	mist.Speed = NumberRange.new(1, 2)
+	mist.SpreadAngle = Vector2.new(180, 0) -- Spread horizontally
+	mist.Acceleration = Vector3.new(0, 0.5, 0) -- Slight rise
+	mist.Parent = puddleCore
+
+	-- 4. Bubbling Particles
+	local bubbles = Instance.new("ParticleEmitter")
+	bubbles.Name = "Bubbles"
+	bubbles.Color = ColorSequence.new(Color3.fromRGB(150, 255, 150))
+	bubbles.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.2), 
+		NumberSequenceKeypoint.new(0.5, 0.8),
+		NumberSequenceKeypoint.new(1, 0)
+	})
+	bubbles.Transparency = NumberSequence.new(0.2, 1)
+	bubbles.Lifetime = NumberRange.new(1, 1.5)
+	bubbles.Rate = 30
+	bubbles.Speed = NumberRange.new(2, 5)
+	bubbles.Acceleration = Vector3.new(0, 8, 0) -- Rise faster
+	bubbles.Shape = Enum.ParticleEmitterShape.Sphere
+	bubbles.ShapePartial = 1
+	bubbles.Parent = puddleCore
+
+	-- 5. Splash Impact (Burst)
+	local splash = Instance.new("ParticleEmitter")
+	splash.Color = ColorSequence.new(Color3.fromRGB(80, 255, 50))
+	splash.Size = NumberSequence.new({NumberSequenceKeypoint.new(0, 1.5), NumberSequenceKeypoint.new(1, 0)})
+	splash.Lifetime = NumberRange.new(0.4, 0.8)
+	splash.Speed = NumberRange.new(15, 25)
+	splash.SpreadAngle = Vector2.new(45, 45)
+	splash.Acceleration = Vector3.new(0, -40, 0) -- Strong Gravity
+	splash.Parent = puddleCore
+	splash.Enabled = false -- One shot
+
+	task.delay(0, function()
+		splash:Emit(60)
+	end)
+
+	-- 6. Pulsing Animation Loop
+	local pulseTime = 0
+	local pulseConnection
+	pulseConnection = RunService.Heartbeat:Connect(function(dt)
+		if not puddleCore or not puddleCore.Parent then
+			if pulseConnection then pulseConnection:Disconnect() end
+			return
+		end
+		pulseTime += dt * 3 -- Speed of pulse
+		local scale = 1 + math.sin(pulseTime) * 0.05 -- +/- 5% size
+		puddleCore.Size = Vector3.new(0.2, radius * 1.6 * scale, radius * 1.6 * scale)
+		puddleCore.Transparency = 0.3 + math.sin(pulseTime) * 0.1 -- vary transparency
+	end)
+
+	-- 7. Fade Out Logic
+	task.delay(duration - 1, function()
+		if puddleModel and puddleModel.Parent then
+			-- Fade out parts
+			local tweenInfo = TweenInfo.new(1)
+			TweenService:Create(puddleCore, tweenInfo, {Transparency = 1}):Play()
+			TweenService:Create(puddleRim, tweenInfo, {Transparency = 1}):Play()
+
+			-- Stop particles
+			mist.Rate = 0
+			bubbles.Rate = 0
+		end
+	end)
+
+	-- Cleanup
+	Debris:AddItem(puddleModel, duration)
+	-- Ensure connection is cleaned up if model is destroyed early
+	puddleModel.Destroying:Connect(function()
+		if pulseConnection then pulseConnection:Disconnect() end
+	end)
 end
 
 function BossVFXModule.CreateVolatileMinionExplosion(position, config)
