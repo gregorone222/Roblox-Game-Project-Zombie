@@ -59,7 +59,7 @@ function ShockVFXModule.SpawnShockImpact(part: BasePart, life: number)
 		Color3.fromRGB(150, 210, 255)
 	)
 	burst.LightEmission = 1
-	burst.VelocitySpread = 360
+	burst.SpreadAngle = Vector2.new(360, 360)
 	burst.Parent = flash
 
 	-- Quick fade out animation
