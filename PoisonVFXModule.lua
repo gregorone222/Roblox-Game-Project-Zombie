@@ -90,7 +90,7 @@ function PoisonVFX.SpawnImpact(part: BasePart, life: number)
 		ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 100, 20))
 	})
 	burst.LightEmission = 0.9
-	burst.VelocitySpread = 360
+	burst.SpreadAngle = Vector2.new(360, 360)
 	burst.Rotation = NumberRange.new(-180, 180)
 	burst.Parent = flash
 
@@ -116,7 +116,7 @@ function PoisonVFX.SpawnImpact(part: BasePart, life: number)
 		NumberSequenceKeypoint.new(0.5, 0.6),
 		NumberSequenceKeypoint.new(1, 1)
 	})
-	gas.VelocitySpread = 180
+	gas.SpreadAngle = Vector2.new(180, 180)
 	gas.Acceleration = Vector3.new(0, 3, 0)
 	gas.Parent = flash
 
@@ -141,7 +141,7 @@ function PoisonVFX.SpawnImpact(part: BasePart, life: number)
 		NumberSequenceKeypoint.new(0, 0.2),
 		NumberSequenceKeypoint.new(1, 0.8)
 	})
-	droplets.VelocitySpread = 90
+	droplets.SpreadAngle = Vector2.new(90, 90)
 	droplets.Acceleration = Vector3.new(0, -15, 0)
 	droplets.Drag = 5
 	droplets.Parent = flash
@@ -233,7 +233,7 @@ function PoisonVFX.AttachEffect(zombieModel: Model, dur: number)
 		NumberSequenceKeypoint.new(0.5, 0.5),
 		NumberSequenceKeypoint.new(1, 1)
 	})
-	gas.VelocitySpread = 360
+	gas.SpreadAngle = Vector2.new(360, 360)
 	gas.Acceleration = Vector3.new(0, 2.5, 0)
 	gas.Parent = poisonContainer
 
@@ -258,7 +258,7 @@ function PoisonVFX.AttachEffect(zombieModel: Model, dur: number)
 		NumberSequenceKeypoint.new(0.7, 0.4),
 		NumberSequenceKeypoint.new(1, 1)
 	})
-	bubbles.VelocitySpread = 180
+	bubbles.SpreadAngle = Vector2.new(180, 180)
 	bubbles.Rotation = NumberRange.new(-180, 180)
 	bubbles.Parent = poisonContainer
 
@@ -284,7 +284,7 @@ function PoisonVFX.AttachEffect(zombieModel: Model, dur: number)
 		NumberSequenceKeypoint.new(0, 0.2),
 		NumberSequenceKeypoint.new(1, 0.8)
 	})
-	drips.VelocitySpread = 30
+	drips.SpreadAngle = Vector2.new(30, 30)
 	drips.Acceleration = Vector3.new(0, -20, 0)
 	drips.Drag = 3
 	drips.Parent = poisonContainer
