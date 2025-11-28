@@ -52,7 +52,7 @@ function IceVFX.SpawnImpact(part: BasePart, life: number)
 	)
 	shards.LightEmission = 0.8
 	shards.Transparency = NumberSequence.new(0.3)
-	shards.VelocitySpread = 360
+	shards.SpreadAngle = Vector2.new(360, 360)
 	shards.Rotation = NumberRange.new(-180, 180)
 	shards.Parent = iceSphere
 
@@ -73,7 +73,7 @@ function IceVFX.SpawnImpact(part: BasePart, life: number)
 	)
 	mist.LightEmission = 0.5
 	mist.Transparency = NumberSequence.new(0.5)
-	mist.VelocitySpread = 180
+	mist.SpreadAngle = Vector2.new(180, 180)
 	mist.Parent = iceSphere
 
 	-- Fade out animation
@@ -133,7 +133,7 @@ function IceVFX.AttachEffect(zombieModel: Model, dur: number)
 	)
 	frost.LightEmission = 0.6
 	frost.Transparency = NumberSequence.new(0.4)
-	frost.VelocitySpread = 180
+	frost.SpreadAngle = Vector2.new(180, 180)
 	frost.Parent = iceContainer
 
 	-- Floating ice crystals
@@ -153,7 +153,7 @@ function IceVFX.AttachEffect(zombieModel: Model, dur: number)
 	)
 	crystals.LightEmission = 0.7
 	crystals.Transparency = NumberSequence.new(0.2)
-	crystals.VelocitySpread = 90
+	crystals.SpreadAngle = Vector2.new(90, 90)
 	crystals.Rotation = NumberRange.new(-180, 180)
 	crystals.Parent = iceContainer
 
@@ -229,7 +229,7 @@ function IceVFX.SpawnBreak(part: BasePart, life: number)
 	)
 	particles.LightEmission = 0.9
 	particles.Transparency = NumberSequence.new(0.2)
-	particles.VelocitySpread = 360
+	particles.SpreadAngle = Vector2.new(360, 360)
 	particles.Rotation = NumberRange.new(-180, 180)
 	particles.Parent = shatter
 
