@@ -61,7 +61,7 @@ function DarkVFX.SpawnImpact(part: BasePart, life: number)
 	})
 	energy.LightEmission = 0.8
 	energy.Transparency = NumberSequence.new(0.4)
-	energy.VelocitySpread = 360
+	energy.SpreadAngle = Vector2.new(360, 360)
 	energy.Rotation = NumberRange.new(-180, 180)
 	energy.Parent = darkSphere
 
@@ -82,7 +82,7 @@ function DarkVFX.SpawnImpact(part: BasePart, life: number)
 	)
 	mist.LightEmission = 0.3
 	mist.Transparency = NumberSequence.new(0.6)
-	mist.VelocitySpread = 180
+	mist.SpreadAngle = Vector2.new(180, 180)
 	mist.Parent = darkSphere
 
 	-- Void tendrils effect
@@ -102,7 +102,7 @@ function DarkVFX.SpawnImpact(part: BasePart, life: number)
 	)
 	tendrils.LightEmission = 0.9
 	tendrils.Transparency = NumberSequence.new(0.3)
-	tendrils.VelocitySpread = 90
+	tendrils.SpreadAngle = Vector2.new(90, 90)
 	tendrils.Rotation = NumberRange.new(-180, 180)
 	tendrils.Parent = darkSphere
 
@@ -256,7 +256,7 @@ function DarkVFX.SpawnForPlayer(player: Player)
 	})
 	energyParticles.LightEmission = 0.7
 	energyParticles.Transparency = NumberSequence.new(0.5)
-	energyParticles.VelocitySpread = 360
+	energyParticles.SpreadAngle = Vector2.new(360, 360)
 	energyParticles.Parent = energyOrb
 
 	-- Floating dark orbs around player
