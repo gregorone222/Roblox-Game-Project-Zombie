@@ -132,7 +132,7 @@ function ZombieModule.SpawnZombie(spawnPoint, typeName, playerCount, difficulty,
 	isZombieTag.Parent = zombie
 
 	if zombie.PrimaryPart then
-		zombie:SetPrimaryPartCFrame(CFrame.new(spawnPoint.Position))
+		zombie:PivotTo(CFrame.new(spawnPoint.Position))
 		-- FIX: Force server ownership to prevent jittery movement caused by client network lag
 		zombie.PrimaryPart:SetNetworkOwner(nil)
 	end
