@@ -50,7 +50,7 @@ function WindVFX.SpawnImpact(part: BasePart, life: number)
 		NumberSequenceKeypoint.new(1, 1)
 	})
 	particles.LightEmission = 0.3
-	particles.VelocitySpread = 360
+	particles.SpreadAngle = Vector2.new(360, 360)
 	particles.Rotation = NumberRange.new(-180, 180)
 	particles.Texture = "rbxassetid://9864638822"
 	particles.Parent = gust
@@ -72,7 +72,7 @@ function WindVFX.SpawnImpact(part: BasePart, life: number)
 	)
 	dust.Transparency = NumberSequence.new(0.6)
 	dust.LightEmission = 0.2
-	dust.VelocitySpread = 180
+	dust.SpreadAngle = Vector2.new(180, 180)
 	dust.Acceleration = Vector3.new(0, 8, 0)
 	dust.Parent = gust
 
