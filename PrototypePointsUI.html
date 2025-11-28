@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roblox PointsUI - Modern Prototype</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Rajdhani:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* --- Global & Reset --- */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0f172a;
+            font-family: 'Rajdhani', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+        }
+
+        /* --- Game Background Simulator --- */
+        .game-bg {
+            position: absolute;
+            inset: 0;
+            background-image: url('https://placehold.co/1920x1080/1e293b/0f172a?text=Game+Environment');
+            background-size: cover;
+            background-position: center;
+            z-index: 0;
+            filter: brightness(0.4);
+        }
+
+        /* --- UI Container Positioning --- */
+        /* Default Desktop Position (Top Right) */
+        #ui-wrapper {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 10;
+            transition: all 0.3s ease;
+        }
+
+        /* Mobile Simulation Class */
+        #ui-wrapper.mobile-mode {
+            top: 60px; /* Below standard mobile controls */
+            right: 10px;
+            transform: scale(0.85); /* Slightly smaller on mobile */
+            transform-origin: top right;
+        }
+
+        /* --- The Points Card Component --- */
+        .points-card {
+            position: relative;
+            display: flex;
+            align-items: center;
+            background: rgba(20, 10, 10, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(220, 38, 38, 0.3);
+            border-radius: 0 12px 12px 24px; /* Asymmetric shape */
+            padding: 10px 25px 10px 15px;
+            box-shadow: 0 0 20px rgba(220, 38, 38, 0.1);
+            overflow: hidden;
+            min-width: 220px;
+            transition: transform 0.1s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* Decorative Left Border */
+        .points-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(to bottom, #ef4444, #7f1d1d);
+            box-shadow: 0 0 10px #ef4444;
+        }
+
+        /* Liquid Blood Background Effect */
+        .liquid-bg {
+            position: absolute;
+            bottom: -50%;
+            right: -20%;
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, rgba(220, 38, 38, 0.4) 0%, transparent 70%);
+            filter: blur(15px);
+            animation: liquid-pulse 4s infinite ease-in-out;
+            z-index: 0;
+        }
+
+        /* Icon Styling */
+        .icon-container {
+            position: relative;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle, #450a0a, #1a0505);
+            border-radius: 50%;
+            border: 2px solid rgba(239, 68, 68, 0.5);
+            margin-right: 15px;
+            z-index: 2;
+            box-shadow: 0 0 15px rgba(220, 38, 38, 0.3);
+        }
+
+        .icon-container i {
+            font-size: 1.4rem;
+            color: #fca5a5;
+            filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.8));
+            animation: heartbeat 1.5s infinite;
+        }
+
+        /* Text Content */
+        .text-content {
+            display: flex;
+            flex-direction: column;
+            z-index: 2;
+            align-items: flex-start; /* Left align text */
+        }
+
+        .label {
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            font-size: 0.75rem;
+            letter-spacing: 0.1em;
+            color: #9ca3af;
+            text-transform: uppercase;
+            margin-bottom: -2px;
+        }
+
+        .value {
+            font-family: 'Black Ops One', cursive; /* Military/Sci-fi font */
+            font-size: 2.2rem;
+            line-height: 1;
+            color: #fff;
+            text-shadow: 2px 2px 0px rgba(0,0,0,0.5);
+            background: linear-gradient(to bottom, #ffffff 40%, #f87171 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            transition: all 0.1s;
+        }
+
+        /* --- Animations & VFX --- */
+        @keyframes liquid-pulse {
+            0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.3; }
+            50% { transform: scale(1.2) translate(-10px, -5px); opacity: 0.6; }
+        }
+
+        @keyframes heartbeat {
+            0% { transform: scale(1); }
+            15% { transform: scale(1.15); }
+            30% { transform: scale(1); }
+            45% { transform: scale(1.15); }
+            60% { transform: scale(1); }
+        }
+
+        /* Sparkle Particle (JS generated) */
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #fcd34d; /* Gold sparks */
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10;
+            animation: particle-fly 0.8s forwards ease-out;
+        }
+
+        @keyframes particle-fly {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+        }
+
+        /* Shake Animation Class */
+        .shake-anim {
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        /* Value Pulse Class */
+        .value-pulse {
+            transform: scale(1.2);
+            -webkit-text-fill-color: #fca5a5 !important; /* Flash bright red */
+            filter: drop-shadow(0 0 10px #ef4444);
+        }
+
+        /* --- Controls Panel (For Prototype Testing) --- */
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.9);
+            padding: 15px 25px;
+            border-radius: 50px;
+            border: 1px solid #334155;
+            display: flex;
+            gap: 15px;
+            z-index: 100;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            align-items: center;
+        }
+
+        button {
+            cursor: pointer;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            transition: all 0.2s;
+        }
+        
+        .btn-add {
+            background: #22c55e; color: #022c22;
+            padding: 8px 16px; border-radius: 8px; border: none;
+        }
+        .btn-add:hover { background: #4ade80; transform: translateY(-2px); }
+
+        .btn-sub {
+            background: #ef4444; color: #450a0a;
+            padding: 8px 16px; border-radius: 8px; border: none;
+        }
+        .btn-sub:hover { background: #f87171; transform: translateY(-2px); }
+
+        .toggle-mode {
+            background: #334155; color: white;
+            padding: 8px 16px; border-radius: 20px; border: 1px solid #475569;
+            font-size: 0.8rem;
+        }
+        .toggle-mode.active { background: #3b82f6; border-color: #60a5fa; }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-bg"></div>
+
+    <!-- UI WRAPPER -->
+    <div id="ui-wrapper">
+        <div class="points-card" id="card">
+            <div class="liquid-bg"></div>
+            
+            <!-- Icon -->
+            <div class="icon-container">
+                <i class="fa-solid fa-droplet"></i>
+            </div>
+
+            <!-- Text -->
+            <div class="text-content">
+                <div class="label">BLOOD POINTS</div>
+                <div class="value" id="points-value">0</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DEBUG CONTROLS -->
+    <div class="controls">
+        <div class="text-slate-400 text-sm font-bold mr-2">DEBUG:</div>
+        <button class="btn-add" onclick="addPoints(100)">+100 BP</button>
+        <button class="btn-add" onclick="addPoints(1500)">+1.5K BP</button>
+        <button class="btn-sub" onclick="addPoints(-500)">-500 BP</button>
+        <div class="w-px h-6 bg-slate-600 mx-2"></div>
+        <button class="toggle-mode" id="modeBtn" onclick="toggleMode()">Mode: Desktop</button>
+    </div>
+
+    <script>
+        // --- Logic Simulasi (Mirip PointsUI.lua) ---
+
+        let currentPoints = 0;
+        let targetPoints = 0;
+        const pointsEl = document.getElementById('points-value');
+        const cardEl = document.getElementById('card');
+        const wrapperEl = document.getElementById('ui-wrapper');
+        const modeBtn = document.getElementById('modeBtn');
+
+        // Fungsi Format Angka (Sama seperti formatNumber di skrip Lua Anda)
+        function formatNumber(num) {
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+            return num.toLocaleString(); // Format koma standar untuk angka kecil
+        }
+
+        // Fungsi Update Visual (Lerp / Counting Effect)
+        function updateDisplay() {
+            // Simple Linear Interpolation for smooth counting
+            const diff = targetPoints - currentPoints;
+            
+            if (Math.abs(diff) < 1) {
+                currentPoints = targetPoints;
+            } else {
+                currentPoints += diff * 0.1; // Speed factor
+            }
+
+            // Tampilkan angka bulat, atau format K/M jika besar
+            if (Math.round(currentPoints) < 1000) {
+                pointsEl.innerText = Math.round(currentPoints);
+            } else {
+                pointsEl.innerText = formatNumber(Math.round(currentPoints));
+            }
+
+            if (currentPoints !== targetPoints) {
+                requestAnimationFrame(updateDisplay);
+            } else {
+                // Reset effects when done
+                pointsEl.classList.remove('value-pulse');
+            }
+        }
+
+        // Fungsi Utama: Tambah Poin
+        function addPoints(amount) {
+            const oldPoints = targetPoints;
+            targetPoints += amount;
+            if (targetPoints < 0) targetPoints = 0;
+
+            // 1. Trigger Counting
+            requestAnimationFrame(updateDisplay);
+
+            // 2. Visual Feedback (Shake & Pulse)
+            if (amount !== 0) {
+                // Reset animation
+                cardEl.classList.remove('shake-anim');
+                void cardEl.offsetWidth; // Trigger reflow
+                
+                // Apply flash text
+                pointsEl.classList.add('value-pulse');
+
+                if (amount > 0) {
+                    // Efek positif (sedikit bounce, gold particles)
+                    cardEl.style.transform = "scale(1.05)";
+                    spawnParticles(10); // Spawn 10 particles
+                } else {
+                    // Efek negatif (shake merah)
+                    cardEl.classList.add('shake-anim');
+                }
+
+                // Reset scale
+                setTimeout(() => {
+                    cardEl.style.transform = "scale(1)";
+                }, 150);
+            }
+        }
+
+        // VFX: Particle System (Simulasi ParticleEmitter Roblox)
+        function spawnParticles(count) {
+            const rect = cardEl.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            for (let i = 0; i < count; i++) {
+                const p = document.createElement('div');
+                p.classList.add('particle');
+                
+                // Random arah sebaran
+                const angle = Math.random() * Math.PI * 2;
+                const velocity = 50 + Math.random() * 100; // Jarak terbang
+                const tx = Math.cos(angle) * velocity + 'px';
+                const ty = Math.sin(angle) * velocity + 'px';
+
+                p.style.setProperty('--tx', tx);
+                p.style.setProperty('--ty', ty);
+                
+                // Posisi awal di tengah card
+                p.style.left = centerX + 'px';
+                p.style.top = centerY + 'px';
+
+                // Warna acak (Emas atau Merah Darah)
+                p.style.background = Math.random() > 0.5 ? '#fcd34d' : '#ef4444';
+
+                document.body.appendChild(p);
+
+                // Hapus elemen setelah animasi
+                setTimeout(() => p.remove(), 800);
+            }
+        }
+
+        // Helper: Toggle Mobile/Desktop
+        let isMobile = false;
+        function toggleMode() {
+            isMobile = !isMobile;
+            if (isMobile) {
+                wrapperEl.classList.add('mobile-mode');
+                modeBtn.classList.add('active');
+                modeBtn.innerText = "Mode: Mobile";
+            } else {
+                wrapperEl.classList.remove('mobile-mode');
+                modeBtn.classList.remove('active');
+                modeBtn.innerText = "Mode: Desktop";
+            }
+        }
+
+        // Init Value
+        addPoints(0);
+
+    </script>
+</body>
+</html>
