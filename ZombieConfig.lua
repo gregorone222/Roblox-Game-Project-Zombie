@@ -21,7 +21,8 @@ ZombieConfig.Types = {
 		AttackDamage = 6,
 		AttackCooldown = 1.0,
 		Chance = 0.30,
-		AttackRange = 4  -- Ditambahkan
+		AttackRange = 4, -- Ditambahkan
+		MinWave = 3 -- Ditambahkan: mulai muncul di wave 3
 	},
 	Shooter = {
 		MaxHealth = 120,
@@ -36,7 +37,8 @@ ZombieConfig.Types = {
 			DoT_DamagePerTick = 5
 		},
 		Chance = 0.25,
-		AttackRange = 4  -- Ditambahkan
+		AttackRange = 4, -- Ditambahkan
+		MinWave = 6 -- Ditambahkan: mulai muncul di wave 6
 	},
 	Tank = {
 		MaxHealth = 10000,
@@ -44,7 +46,8 @@ ZombieConfig.Types = {
 		AttackDamage = 25,
 		AttackCooldown = 2.5,
 		Chance = 0.10,
-		AttackRange = 5  -- Ditambahkan
+		AttackRange = 5, -- Ditambahkan
+		MinWave = 9 -- Ditambahkan: mulai muncul di wave 9
 	},
 	Boss = {
 		Name = "Plague Titan",
@@ -111,8 +114,8 @@ ZombieConfig.Types = {
 			SecondaryChainRadius = 15, -- Radius pantulan dari target pertama
 		},
 
-		ChanceWaveMin = 1,
-		ChanceWaveMax = 1,
+		ChanceWaveMin = 10,
+		ChanceWaveMax = 15,
 		ChanceToSpawn = 1
 	},
 	Boss2 = {
