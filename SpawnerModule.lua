@@ -80,6 +80,26 @@ function SpawnerModule.SpawnWave(amount, wave, playerCount, gameMode, difficulty
 	local zombiesSpawnedInBatch = 0
 	local batchSize = math.floor(1 + (wave * 0.5)) -- Increase batch size with wave to prevent long spawn times
 
+	-- --- DYNAMIC WEIGHTED SPAWN LIST ---
+	-- Membuat daftar tipe zombie yang valid untuk wave ini berdasarkan MinWave
+	local validTypes = {}
+	local totalWeight = 0
+
+	if not isBossWave and not waveModifiers.isSpecial then
+		for typeName, config in pairs(ZombieConfig.Types) do
+			if not string.find(typeName, "Boss") then -- Skip bosses for normal spawn logic
+				if wave >= (config.MinWave or 0) then
+					table.insert(validTypes, {Type = typeName, Chance = config.Chance or 0})
+					totalWeight += (config.Chance or 0)
+				end
+			end
+		end
+
+		-- Pastikan ada setidaknya satu tipe (Base Zombie fallback tidak ada di list explicit types)
+		-- Jika totalWeight 0, berarti mungkin hanya Base yang bisa spawn? 
+		-- Tapi di sini kita asumsikan 'Runner', 'Shooter', 'Tank' adalah special, dan 'Zombie' (Base) adalah default
+	end
+
 	for i = 1, amount do
 		local spawnPoints = spawners:GetChildren()
 		local randomSpawn = spawnPoints[math.random(1, #spawnPoints)]
@@ -94,13 +114,31 @@ function SpawnerModule.SpawnWave(amount, wave, playerCount, gameMode, difficulty
 				chosenType = allowedTypes[math.random(1, #allowedTypes)]
 			end
 		else
-			if wave and wave >= 3 and math.random() < (ZombieConfig.Types.Runner.Chance or 0.30) then
-				chosenType = "Runner"
-			elseif wave and wave >= 6 and math.random() < (ZombieConfig.Types.Shooter.Chance or 0.25) then
-				chosenType = "Shooter"
-			elseif wave and wave >= 9 and math.random() < (ZombieConfig.Types.Tank.Chance or 0.10) then
-				chosenType = "Tank"
+			-- --- UPDATED SPAWN LOGIC USING CONFIG ---
+			-- Logic: Roll dadu 0..1. Jika < Chance tipe tertentu (dinormalisasi), spawn tipe itu.
+			-- Namun logika asli sebelumnya adalah: Cek Tank, Cek Shooter, Cek Runner secara berurutan.
+			-- Agar konsisten dengan config yang baru, kita bisa iterasi validTypes.
+
+			-- Metode sebelumnya:
+			-- if wave >= 9 and random < TankChance then Tank
+			-- elseif wave >= 6 and random < ShooterChance then Shooter
+			-- elseif wave >= 3 and random < RunnerChance then Runner
+			-- else Base
+
+			-- Kita bisa meniru prioritas ini dengan mengurutkan validTypes berdasarkan MinWave descending (Tank -> Shooter -> Runner)
+			table.sort(validTypes, function(a, b) 
+				local wa = ZombieConfig.Types[a.Type].MinWave or 0
+				local wb = ZombieConfig.Types[b.Type].MinWave or 0
+				return wa > wb 
+			end)
+
+			for _, entry in ipairs(validTypes) do
+				if math.random() < entry.Chance then
+					chosenType = entry.Type
+					break -- Priority spawn found
+				end
 			end
+			-- Jika loop selesai dan chosenType masih nil, maka akan spawn Base Zombie (default behavior di ZombieModule jika type nil)
 		end
 
 		local zombie = ZombieModule.SpawnZombie(randomSpawn, chosenType, playerCount, difficulty, waveModifiers)
