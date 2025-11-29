@@ -19,6 +19,7 @@ local ModuleScriptReplicatedStorage = ReplicatedStorage:WaitForChild("ModuleScri
 
 -- Require WeaponModule for stats
 local WeaponModule = require(ModuleScriptReplicatedStorage:WaitForChild("WeaponModule"))
+local ProximityUIHandler = require(ModuleScriptReplicatedStorage:WaitForChild("ProximityUIHandler"))
 
 local openReplaceUI = RemoteEvents:WaitForChild("OpenReplaceUI")
 local replaceChoiceEv = RemoteEvents:WaitForChild("ReplaceChoice")
@@ -26,7 +27,6 @@ local replaceChoiceEv = RemoteEvents:WaitForChild("ReplaceChoice")
 local purchaseRF = RemoteFunctions:WaitForChild("PurchaseRandomWeapon")
 local getCostRF = RemoteFunctions:WaitForChild("GetRandomWeaponCost")
 
-local randomPart = workspace:WaitForChild("Random", 5)
 local isUIOpen = false
 
 -- Modern UI Elements
@@ -780,8 +780,6 @@ openReplaceUI.OnClientEvent:Connect(function(currentNames, newName, cost, hasDis
 	showReplaceUI(currentNames, newName, cost, hasDiscount)
 end)
 
-local randomPrompt = workspace.Random:WaitForChild("Attachment"):WaitForChild("RandomPrompt")
-
 local function purchaseRandomWeapon()
 	if isUIOpen then return end
 	local ok, result = pcall(function() return purchaseRF:InvokeServer() end)
@@ -803,24 +801,44 @@ local function purchaseRandomWeapon()
 	end
 end
 
-ProximityPromptService.PromptTriggered:Connect(function(prompt, plr)
-	if prompt ~= randomPrompt or plr ~= player then return end
-	purchaseRandomWeapon()
-end)
+-- Register Proximity Interaction via Module
+local randomPart = workspace:WaitForChild("Random", 5)
+local promptHandler = nil
 
--- Cost Updater
-task.spawn(function()
-	while task.wait(1) do
-		local success, cost = pcall(function()
-			return getCostRF:InvokeServer()
-		end)
-		if success and cost then
-			randomPrompt.ObjectText = "Beli Senjata Acak (Harga: " .. cost .. ")"
-		else
-			randomPrompt.ObjectText = "Beli Senjata Acak"
+if randomPart then
+	promptHandler = ProximityUIHandler.Register({
+		name = "RandomWeaponShop",
+		partName = "Random",
+		parent = workspace,
+		searchRecursive = true,
+		onToggle = function(isOpen)
+			purchaseRandomWeapon()
+			-- Reset the handler state because this isn't a persistent UI toggle
+			-- The function executes an action and finishes.
+			if promptHandler then promptHandler:SetOpen(false) end
 		end
-	end
-end)
+	})
+
+	-- Cost Updater
+	task.spawn(function()
+		local attachment = randomPart:WaitForChild("Attachment", 10)
+		if attachment then
+			local prompt = attachment:WaitForChild("RandomPrompt", 10)
+			if not prompt then return end
+
+			while task.wait(1) do
+				local success, cost = pcall(function()
+					return getCostRF:InvokeServer()
+				end)
+				if success and cost then
+					prompt.ObjectText = "Beli Senjata Acak (Harga: " .. cost .. ")"
+				else
+					prompt.ObjectText = "Beli Senjata Acak"
+				end
+			end
+		end
+	end)
+end
 
 -- Close on distance
 RunService.RenderStepped:Connect(function()
