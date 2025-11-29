@@ -13,6 +13,16 @@ local ElementVFX = ReplicatedStorage.ElementVFX
 
 local AudioManager      = require(ModuleScriptReplicatedStorage:WaitForChild("AudioManager"))
 
+--// VFX Module
+local LightVFXModule = require(ElementVFX.LightVFXModule)
+local EarthVFXModule = require(ElementVFX.EarthVFXModule)
+local FireVFXModule = require(ElementVFX.FireVFXModule)
+local ShockVFXModule = require(ElementVFX.ShockVFXModule)
+local PoisonVFXModule = require(ElementVFX.PoisonVFXModule)
+local IceVFXModule = require(ElementVFX.IceVFXModule)
+local WindVFXModule = require(ElementVFX.WindVFXModule)
+local DarkVFXModule = require(ElementVFX.DarkVFXModule)
+
 local ElementActivated     = RemoteEvents:WaitForChild("ElementActivated")
 local ElementDeactivated   = RemoteEvents:WaitForChild("ElementDeactivated")
 local ActivateElementEvent = RemoteEvents:WaitForChild("ActivateElementEvent")
@@ -138,20 +148,11 @@ function ElementModule.ApplyDamageReduction(player, damage)
 	local activeElement = ElementModule.GetActiveElement(player)
 	if activeElement == "Earth" then
 		local cfg = ElementsConfig.Earth
+		EarthVFXModule.SpawnDefenseEffect(player)
 		return damage * (1 - cfg.DamageReduction)
 	end
 	return damage
 end
-
---// VFX Module
-local LightVFXModule = require(ElementVFX.LightVFXModule)
-local EarthVFXModule = require(ElementVFX.EarthVFXModule)
-local FireVFXModule = require(ElementVFX.FireVFXModule)
-local ShockVFXModule = require(ElementVFX.ShockVFXModule)
-local PoisonVFXModule = require(ElementVFX.PoisonVFXModule)
-local IceVFXModule = require(ElementVFX.IceVFXModule)
-local WindVFXModule = require(ElementVFX.WindVFXModule)
-local DarkVFXModule = require(ElementVFX.DarkVFXModule)
 
 --// Helper functions
 function ElementModule.GetMainPart(model: Model)
@@ -179,8 +180,9 @@ function ElementModule.ActivateElement(player, elementName)
 	local p = active[player]
 
 	-- extend or set
-	if p.elements[elementName] and p.elements[elementName] > tick() then
-		p.elements[elementName] = math.max(p.elements[elementName], expires)
+	local currentExpiry = p.elements[elementName]
+	if currentExpiry and currentExpiry > tick() then
+		p.elements[elementName] = math.max(tonumber(currentExpiry) or 0, expires)
 	else
 		p.elements[elementName] = expires
 	end
@@ -231,7 +233,8 @@ function ElementModule.ActivateElement(player, elementName)
 				pcall(function() ElementDeactivated:FireClient(player, elementName) end)
 				break
 			end
-			task.wait(math.min(1, rem))
+			-- FIX: ensure rem is treated as number, even though logic guarantees not nil here
+			task.wait(math.min(1, tonumber(rem) or 1))
 		end
 	end)
 
@@ -264,6 +267,9 @@ end
 
 --// ===== Weapon hit hooks =====
 function ElementModule.OnPlayerHit(player, hitModel, baseDamage)
+	-- FIX: Default baseDamage to avoid type errors
+	baseDamage = tonumber(baseDamage) or 0
+
 	local name = ElementModule.GetActiveElement(player)
 	if not name then return baseDamage end
 	local cfg = ElementsConfig[name]
@@ -395,10 +401,17 @@ ElementModule._applyBurnToZombie = function(zombieModel, damagePerTick, ticks, i
 	local tag = zombieModel:FindFirstChild("Element_Burn")
 	local expireTag = zombieModel:FindFirstChild("Element_Burn_Expire")
 	if not tag then tag = Instance.new("BoolValue"); tag.Name = "Element_Burn"; tag.Parent = zombieModel end
+
+	-- FIX: ensure arguments are numbers
+	local ticksVal = tonumber(ticks) or 1
+	local intervalVal = tonumber(interval) or 1
+
 	if not expireTag then
-		expireTag = Instance.new("NumberValue"); expireTag.Name = "Element_Burn_Expire"; expireTag.Value = tick() + ticks * interval; expireTag.Parent = zombieModel
+		expireTag = Instance.new("NumberValue"); expireTag.Name = "Element_Burn_Expire"; expireTag.Value = tick() + ticksVal * intervalVal; expireTag.Parent = zombieModel
 	else
-		expireTag.Value = math.max(expireTag.Value, tick() + ticks * interval)
+		-- FIX: Ensure expireTag.Value is treated as number
+		local currentExpire = tonumber(expireTag.Value) or tick()
+		expireTag.Value = math.max(currentExpire, tick() + ticksVal * intervalVal)
 	end
 	if zombieModel:FindFirstChild("Element_Burn_Coroutine") then return end
 	local marker = Instance.new("BoolValue"); marker.Name = "Element_Burn_Coroutine"; marker.Parent = zombieModel
