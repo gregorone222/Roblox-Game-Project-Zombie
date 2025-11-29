@@ -7,10 +7,16 @@ local EarthVFX = {}
 local Debris = game:GetService("Debris")
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local ModuleScriptReplicatedStorage = ReplicatedStorage.ModuleScript
-
 local AudioManager = require(ModuleScriptReplicatedStorage:WaitForChild("AudioManager"))
+
+-- Constants for VFX visuals
+local EARTH_COLOR_PRIMARY = Color3.fromRGB(80, 60, 50) -- Dark brown
+local EARTH_COLOR_SECONDARY = Color3.fromRGB(110, 90, 80) -- Lighter earthy tone
+local EARTH_MATERIAL = Enum.Material.Slate
+local NEON_MATERIAL = Enum.Material.Neon
 
 local function _ensureEarthFolder(char)
 	local f = char:FindFirstChild("EarthVFX")
@@ -22,266 +28,183 @@ local function _ensureEarthFolder(char)
 	return f
 end
 
+-- Helper to create a "jagged" rock part
+local function createRockPart(size, color, material)
+	local part = Instance.new("Part")
+	part.Size = size
+	part.Color = color or EARTH_COLOR_PRIMARY
+	part.Material = material or EARTH_MATERIAL
+	part.CanCollide = false
+	part.Massless = true
+	part.Anchored = true
+	part.CastShadow = false
+	return part
+end
+
 function EarthVFX.SpawnForPlayer(player)
 	local char = player.Character
 	if not char then return end
-	local hrp = char:FindFirstChild("HumanoidRootPart") or char.PrimaryPart
+	local hrp = char:FindFirstChild("HumanoidRootPart")
 	if not hrp then return end
 
-	-- Clear previous earth VFX
+	-- Cleanup old VFX
 	local old = char:FindFirstChild("EarthVFX")
 	if old then old:Destroy() end
+
 	local folder = _ensureEarthFolder(char)
 
-	-- Earth aura effect (rotating rock particles)
-	local earthAura = Instance.new("Part")
-	earthAura.Name = "EarthAura"
-	earthAura.Shape = Enum.PartType.Ball
-	earthAura.Size = Vector3.new(10, 10, 10)
-	earthAura.Material = Enum.Material.Granite
-	earthAura.Color = Color3.fromRGB(101, 67, 33)  -- Brown earth tone
-	earthAura.Transparency = 0.9
-	earthAura.CanCollide = false
-	earthAura.Massless = true
-	earthAura.Anchored = false
-	earthAura.CFrame = hrp.CFrame
-	earthAura.Parent = folder
+	-- 1. Ground Ring (The foundation)
+	local groundRing = Instance.new("Part")
+	groundRing.Name = "GroundRing"
+	groundRing.Shape = Enum.PartType.Cylinder
+	groundRing.Color = EARTH_COLOR_PRIMARY
+	groundRing.Material = EARTH_MATERIAL
+	groundRing.Transparency = 0.8
+	groundRing.Size = Vector3.new(0.5, 8, 8) -- Height is X for Cylinder
+	groundRing.CFrame = hrp.CFrame * CFrame.Angles(0, 0, math.pi/2)
+	groundRing.Anchored = true
+	groundRing.CanCollide = false
+	groundRing.Parent = folder
 
-	-- Weld to HRP
-	local weld = Instance.new("WeldConstraint")
-	weld.Part0 = hrp
-	weld.Part1 = earthAura
-	weld.Parent = earthAura
+	-- 2. Floating Rocks (Orbiting Shield)
+	local numRocks = 4
+	local rocks = {}
 
-	-- Earth particles (floating rocks and debris)
-	local earthParticles = Instance.new("ParticleEmitter")
-	earthParticles.Name = "EarthParticles"
-	earthParticles.Rate = 50
-	earthParticles.Lifetime = NumberRange.new(1.5, 2.0)
-	earthParticles.Speed = NumberRange.new(2, 4)
-	earthParticles.Size = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0.8),
-		NumberSequenceKeypoint.new(0.5, 1.2),
-		NumberSequenceKeypoint.new(1, 0)
-	})
-	earthParticles.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(121, 85, 72)),
-		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(93, 64, 55)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(62, 39, 35))
-	})
-	earthParticles.LightEmission = 0.4
-	earthParticles.Transparency = NumberSequence.new(0.5)
-	earthParticles.SpreadAngle = Vector2.new(360, 360)
-	earthParticles.Rotation = NumberRange.new(-180, 180)
-	earthParticles.Parent = earthAura
-
-	-- Create orbiting rocks around player
-	for i = 1, 8 do
-		local rock = Instance.new("Part")
-		rock.Name = "EarthRock" .. i
-		rock.Shape = Enum.PartType.Block
-		rock.Size = Vector3.new(1.2, 1.2, 1.2)
-		rock.Material = Enum.Material.Slate
-		rock.Color = Color3.fromRGB(93, 64, 55)
-		rock.Transparency = 0.2
-		rock.CanCollide = false
-		rock.Massless = true
-		rock.Anchored = false
+	for i = 1, numRocks do
+		local rock = createRockPart(Vector3.new(1.5, 2, 1.5), EARTH_COLOR_SECONDARY, EARTH_MATERIAL)
+		rock.Name = "OrbitRock_" .. i
 		rock.Parent = folder
-
-		-- Rock particles
-		local rockParticles = Instance.new("ParticleEmitter")
-		rockParticles.Name = "RockParticles"
-		rockParticles.Rate = 15
-		rockParticles.Lifetime = NumberRange.new(0.5, 1.0)
-		rockParticles.Speed = NumberRange.new(0.5, 1)
-		rockParticles.Size = NumberSequence.new({
-			NumberSequenceKeypoint.new(0, 0.4),
-			NumberSequenceKeypoint.new(0.5, 0.6),
-			NumberSequenceKeypoint.new(1, 0)
-		})
-		rockParticles.Color = ColorSequence.new(
-			Color3.fromRGB(121, 85, 72),
-			Color3.fromRGB(93, 64, 55)
-		)
-		rockParticles.LightEmission = 0.3
-		rockParticles.Transparency = NumberSequence.new(0.4)
-		rockParticles.Parent = rock
-
-		-- Rock orbit animation
-		task.spawn(function()
-			local angle = (i - 1) * math.pi / 4
-			local radius = 6
-			local height = 3
-
-			while rock and rock.Parent do
-				angle = angle + 0.01
-				local x = math.cos(angle) * radius
-				local z = math.sin(angle) * radius
-				local y = math.sin(angle * 2) * height / 2 + height / 2
-
-				rock.CFrame = hrp.CFrame * CFrame.new(x, y, z) * CFrame.Angles(math.random() * math.pi, math.random() * math.pi, math.random() * math.pi)
-				task.wait()
-			end
-		end)
+		table.insert(rocks, {part = rock, angle = (i/numRocks) * math.pi * 2, speed = 0.5 + (math.random() * 0.5), yOffset = math.random(-1, 1) * 0.5})
 	end
 
-	-- Ground crack effect at player's feet
-	local groundCrack = Instance.new("Part")
-	groundCrack.Name = "GroundCrack"
-	groundCrack.Size = Vector3.new(8, 0.3, 8)
-	groundCrack.Material = Enum.Material.Cobblestone
-	groundCrack.Color = Color3.fromRGB(62, 39, 35)
-	groundCrack.Transparency = 1
-	groundCrack.CanCollide = false
-	groundCrack.Anchored = true
-	groundCrack.CFrame = hrp.CFrame * CFrame.new(0, -3.5, 0)
-	groundCrack.Parent = folder
-
-	-- Ground particles
-	local groundParticles = Instance.new("ParticleEmitter")
-	groundParticles.Name = "GroundParticles"
-	groundParticles.Rate = 20
-	groundParticles.Lifetime = NumberRange.new(1.0, 1.5)
-	groundParticles.Speed = NumberRange.new(1, 3)
-	groundParticles.Size = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0.6),
-		NumberSequenceKeypoint.new(0.7, 1.0),
-		NumberSequenceKeypoint.new(1, 0)
+	-- 3. Dust/Debris Particles (Attached to HRP)
+	local dustEmitter = Instance.new("ParticleEmitter")
+	dustEmitter.Name = "EarthDust"
+	dustEmitter.Texture = "" -- Default texture
+	dustEmitter.Color = ColorSequence.new(EARTH_COLOR_SECONDARY)
+	dustEmitter.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.5),
+		NumberSequenceKeypoint.new(1, 2)
 	})
-	groundParticles.Color = ColorSequence.new(
-		Color3.fromRGB(93, 64, 55),
-		Color3.fromRGB(62, 39, 35)
-	)
-	groundParticles.LightEmission = 0.3
-	groundParticles.Transparency = NumberSequence.new(0.6)
-	groundParticles.SpreadAngle = Vector2.new(90, 90)
-	groundParticles.Parent = groundCrack
+	dustEmitter.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.5),
+		NumberSequenceKeypoint.new(1, 1)
+	})
+	dustEmitter.Lifetime = NumberRange.new(1, 2)
+	dustEmitter.Rate = 10
+	dustEmitter.Speed = NumberRange.new(2, 4)
+	dustEmitter.SpreadAngle = Vector2.new(180, 0) -- Flat horizontal spread
+	dustEmitter.Drag = 1
+	dustEmitter.Parent = groundRing
 
-	-- Earth light source
-	local earthLight = Instance.new("PointLight")
-	earthLight.Name = "EarthLight"
-	earthLight.Brightness = 4
-	earthLight.Range = 12
-	earthLight.Color = Color3.fromRGB(101, 67, 33)
-	earthLight.Parent = earthAura
+	-- Animate the aura
+	local connection
+	connection = RunService.Heartbeat:Connect(function(dt)
+		if not char.Parent or not folder.Parent then
+			connection:Disconnect()
+			return
+		end
+
+		-- Keep ring at feet
+		groundRing.CFrame = hrp.CFrame * CFrame.new(0, -2.5, 0) * CFrame.Angles(0, 0, math.pi/2)
+
+		-- Orbit rocks
+		for _, rockData in ipairs(rocks) do
+			rockData.angle = rockData.angle + (dt * rockData.speed)
+			local radius = 5
+			local x = math.cos(rockData.angle) * radius
+			local z = math.sin(rockData.angle) * radius
+			local bob = math.sin(os.clock() * 2 + rockData.angle) * 0.5 -- Vertical bobbing
+
+			rockData.part.CFrame = hrp.CFrame * CFrame.new(x, bob + rockData.yOffset, z) 
+				* CFrame.Angles(os.clock(), os.clock() * 0.5, 0) -- Tumble rotation
+		end
+	end)
+
+	-- Store connection in folder to clean up later if needed (optional, but good practice)
+	-- For simplicity here, we rely on parent check inside Heartbeat.
 end
 
 function EarthVFX.RemoveForPlayer(player)
 	local char = player.Character
 	if not char then return end
-	local earthFolder = char:FindFirstChild("EarthVFX")
-	if earthFolder then earthFolder:Destroy() end
+	local f = char:FindFirstChild("EarthVFX")
+	if f then f:Destroy() end
 end
 
 function EarthVFX.SpawnImpact(part, life)
-	if not part then return end
+	-- No hit effect for Earth element as it is purely defensive/aura based.
+end
 
-	-- Main earth impact effect
-	local earthImpact = Instance.new("Part")
-	earthImpact.Name = "EarthImpact"
-	earthImpact.Shape = Enum.PartType.Ball
-	earthImpact.Size = Vector3.new(4, 4, 4)
-	earthImpact.Material = Enum.Material.Slate
-	earthImpact.Color = Color3.fromRGB(101, 67, 33)
-	earthImpact.Transparency = 0.7
-	earthImpact.CanCollide = false
-	earthImpact.Anchored = true
-	earthImpact.CFrame = part.CFrame
-	earthImpact.Parent = workspace
+function EarthVFX.SpawnDefenseEffect(player)
+	local char = player.Character
+	if not char then return end
+	local hrp = char:FindFirstChild("HumanoidRootPart")
+	if not hrp then return end
 
-	-- Earth light source
-	local light = Instance.new("PointLight")
-	light.Color = Color3.fromRGB(101, 67, 33)
-	light.Brightness = 6
-	light.Range = 12
-	light.Parent = earthImpact
+	-- 1. Create a transient rock shield sphere
+	local shield = Instance.new("Part")
+	shield.Name = "EarthDefenseShield"
+	shield.Shape = Enum.PartType.Ball
+	shield.Size = Vector3.new(6, 6, 6)
+	shield.Color = EARTH_COLOR_SECONDARY
+	shield.Material = Enum.Material.ForceField -- Use ForceField to show "energy" + "rock" color
+	shield.Transparency = 0 -- Start visible
+	shield.Anchored = true
+	shield.CanCollide = false
+	shield.CFrame = hrp.CFrame
+	shield.Parent = workspace
 
-	-- Rock debris particles
-	local rocks = Instance.new("ParticleEmitter")
-	rocks.Name = "EarthRocks"
-	rocks.Rate = 60
-	rocks.Lifetime = NumberRange.new(0.8, 1.2)
-	rocks.Speed = NumberRange.new(10, 15)
-	rocks.Size = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0.8),
-		NumberSequenceKeypoint.new(0.4, 1.2),
-		NumberSequenceKeypoint.new(1, 0)
-	})
-	rocks.Color = ColorSequence.new({
-		NumberSequenceKeypoint.new(0, Color3.fromRGB(121, 85, 72)),
-		NumberSequenceKeypoint.new(0.5, Color3.fromRGB(93, 64, 55)),
-		NumberSequenceKeypoint.new(1, Color3.fromRGB(62, 39, 35))
-	})
-	rocks.LightEmission = 0.5
-	rocks.Transparency = NumberSequence.new(0.4)
-	rocks.SpreadAngle = Vector2.new(360, 360)
-	rocks.Rotation = NumberRange.new(-180, 180)
-	rocks.Parent = earthImpact
-
-	-- Dust cloud particles
-	local dust = Instance.new("ParticleEmitter")
-	dust.Name = "EarthDust"
-	dust.Rate = 50
-	dust.Lifetime = NumberRange.new(1.0, 1.6)
-	dust.Speed = NumberRange.new(4, 8)
-	dust.Size = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 2.0),
-		NumberSequenceKeypoint.new(0.6, 3.0),
-		NumberSequenceKeypoint.new(1, 0)
-	})
-	dust.Color = ColorSequence.new(
-		Color3.fromRGB(140, 120, 100),
-		Color3.fromRGB(100, 80, 60)
-	)
-	dust.LightEmission = 0.4
-	dust.Transparency = NumberSequence.new(0.7)
-	dust.SpreadAngle = Vector2.new(180, 180)
-	dust.Parent = earthImpact
-
-	-- Stone spikes effect
-	for i = 1, 6 do
-		local spike = Instance.new("Part")
-		spike.Name = "EarthSpike"
-		spike.Shape = Enum.PartType.Block
-		spike.Size = Vector3.new(0.8, 2.5, 0.8)
-		spike.Material = Enum.Material.Slate
-		spike.Color = Color3.fromRGB(93, 64, 55)
-		spike.Transparency = 0.3
-		spike.CanCollide = false
-		spike.Anchored = true
-
-		-- Position spikes in a circle around impact point
-		local angle = (i - 1) * math.pi / 3
-		local offset = Vector3.new(math.cos(angle) * 3, 0, math.sin(angle) * 3)
-		spike.CFrame = part.CFrame * CFrame.new(offset) * CFrame.Angles(math.pi/2, 0, 0)
-		spike.Parent = workspace
-
-		-- Add debris to remove spikes
-		Debris:AddItem(spike, life * 1.5)
-	end
-
-	-- Fade out animation
-	local tweenInfo = TweenInfo.new(life, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-	local tween = TweenService:Create(earthImpact, tweenInfo, {
-		Size = Vector3.new(0.1, 0.1, 0.1), 
-		Transparency = 1
+	-- Tween it out (Flash effect)
+	local tween = TweenService:Create(shield, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		Transparency = 1,
+		Size = Vector3.new(7, 7, 7)
 	})
 	tween:Play()
+	Debris:AddItem(shield, 0.5)
 
-	Debris:AddItem(earthImpact, life)
+	-- 2. Spawn some defensive rocks popping up briefly
+	local numRocks = 3
+	for i = 1, numRocks do
+		local angle = math.rad(math.random(0, 360))
+		local offset = Vector3.new(math.cos(angle) * 3, 0, math.sin(angle) * 3)
+		local rock = createRockPart(Vector3.new(1, 2, 1), EARTH_COLOR_PRIMARY, EARTH_MATERIAL)
+		rock.CFrame = hrp.CFrame * CFrame.new(offset) * CFrame.new(0, -2, 0) -- Start below ground
+		rock.Parent = workspace
+
+		-- Pop up
+		local upTween = TweenService:Create(rock, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+			CFrame = rock.CFrame * CFrame.new(0, 2, 0)
+		})
+		upTween:Play()
+
+		-- Fade down
+		task.delay(0.3, function()
+			if rock.Parent then
+				TweenService:Create(rock, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+					CFrame = rock.CFrame * CFrame.new(0, -2, 0),
+					Transparency = 1
+				}):Play()
+			end
+		end)
+		Debris:AddItem(rock, 0.6)
+	end
+
+	-- 3. Sound
+	EarthVFX.PlaySoundAt(hrp)
 end
 
 function EarthVFX.PlaySoundAt(part)
 	if not part then return end
+	-- Use existing AudioManager but maybe we can tweak params if needed
 	local sound = AudioManager.playSound("Elements.Earth", part, {
 		Name = "EarthSFX",
-		Volume = 0.7,
-		PlaybackSpeed = 1.0,
-		RollOffMaxDistance = 35
+		Volume = 1.0, -- Increased volume for impact
+		PlaybackSpeed = 0.8 + (math.random() * 0.4), -- Varied pitch
+		RollOffMaxDistance = 50
 	})
 	if sound then
-		Debris:AddItem(sound, 5)
+		Debris:AddItem(sound, 3)
 	end
 end
 
