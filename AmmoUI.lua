@@ -270,6 +270,7 @@ local reloadHint = create("TextLabel", {
 -- ============================================================================
 
 local currentTweens = {}
+local activeWeapon = nil -- Track senjata aktif
 
 -- Fungsi untuk mendeteksi perangkat mobile
 local function isMobile()
@@ -334,7 +335,13 @@ end
 AmmoUpdateEvent.OnClientEvent:Connect(function(weaponName, ammo, reserveAmmo, isVisible, isReloading)
 	mainContainer.Visible = isVisible
 
-	if not isVisible then return end
+	if not isVisible then 
+		activeWeapon = nil
+		return 
+	end
+
+	-- Set active weapon untuk tracking unequip
+	activeWeapon = weaponName
 
 	-- Cek Tool yang sedang dipegang untuk update Level
 	local currentTool = player.Character and player.Character:FindFirstChildOfClass("Tool")
@@ -416,5 +423,65 @@ AmmoUpdateEvent.OnClientEvent:Connect(function(weaponName, ammo, reserveAmmo, is
 	end
 end)
 
--- Inisialisasi awal (sembunyikan sampai ada event)
-mainContainer.Visible = false
+-- --- FIX: DETECT WEAPON EQUIP & UNEQUIP LOCALLY ---
+local function setupCharacter(char)
+
+	-- Function to handle equip (Show UI)
+	local function onChildAdded(child)
+		if child:IsA("Tool") then
+			-- Tampilkan UI segera
+			activeWeapon = child.Name
+			mainContainer.Visible = true
+
+			-- Update visual sementara (Loading state)
+			weaponNameLabel.Text = string.upper(child.Name)
+			-- Kita tidak tahu ammo pasti, biarkan kosong atau "..." sampai server update masuk (biasanya instan)
+			-- Tapi jangan reset ke 0/0 karena terlihat jelek.
+			-- Server event akan menimpa ini dalam <100ms.
+
+			-- Cek level jika atribut ada
+			local level = child:GetAttribute("UpgradeLevel") or 0
+			levelText.Text = "LV." .. tostring(level)
+		end
+	end
+
+	-- Listen for tools being added (Equip)
+	char.ChildAdded:Connect(onChildAdded)
+
+	-- Check existing tools (in case of respawn/race condition)
+	for _, child in ipairs(char:GetChildren()) do
+		if child:IsA("Tool") then
+			onChildAdded(child)
+		end
+	end
+
+	-- Listen for tools being removed (Unequip)
+	char.ChildRemoved:Connect(function(child)
+		if child:IsA("Tool") then
+			-- If the tool being removed is the active weapon, hide UI
+			if activeWeapon and child.Name == activeWeapon then
+				mainContainer.Visible = false
+				activeWeapon = nil
+			elseif mainContainer.Visible then
+				-- Safety check: if visible but no tool equipped at all
+				task.delay(0.1, function()
+					if char and not char:FindFirstChildOfClass("Tool") then
+						mainContainer.Visible = false
+						activeWeapon = nil
+					end
+				end)
+			end
+		end
+	end)
+end
+
+if player.Character then
+	setupCharacter(player.Character)
+end
+
+player.CharacterAdded:Connect(setupCharacter)
+
+-- Inisialisasi awal (sembunyikan sampai ada event/equip)
+if not activeWeapon then
+	mainContainer.Visible = false
+end
