@@ -17,6 +17,9 @@ local RemoteFunctions = ReplicatedStorage.RemoteFunctions
 local ModuleScriptReplicatedStorage = ReplicatedStorage.ModuleScript
 
 local WeaponModule = require(ModuleScriptReplicatedStorage:WaitForChild("WeaponModule"))
+local ProximityUIHandler = require(ModuleScriptReplicatedStorage:WaitForChild("ProximityUIHandler"))
+
+local proximityHandler -- Forward declaration
 
 local upgradeEvent = RemoteEvents:WaitForChild("UpgradeUIOpen")
 local confirmUpgradeEvent = RemoteEvents:WaitForChild("ConfirmUpgrade")
@@ -657,6 +660,11 @@ local function closeUpgradeUI()
 	task.wait(0.3)
 	screenGui.Enabled = false
 	isUIOpen = false
+
+	-- Sync handler state
+	if proximityHandler then
+		proximityHandler:SetOpen(false)
+	end
 end
 
 local function startDistanceCheck()
@@ -885,43 +893,47 @@ upgradeEvent.OnClientEvent:Connect(function(weaponName, newLevel)
 	refreshUpgradeData()
 end)
 
--- Interaction Logic (Proximity Prompt)
-local ProximityPromptService = game:GetService("ProximityPromptService")
-task.spawn(function()
-	local upgradePrompt = nil
-	local upgPart = workspace:WaitForChild("Upgrade", 10)
-	if upgPart then
-		local att = upgPart:WaitForChild("Attachment", 10)
-		if att then
-			upgradePrompt = att:WaitForChild("UpgradePrompt", 10)
+-- Register Proximity Interaction via Module
+local upgPart = workspace:WaitForChild("Upgrade")
+if upgPart then
+	-- Perbaikan: Kita register Part induk ("Upgrade"), lalu modul akan mencari ProximityPrompt
+	-- searchRecursive=true akan mencari "UpgradePrompt" atau ProximityPrompt apapun di dalamnya
+	proximityHandler = ProximityUIHandler.Register({
+		name = "UpgradeShop",
+		partName = "Upgrade",
+		parent = workspace,
+		searchRecursive = true,
+		onToggle = function(isOpen)
+			if isOpen then
+				if isUIOpen then return end -- Already open
+
+				local equippedTool = player.Character and player.Character:FindFirstChildOfClass("Tool")
+				if not equippedTool then
+					-- Auto-close if requirements not met
+					if proximityHandler then proximityHandler:SetOpen(false) end
+					return
+				end
+				-- Check if weapon is valid
+				if not WeaponModule.Weapons[equippedTool.Name] then
+					if proximityHandler then proximityHandler:SetOpen(false) end
+					return
+				end
+
+				local ok, result = pcall(function()
+					return upgradeRF:InvokeServer(equippedTool)
+				end)
+
+				if ok and result.success then
+					showUpgradeUI(equippedTool, result)
+				else
+					if proximityHandler then proximityHandler:SetOpen(false) end
+				end
+			else
+				closeUpgradeUI()
+			end
 		end
-	end
-
-	if upgradePrompt then
-		ProximityPromptService.PromptTriggered:Connect(function(prompt, plr)
-			if prompt ~= upgradePrompt or plr ~= player then return end
-			if isUIOpen then return end
-
-			local equippedTool = player.Character and player.Character:FindFirstChildOfClass("Tool")
-			if not equippedTool then
-				-- Can add notification toast here
-				return
-			end
-			-- Check if weapon is valid
-			if not WeaponModule.Weapons[equippedTool.Name] then
-				return
-			end
-
-			local ok, result = pcall(function()
-				return upgradeRF:InvokeServer(equippedTool)
-			end)
-
-			if ok and result.success then
-				showUpgradeUI(equippedTool, result)
-			end
-		end)
-	end
-end)
+	})
+end
 
 -- Mobile/Responsive Layout Check
 local function updateLayout()
