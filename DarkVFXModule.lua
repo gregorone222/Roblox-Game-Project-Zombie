@@ -7,332 +7,271 @@ local DarkVFX = {}
 local Debris = game:GetService("Debris")
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local ModuleScriptReplicatedStorage = ReplicatedStorage.ModuleScript
-
 local AudioManager = require(ModuleScriptReplicatedStorage:WaitForChild("AudioManager"))
 
-local function _makeAttachment(parent: Instance, name: string)
-	local a = Instance.new("Attachment")
-	a.Name = name
-	a.Parent = parent
-	return a
+-- Constants for Dark VFX
+local DARK_COLOR_PRIMARY = Color3.fromRGB(20, 0, 30) -- Deepest purple/black
+local DARK_COLOR_SECONDARY = Color3.fromRGB(80, 20, 120) -- Neon purple for edges
+local VOID_MATERIAL = Enum.Material.Neon
+local SHARD_MATERIAL = Enum.Material.Glass
+
+local function _ensureDarkFolder(char)
+	local f = char:FindFirstChild("DarkVFX")
+	if not f then
+		f = Instance.new("Folder")
+		f.Name = "DarkVFX"
+		f.Parent = char
+	end
+	return f
 end
 
-function DarkVFX.SpawnImpact(part: BasePart, life: number)
+function DarkVFX.SpawnImpact(part, life)
 	if not part then return end
+	local position = part.Position
 
-	-- Main dark sphere
-	local darkSphere = Instance.new("Part")
-	darkSphere.Name = "DarkImpact"
-	darkSphere.Shape = Enum.PartType.Ball
-	darkSphere.Size = Vector3.new(3, 3, 3)
-	darkSphere.Material = Enum.Material.Neon
-	darkSphere.Color = Color3.fromRGB(30, 0, 40)
-	darkSphere.Transparency = 0.6
-	darkSphere.CanCollide = false
-	darkSphere.Anchored = true
-	darkSphere.CFrame = part.CFrame
-	darkSphere.Parent = workspace
+	-- 1. Singularity (Implosion)
+	local singularity = Instance.new("Part")
+	singularity.Name = "DarkSingularity"
+	singularity.Shape = Enum.PartType.Ball
+	singularity.Size = Vector3.new(12, 12, 12) -- Start big
+	singularity.Color = Color3.new(0, 0, 0) -- Pure black
+	singularity.Material = VOID_MATERIAL
+	singularity.Transparency = 0.2
+	singularity.Anchored = true
+	singularity.CanCollide = false
+	singularity.CFrame = part.CFrame
+	singularity.Parent = workspace
 
-	-- Dark energy light source
-	local light = Instance.new("PointLight")
-	light.Color = Color3.fromRGB(60, 0, 80)
-	light.Brightness = 6
-	light.Range = 12
-	light.Parent = darkSphere
-
-	-- Dark energy particles
-	local energy = Instance.new("ParticleEmitter")
-	energy.Name = "DarkEnergy"
-	energy.Rate = 60
-	energy.Lifetime = NumberRange.new(0.5, 1.2)
-	energy.Speed = NumberRange.new(8, 15)
-	energy.Size = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0.8),
-		NumberSequenceKeypoint.new(0.5, 1.2),
-		NumberSequenceKeypoint.new(1, 0)
+	-- Implosion Tween (Shrink rapidly)
+	local shrinkTween = TweenService:Create(singularity, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+		Size = Vector3.new(0.5, 0.5, 0.5),
+		Transparency = 0
 	})
-	energy.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(80, 0, 100)),
-		ColorSequenceKeypoint.new(0.3, Color3.fromRGB(60, 0, 80)),
-		ColorSequenceKeypoint.new(0.7, Color3.fromRGB(40, 0, 60)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 0, 30))
-	})
-	energy.LightEmission = 0.8
-	energy.Transparency = NumberSequence.new(0.4)
-	energy.SpreadAngle = Vector2.new(360, 360)
-	energy.Rotation = NumberRange.new(-180, 180)
-	energy.Parent = darkSphere
+	shrinkTween:Play()
 
-	-- Shadow mist particles
-	local mist = Instance.new("ParticleEmitter")
-	mist.Name = "DarkMist"
-	mist.Rate = 40
-	mist.Lifetime = NumberRange.new(0.8, 1.5)
-	mist.Speed = NumberRange.new(3, 6)
-	mist.Size = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 1.5),
-		NumberSequenceKeypoint.new(0.6, 2.5),
-		NumberSequenceKeypoint.new(1, 0)
-	})
-	mist.Color = ColorSequence.new(
-		Color3.fromRGB(40, 0, 50),
-		Color3.fromRGB(20, 0, 30)
-	)
-	mist.LightEmission = 0.3
-	mist.Transparency = NumberSequence.new(0.6)
-	mist.SpreadAngle = Vector2.new(180, 180)
-	mist.Parent = darkSphere
+	task.delay(0.2, function()
+		if not singularity.Parent then return end
+		-- 2. Explosion (Burst)
+		-- Change color to purple for explosion
+		singularity.Color = DARK_COLOR_SECONDARY
+		singularity.Material = VOID_MATERIAL
 
-	-- Void tendrils effect
-	local tendrils = Instance.new("ParticleEmitter")
-	tendrils.Name = "DarkTendrils"
-	tendrils.Rate = 20
-	tendrils.Lifetime = NumberRange.new(0.7, 1.0)
-	tendrils.Speed = NumberRange.new(5, 10)
-	tendrils.Size = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0.3),
-		NumberSequenceKeypoint.new(0.3, 0.6),
-		NumberSequenceKeypoint.new(1, 0)
-	})
-	tendrils.Color = ColorSequence.new(
-		Color3.fromRGB(100, 0, 120),
-		Color3.fromRGB(60, 0, 80)
-	)
-	tendrils.LightEmission = 0.9
-	tendrils.Transparency = NumberSequence.new(0.3)
-	tendrils.SpreadAngle = Vector2.new(90, 90)
-	tendrils.Rotation = NumberRange.new(-180, 180)
-	tendrils.Parent = darkSphere
+		local burstTween = TweenService:Create(singularity, TweenInfo.new(0.4, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out), {
+			Size = Vector3.new(8, 8, 8),
+			Transparency = 0.8
+		})
+		burstTween:Play()
 
-	-- Fade out animation
-	local tweenInfo = TweenInfo.new(life, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-	local tween = TweenService:Create(darkSphere, tweenInfo, {
-		Size = Vector3.new(0.1, 0.1, 0.1), 
-		Transparency = 1
+		-- 3. Shockwave Ring
+		local ring = Instance.new("Part")
+		ring.Shape = Enum.PartType.Cylinder
+		ring.Size = Vector3.new(0.5, 1, 1)
+		ring.Color = DARK_COLOR_SECONDARY
+		ring.Material = VOID_MATERIAL
+		ring.Transparency = 0.5
+		ring.Anchored = true
+		ring.CanCollide = false
+		ring.CFrame = part.CFrame * CFrame.Angles(0, 0, math.pi/2)
+		ring.Parent = workspace
+
+		local ringTween = TweenService:Create(ring, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			Size = Vector3.new(0.5, 25, 25),
+			Transparency = 1
+		})
+		ringTween:Play()
+		Debris:AddItem(ring, 0.5)
+
+		-- 4. Particles (Void Motes)
+		local emitter = Instance.new("ParticleEmitter")
+		emitter.Name = "VoidMotes"
+		emitter.Texture = "" -- Default
+		emitter.Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, DARK_COLOR_SECONDARY),
+			ColorSequenceKeypoint.new(1, Color3.new(0,0,0))
+		})
+		emitter.Size = NumberSequence.new({NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(1, 0)})
+		emitter.Lifetime = NumberRange.new(0.5, 1)
+		emitter.Speed = NumberRange.new(10, 20)
+		emitter.SpreadAngle = Vector2.new(360, 360)
+		emitter.Rate = 0
+		emitter.Parent = singularity
+
+		emitter:Emit(30)
+
+		-- Cleanup singularity
+		task.delay(0.5, function()
+			if singularity.Parent then
+				TweenService:Create(singularity, TweenInfo.new(0.3), {Transparency = 1, Size = Vector3.new(0,0,0)}):Play()
+				Debris:AddItem(singularity, 0.3)
+			end
+		end)
+	end)
+end
+
+function DarkVFX.SpawnLifestealVFX(sourceModel, targetCharacter, amount)
+	if not (sourceModel and targetCharacter) then return end
+	local srcPart = sourceModel.PrimaryPart or sourceModel:FindFirstChild("HumanoidRootPart")
+	local tgtPart = targetCharacter:FindFirstChild("HumanoidRootPart")
+	if not (srcPart and tgtPart) then return end
+
+	-- Create a trail of "souls" flowing from source(enemy) to target(player)
+	local soul = Instance.new("Part")
+	soul.Size = Vector3.new(1, 1, 1)
+	soul.Shape = Enum.PartType.Ball
+	soul.Color = DARK_COLOR_SECONDARY
+	soul.Material = VOID_MATERIAL
+	soul.Transparency = 0.5
+	soul.Anchored = true
+	soul.CanCollide = false
+	soul.CFrame = srcPart.CFrame
+	soul.Parent = workspace
+
+	-- Trail
+	local trail = Instance.new("Trail")
+	trail.Attachment0 = Instance.new("Attachment", soul)
+	trail.Attachment0.Position = Vector3.new(0, 0.5, 0)
+	trail.Attachment1 = Instance.new("Attachment", soul)
+	trail.Attachment1.Position = Vector3.new(0, -0.5, 0)
+	trail.FaceCamera = true
+	trail.Color = ColorSequence.new(DARK_COLOR_SECONDARY, Color3.new(0,0,0))
+	trail.Lifetime = 0.3
+	trail.Transparency = NumberSequence.new(0.5, 1)
+	trail.Parent = soul
+
+	-- Tween travel
+	local dist = (tgtPart.Position - srcPart.Position).Magnitude
+	local travelTime = math.clamp(dist / 40, 0.2, 0.5)
+
+	local tween = TweenService:Create(soul, TweenInfo.new(travelTime, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+		CFrame = tgtPart.CFrame
 	})
 	tween:Play()
 
-	Debris:AddItem(darkSphere, life)
+	-- On arrival, heal effect on player
+	task.delay(travelTime, function()
+		if soul.Parent then
+			soul:Destroy()
+
+			-- Heal flash on player
+			local healFlash = Instance.new("Part")
+			healFlash.Shape = Enum.PartType.Ball
+			healFlash.Size = Vector3.new(4, 4, 4)
+			healFlash.Color = Color3.fromRGB(0, 255, 100) -- Greenish tint for healing mixed with dark? No, keep dark theme -> Purple heal
+			healFlash.Color = DARK_COLOR_SECONDARY
+			healFlash.Material = VOID_MATERIAL
+			healFlash.Anchored = true
+			healFlash.CanCollide = false
+			healFlash.CFrame = tgtPart.CFrame
+			healFlash.Transparency = 0.5
+			healFlash.Parent = workspace
+
+			TweenService:Create(healFlash, TweenInfo.new(0.3), {Size = Vector3.new(2,2,2), Transparency = 1}):Play()
+			Debris:AddItem(healFlash, 0.3)
+		end
+	end)
 end
 
-function DarkVFX.SpawnLifestealVFX(sourceModel: Model, targetCharacter: Model, amount: number)
-	if not (sourceModel and targetCharacter) then return end
-
-	local sourcePart = sourceModel.PrimaryPart or sourceModel:FindFirstChild("HumanoidRootPart") or sourceModel:FindFirstChildWhichIsA("BasePart")
-	local targetPart = targetCharacter:FindFirstChild("HumanoidRootPart") or targetCharacter.PrimaryPart
-
-	if not (sourcePart and targetPart) then return end
-
-	-- Create a dark energy beam between source and target
-	local a0 = _makeAttachment(sourcePart, "DarkBeamA0")
-	local a1 = _makeAttachment(targetPart, "DarkBeamA1")
-
-	-- Create the beam
-	local beam = Instance.new("Beam")
-	beam.Attachment0 = a0
-	beam.Attachment1 = a1
-	beam.Width0 = 0.2
-	beam.Width1 = 0.2
-	beam.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 0, 150)),
-		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(80, 0, 100)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(50, 0, 60))
-	})
-	beam.Brightness = 3
-	beam.LightEmission = 0.7
-	beam.Segments = 10
-	beam.CurveSize0 = 2
-	beam.CurveSize1 = -2
-
-	-- Pulsating effect
-	beam.Transparency = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0.2),
-		NumberSequenceKeypoint.new(0.3, 0.5),
-		NumberSequenceKeypoint.new(0.7, 0.3),
-		NumberSequenceKeypoint.new(1, 0.2)
-	})
-
-	beam.Parent = a0
-
-	-- Life particles flowing from source to target
-	local lifeParticles = Instance.new("ParticleEmitter")
-	lifeParticles.Name = "LifeParticles"
-	lifeParticles.Rate = 30
-	lifeParticles.Lifetime = NumberRange.new(0.5, 0.8)
-	lifeParticles.Speed = NumberRange.new(10, 15)
-	lifeParticles.Size = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0.3),
-		NumberSequenceKeypoint.new(0.5, 0.5),
-		NumberSequenceKeypoint.new(1, 0)
-	})
-	lifeParticles.Color = ColorSequence.new(
-		Color3.fromRGB(180, 0, 220),
-		Color3.fromRGB(120, 0, 150)
-	)
-	lifeParticles.LightEmission = 0.8
-	lifeParticles.Transparency = NumberSequence.new(0.3)
-	lifeParticles.VelocityInheritance = 0
-	lifeParticles.Parent = beam
-
-	-- Target healing effect
-	local healGlow = Instance.new("Part")
-	healGlow.Name = "HealGlow"
-	healGlow.Shape = Enum.PartType.Ball
-	healGlow.Size = Vector3.new(2, 2, 2)
-	healGlow.Material = Enum.Material.Neon
-	healGlow.Color = Color3.fromRGB(100, 0, 120)
-	healGlow.Transparency = 1
-	healGlow.CanCollide = false
-	healGlow.Anchored = true
-	healGlow.CFrame = targetPart.CFrame
-	healGlow.Parent = workspace
-
-	local healLight = Instance.new("PointLight")
-	healLight.Color = Color3.fromRGB(120, 0, 150)
-	healLight.Brightness = 5
-	healLight.Range = 8
-	healLight.Parent = healGlow
-
-	-- Fade out effects after short duration
-	local life = 1.0
-	Debris:AddItem(beam, life)
-	Debris:AddItem(a0, life)
-	Debris:AddItem(a1, life)
-	Debris:AddItem(healGlow, life * 0.5)
-end
-
-function DarkVFX.SpawnForPlayer(player: Player)
+function DarkVFX.SpawnForPlayer(player)
 	local char = player.Character
 	if not char then return end
-	local hrp = char:FindFirstChild("HumanoidRootPart") or char.PrimaryPart
+	local hrp = char:FindFirstChild("HumanoidRootPart")
 	if not hrp then return end
 
-	-- Clear previous dark aura
-	local old = char:FindFirstChild("DarkAura")
+	-- Cleanup old
+	local old = char:FindFirstChild("DarkVFX")
 	if old then old:Destroy() end
 
-	-- Create aura container
-	local auraFolder = Instance.new("Folder")
-	auraFolder.Name = "DarkAura"
-	auraFolder.Parent = char
+	local folder = _ensureDarkFolder(char)
 
-	-- Dark energy orb around player
-	local energyOrb = Instance.new("Part")
-	energyOrb.Name = "DarkEnergyOrb"
-	energyOrb.Shape = Enum.PartType.Ball
-	energyOrb.Size = Vector3.new(8, 8, 8)
-	energyOrb.Material = Enum.Material.Neon
-	energyOrb.Color = Color3.fromRGB(40, 0, 50)
-	energyOrb.Transparency = 0.8
-	energyOrb.CanCollide = false
-	energyOrb.Massless = true
-	energyOrb.Anchored = false
-	energyOrb.CFrame = hrp.CFrame
-	energyOrb.Parent = auraFolder
+	-- 1. Void Vortex (Ground)
+	local vortex = Instance.new("Part")
+	vortex.Name = "VoidVortex"
+	vortex.Shape = Enum.PartType.Cylinder
+	vortex.Color = Color3.new(0, 0, 0)
+	vortex.Material = VOID_MATERIAL
+	vortex.Transparency = 0.2
+	vortex.Size = Vector3.new(0.2, 8, 8) -- Height X
+	vortex.Anchored = true
+	vortex.CanCollide = false
+	vortex.CFrame = hrp.CFrame * CFrame.Angles(0, 0, math.pi/2)
+	vortex.Parent = folder
 
-	-- Weld to HRP
-	local weld = Instance.new("WeldConstraint")
-	weld.Part0 = hrp
-	weld.Part1 = energyOrb
-	weld.Parent = energyOrb
+	-- 2. Void Shards (Orbiting)
+	local shards = {}
+	local numShards = 5
+	for i = 1, numShards do
+		local shard = Instance.new("Part")
+		shard.Name = "VoidShard"
+		shard.Shape = Enum.PartType.Block -- We'll use Block but scaled thin
+		shard.Size = Vector3.new(0.5, 2, 0.5)
+		shard.Color = DARK_COLOR_PRIMARY
+		shard.Material = SHARD_MATERIAL
+		shard.Reflectance = 0.5
+		shard.Anchored = true
+		shard.CanCollide = false
+		shard.Parent = folder
 
-	-- Dark energy particles
-	local energyParticles = Instance.new("ParticleEmitter")
-	energyParticles.Name = "DarkAuraParticles"
-	energyParticles.Rate = 50
-	energyParticles.Lifetime = NumberRange.new(1.0, 1.5)
-	energyParticles.Speed = NumberRange.new(2, 4)
-	energyParticles.Size = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0.8),
-		NumberSequenceKeypoint.new(0.5, 1.2),
-		NumberSequenceKeypoint.new(1, 0)
-	})
-	energyParticles.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(80, 0, 100)),
-		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(60, 0, 80)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 0, 60))
-	})
-	energyParticles.LightEmission = 0.7
-	energyParticles.Transparency = NumberSequence.new(0.5)
-	energyParticles.SpreadAngle = Vector2.new(360, 360)
-	energyParticles.Parent = energyOrb
+		-- Add neon edge (SelectionBox hack for wireframe look? No, just use Highlight or another Part. Let's keep it simple: Highlight)
+		local hl = Instance.new("Highlight")
+		hl.Adornee = shard
+		hl.FillTransparency = 1
+		hl.OutlineColor = DARK_COLOR_SECONDARY
+		hl.Parent = shard
 
-	-- Floating dark orbs around player
-	for i = 1, 4 do
-		task.wait(0.1)
-		local orb = Instance.new("Part")
-		orb.Name = "DarkOrb" .. i
-		orb.Shape = Enum.PartType.Ball
-		orb.Size = Vector3.new(1.5, 1.5, 1.5)
-		orb.Material = Enum.Material.Neon
-		orb.Color = Color3.fromRGB(60, 0, 80)
-		orb.Transparency = 0.4
-		orb.CanCollide = false
-		orb.Massless = true
-		orb.Anchored = false
-		orb.Parent = auraFolder
-
-		-- Orb light
-		local orbLight = Instance.new("PointLight")
-		orbLight.Color = Color3.fromRGB(80, 0, 100)
-		orbLight.Brightness = 3
-		orbLight.Range = 6
-		orbLight.Parent = orb
-
-		-- Orb particles
-		local orbParticles = Instance.new("ParticleEmitter")
-		orbParticles.Name = "OrbParticles"
-		orbParticles.Rate = 20
-		orbParticles.Lifetime = NumberRange.new(0.5, 1.0)
-		orbParticles.Speed = NumberRange.new(1, 2)
-		orbParticles.Size = NumberSequence.new({
-			NumberSequenceKeypoint.new(0, 0.4),
-			NumberSequenceKeypoint.new(0.5, 0.6),
-			NumberSequenceKeypoint.new(1, 0)
+		table.insert(shards, {
+			part = shard,
+			angle = (i/numShards) * math.pi * 2,
+			radius = 4 + math.random(),
+			speed = 2 + math.random(),
+			yOffset = math.random(-1, 2)
 		})
-		orbParticles.Color = ColorSequence.new(
-			Color3.fromRGB(100, 0, 120),
-			Color3.fromRGB(60, 0, 80)
-		)
-		orbParticles.LightEmission = 0.8
-		orbParticles.Transparency = NumberSequence.new(0.3)
-		orbParticles.Parent = orb
-
-		-- Orb orbit animation
-		task.spawn(function()
-			local angle = (i - 1) * math.pi / 2
-			local radius = 4
-			local height = 2
-
-			while orb and orb.Parent do
-				angle = angle + 0.02
-				local x = math.cos(angle) * radius
-				local z = math.sin(angle) * radius
-				local y = math.sin(angle * 2) * height / 2 + height / 2
-
-				orb.CFrame = hrp.CFrame * CFrame.new(x, y, z)
-				task.wait()
-			end
-		end)
 	end
+
+	-- Animation Loop
+	local connection
+	connection = RunService.Heartbeat:Connect(function(dt)
+		if not char.Parent or not folder.Parent then
+			connection:Disconnect()
+			return
+		end
+
+		local t = os.clock()
+
+		-- Vortex spin
+		vortex.CFrame = hrp.CFrame * CFrame.new(0, -2.8, 0) * CFrame.Angles(0, t, math.pi/2)
+
+		-- Shard orbit
+		for _, data in ipairs(shards) do
+			data.angle = data.angle + (dt * data.speed)
+			local x = math.cos(data.angle) * data.radius
+			local z = math.sin(data.angle) * data.radius
+			local y = math.sin(t * 2 + data.angle) * 0.5 + data.yOffset
+
+			-- Erratic rotation
+			local rot = CFrame.Angles(t * 2, t, t * 1.5)
+
+			data.part.CFrame = hrp.CFrame * CFrame.new(x, y, z) * rot
+		end
+	end)
 end
 
-function DarkVFX.RemoveForPlayer(player: Player)
+function DarkVFX.RemoveForPlayer(player)
 	local char = player.Character
 	if not char then return end
-	local auraFolder = char:FindFirstChild("DarkAura")
-	if auraFolder then auraFolder:Destroy() end
+	local f = char:FindFirstChild("DarkVFX")
+	if f then f:Destroy() end
 end
 
-function DarkVFX.PlaySoundAt(part: BasePart)
+function DarkVFX.PlaySoundAt(part)
 	if not part then return end
-	local sound = AudioManager.playSound("Elements.Placeholder", part, {
+	local sound = AudioManager.playSound("Elements.Dark", part, {
 		Name = "DarkSFX",
-		Volume = 0.7,
-		PlaybackSpeed = 1.0,
-		RollOffMaxDistance = 35
+		Volume = 1.0,
+		PlaybackSpeed = 0.6, -- Low pitch for "heavy" sound
+		RollOffMaxDistance = 60
 	})
 	if sound then
 		Debris:AddItem(sound, 5)
