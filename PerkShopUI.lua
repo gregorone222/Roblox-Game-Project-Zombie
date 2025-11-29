@@ -15,6 +15,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 local RemoteEvents = ReplicatedStorage:WaitForChild("RemoteEvents")
 local RemoteFunctions = ReplicatedStorage:WaitForChild("RemoteFunctions")
+local ProximityUIHandler = require(ReplicatedStorage.ModuleScript:WaitForChild("ProximityUIHandler"))
 
 local openEv = RemoteEvents:WaitForChild("OpenPerkShop")
 local perkUpdateEv = RemoteEvents:WaitForChild("PerkUpdate")
@@ -444,6 +445,11 @@ function closeShop()
 	end
 	restoreCoreGuiOnMobile()
 	closeShopEvent:FireServer()
+
+	-- Note: ProximityUIHandler handles state internally for PerkShop 
+	-- because PerkShop logic is server-driven (RequestOpen -> OpenPerkShop).
+	-- We don't need to sync state here because the PromptTriggered 
+	-- logic was replaced by ProximityUIHandler which calls RequestOpen.
 end
 
 function updateDetailPanel(index)
@@ -770,17 +776,6 @@ pointsUpdateEv.OnClientEvent:Connect(function(points)
 	end
 end)
 
-local function onPromptTrigger(prompt, plr)
-	-- Check if triggered by local player and matches our target prompt
-	if plr ~= player then return end
-
-	-- Robust check: match specific instance if found, or fallback to name check logic
-	if (perksPrompt and prompt == perksPrompt) or (prompt.Name == "PerksPrompt" and prompt.Parent and prompt.Parent.Parent and prompt.Parent.Parent.Name == "Perks") then
-		requestOpenEvent:FireServer()
-	end
-end
-ProximityPromptService.PromptTriggered:Connect(onPromptTrigger)
-
 UserInputService.InputBegan:Connect(function(input)
 	if input.KeyCode == Enum.KeyCode.Escape and screenGui and screenGui.Enabled then
 		closeShop()
@@ -799,3 +794,22 @@ RunService.RenderStepped:Connect(function()
 end)
 
 screenGui = nil -- Will be created in openEv
+
+-- Register Proximity Interaction via Module
+if perksPart then
+	ProximityUIHandler.Register({
+		name = "PerkShop",
+		partName = "Perks",
+		parent = workspace,
+		searchRecursive = true,
+		onToggle = function(isOpen)
+			-- PerkShop uses server validation to open.
+			-- We just request it.
+			requestOpenEvent:FireServer()
+
+			-- Since we rely on server event to actually show UI,
+			-- we don't manage local state toggle here strictly.
+			-- The server will fire OpenPerkShop back.
+		end
+	})
+end
