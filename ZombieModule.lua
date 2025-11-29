@@ -195,23 +195,13 @@ function ZombieModule.SpawnZombie(spawnPoint, typeName, playerCount, difficulty,
 		-- Optimization: Throttling variables
 		local lastLoSCheckTime = 0
 		local losCheckInterval = 0.5
+		local lastPathTime = 0
+		local PATH_RECALC_INTERVAL = 1.0 -- Hitung ulang path maksimal setiap 1 detik, kecuali target pindah jauh
 
 		while zombie.Parent and humanoid and humanoid.Health > 0 do
-			-- OPTIMIZATION: Dynamic wait based on distance to player
-			local updateRate = 0.1
-			local target = ZombieModule.GetNearestPlayer(zombie)
-			local currentPos = zombie.PrimaryPart.Position
-			local targetPos = (target and target.Character and target.Character.PrimaryPart) and target.Character.PrimaryPart.Position
-
-			if targetPos then
-				local dist = (targetPos - currentPos).Magnitude
-				if dist > 100 then
-					updateRate = 0.5
-				elseif dist > 40 then
-					updateRate = 0.25
-				end
-			end
-
+			-- MOVEMENT LOOP FREQUENCY: Keep this fast (e.g., 0.1s) for smooth waypoint transition
+			-- Pathfinding calculation will be throttled separately
+			local updateRate = 0.1 
 			task.wait(updateRate)
 
 			-- Handle special states like being stunned or frozen by a mechanic
@@ -225,10 +215,13 @@ function ZombieModule.SpawnZombie(spawnPoint, typeName, playerCount, difficulty,
 				end
 			end
 
+			local target = ZombieModule.GetNearestPlayer(zombie)
 			if not target or not target.Character or not target.Character.PrimaryPart then
 				continue -- No target, wait for the next cycle
 			end
 
+			local currentPos = zombie.PrimaryPart.Position
+			local targetPos = target.Character.PrimaryPart.Position
 			local distanceToTarget = (targetPos - currentPos).Magnitude
 			local attackRange = zombie:GetAttribute("AttackRange") or 4
 
@@ -292,22 +285,27 @@ function ZombieModule.SpawnZombie(spawnPoint, typeName, playerCount, difficulty,
 			else
 				-- NON-BOSS MOVEMENT: Use existing pathfinding.
 				local needsNewPath = false
-				-- Reason a) Target has moved a significant distance since last path calculation
-				if (targetPos - lastTargetPosition).Magnitude > 10 then
+				local now = tick()
+
+				-- Throttled Path Calculation Logic
+				-- Recalculate if:
+				-- a) Target has moved a significant distance (> 10 studs)
+				-- b) We don't have a path
+				-- c) It's been a while since last update AND we are far from target (optional sanity check)
+
+				local targetMovedDist = (targetPos - lastTargetPosition).Magnitude
+
+				if targetMovedDist > 10 then
 					needsNewPath = true
-					-- Reason b) We don't have a path, or we've reached the end of our current one
-				elseif not currentWaypoints or currentWaypointIndex >= #currentWaypoints then
+				elseif not currentWaypoints or #currentWaypoints == 0 or currentWaypointIndex > #currentWaypoints then
 					needsNewPath = true
-					-- Reason c) Check if we've arrived at the current waypoint to advance the index
-				else
-					local nextWaypointPos = currentWaypoints[currentWaypointIndex].Position
-					if (Vector2.new(nextWaypointPos.X, nextWaypointPos.Z) - Vector2.new(currentPos.X, currentPos.Z)).Magnitude < 4 then
-						-- We are close enough to the waypoint, so advance to the next one
-						currentWaypointIndex += 1
-					end
+				elseif (now - lastPathTime) > PATH_RECALC_INTERVAL then
+					-- Periodic update to correct path if needed
+					needsNewPath = true
 				end
 
 				if needsNewPath then
+					lastPathTime = now
 					local success, err = pcall(function()
 						path:ComputeAsync(currentPos, targetPos)
 					end)
@@ -325,8 +323,26 @@ function ZombieModule.SpawnZombie(spawnPoint, typeName, playerCount, difficulty,
 				end
 
 				-- 3. MOVEMENT EXECUTION: Follow the current path.
+				-- Waypoint Advancement Logic (Smooth Pathing)
 				if currentWaypoints and currentWaypoints[currentWaypointIndex] then
 					local waypoint = currentWaypoints[currentWaypointIndex]
+
+					-- Check distance to current waypoint (Horizontal only)
+					local distToWaypoint = (Vector2.new(waypoint.Position.X, waypoint.Position.Z) - Vector2.new(currentPos.X, currentPos.Z)).Magnitude
+
+					-- Advance to next waypoint if close enough
+					if distToWaypoint < 4 then
+						currentWaypointIndex = currentWaypointIndex + 1
+						if currentWaypoints[currentWaypointIndex] then
+							waypoint = currentWaypoints[currentWaypointIndex]
+						else
+							-- End of path
+							currentWaypoints = {}
+							humanoid:MoveTo(targetPos)
+						end
+					end
+
+					-- Move to the (potentially new) waypoint
 					humanoid:MoveTo(waypoint.Position)
 
 					-- If the path requires a jump, make the humanoid jump
