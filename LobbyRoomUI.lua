@@ -1,5 +1,6 @@
 -- LobbyRoomUI.lua (LocalScript)
 -- Path: StarterPlayerScripts/LobbyRoomUI.lua
+-- Script Place: Lobby
 -- Purpose: Create a lobby UI that matches the HTML prototype design
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -12,6 +13,7 @@ local Workspace = game:GetService("Workspace")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 local lobbyRemote = ReplicatedStorage:WaitForChild("LobbyRemote")
+local ProximityUIHandler = require(ReplicatedStorage.ModuleScript:WaitForChild("ProximityUIHandler"))
 
 local state = {
 	currentScreenContainer = "main-hub",
@@ -52,6 +54,11 @@ local function hideLobbyUI()
 		gui.Enabled = false
 		state.isUIOpen = false
 		print("LobbyRoomUI closed")
+
+		-- Sync handler state if registered
+		if state.proximityHandler then
+			state.proximityHandler:SetOpen(false)
+		end
 	end
 end
 local function selectButtonInGroup(groupName, selectedValue)
@@ -2529,55 +2536,26 @@ START EXECUTION - NOW WE CAN CALL FUNCTIONS
 -- Setup event handlers
 setupServerEventHandlers()
 
--- Setup integration with LobbyRoom proximity prompt
-local function setupLobbyRoomIntegration()
-	-- Find the LobbyRoom part in Workspace
-	local lobbyRoomPart = Workspace:WaitForChild("LobbyRoom")
-	if not lobbyRoomPart then
-		warn("LobbyRoom part not found in Workspace. UI will still work but won't open via proximity prompt.")
-		return
-	end
-
-	-- Get the ProximityPrompt
-	local proximityPrompt = lobbyRoomPart:FindFirstChildOfClass("ProximityPrompt")
-	if not proximityPrompt then
-		warn("ProximityPrompt not found in LobbyRoom part.")
-		return
-	end
-
-	-- Configure the proximity prompt
-	proximityPrompt.ObjectText = "Lobby Room"
-	proximityPrompt.ActionText = "Open Lobby"
-	proximityPrompt.HoldDuration = 0.1
-
-	-- Connect the proximity prompt to open/close UI
-	proximityPrompt.Triggered:Connect(function(promptedPlayer)
-		if promptedPlayer == player then
-			if not state.isUIOpen then
-				showLobbyUI()
-			else
-				hideLobbyUI()
-			end
-		end
-	end)
-
-	print("LobbyRoom proximity prompt integration setup complete.")
-end
-
 -- Start the initialization
 if playerGui.Parent then
 	initialize()
-	setupLobbyRoomIntegration()
 else
 	playerGui.AncestryChanged:Connect(function()
 		if playerGui.Parent then
 			initialize()
-			setupLobbyRoomIntegration()
 		end
 	end)
 end
 
---[[
-LOBBY ROOM INTEGRATION
-]]
-
+-- Register Proximity Interaction via Module
+state.proximityHandler = ProximityUIHandler.Register({
+	name = "LobbyRoom",
+	partName = "LobbyRoom",
+	onToggle = function(isOpen)
+		if isOpen then
+			showLobbyUI()
+		else
+			hideLobbyUI()
+		end
+	end
+})
