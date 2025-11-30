@@ -1,12 +1,8 @@
--- BoosterShopUI.lua (LocalScript)
--- Path: StarterGui/BoosterShopUI.lua
--- Script Place: Lobby
--- New "Armory" UI/UX Overhaul
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
@@ -18,654 +14,792 @@ local PurchaseBoosterFunction = ReplicatedStorage.RemoteFunctions:WaitForChild("
 local GetBoosterConfig = ReplicatedStorage.RemoteFunctions:WaitForChild("GetBoosterConfig")
 
 -- ==================================
--- ======== UI SETUP ================
+-- ======== THEME CONSTANTS =========
 -- ==================================
--- UI creation based on the new prototype.
+local THEME = {
+	BgDark = Color3.fromHex("#0f172a"),      -- Slate-900
+	PanelBg = Color3.fromHex("#1e293b"),     -- Slate-800
+	Accent = Color3.fromHex("#6366f1"),      -- Indigo-500
+	AccentHover = Color3.fromHex("#4f46e5"), -- Indigo-600
+	TextMain = Color3.fromHex("#f8fafc"),    -- Slate-50
+	TextDim = Color3.fromHex("#94a3b8"),     -- Slate-400
+	TextDark = Color3.fromHex("#334155"),    -- Slate-700
+	Border = Color3.fromHex("#334155"),      -- Slate-700
+	Success = Color3.fromHex("#10b981"),     -- Emerald-500
+	Error = Color3.fromHex("#ef4444"),       -- Red-500
+	Gold = Color3.fromHex("#fbbf24"),        -- Amber-400
+	CardBg = Color3.fromHex("#1e293b"),      -- Slate-800 (Base)
+	CardHover = Color3.fromHex("#334155"),   -- Slate-700
+}
 
--- Helper functions for creating UI elements
-local function create(instanceType, properties)
+-- Unicode Icon Mapping based on BoosterConfig keys
+local ICONS = {
+	SelfRevive = "💗",
+	StarterPoints = "💰",
+	CouponDiscount = "🏷️",
+	StartingShield = "🛡️",
+	LegionsLegacy = "⚔️",
+	Default = "📦"
+}
+
+-- Category Mapping (Inferred)
+local CATEGORIES = {
+	SelfRevive = "SURVIVAL",
+	StarterPoints = "ECONOMY",
+	CouponDiscount = "ECONOMY",
+	StartingShield = "DEFENSE",
+	LegionsLegacy = "WEAPON"
+}
+
+-- ==================================
+-- ======== UI CONSTRUCTION =========
+-- ==================================
+
+local function create(instanceType, properties, children)
 	local obj = Instance.new(instanceType)
 	for prop, value in pairs(properties or {}) do
 		obj[prop] = value
 	end
+	if children then
+		for _, child in ipairs(children) do
+			child.Parent = obj
+		end
+	end
 	return obj
 end
 
+local function createUICorner(radius, parent)
+	create("UICorner", { CornerRadius = UDim.new(0, radius), Parent = parent })
+end
+
+local function createPadding(px, parent)
+	create("UIPadding", {
+		PaddingTop = UDim.new(0, px),
+		PaddingBottom = UDim.new(0, px),
+		PaddingLeft = UDim.new(0, px),
+		PaddingRight = UDim.new(0, px),
+		Parent = parent
+	})
+end
+
+-- Create ScreenGui
 local screenGui = create("ScreenGui", {
 	Name = "BoosterShopUI",
 	Parent = playerGui,
 	ResetOnSpawn = false,
 	ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+	IgnoreGuiInset = true,
 })
 
--- Main container that dims the background
-local boosterShopContainer = create("Frame", {
-	Name = "BoosterShopContainer",
+-- Background Overlay (Glass Effect)
+local overlay = create("Frame", {
+	Name = "Overlay",
 	Parent = screenGui,
 	Size = UDim2.new(1, 0, 1, 0),
-	BackgroundColor3 = Color3.fromRGB(0, 0, 0),
-	BackgroundTransparency = 0.8,
+	BackgroundColor3 = Color3.new(0, 0, 0),
+	BackgroundTransparency = 0.6,
 	Visible = false,
-	ZIndex = 40,
+	ZIndex = 100,
 })
 
--- Main shop window
-local shopWindow = create("Frame", {
-	Name = "ShopWindow",
-	Parent = boosterShopContainer,
-	Size = UDim2.new(0.9, 0, 0.9, 0),
+-- Main Window
+local mainWindow = create("Frame", {
+	Name = "MainWindow",
+	Parent = overlay,
+	Size = UDim2.fromOffset(900, 600),
 	AnchorPoint = Vector2.new(0.5, 0.5),
-	Position = UDim2.new(0.5, 0, 1.5, 0), -- Start off-screen for entry animation
-	BackgroundColor3 = Color3.fromRGB(15, 23, 42), -- slate-900
+	Position = UDim2.new(0.5, 0, 1.5, 0), -- Start off-screen
+	BackgroundColor3 = THEME.BgDark,
 	BorderSizePixel = 0,
 })
-create("UICorner", { CornerRadius = UDim.new(0, 16), Parent = shopWindow })
-create("UIStroke", { Color = Color3.fromRGB(51, 65, 85), Thickness = 2, Parent = shopWindow })
+createUICorner(24, mainWindow)
+create("UIStroke", { Color = Color3.new(1, 1, 1), Transparency = 0.9, Thickness = 1, Parent = mainWindow })
+
+-- ==================================
+-- ======== SIDEBAR (LEFT) ==========
+-- ==================================
+local sidebar = create("Frame", {
+	Name = "Sidebar",
+	Parent = mainWindow,
+	Size = UDim2.new(0, 320, 1, 0),
+	BackgroundColor3 = Color3.new(0,0,0),
+	BackgroundTransparency = 0.2,
+	BorderSizePixel = 0,
+})
+createUICorner(24, sidebar)
+local sidebarMask = create("Frame", { -- To handle corner clipping properly
+	Name = "SidebarMask",
+	Parent = sidebar,
+	Size = UDim2.new(1, 0, 1, 0),
+	BackgroundTransparency = 1,
+})
+create("UICorner", { CornerRadius = UDim.new(0, 24), Parent = sidebar })
+-- Cover the right side corners so it looks attached
+local sidebarCover = create("Frame", {
+	Parent = sidebar,
+	Size = UDim2.new(0, 20, 1, 0),
+	Position = UDim2.new(1, -20, 0, 0),
+	BackgroundColor3 = THEME.BgDark, -- Match background
+	BackgroundTransparency = 0.2, -- Match sidebar transparency
+	BorderSizePixel = 0,
+	ZIndex = 0
+})
+
+-- Sidebar Content Container
+local sidebarContent = create("Frame", {
+	Name = "Content",
+	Parent = sidebar,
+	Size = UDim2.new(1, 0, 1, 0),
+	BackgroundTransparency = 1,
+	ZIndex = 2,
+})
+createPadding(24, sidebarContent)
 
 -- Header
-local header = create("Frame", {
-	Name = "Header",
-	Parent = shopWindow,
+local headerFrame = create("Frame", {
+	Parent = sidebarContent,
 	Size = UDim2.new(1, 0, 0, 60),
-	BackgroundColor3 = Color3.fromRGB(30, 41, 59), -- slate-800
-	BorderSizePixel = 0,
+	BackgroundTransparency = 1,
 })
-create("UIStroke", { ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual, Color = Color3.fromRGB(51, 65, 85), Thickness = 1, Parent = header })
-
-
-local title = create("TextLabel", {
-	Name = "Title",
-	Parent = header,
-	Size = UDim2.new(1, 0, 1, 0),
-	Position = UDim2.new(0, 0, 0, 0),
-	Text = "GUDANG BOOSTER",
-	Font = Enum.Font.GothamBlack,
+local headerIcon = create("TextLabel", {
+	Parent = headerFrame,
+	Text = "📦",
 	TextSize = 24,
-	TextColor3 = Color3.fromRGB(255, 255, 255),
-	TextXAlignment = Enum.TextXAlignment.Center,
 	BackgroundTransparency = 1,
+	Size = UDim2.new(0, 30, 0, 30),
+	TextColor3 = THEME.Accent,
 })
-
-local closeShopButton = create("TextButton", {
-	Name = "CloseShopButton",
-	Parent = header,
-	Size = UDim2.new(0, 40, 0, 40),
-	AnchorPoint = Vector2.new(1, 0.5),
-	Position = UDim2.new(1, -16, 0.5, 0),
-	Text = "×",
-	Font = Enum.Font.GothamBold,
-	TextSize = 32,
-	TextColor3 = Color3.fromRGB(255, 255, 255),
-	BackgroundColor3 = Color3.fromRGB(220, 38, 38), -- red-600
-})
-create("UICorner", { CornerRadius = UDim.new(0, 20), Parent = closeShopButton })
-
--- Main content area
-local mainContent = create("Frame", {
-	Name = "MainContent",
-	Parent = shopWindow,
-	Size = UDim2.new(1, -48, 1, -84), -- Padding applied
-	Position = UDim2.new(0.5, 0, 0.5, 30),
-	AnchorPoint = Vector2.new(0.5, 0.5),
+local headerTitle = create("TextLabel", {
+	Parent = headerFrame,
+	Text = "BOOSTER SHOP",
+	Font = Enum.Font.GothamBlack,
+	TextSize = 22,
+	TextColor3 = THEME.TextMain,
 	BackgroundTransparency = 1,
+	Position = UDim2.new(0, 36, 0, 0),
+	Size = UDim2.new(1, -36, 0, 30),
+	TextXAlignment = Enum.TextXAlignment.Left,
 })
-create("UIListLayout", {
-	FillDirection = Enum.FillDirection.Horizontal,
-	SortOrder = Enum.SortOrder.LayoutOrder,
-	Padding = UDim.new(0, 24),
-	Parent = mainContent,
+local headerSubtitle = create("TextLabel", {
+	Parent = headerFrame,
+	Text = "Tingkatkan kemampuan tempurmu.",
+	Font = Enum.Font.Gotham,
+	TextSize = 12,
+	TextColor3 = THEME.TextDim,
+	BackgroundTransparency = 1,
+	Position = UDim2.new(0, 0, 0, 30),
+	Size = UDim2.new(1, 0, 0, 20),
+	TextXAlignment = Enum.TextXAlignment.Left,
 })
 
--- Left panel: Item List
-local itemListContainer = create("Frame", {
-	Name = "ItemListContainer",
-	Parent = mainContent,
-	Size = UDim2.new(0.35, 0, 1, 0),
-	BackgroundColor3 = Color3.fromRGB(30, 41, 59), -- slate-800
+-- Separator
+local separator = create("Frame", {
+	Parent = sidebarContent,
+	Size = UDim2.new(1, 0, 0, 1),
+	Position = UDim2.new(0, 0, 0, 65),
+	BackgroundColor3 = THEME.Border,
 	BorderSizePixel = 0,
-	LayoutOrder = 1,
 })
-create("UICorner", { CornerRadius = UDim.new(0, 8), Parent = itemListContainer })
-create("UIStroke", { Color = Color3.fromRGB(51, 65, 85), Thickness = 1, Parent = itemListContainer })
-create("UIPadding", { PaddingTop = UDim.new(0, 16), PaddingLeft = UDim.new(0, 16), PaddingRight = UDim.new(0, 16), PaddingBottom = UDim.new(0,16), Parent = itemListContainer })
-local itemListLayout = create("UIListLayout", {FillDirection = Enum.FillDirection.Vertical, SortOrder = Enum.SortOrder.LayoutOrder, Parent = itemListContainer})
 
-local itemListHeader = create("TextLabel", {
-	Name = "ItemListHeader",
-	Parent = itemListContainer,
-	Size = UDim2.new(1, 0, 0, 30),
-	Text = "Item Tersedia",
+-- Balance Display
+local balanceFrame = create("Frame", {
+	Parent = sidebarContent,
+	Size = UDim2.new(1, 0, 0, 50),
+	Position = UDim2.new(0, 0, 0, 80),
+	BackgroundColor3 = THEME.PanelBg,
+	BorderSizePixel = 0,
+})
+createUICorner(12, balanceFrame)
+create("UIStroke", { Color = THEME.Border, Thickness = 1, Parent = balanceFrame })
+createPadding(12, balanceFrame)
+
+local balanceLabel = create("TextLabel", {
+	Parent = balanceFrame,
+	Text = "SALDO ANDA",
 	Font = Enum.Font.GothamBold,
-	TextSize = 20,
-	TextColor3 = Color3.fromRGB(241, 245, 249), -- slate-100
-	TextXAlignment = Enum.TextXAlignment.Center,
+	TextSize = 10,
+	TextColor3 = THEME.TextDim,
 	BackgroundTransparency = 1,
-	LayoutOrder = 1,
+	Size = UDim2.new(0, 80, 1, 0),
+	TextXAlignment = Enum.TextXAlignment.Left,
 })
-itemListLayout.Padding = UDim.new(0,10)
+local balanceValue = create("TextLabel", {
+	Name = "Value",
+	Parent = balanceFrame,
+	Text = "0 🩸",
+	Font = Enum.Font.GothamBold,
+	TextSize = 18,
+	TextColor3 = THEME.Gold,
+	BackgroundTransparency = 1,
+	Size = UDim2.new(1, -80, 1, 0),
+	Position = UDim2.new(0, 80, 0, 0),
+	TextXAlignment = Enum.TextXAlignment.Right,
+})
 
+-- Item List (ScrollingFrame)
 local itemList = create("ScrollingFrame", {
 	Name = "ItemList",
-	Parent = itemListContainer,
-	Size = UDim2.new(1, 0, 1, -40),
-	BackgroundColor3 = Color3.fromRGB(30, 41, 59),
+	Parent = sidebarContent,
+	Size = UDim2.new(1, 0, 1, -150), -- Fill remaining space
+	Position = UDim2.new(0, 0, 0, 145),
+	BackgroundTransparency = 1,
 	BorderSizePixel = 0,
-	ScrollBarImageColor3 = Color3.fromRGB(79, 70, 229), -- indigo-600
-	ScrollBarThickness = 6,
-	LayoutOrder = 2,
+	ScrollBarThickness = 4,
+	ScrollBarImageColor3 = THEME.TextDim,
+	CanvasSize = UDim2.new(0, 0, 0, 0), -- Automatic
 	AutomaticCanvasSize = Enum.AutomaticSize.Y,
-	CanvasSize = UDim2.new(0,0,0,0),
 })
 create("UIListLayout", {
-	FillDirection = Enum.FillDirection.Vertical,
-	SortOrder = Enum.SortOrder.Name,
-	Padding = UDim.new(0, 12),
 	Parent = itemList,
+	SortOrder = Enum.SortOrder.LayoutOrder,
+	Padding = UDim.new(0, 8),
 })
-create("UIPadding", {PaddingRight = UDim.new(0,8), Parent=itemList})
 
-
--- Right panel: Detail View
+-- ==================================
+-- ======== DETAIL PANEL (RIGHT) ====
+-- ==================================
 local detailPanel = create("Frame", {
 	Name = "DetailPanel",
-	Parent = mainContent,
-	Size = UDim2.new(0.65, -24, 1, 0),
-	BackgroundColor3 = Color3.fromRGB(30, 41, 59), -- slate-800
-	BorderSizePixel = 0,
-	LayoutOrder = 2,
+	Parent = mainWindow,
+	Size = UDim2.new(1, -320, 1, 0),
+	Position = UDim2.new(0, 320, 0, 0),
+	BackgroundTransparency = 1,
+	ClipsDescendants = true,
 })
-create("UICorner", { CornerRadius = UDim.new(0, 8), Parent = detailPanel })
-create("UIStroke", { Color = Color3.fromRGB(51, 65, 85), Thickness = 1, Parent = detailPanel })
-create("UIPadding", { PaddingTop = UDim.new(0, 32), PaddingLeft = UDim.new(0, 32), PaddingRight = UDim.new(0, 32), PaddingBottom = UDim.new(0,32), Parent = detailPanel })
+-- Gradient Background for Detail Panel
+local detailBg = create("Frame", {
+	Parent = detailPanel,
+	Size = UDim2.new(1, 0, 1, 0),
+	BackgroundColor3 = THEME.Accent,
+	BackgroundTransparency = 0.95,
+	ZIndex = 0,
+})
+createUICorner(24, detailBg)
+-- Fix corner overlap: Left side should be square to join with sidebar
+local detailBgCover = create("Frame", {
+	Parent = detailBg,
+	Size = UDim2.new(0, 20, 1, 0),
+	BackgroundColor3 = THEME.Accent, 
+	Visible = false
+})
 
--- Detail Panel Placeholder
-local detailPlaceholder = create("Frame", {
-	Name = "DetailPlaceholder",
+local detailContent = create("Frame", {
 	Parent = detailPanel,
 	Size = UDim2.new(1, 0, 1, 0),
 	BackgroundTransparency = 1,
-	Visible = true,
+	ZIndex = 2,
 })
-local placeholderLayout = create("UIListLayout", {
-	FillDirection = Enum.FillDirection.Vertical,
+createPadding(32, detailContent)
+
+-- Close Button
+local closeButton = create("TextButton", {
+	Parent = detailContent,
+	Size = UDim2.fromOffset(32, 32),
+	Position = UDim2.new(1, 0, 0, 0),
+	AnchorPoint = Vector2.new(1, 0),
+	BackgroundColor3 = THEME.PanelBg,
+	Text = "×",
+	Font = Enum.Font.GothamBold,
+	TextSize = 24,
+	TextColor3 = THEME.TextMain,
+	AutoButtonColor = false,
+})
+createUICorner(16, closeButton)
+closeButton.MouseButton1Click:Connect(function()
+	toggleShop(false)
+end)
+
+-- Preview Container (Center content)
+local previewContainer = create("Frame", {
+	Name = "PreviewContainer",
+	Parent = detailContent,
+	Size = UDim2.new(1, 0, 1, -100), -- Leave room for action bar
+	BackgroundTransparency = 1,
+})
+create("UIListLayout", {
+	Parent = previewContainer,
 	HorizontalAlignment = Enum.HorizontalAlignment.Center,
 	VerticalAlignment = Enum.VerticalAlignment.Center,
 	SortOrder = Enum.SortOrder.LayoutOrder,
 	Padding = UDim.new(0, 16),
-	Parent = detailPlaceholder,
 })
-local placeholderIcon = create("ImageLabel", {
-	Name = "PlaceholderIcon",
-	Parent = detailPlaceholder,
-	Size = UDim2.new(0, 96, 0, 96),
-	Image = "rbxassetid://10621421113", -- A shield/check icon
-	ImageColor3 = Color3.fromRGB(129, 140, 153), -- slate-500
-	BackgroundTransparency = 1,
+
+-- Large Icon Wrapper
+local iconWrapper = create("Frame", {
+	Name = "IconWrapper",
+	Parent = previewContainer,
+	Size = UDim2.fromOffset(140, 140),
+	BackgroundColor3 = THEME.BgDark,
 	LayoutOrder = 1,
 })
-local placeholderTitle = create("TextLabel", {
-	Name = "PlaceholderTitle",
-	Parent = detailPlaceholder,
-	Size = UDim2.new(1, 0, 0, 30),
-	Text = "Pilih Booster",
-	Font = Enum.Font.GothamBold,
-	TextSize = 24,
-	TextColor3 = Color3.fromRGB(100, 116, 139), -- slate-500
-	BackgroundTransparency = 1,
-	LayoutOrder = 2,
+createUICorner(30, iconWrapper)
+create("UIStroke", {
+	Name = "Stroke",
+	Parent = iconWrapper,
+	Color = Color3.new(1,1,1),
+	Transparency = 0.9,
+	Thickness = 2,
 })
-local placeholderDesc = create("TextLabel", {
-	Name = "PlaceholderDesc",
-	Parent = detailPlaceholder,
-	Size = UDim2.new(1, 0, 0, 20),
-	Text = "Pilih item dari daftar di sebelah kiri untuk melihat detailnya.",
-	Font = Enum.Font.Gotham,
-	TextSize = 18,
-	TextColor3 = Color3.fromRGB(100, 116, 139), -- slate-500
-	BackgroundTransparency = 1,
-	LayoutOrder = 3,
-})
-
-
--- Detail Panel Content
-local detailContent = create("Frame", {
-	Name = "DetailContent",
-	Parent = detailPanel,
+local largeIcon = create("TextLabel", {
+	Parent = iconWrapper,
 	Size = UDim2.new(1, 0, 1, 0),
 	BackgroundTransparency = 1,
-	Visible = false,
+	Text = "📦",
+	TextSize = 80,
+	TextColor3 = THEME.TextMain,
 })
 
--- Bottom container for purchase info and button (anchored to bottom)
-local bottomContainer = create("Frame", {
-	Name = "BottomContainer",
-	Parent = detailContent,
-	Size = UDim2.new(1, 0, 0, 140),
-	AnchorPoint = Vector2.new(0.5, 1),
-	Position = UDim2.new(0.5, 0, 1, 0),
+-- Detail Text
+local detailName = create("TextLabel", {
+	Parent = previewContainer,
+	LayoutOrder = 2,
+	Text = "Pilih Item",
+	Font = Enum.Font.GothamBlack,
+	TextSize = 36,
+	TextColor3 = THEME.TextMain,
+	AutomaticSize = Enum.AutomaticSize.XY,
 	BackgroundTransparency = 1,
-})
-local bottomLayout = create("UIListLayout", {
-	FillDirection = Enum.FillDirection.Vertical,
-	HorizontalAlignment = Enum.HorizontalAlignment.Center,
-	SortOrder = Enum.SortOrder.LayoutOrder,
-	Padding = UDim.new(0, 12),
-	Parent = bottomContainer,
 })
 
--- Top container for scrollable content
-local topContainer = create("Frame", {
-	Name = "TopContainer",
-	Parent = detailContent,
-	Size = UDim2.new(1, 0, 1, -152), -- Fill space above bottom container
-	BackgroundTransparency = 1,
+local detailTypeBadge = create("TextLabel", {
+	Parent = previewContainer,
+	LayoutOrder = 3,
+	Text = "SYSTEM",
+	Font = Enum.Font.GothamBold,
+	TextSize = 12,
+	TextColor3 = THEME.TextDim,
+	BackgroundColor3 = THEME.PanelBg,
+	Size = UDim2.fromOffset(80, 24),
 	BorderSizePixel = 0,
 })
-local topLayout = create("UIListLayout", {
-	FillDirection = Enum.FillDirection.Vertical,
-	HorizontalAlignment = Enum.HorizontalAlignment.Center,
-	SortOrder = Enum.SortOrder.LayoutOrder,
-	Padding = UDim.new(0, 8),
-	Parent = topContainer,
-})
-create("UIPadding", {PaddingTop = UDim.new(0, 16), Parent = topContainer})
-
-
-local detailIconContainer = create("Frame", {
-	Name = "DetailIconContainer",
-	Parent = topContainer,
-	Size = UDim2.new(0, 160, 0, 160), -- Smaller size
-	BackgroundColor3 = Color3.fromRGB(15, 23, 42), -- slate-900
-	LayoutOrder = 1,
-})
-create("UICorner", {CornerRadius=UDim.new(0,16), Parent=detailIconContainer})
-create("UIStroke", {Color=Color3.fromRGB(99, 102, 241), Thickness=2, Parent=detailIconContainer})
-
-local detailIcon = create("TextLabel", {
-	Name = "DetailIcon",
-	Parent = detailIconContainer,
-	Size = UDim2.new(1, 0, 1, 0),
-	Text = "SR",
-	Font = Enum.Font.GothamBlack,
-	TextSize = 80, -- Smaller text
-	TextColor3 = Color3.fromRGB(129, 140, 248), -- indigo-400
-	BackgroundTransparency = 1,
-})
-
-local detailName = create("TextLabel", {
-	Name = "DetailName",
-	Parent = topContainer,
-	Size = UDim2.new(1, 0, 0, 60),
-	Text = "Self Revive",
-	Font = Enum.Font.GothamBlack,
-	TextSize = 48,
-	TextColor3 = Color3.fromRGB(255, 255, 255),
-	BackgroundTransparency = 1,
-	LayoutOrder = 2,
-})
+createUICorner(12, detailTypeBadge)
 
 local detailDesc = create("TextLabel", {
-	Name = "DetailDesc",
-	Parent = topContainer,
-	Size = UDim2.new(1, 0, 0, 0), -- Use AutomaticSize
-	AutomaticSize = Enum.AutomaticSize.Y,
-	Text = "Memberi Anda kemampuan untuk hidup kembali (self-revive) saat Anda terjatuh (knocked).",
+	Parent = previewContainer,
+	LayoutOrder = 4,
+	Text = "Pilih booster dari daftar di sebelah kiri.",
 	Font = Enum.Font.Gotham,
-	TextSize = 18, -- Smaller text
-	TextColor3 = Color3.fromRGB(156, 163, 175), -- gray-400
+	TextSize = 16,
+	TextColor3 = THEME.TextDim,
 	BackgroundTransparency = 1,
+	Size = UDim2.new(0, 400, 0, 0),
+	AutomaticSize = Enum.AutomaticSize.Y,
 	TextWrapped = true,
-	LayoutOrder = 3,
+	TextTransparency = 0.2,
 })
 
+-- Action Bar (Bottom)
+local actionBar = create("Frame", {
+	Name = "ActionBar",
+	Parent = detailContent,
+	Size = UDim2.new(1, 0, 0, 80),
+	Position = UDim2.new(0, 0, 1, 0),
+	AnchorPoint = Vector2.new(0, 1),
+	BackgroundColor3 = Color3.new(0, 0, 0),
+	BackgroundTransparency = 0.4,
+})
+createUICorner(16, actionBar)
+create("UIStroke", { Color = Color3.new(1,1,1), Transparency = 0.9, Parent = actionBar })
+createPadding(16, actionBar)
 
-local purchaseInfo = create("Frame", {
-	Name = "PurchaseInfo",
-	Parent = bottomContainer,
-	Size = UDim2.new(1, 0, 0, 60),
-	BackgroundColor3 = Color3.fromRGB(15, 23, 42), -- slate-900
+-- Price Info (Left of Action Bar)
+local priceContainer = create("Frame", {
+	Parent = actionBar,
+	Size = UDim2.new(0.5, 0, 1, 0),
+	BackgroundTransparency = 1,
+})
+create("UIListLayout", { Parent = priceContainer, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 2) })
+
+local priceHeader = create("TextLabel", {
+	Parent = priceContainer,
 	LayoutOrder = 1,
-})
-create("UICorner", {CornerRadius=UDim.new(0,8), Parent=purchaseInfo})
-create("UIStroke", {Color=Color3.fromRGB(51, 65, 85), Parent=purchaseInfo})
-create("UIPadding", {PaddingLeft=UDim.new(0,16), PaddingRight=UDim.new(0,16), Parent=purchaseInfo})
-
-local priceLabel = create("TextLabel", {
-	Name = "PriceLabel",
-	Parent = purchaseInfo,
-	Size = UDim2.new(0.5, 0, 1, 0),
-	Text = "2,500 🩸",
+	Text = "HARGA",
 	Font = Enum.Font.GothamBold,
-	TextSize = 24,
-	TextColor3 = Color3.fromRGB(250, 204, 21), -- yellow-400
+	TextSize = 10,
+	TextColor3 = THEME.TextDim,
+	BackgroundTransparency = 1,
+	Size = UDim2.new(1, 0, 0, 12),
 	TextXAlignment = Enum.TextXAlignment.Left,
-	BackgroundTransparency = 1,
 })
-
-local ownedLabel = create("TextLabel", {
-	Name = "OwnedLabel",
-	Parent = purchaseInfo,
-	Size = UDim2.new(0.5, 0, 1, 0),
-	Position = UDim2.new(0.5, 0, 0, 0),
-	Text = "x0",
-	Font = Enum.Font.GothamBold,
-	TextSize = 24,
-	TextColor3 = Color3.fromRGB(255, 255, 255),
-	TextXAlignment = Enum.TextXAlignment.Right,
-	BackgroundTransparency = 1,
-})
-
-local purchaseButton = create("TextButton", {
-	Name = "PurchaseButton",
-	Parent = bottomContainer,
-	Size = UDim2.new(1, 0, 0, 60),
-	Text = "BELI",
-	Font = Enum.Font.GothamBold,
-	TextSize = 20,
-	TextColor3 = Color3.fromRGB(255, 255, 255),
-	BackgroundColor3 = Color3.fromRGB(79, 70, 229), -- indigo-600
+local detailPrice = create("TextLabel", {
+	Parent = priceContainer,
 	LayoutOrder = 2,
-})
-create("UICorner", {CornerRadius = UDim.new(0,8), Parent=purchaseButton})
-
--- Toast Notification Container
-local toastContainer = create("Frame", {
-	Name = "ToastContainer",
-	Parent = screenGui,
-	Size = UDim2.new(0, 320, 0, 300),
-	Position = UDim2.new(1, -20, 0, 20),
-	AnchorPoint = Vector2.new(1, 0),
+	Text = "- 🩸",
+	Font = Enum.Font.GothamBlack,
+	TextSize = 24,
+	TextColor3 = THEME.TextMain,
 	BackgroundTransparency = 1,
-	ZIndex = 50,
+	Size = UDim2.new(1, 0, 0, 28),
+	TextXAlignment = Enum.TextXAlignment.Left,
+	RichText = true,
 })
-create("UIListLayout", {
-	FillDirection = Enum.FillDirection.Vertical,
-	HorizontalAlignment = Enum.HorizontalAlignment.Right,
-	SortOrder = Enum.SortOrder.LayoutOrder,
-	Padding = UDim.new(0, 12),
-	Parent = toastContainer,
+local detailOwned = create("TextLabel", {
+	Parent = priceContainer,
+	LayoutOrder = 3,
+	Text = "Dimiliki: 0",
+	Font = Enum.Font.Gotham,
+	TextSize = 12,
+	TextColor3 = THEME.TextDim,
+	BackgroundTransparency = 1,
+	Size = UDim2.new(1, 0, 0, 16),
+	TextXAlignment = Enum.TextXAlignment.Left,
 })
 
+-- Buy Button (Right of Action Bar)
+local buyButton = create("TextButton", {
+	Parent = actionBar,
+	Size = UDim2.new(0, 180, 1, 0),
+	Position = UDim2.new(1, 0, 0, 0),
+	AnchorPoint = Vector2.new(1, 0),
+	BackgroundColor3 = THEME.Accent,
+	Text = "BELI SEKARANG",
+	Font = Enum.Font.GothamBold,
+	TextSize = 14,
+	TextColor3 = THEME.TextMain,
+	AutoButtonColor = false,
+})
+createUICorner(12, buyButton)
+
+-- Toast Notification
+local toastFrame = create("Frame", {
+	Name = "Toast",
+	Parent = overlay,
+	Size = UDim2.new(0, 0, 0, 40),
+	Position = UDim2.new(0.5, 0, 1, -80),
+	AnchorPoint = Vector2.new(0.5, 1),
+	BackgroundColor3 = THEME.Success,
+	AutomaticSize = Enum.AutomaticSize.X,
+	Visible = false,
+})
+createUICorner(20, toastFrame)
+local toastLabel = create("TextLabel", {
+	Parent = toastFrame,
+	Text = "Pembelian Berhasil!",
+	Font = Enum.Font.GothamBold,
+	TextSize = 14,
+	TextColor3 = THEME.TextMain,
+	BackgroundTransparency = 1,
+	Size = UDim2.new(0, 0, 1, 0),
+	AutomaticSize = Enum.AutomaticSize.X,
+})
+createPadding(12, toastFrame) -- horizontal padding for toast
 
 -- ==================================
--- ====== UI LOGIC ==================
+-- ======== LOGIC & STATE ===========
 -- ==================================
 local boosterConfigCache = nil
 local currentPlayerData = nil
 local selectedBoosterId = nil
+local itemButtons = {} -- Cache for button instances
 
-local function showToast(message, isSuccess)
-	local toastId = "toast-" .. os.clock()
-	local bgColor = isSuccess and Color3.fromRGB(22, 163, 74) or Color3.fromRGB(220, 38, 38)
-	local icon = isSuccess and "✓" or "✕"
+local function showToast(message, isError)
+	toastLabel.Text = message
+	toastFrame.BackgroundColor3 = isError and THEME.Error or THEME.Success
 
-	local toast = create("Frame", {
-		Name = toastId,
-		Parent = toastContainer,
-		Size = UDim2.new(1, 0, 0, 60),
-		BackgroundColor3 = bgColor,
-		Position = UDim2.new(1, 400, 0, 0), -- Start off-screen
-	})
-	create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = toast})
-	create("UIStroke", {Color = Color3.fromRGB(255,255,255), Transparency = 0.8, Thickness = 1, Parent = toast})
-	create("UIPadding", {PaddingLeft=UDim.new(0,16), Parent=toast})
+	toastFrame.Visible = true
+	toastFrame.Position = UDim2.new(0.5, 0, 1, -40)
+	toastFrame.BackgroundTransparency = 0
+	toastLabel.TextTransparency = 0
 
-	local toastIcon = create("TextLabel", {
-		Name = "ToastIcon",
-		Parent = toast,
-		Size = UDim2.new(0, 30, 1, 0),
-		Text = icon,
-		Font = Enum.Font.GothamBold,
-		TextSize = 24,
-		TextColor3 = Color3.fromRGB(255,255,255),
-		BackgroundTransparency = 1,
-	})
-
-	local toastMessage = create("TextLabel", {
-		Name = "ToastMessage",
-		Parent = toast,
-		Size = UDim2.new(1, -40, 1, 0),
-		Position = UDim2.new(0, 40, 0, 0),
-		Text = message,
-		Font = Enum.Font.Gotham,
-		TextSize = 16,
-		TextColor3 = Color3.fromRGB(255,255,255),
-		TextXAlignment = Enum.TextXAlignment.Left,
-		BackgroundTransparency = 1,
-	})
-
-	local tweenInfoIn = TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-	local tweenIn = TweenService:Create(toast, tweenInfoIn, {Position = UDim2.new(0, 0, 0, 0)})
-	tweenIn:Play()
+	-- Pop up animation
+	TweenService:Create(toastFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Position = UDim2.new(0.5, 0, 1, -100)
+	}):Play()
 
 	task.delay(3, function()
-		if toast and toast.Parent then
-			local tweenInfoOut = TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
-			local tweenOut = TweenService:Create(toast, tweenInfoOut, {Position = UDim2.new(1, 400, 0, 0)})
-			tweenOut:Play()
-			tweenOut.Completed:Connect(function()
-				toast:Destroy()
-			end)
-		end
+		local fadeInfo = TweenInfo.new(0.5)
+		TweenService:Create(toastFrame, fadeInfo, { BackgroundTransparency = 1 }):Play()
+		TweenService:Create(toastLabel, fadeInfo, { TextTransparency = 1 }):Play()
+		task.wait(0.5)
+		toastFrame.Visible = false
 	end)
 end
 
-local function createItemCard(boosterId, config, ownedCount)
-	local card = create("TextButton", {
-		Name = boosterId,
-		Size = UDim2.new(1, 0, 0, 72),
-		BackgroundColor3 = Color3.fromRGB(51, 65, 85), -- slate-700
-		AutoButtonColor = false,
-		Text = "",
-	})
-	local stroke = create("UIStroke", { Parent = card, Color = Color3.fromRGB(71, 85, 105), Thickness = 2 }) -- slate-600
-	create("UICorner", { CornerRadius = UDim.new(0, 8), Parent = card })
-	create("UIPadding", { PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12), Parent = card })
-
-	local iconBg = create("Frame", {
-		Name = "IconBg",
-		Parent = card,
-		Size = UDim2.new(0, 48, 0, 48),
-		Position = UDim2.new(0, 0, 0.5, 0),
-		AnchorPoint = Vector2.new(0, 0.5),
-		BackgroundColor3 = Color3.fromRGB(15, 23, 42), -- slate-900
-	})
-	create("UICorner", { CornerRadius = UDim.new(0, 8), Parent = iconBg })
-
-	local icon = create("TextLabel", {
-		Name = "Icon",
-		Parent = iconBg,
-		Size = UDim2.new(1, 0, 1, 0),
-		Text = config.Icon,
-		Font = Enum.Font.GothamBold,
-		TextSize = 24,
-		TextColor3 = Color3.fromRGB(129, 140, 248), -- indigo-400
-		BackgroundTransparency = 1,
-	})
-
-	local name = create("TextLabel", {
-		Name = "Name",
-		Parent = card,
-		Size = UDim2.new(1, -120, 0.5, 0),
-		Position = UDim2.new(0, 60, 0, 0),
-		Text = config.Name,
-		Font = Enum.Font.GothamBold,
-		TextSize = 18,
-		TextColor3 = Color3.fromRGB(255, 255, 255),
-		TextXAlignment = Enum.TextXAlignment.Left,
-		BackgroundTransparency = 1,
-	})
-
-	local price = create("TextLabel", {
-		Name = "Price",
-		Parent = card,
-		Size = UDim2.new(1, -120, 0.5, 0),
-		Position = UDim2.new(0, 60, 0.5, 0),
-		Text = config.Price .. " 🩸",
-		Font = Enum.Font.Gotham,
-		TextSize = 14,
-		TextColor3 = Color3.fromRGB(250, 204, 21), -- yellow-400
-		TextXAlignment = Enum.TextXAlignment.Left,
-		BackgroundTransparency = 1,
-	})
-
-	local owned = create("TextLabel", {
-		Name = "Owned",
-		Parent = card,
-		Size = UDim2.new(0, 50, 1, 0),
-		Position = UDim2.new(1, -50, 0, 0),
-		Text = "x" .. ownedCount,
-		Font = Enum.Font.GothamBold,
-		TextSize = 14,
-		TextColor3 = ownedCount > 0 and Color3.fromRGB(34, 211, 238) or Color3.fromRGB(100, 116, 139), -- cyan-400 or slate-500
-		BackgroundTransparency = 1,
-	})
-
-	-- Hover Logic
-	card.MouseEnter:Connect(function()
-		TweenService:Create(card, TweenInfo.new(0.15), { BackgroundColor3 = Color3.fromRGB(71, 85, 105) }):Play() -- slate-600
-	end)
-	card.MouseLeave:Connect(function()
-		TweenService:Create(card, TweenInfo.new(0.15), { BackgroundColor3 = Color3.fromRGB(51, 65, 85) }):Play() -- slate-700
-	end)
-
-	return card
-end
-
-local function updateDetailsPanel(boosterId)
+local function updateDetailView(boosterId)
 	selectedBoosterId = boosterId
+	local config = boosterConfigCache and boosterConfigCache[boosterId]
 
-	if not boosterId or not boosterConfigCache[boosterId] then
-		detailPlaceholder.Visible = true
-		detailContent.Visible = false
+	if not config then
+		detailName.Text = "Pilih Item"
+		detailDesc.Text = "Pilih booster dari daftar di sebelah kiri untuk melihat detail."
+		largeIcon.Text = "📦"
+		detailPrice.Text = "- 🩸"
+		detailOwned.Text = "Dimiliki: -"
+		buyButton.Visible = false
+		detailTypeBadge.Visible = false
 		return
 	end
 
-	detailPlaceholder.Visible = false
-	detailContent.Visible = true
-
-	local item = boosterConfigCache[boosterId]
 	local ownedCount = (currentPlayerData and currentPlayerData.inventory and currentPlayerData.inventory[boosterId]) or 0
-	local canAfford = currentPlayerData and currentPlayerData.coins >= item.Price
+	local canAfford = currentPlayerData and currentPlayerData.coins >= config.Price
+	local iconChar = ICONS[boosterId] or ICONS.Default
+	local category = CATEGORIES[boosterId] or "ITEM"
 
-	detailIcon.Text = item.Icon
-	detailName.Text = item.Name
-	detailDesc.Text = item.Description
-	priceLabel.Text = item.Price .. " 🩸"
-	ownedLabel.Text = "x" .. ownedCount
+	-- Update Text
+	detailName.Text = config.Name
+	detailDesc.Text = config.Description
+	largeIcon.Text = iconChar
+	detailPrice.Text = config.Price .. " <font color='#fbbf24'>🩸</font>"
+	detailOwned.Text = "Dimiliki: " .. ownedCount
+	detailTypeBadge.Text = category
+	detailTypeBadge.Visible = true
 
-	purchaseButton.Text = canAfford and "BELI" or "KOIN TIDAK CUKUP"
-	purchaseButton.BackgroundColor3 = canAfford and Color3.fromRGB(79, 70, 229) or Color3.fromRGB(51, 65, 85)
-	purchaseButton.Enabled = canAfford
+	-- Update Buy Button
+	buyButton.Visible = true
+	if canAfford then
+		buyButton.Text = "BELI SEKARANG"
+		buyButton.BackgroundColor3 = THEME.Accent
+		buyButton.AutoButtonColor = true
+		buyButton.Active = true
+	else
+		buyButton.Text = "SALDO KURANG"
+		buyButton.BackgroundColor3 = THEME.Border
+		buyButton.AutoButtonColor = false
+		buyButton.Active = false
+	end
+
+	-- Update active state in sidebar
+	for id, btn in pairs(itemButtons) do
+		local isSelected = (id == boosterId)
+		local bg = btn:FindFirstChild("Bg")
+		local stroke = btn:FindFirstChild("UIStroke")
+		local iconContainer = btn:FindFirstChild("IconContainer")
+		local iconStroke = iconContainer and iconContainer:FindFirstChild("UIStroke")
+
+		if isSelected then
+			TweenService:Create(bg, TweenInfo.new(0.2), { BackgroundTransparency = 0.85 }):Play() -- Slightly lighter
+			TweenService:Create(stroke, TweenInfo.new(0.2), { Color = THEME.Accent, Transparency = 0 }):Play()
+			if iconStroke then
+				TweenService:Create(iconStroke, TweenInfo.new(0.2), { Color = THEME.Accent }):Play()
+			end
+		else
+			TweenService:Create(bg, TweenInfo.new(0.2), { BackgroundTransparency = 0.97 }):Play()
+			TweenService:Create(stroke, TweenInfo.new(0.2), { Color = Color3.new(1,1,1), Transparency = 1 }):Play()
+			if iconStroke then
+				TweenService:Create(iconStroke, TweenInfo.new(0.2), { Color = Color3.new(1,1,1) }):Play()
+			end
+		end
+	end
 end
 
-local function populateShop()
-	if not boosterConfigCache or not currentPlayerData then return end
+local function populateSidebar()
+	if not boosterConfigCache then return end
 
+	-- Clear old items
 	for _, child in ipairs(itemList:GetChildren()) do
 		if child:IsA("TextButton") then child:Destroy() end
 	end
+	itemButtons = {}
 
-	for boosterId, config in pairs(boosterConfigCache) do
-		local ownedCount = (currentPlayerData.inventory and currentPlayerData.inventory[boosterId]) or 0
-		local card = createItemCard(boosterId, config, ownedCount)
-		card.Parent = itemList
+	-- Sort items by price (or name if you prefer)
+	local sortedItems = {}
+	for id, cfg in pairs(boosterConfigCache) do
+		table.insert(sortedItems, { id = id, cfg = cfg })
+	end
+	table.sort(sortedItems, function(a, b) return a.cfg.Price < b.cfg.Price end)
 
-		card.MouseButton1Click:Connect(function()
-			updateDetailsPanel(boosterId)
+	for _, item in ipairs(sortedItems) do
+		local id = item.id
+		local cfg = item.cfg
+		local owned = (currentPlayerData and currentPlayerData.inventory and currentPlayerData.inventory[id]) or 0
+		local iconChar = ICONS[id] or ICONS.Default
+
+		-- Card Button
+		local btn = create("TextButton", {
+			Name = id,
+			Parent = itemList,
+			Size = UDim2.new(1, -8, 0, 70), -- -8 for padding
+			BackgroundTransparency = 1,
+			Text = "",
+			AutoButtonColor = false,
+		})
+
+		-- Background
+		local bg = create("Frame", {
+			Name = "Bg",
+			Parent = btn,
+			Size = UDim2.new(1, 0, 1, 0),
+			BackgroundColor3 = Color3.new(1, 1, 1),
+			BackgroundTransparency = 0.97, -- Very subtle default
+		})
+		createUICorner(12, bg)
+		create("UIStroke", {
+			Parent = btn,
+			Color = Color3.new(1,1,1),
+			Transparency = 1, -- Invisible by default
+			Thickness = 1,
+		})
+
+		-- Icon Container
+		local iconContainer = create("Frame", {
+			Name = "IconContainer",
+			Parent = btn,
+			Size = UDim2.fromOffset(48, 48),
+			Position = UDim2.new(0, 12, 0.5, 0),
+			AnchorPoint = Vector2.new(0, 0.5),
+			BackgroundColor3 = THEME.BgDark,
+		})
+		createUICorner(8, iconContainer)
+		create("UIStroke", {
+			Parent = iconContainer,
+			Color = Color3.new(1,1,1),
+			Transparency = 0.9,
+			Thickness = 1,
+		})
+		local iconLabel = create("TextLabel", {
+			Parent = iconContainer,
+			Size = UDim2.new(1, 0, 1, 0),
+			BackgroundTransparency = 1,
+			Text = iconChar,
+			TextSize = 24,
+		})
+
+		-- Text Content
+		local nameLabel = create("TextLabel", {
+			Parent = btn,
+			Text = cfg.Name,
+			Font = Enum.Font.GothamBold,
+			TextSize = 14,
+			TextColor3 = THEME.TextMain,
+			BackgroundTransparency = 1,
+			Position = UDim2.new(0, 72, 0, 14),
+			Size = UDim2.new(1, -140, 0, 14),
+			TextXAlignment = Enum.TextXAlignment.Left,
+		})
+		local ownedLabel = create("TextLabel", {
+			Parent = btn,
+			Text = "Dimiliki: " .. owned,
+			Font = Enum.Font.Gotham,
+			TextSize = 11,
+			TextColor3 = THEME.TextDim,
+			BackgroundTransparency = 1,
+			Position = UDim2.new(0, 72, 0, 32),
+			Size = UDim2.new(1, -140, 0, 12),
+			TextXAlignment = Enum.TextXAlignment.Left,
+		})
+
+		-- Price
+		local priceLabel = create("TextLabel", {
+			Parent = btn,
+			Text = cfg.Price,
+			Font = Enum.Font.GothamBold,
+			TextSize = 14,
+			TextColor3 = THEME.Gold,
+			BackgroundTransparency = 1,
+			Position = UDim2.new(1, -12, 0.5, 0),
+			AnchorPoint = Vector2.new(1, 0.5),
+			Size = UDim2.new(0, 60, 1, 0),
+			TextXAlignment = Enum.TextXAlignment.Right,
+		})
+
+		-- Interaction
+		btn.MouseEnter:Connect(function()
+			if selectedBoosterId ~= id then
+				TweenService:Create(bg, TweenInfo.new(0.2), { BackgroundTransparency = 0.92 }):Play()
+			end
 		end)
+		btn.MouseLeave:Connect(function()
+			if selectedBoosterId ~= id then
+				TweenService:Create(bg, TweenInfo.new(0.2), { BackgroundTransparency = 0.97 }):Play()
+			end
+		end)
+		btn.MouseButton1Click:Connect(function()
+			updateDetailView(id)
+		end)
+
+		itemButtons[id] = btn
 	end
 end
 
-local function handlePurchase()
-	if not selectedBoosterId or not purchaseButton.Enabled then return end
+-- ==================================
+-- ======== MAIN FUNCTIONS ==========
+-- ==================================
 
-	local itemInfo = boosterConfigCache[selectedBoosterId]
+function toggleShop(visible, data)
+	overlay.Visible = true
+
+	if visible then
+		if data then
+			currentPlayerData = data
+		end
+
+		-- Update Balance
+		if currentPlayerData and currentPlayerData.coins then
+			balanceValue.Text = currentPlayerData.coins .. " 🩸"
+		end
+
+		-- Re-populate to update "Owned" counts
+		populateSidebar()
+
+		-- Select first item if nothing selected or select cached
+		local firstId = next(boosterConfigCache)
+		updateDetailView(selectedBoosterId or firstId)
+
+		-- Animate In
+		mainWindow.Position = UDim2.new(0.5, 0, 0.55, 0) -- Start slightly lower
+		mainWindow.BackgroundTransparency = 1
+		for _, c in ipairs(mainWindow:GetChildren()) do
+			if c:IsA("GuiObject") then c.GroupTransparency = 1 end -- Not supported in standard Luau yet, assume manual fade or simple move
+		end
+
+		local tweenInfo = TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+		TweenService:Create(mainWindow, tweenInfo, { Position = UDim2.new(0.5, 0, 0.5, 0) }):Play()
+		-- Since we can't group transparency easily, we just rely on slide-in.
+	else
+		-- Animate Out
+		local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		local t = TweenService:Create(mainWindow, tweenInfo, { Position = UDim2.new(0.5, 0, 1.5, 0) })
+		t:Play()
+		t.Completed:Wait()
+		overlay.Visible = false
+	end
+end
+
+buyButton.MouseButton1Click:Connect(function()
+	if not selectedBoosterId or not buyButton.Active then return end
+
 	local result = PurchaseBoosterFunction:InvokeServer(selectedBoosterId)
 
 	if result.success then
-		-- Manually update local data for immediate feedback
+		showToast("Pembelian Berhasil!", false)
+		-- Update Local Data
 		currentPlayerData.coins = result.newCoins
 		currentPlayerData.inventory[selectedBoosterId] = result.newAmount
 
-		showToast("Pembelian " .. itemInfo.Name .. " berhasil!", true)
-
-		-- Refresh the UI
-		populateShop()
-		updateDetailsPanel(selectedBoosterId)
+		-- Update UI
+		balanceValue.Text = result.newCoins .. " 🩸"
+		updateDetailView(selectedBoosterId)
+		populateSidebar() -- To update list owned counts
 	else
-		showToast(result.message or "Pembelian gagal.", false)
+		showToast(result.message or "Pembelian Gagal", true)
 	end
-end
-
-local isShopVisible = false
-function toggleShop(visible, data)
-	if isShopVisible == visible then return end
-	isShopVisible = visible
-
-	if visible then
-		currentPlayerData = data
-		if not currentPlayerData.inventory then
-			currentPlayerData.inventory = {}
-		end
-		populateShop()
-		updateDetailsPanel(nil)
-	end
-
-	local targetPosition = visible and UDim2.new(0.5, 0, 0.5, 0) or UDim2.new(0.5, 0, 1.5, 0)
-	local tweenInfo = TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-	local tween = TweenService:Create(shopWindow, tweenInfo, {Position = targetPosition})
-
-	if visible then boosterShopContainer.Visible = true end
-	tween:Play()
-
-	if not visible then
-		tween.Completed:Wait()
-		boosterShopContainer.Visible = false
-	end
-end
-
--- ==================================
--- ====== EVENT CONNECTIONS =========
--- ==================================
-closeShopButton.MouseButton1Click:Connect(function() toggleShop(false) end)
-purchaseButton.MouseButton1Click:Connect(handlePurchase)
-
-ToggleBoosterShopEvent.OnClientEvent:Connect(function(data)
-	toggleShop(not isShopVisible, data)
 end)
 
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-	if gameProcessed then return end
-	if input.KeyCode == Enum.KeyCode.Escape and isShopVisible then
+-- Initialize
+task.spawn(function()
+	boosterConfigCache = GetBoosterConfig:InvokeServer()
+	-- Initial population
+end)
+
+ToggleBoosterShopEvent.OnClientEvent:Connect(function(data)
+	toggleShop(true, data)
+end)
+
+UserInputService.InputBegan:Connect(function(input, gp)
+	if gp then return end
+	if input.KeyCode == Enum.KeyCode.Escape and overlay.Visible then
 		toggleShop(false)
 	end
 end)
 
+-- Hover effects for close/buy buttons
+closeButton.MouseEnter:Connect(function() TweenService:Create(closeButton, TweenInfo.new(0.2), { BackgroundColor3 = THEME.Error }):Play() end)
+closeButton.MouseLeave:Connect(function() TweenService:Create(closeButton, TweenInfo.new(0.2), { BackgroundColor3 = THEME.PanelBg }):Play() end)
 
--- Add hover effects
-local function addHoverEffect(button, hoverColor, defaultColor)
-	button.MouseEnter:Connect(function()
-		if button.Enabled then
-			TweenService:Create(button, TweenInfo.new(0.15), {BackgroundColor3 = hoverColor}):Play()
-		end
-	end)
-	button.MouseLeave:Connect(function()
-		if button.Enabled then
-			TweenService:Create(button, TweenInfo.new(0.15), {BackgroundColor3 = defaultColor}):Play()
-		end
-	end)
-end
+buyButton.MouseEnter:Connect(function() 
+	if buyButton.Active then TweenService:Create(buyButton, TweenInfo.new(0.2), { BackgroundColor3 = THEME.AccentHover }):Play() end 
+end)
+buyButton.MouseLeave:Connect(function() 
+	if buyButton.Active then TweenService:Create(buyButton, TweenInfo.new(0.2), { BackgroundColor3 = THEME.Accent }):Play() end 
+end)
 
-addHoverEffect(closeShopButton, Color3.fromRGB(248, 113, 113), Color3.fromRGB(220, 38, 38)) -- red-400, red-600
-addHoverEffect(purchaseButton, Color3.fromRGB(99, 102, 241), Color3.fromRGB(79, 70, 229)) -- indigo-500, indigo-600
-
--- ==================================
--- ======== INITIALIZATION ========
--- ==================================
-local function initialize()
-	boosterConfigCache = GetBoosterConfig:InvokeServer()
-	print("BoosterShopUI Overhaul Loaded. Config cached.")
-end
-
-initialize()
