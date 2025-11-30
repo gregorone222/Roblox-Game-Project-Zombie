@@ -1,3 +1,7 @@
+-- BoosterShopUI.lua (LocalScript)
+-- Path: StarterGui/BoosterShopUI.lua
+-- Script Place: Lobby
+
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
