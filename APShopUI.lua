@@ -8,6 +8,7 @@ local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local ProximityPromptService = game:GetService("ProximityPromptService")
+local Workspace = game:GetService("Workspace")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -19,6 +20,9 @@ local playerGui = player:WaitForChild("PlayerGui")
 local ModuleScriptReplicated = ReplicatedStorage:WaitForChild("ModuleScript")
 local WeaponModule = require(ModuleScriptReplicated:WaitForChild("WeaponModule"))
 local ModelPreviewModule = require(ModuleScriptReplicated:WaitForChild("ModelPreviewModule"))
+local ProximityUIHandler = require(ModuleScriptReplicated:WaitForChild("ProximityUIHandler"))
+
+local proximityHandler -- Forward declaration
 
 -- Config Item Spesial (Hardcoded fallback + Extended for prototype matching)
 local SpecialItemsConfig = {
@@ -103,13 +107,15 @@ local apValueLabel = nil
 local previewViewport = nil
 local previewIconLabel = nil
 
--- State
-local currentTab = "All"
-local currentAP = 0
-local selectedItem = nil
-local activePreview = nil
-local allItemsList = {} 
-local isVisible = false
+-- State Management (Similar to LobbyRoomUI)
+local state = {
+	currentTab = "All",
+	currentAP = 0,
+	selectedItem = nil,
+	activePreview = nil,
+	allItemsList = {},
+	isUIOpen = false
+}
 
 -- ============================================================================
 -- HELPER FUNCTIONS
@@ -177,7 +183,7 @@ end
 -- ============================================================================
 
 function apShopUI:LoadData()
-	allItemsList = {}
+	state.allItemsList = {}
 
 	-- 1. Load Skins
 	for weaponName, weaponData in pairs(WeaponModule.Weapons) do
@@ -188,7 +194,7 @@ function apShopUI:LoadData()
 				elseif skinData.APCost >= 10000 then rarity = "Epic"
 				end
 
-				table.insert(allItemsList, {
+				table.insert(state.allItemsList, {
 					Id = weaponName .. "_" .. skinName,
 					Name = skinName,
 					Type = "Skins",
@@ -207,7 +213,7 @@ function apShopUI:LoadData()
 
 	-- 2. Load Special Items
 	for id, itemData in pairs(SpecialItemsConfig) do
-		table.insert(allItemsList, {
+		table.insert(state.allItemsList, {
 			Id = id,
 			Name = itemData.Name,
 			Type = itemData.Type or "Utility",
@@ -220,7 +226,7 @@ function apShopUI:LoadData()
 	end
 
 	-- Sort by cost
-	table.sort(allItemsList, function(a, b) return a.Cost < b.Cost end)
+	table.sort(state.allItemsList, function(a, b) return a.Cost < b.Cost end)
 end
 
 function apShopUI:RefreshList()
@@ -233,9 +239,9 @@ function apShopUI:RefreshList()
 
 	local searchTerm = searchInput and searchInput.Text:lower() or ""
 
-	for _, item in ipairs(allItemsList) do
+	for _, item in ipairs(state.allItemsList) do
 		-- Filter Logic
-		local matchesTab = (currentTab == "All") or (item.Type == currentTab)
+		local matchesTab = (state.currentTab == "All") or (item.Type == state.currentTab)
 		local matchesSearch = false
 		if searchTerm == "" then
 			matchesSearch = true
@@ -257,7 +263,7 @@ end
 -- ============================================================================
 
 function apShopUI:CreateItemCard(item)
-	local isSelected = (selectedItem and selectedItem.Id == item.Id)
+	local isSelected = (state.selectedItem and state.selectedItem.Id == item.Id)
 	local rarityColor = getRarityColor(item.Rarity)
 
 	local card = create("TextButton", {
@@ -272,12 +278,6 @@ function apShopUI:CreateItemCard(item)
 	addCorner(card, 12)
 	local stroke = addStroke(card, isSelected and COLORS.ACCENT_CYAN or COLORS.TEXT_DIM, 1)
 	stroke.Transparency = isSelected and 0.5 or 0.9
-
-	-- Gradient highlight for active
-	if isSelected then
-		-- local grad = addGradient(card, Color3.fromRGB(6, 182, 212), COLORS.BG_PANEL, 0)
-		-- grad.Transparency = NumberSequence.new(0.85, 1)
-	end
 
 	-- Icon Box
 	local iconBox = create("Frame", {
@@ -339,7 +339,7 @@ function apShopUI:CreateItemCard(item)
 		Parent = metaRow
 	})
 
-	local priceColor = (currentAP >= item.Cost) and COLORS.ACCENT_AMBER or COLORS.ACCENT_RED
+	local priceColor = (state.currentAP >= item.Cost) and COLORS.ACCENT_AMBER or COLORS.ACCENT_RED
 	if item.Owned then priceColor = COLORS.ACCENT_GREEN end
 
 	create("TextLabel", {
@@ -361,14 +361,14 @@ function apShopUI:CreateItemCard(item)
 end
 
 function apShopUI:SelectItem(item)
-	selectedItem = item
+	state.selectedItem = item
 	self:RefreshList() -- Refresh to update selection highlight
 	self:UpdateDetails()
 end
 
 function apShopUI:UpdateDetails()
-	if not selectedItem then return end
-	local item = selectedItem
+	if not state.selectedItem then return end
+	local item = state.selectedItem
 
 	-- Update Text
 	detailsPanel.InfoGroup.Title.Text = item.Name
@@ -385,17 +385,17 @@ function apShopUI:UpdateDetails()
 	rarityBg.UIStroke.Color = getRarityColor(item.Rarity)
 
 	-- Icon Preview
-	if activePreview then
-		ModelPreviewModule.destroy(activePreview)
-		activePreview = nil
+	if state.activePreview then
+		ModelPreviewModule.destroy(state.activePreview)
+		state.activePreview = nil
 	end
 
 	if item.Type == "Skins" and item.Data then
 		previewViewport.Visible = true
 		previewIconLabel.Visible = false
 		local weaponDef = WeaponModule.Weapons[item.Weapon]
-		activePreview = ModelPreviewModule.create(previewViewport, weaponDef, item.Data)
-		ModelPreviewModule.startRotation(activePreview, 3.5) -- Zoom adjusted per request
+		state.activePreview = ModelPreviewModule.create(previewViewport, weaponDef, item.Data)
+		ModelPreviewModule.startRotation(state.activePreview, 3.5) -- Zoom adjusted per request
 	else
 		previewViewport.Visible = false
 		previewIconLabel.Visible = true
@@ -410,7 +410,7 @@ function apShopUI:UpdateDetails()
 		btnText.Text = "OWNED " .. UNICODE_ICONS.Check
 		btn.BackgroundColor3 = COLORS.BG_HOVER
 		btn.AutoButtonColor = false
-	elseif currentAP < item.Cost then
+	elseif state.currentAP < item.Cost then
 		btnText.Text = "NOT ENOUGH AP " .. UNICODE_ICONS.Lock
 		btn.BackgroundColor3 = COLORS.BG_HOVER
 		btn.AutoButtonColor = false
@@ -426,6 +426,7 @@ end
 -- ============================================================================
 
 function apShopUI:Create()
+	-- Clean up existing (though logic prevents this usually)
 	if playerGui:FindFirstChild("APShopUI") then
 		screenGui = playerGui.APShopUI
 		screenGui:Destroy()
@@ -434,9 +435,9 @@ function apShopUI:Create()
 	screenGui = create("ScreenGui", {
 		Name = "APShopUI",
 		Parent = playerGui,
-		ResetOnSpawn = false,
-		IgnoreGuiInset = false, -- Adjusted per request
-		Enabled = false
+		ResetOnSpawn = false, -- IMPORTANT: Match LobbyRoomUI persistence
+		IgnoreGuiInset = false,
+		Enabled = false -- Start hidden
 	})
 
 	-- Main Interface Container (Glassmorphism Mockup)
@@ -460,7 +461,7 @@ function apShopUI:Create()
 		BackgroundTransparency = 1,
 		Parent = mainInterface
 	})
-	local headPad = addPadding(header, 24)
+	addPadding(header, 24)
 
 	local titleGroup = create("Frame", {
 		Size = UDim2.new(0, 300, 1, 0),
@@ -590,23 +591,23 @@ function apShopUI:Create()
 			Name = name,
 			Text = name,
 			Size = UDim2.new(0.23, 0, 1, 0),
-			BackgroundColor3 = (currentTab == name) and Color3.fromRGB(6, 182, 212) or COLORS.BG_HOVER,
-			BackgroundTransparency = (currentTab == name) and 0.85 or 0.95,
-			TextColor3 = (currentTab == name) and COLORS.ACCENT_CYAN or COLORS.TEXT_DIM,
+			BackgroundColor3 = (state.currentTab == name) and Color3.fromRGB(6, 182, 212) or COLORS.BG_HOVER,
+			BackgroundTransparency = (state.currentTab == name) and 0.85 or 0.95,
+			TextColor3 = (state.currentTab == name) and COLORS.ACCENT_CYAN or COLORS.TEXT_DIM,
 			Font = Enum.Font.GothamBold,
 			TextSize = 12,
 			Parent = tabContainer
 		})
 		addCorner(btn, 6)
-		if currentTab == name then
+		if state.currentTab == name then
 			addStroke(btn, COLORS.ACCENT_CYAN, 1).Transparency = 0.7
 		end
 		btn.MouseButton1Click:Connect(function()
-			currentTab = name
+			state.currentTab = name
 			-- Refresh Tab Styles
 			for _, c in ipairs(tabContainer:GetChildren()) do
 				if c:IsA("TextButton") then
-					local isActive = (c.Name == currentTab)
+					local isActive = (c.Name == state.currentTab)
 					c.BackgroundColor3 = isActive and Color3.fromRGB(6, 182, 212) or COLORS.BG_HOVER
 					c.BackgroundTransparency = isActive and 0.85 or 0.95
 					c.TextColor3 = isActive and COLORS.ACCENT_CYAN or COLORS.TEXT_DIM
@@ -784,23 +785,23 @@ function apShopUI:Create()
 end
 
 function apShopUI:PurchaseItem()
-	if not selectedItem then return end
-	if selectedItem.Owned then return end
-	if currentAP < selectedItem.Cost then return end
+	if not state.selectedItem then return end
+	if state.selectedItem.Owned then return end
+	if state.currentAP < state.selectedItem.Cost then return end
 
 	local btn = detailsPanel.ActionGroup.BuyButton
 	local originalText = btn.TextLabel.Text
 	btn.TextLabel.Text = "PROCESSING..."
 
 	local result
-	if selectedItem.Type == "Skins" then
-		result = purchaseSkinFunc:InvokeServer(selectedItem.Weapon, selectedItem.SkinName)
+	if state.selectedItem.Type == "Skins" then
+		result = purchaseSkinFunc:InvokeServer(state.selectedItem.Weapon, state.selectedItem.SkinName)
 	else
-		result = purchaseItemFunc:InvokeServer(selectedItem.Id)
+		result = purchaseItemFunc:InvokeServer(state.selectedItem.Id)
 	end
 
 	if result.Success then
-		selectedItem.Owned = true
+		state.selectedItem.Owned = true
 		btn.TextLabel.Text = "SUCCESS!"
 		btn.BackgroundColor3 = COLORS.ACCENT_GREEN
 		self:UpdateAP() -- Update AP visually
@@ -818,14 +819,14 @@ function apShopUI:PurchaseItem()
 end
 
 -- ============================================================================
--- MAIN LOGIC
+-- MAIN LOGIC (Refactored to match LobbyRoomUI)
 -- ============================================================================
 
 function apShopUI:UpdateAP()
 	task.spawn(function()
 		local success, points = pcall(function() return getAPFunc:InvokeServer() end)
 		if success then
-			currentAP = points
+			state.currentAP = points
 			if apValueLabel then apValueLabel.Text = formatNumber(points) end
 			self:UpdateDetails()
 		end
@@ -833,50 +834,84 @@ function apShopUI:UpdateAP()
 end
 
 function apShopUI:Show()
-	if not screenGui then self:Create() end
-	screenGui.Enabled = true
-	self:LoadData()
-	self:RefreshList()
-	self:UpdateAP()
+	if screenGui then
+		screenGui.Enabled = true
+		state.isUIOpen = true
 
-	-- Intro Animation
-	local main = screenGui.MainInterface
-	main.Size = UDim2.new(0, 950, 0, 600)
-	-- main.BackgroundTransparency = 1 -- Removed to keep solid background
-	TweenService:Create(main, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-		Size = UDim2.new(0, 1000, 0, 650)
-		-- BackgroundTransparency = 0.1
-	}):Play()
+		self:LoadData()
+		self:RefreshList()
+		self:UpdateAP()
 
-	if #allItemsList > 0 then
-		self:SelectItem(allItemsList[1])
+		-- Intro Animation
+		if screenGui:FindFirstChild("MainInterface") then
+			local main = screenGui.MainInterface
+			main.Size = UDim2.new(0, 950, 0, 600)
+			TweenService:Create(main, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+				Size = UDim2.new(0, 1000, 0, 650)
+			}):Play()
+		end
+
+		if #state.allItemsList > 0 then
+			self:SelectItem(state.allItemsList[1])
+		end
 	end
 end
 
 function apShopUI:Hide()
 	if screenGui then
 		screenGui.Enabled = false
+		state.isUIOpen = false
 	end
-	if activePreview then 
-		ModelPreviewModule.destroy(activePreview) 
-		activePreview = nil 
+	if state.activePreview then 
+		ModelPreviewModule.destroy(state.activePreview) 
+		state.activePreview = nil 
+	end
+	-- Sync handler state
+	if proximityHandler then
+		proximityHandler:SetOpen(false)
 	end
 end
 
 -- Event Listeners
 apChangedEvent.OnClientEvent:Connect(function(newAP)
-	currentAP = newAP
+	state.currentAP = newAP
 	if apValueLabel then apValueLabel.Text = formatNumber(newAP) end
 	if screenGui and screenGui.Enabled then
 		apShopUI:UpdateDetails()
 	end
 end)
 
-ProximityPromptService.PromptTriggered:Connect(function(prompt, triggeredBy)
-	if triggeredBy ~= player then return end
-	if prompt.Parent and prompt.Parent.Name == "APShop" then
-		apShopUI:Show()
+-- Initialization
+local function initialize()
+	apShopUI:Create()
+	apShopUI:Hide()
+end
+
+-- Start Execution
+if playerGui.Parent then
+	initialize()
+else
+	playerGui.AncestryChanged:Connect(function()
+		if playerGui.Parent then
+			initialize()
+		end
+	end)
+end
+
+-- Register Proximity Interaction via Module
+local ShopFolder = Workspace:WaitForChild("Shop", 10) or Workspace
+
+proximityHandler = ProximityUIHandler.Register({
+	name = "APShop",
+	partName = "APShop",
+	parent = ShopFolder,
+	onToggle = function(isOpen)
+		if isOpen then
+			apShopUI:Show()
+		else
+			apShopUI:Hide()
+		end
 	end
-end)
+})
 
 return apShopUI
