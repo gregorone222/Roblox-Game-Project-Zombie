@@ -20,6 +20,9 @@ local playerGui = player:WaitForChild("PlayerGui")
 local ModuleScriptReplicated = ReplicatedStorage:WaitForChild("ModuleScript")
 local WeaponModule = require(ModuleScriptReplicated:WaitForChild("WeaponModule"))
 local ModelPreviewModule = require(ModuleScriptReplicated:WaitForChild("ModelPreviewModule"))
+local ProximityUIHandler = require(ModuleScriptReplicated:WaitForChild("ProximityUIHandler"))
+
+local proximityHandler -- Forward declaration
 
 local SpecialItemsConfig = {
 	XP_BOOSTER_30MIN = {
@@ -839,30 +842,17 @@ function mpShopUI:Toggle(state)
 			screenGui.Enabled = false
 			if activePreview then ModelPreviewModule.destroy(activePreview) activePreview = nil end
 		end)
+
+		-- Sync handler state
+		if proximityHandler then
+			proximityHandler:SetOpen(false)
+		end
 	end
 end
 
 -- ============================================================================
 -- INITIALIZATION
 -- ============================================================================
-
-local function connectPrompt()
-	local shopPart = Workspace:WaitForChild("Shop", 10)
-	if not shopPart then return end
-	local mpShopPart = shopPart:WaitForChild("MPShop", 10)
-	if not mpShopPart then return end
-
-	local prompt = mpShopPart:WaitForChild("ProximityPrompt", 10)
-	if prompt then
-		if mpShopUI._promptConnection then mpShopUI._promptConnection:Disconnect() end
-
-		mpShopUI._promptConnection = prompt.Triggered:Connect(function(plr)
-			if plr == player then
-				mpShopUI:Toggle(true)
-			end
-		end)
-	end
-end
 
 mpChangedEvent.OnClientEvent:Connect(function(newMP)
 	currentMP = newMP
@@ -872,7 +862,18 @@ mpChangedEvent.OnClientEvent:Connect(function(newMP)
 	end
 end)
 
-task.spawn(connectPrompt)
+-- Register Proximity Interaction via Module
+local ShopFolder = Workspace:WaitForChild("Shop", 10) or Workspace
+
+proximityHandler = ProximityUIHandler.Register({
+	name = "MPShop",
+	partName = "MPShop",
+	parent = ShopFolder,
+	onToggle = function(isOpen)
+		mpShopUI:Toggle(isOpen)
+	end
+})
+
 mpShopUI:CreateUI()
 
 return mpShopUI
