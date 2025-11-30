@@ -15,6 +15,7 @@ local player = Players.LocalPlayer
 local AudioManager = require(ReplicatedStorage.ModuleScript:WaitForChild("AudioManager"))
 local WeaponModule = require(ReplicatedStorage.ModuleScript:WaitForChild("WeaponModule"))
 local ModelPreviewModule = require(ReplicatedStorage.ModuleScript:WaitForChild("ModelPreviewModule"))
+local ProximityUIHandler = require(ReplicatedStorage.ModuleScript:WaitForChild("ProximityUIHandler"))
 local GachaRollEvent = ReplicatedStorage.RemoteEvents:WaitForChild("GachaRollEvent")
 local GachaMultiRollEvent = ReplicatedStorage.RemoteEvents:WaitForChild("GachaMultiRollEvent")
 local GachaFreeRollEvent = ReplicatedStorage.RemoteEvents:WaitForChild("GachaFreeRollEvent")
@@ -48,6 +49,8 @@ local state = {
 
 -- ================== UI ELEMENT REFERENCES ==================
 local ui = {}
+
+local proximityHandler -- Forward declaration
 
 -- Forward declare functions that are called before they are defined
 local createUI, toggleGachaUI, updateMainUI, populateWeaponSelector
@@ -522,6 +525,11 @@ toggleGachaUI = function(visible)
 		if ui.gachaScreen and ui.gachaScreen.Enabled then
 			ui.gachaScreen.Enabled = false
 		end
+
+		-- Sync handler state
+		if proximityHandler then
+			proximityHandler:SetOpen(false)
+		end
 	end
 end
 
@@ -548,18 +556,19 @@ initializeGachaData = function()
 	end
 end
 
--- Connect to ProximityPrompt
-local gachaPart = Workspace.Shop:WaitForChild("GachaShopSkin", 10)
-if gachaPart then
-	local prompt = gachaPart:WaitForChild("ProximityPrompt", 10)
-	if prompt then
-		prompt.Triggered:Connect(function()
-			toggleGachaUI(true)
-		end)
-	end
-end
-
 -- Initialize data when the script starts
 initializeGachaData()
+
+-- Register Proximity Interaction via Module
+local ShopFolder = Workspace:WaitForChild("Shop", 10) or Workspace
+
+proximityHandler = ProximityUIHandler.Register({
+	name = "GachaShop",
+	partName = "GachaShopSkin",
+	parent = ShopFolder,
+	onToggle = function(isOpen)
+		toggleGachaUI(isOpen)
+	end
+})
 
 print("GachaUI Initialized and ready.")
