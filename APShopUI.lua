@@ -1,13 +1,12 @@
 -- APShopUI.lua (LocalScript)
 -- Path: StarterGui/APShopUI.lua
 -- Script Place: Lobby
--- Theme: Prototype Match (Dark Glassmorphism, Cyan/Amber Accents)
+-- Theme: Zombie Apocalypse (Grunge, Industrial, Survival)
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
-local ProximityPromptService = game:GetService("ProximityPromptService")
 local Workspace = game:GetService("Workspace")
 
 local player = Players.LocalPlayer
@@ -24,19 +23,19 @@ local ProximityUIHandler = require(ModuleScriptReplicated:WaitForChild("Proximit
 
 local proximityHandler -- Forward declaration
 
--- Config Item Spesial (Hardcoded fallback + Extended for prototype matching)
+-- Config Item Spesial
 local SpecialItemsConfig = {
 	SKILL_RESET_TOKEN = {
 		Name = "Skill Reset Token",
-		Description = "A one-time use token that allows you to reset all your skill points. Perfect for trying new builds.",
+		Description = "Reset your survival skills. Adapt or die.",
 		APCost = 7500,
 		Rarity = "Common",
 		Type = "Utility",
-		Unicode = "🔄"
+		Unicode = "💉"
 	},
 	EXCLUSIVE_TITLE_COLLECTOR = {
 		Name = "Title: The Collector",
-		Description = "An exclusive golden title displayed above your head. Shows everyone your dedication to the grind.",
+		Description = "Golden mark of a true scavenger.",
 		APCost = 10000,
 		Rarity = "Epic",
 		Type = "Titles",
@@ -44,7 +43,7 @@ local SpecialItemsConfig = {
 	},
 	TITLE_SLAYER = {
 		Name = "Title: Zombie Slayer",
-		Description = "Unlocks the 'Zombie Slayer' prefix for your nametag.",
+		Description = "Let them know who the predator is.",
 		APCost = 2500,
 		Rarity = "Common",
 		Type = "Titles",
@@ -63,37 +62,43 @@ local apChangedEvent = ReplicatedStorage:WaitForChild("AchievementPointsChanged"
 -- ============================================================================
 
 local COLORS = {
-	BG_ROOT = Color3.fromRGB(15, 23, 42),       -- Slate 900
-	BG_PANEL = Color3.fromRGB(30, 41, 59),      -- Slate 800
-	BG_HOVER = Color3.fromRGB(51, 65, 85),      -- Slate 700
-	TEXT_MAIN = Color3.fromRGB(255, 255, 255),
-	TEXT_DIM = Color3.fromRGB(148, 163, 184),   -- Slate 400
+	BG_ROOT = Color3.fromRGB(25, 20, 15),       -- Muddy Brown/Black
+	BG_PANEL = Color3.fromRGB(40, 35, 30),      -- Worn Metal
+	BG_HOVER = Color3.fromRGB(60, 50, 40),      -- Lighter Grunge
 
-	ACCENT_CYAN = Color3.fromRGB(6, 182, 212),  -- Cyan 500
-	ACCENT_AMBER = Color3.fromRGB(245, 158, 11),-- Amber 500
-	ACCENT_RED = Color3.fromRGB(239, 68, 68),   -- Red 500
-	ACCENT_GREEN = Color3.fromRGB(34, 197, 94), -- Green 500
+	TEXT_MAIN = Color3.fromRGB(220, 210, 190),  -- Old Paper White
+	TEXT_DIM = Color3.fromRGB(140, 130, 110),   -- Faded Ink
 
-	RARITY_COMMON = Color3.fromRGB(148, 163, 184), -- Slate
-	RARITY_RARE = Color3.fromRGB(59, 130, 246),    -- Blue
-	RARITY_EPIC = Color3.fromRGB(168, 85, 247),    -- Purple
-	RARITY_LEGENDARY = Color3.fromRGB(234, 179, 8) -- Gold
+	ACCENT_TOXIC = Color3.fromRGB(120, 255, 50), -- Radioactive Green
+	ACCENT_HAZARD = Color3.fromRGB(255, 140, 0), -- Caution Orange
+	ACCENT_BLOOD = Color3.fromRGB(180, 20, 20),  -- Dried Blood
+
+	RARITY_COMMON = Color3.fromRGB(140, 140, 140),
+	RARITY_RARE = Color3.fromRGB(50, 150, 255),
+	RARITY_EPIC = Color3.fromRGB(180, 50, 255),
+	RARITY_LEGENDARY = Color3.fromRGB(255, 200, 50)
+}
+
+local FONTS = {
+	Header = Enum.Font.SpecialElite, -- Typewriter style
+	Body = Enum.Font.GothamMedium,
+	Tech = Enum.Font.Code
 }
 
 local UNICODE_ICONS = {
 	Search = "🔍",
-	Close = "X",
-	AP = "🏆",
-	Shop = "🏪",
+	Close = "✖",
+	AP = "☣️", -- Biohazard for points
+	Shop = "⛺",
 	Check = "✓",
 	Lock = "🔒",
 	Cart = "🛒",
-	Fire = "🔥",
-	Snow = "❄️",
-	Skull = "💀",
-	Crown = "👑",
-	Rotate = "🔄",
 	Gun = "🔫"
+}
+
+local TEXTURES = {
+	Grunge = "rbxassetid://15264388636", -- Generic grunge/scratch texture if available, fallback to noise
+	Noise = "rbxassetid://130424513"
 }
 
 local apShopUI = {}
@@ -107,7 +112,7 @@ local apValueLabel = nil
 local previewViewport = nil
 local previewIconLabel = nil
 
--- State Management (Similar to LobbyRoomUI)
+-- State
 local state = {
 	currentTab = "All",
 	currentAP = 0,
@@ -136,35 +141,29 @@ local function addCorner(parent, radius)
 	return corner
 end
 
-local function addPadding(parent, amount)
-	local pad = Instance.new("UIPadding")
-	pad.PaddingTop = UDim.new(0, amount)
-	pad.PaddingBottom = UDim.new(0, amount)
-	pad.PaddingLeft = UDim.new(0, amount)
-	pad.PaddingRight = UDim.new(0, amount)
-	pad.Parent = parent
-	return pad
-end
-
 local function addStroke(parent, color, thickness)
 	local stroke = Instance.new("UIStroke")
 	stroke.Color = color or COLORS.TEXT_DIM
 	stroke.Thickness = thickness or 1
 	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-	stroke.Transparency = 0.8
 	stroke.Parent = parent
 	return stroke
 end
 
-local function addGradient(parent, color1, color2, rotation)
-	local grad = Instance.new("UIGradient")
-	grad.Color = ColorSequence.new{
-		ColorSequenceKeypoint.new(0, color1),
-		ColorSequenceKeypoint.new(1, color2)
-	}
-	grad.Rotation = rotation or 0
-	grad.Parent = parent
-	return grad
+local function addGrunge(parent, transparency)
+	local texture = create("ImageLabel", {
+		Name = "GrungeOverlay",
+		Size = UDim2.new(1, 0, 1, 0),
+		BackgroundTransparency = 1,
+		Image = TEXTURES.Noise,
+		ImageTransparency = transparency or 0.92,
+		ImageColor3 = Color3.new(0,0,0),
+		ScaleType = Enum.ScaleType.Tile,
+		TileSize = UDim2.new(0, 128, 0, 128),
+		ZIndex = 0,
+		Parent = parent
+	})
+	return texture
 end
 
 local function formatNumber(n)
@@ -185,7 +184,7 @@ end
 function apShopUI:LoadData()
 	state.allItemsList = {}
 
-	-- 1. Load Skins
+	-- Load Skins
 	for weaponName, weaponData in pairs(WeaponModule.Weapons) do
 		for skinName, skinData in pairs(weaponData.Skins) do
 			if skinData.APCost and skinData.APCost > 0 then
@@ -200,18 +199,18 @@ function apShopUI:LoadData()
 					Type = "Skins",
 					Rarity = rarity,
 					Cost = skinData.APCost,
-					Desc = string.format("%s skin for %s.", tostring(rarity), tostring(weaponName)),
-					Unicode = UNICODE_ICONS.Gun, -- Fallback icon
+					Desc = string.format("Paint job for %s. Grade: %s.", tostring(weaponName), tostring(rarity)),
+					Unicode = UNICODE_ICONS.Gun,
 					Weapon = weaponName,
 					SkinName = skinName,
 					Data = skinData,
-					Owned = false -- Updated dynamically
+					Owned = false
 				})
 			end
 		end
 	end
 
-	-- 2. Load Special Items
+	-- Load Special Items
 	for id, itemData in pairs(SpecialItemsConfig) do
 		table.insert(state.allItemsList, {
 			Id = id,
@@ -225,14 +224,12 @@ function apShopUI:LoadData()
 		})
 	end
 
-	-- Sort by cost
 	table.sort(state.allItemsList, function(a, b) return a.Cost < b.Cost end)
 end
 
 function apShopUI:RefreshList()
 	if not listContainer then return end
 
-	-- Clear
 	for _, c in ipairs(listContainer:GetChildren()) do
 		if c:IsA("GuiObject") then c:Destroy() end
 	end
@@ -240,16 +237,12 @@ function apShopUI:RefreshList()
 	local searchTerm = searchInput and searchInput.Text:lower() or ""
 
 	for _, item in ipairs(state.allItemsList) do
-		-- Filter Logic
 		local matchesTab = (state.currentTab == "All") or (item.Type == state.currentTab)
 		local matchesSearch = false
 		if searchTerm == "" then
 			matchesSearch = true
 		else
-			local itemNameLower = tostring(item.Name):lower()
-			if string.find(itemNameLower, tostring(searchTerm)) then
-				matchesSearch = true
-			end
+			if string.find(tostring(item.Name):lower(), searchTerm) then matchesSearch = true end
 		end
 
 		if matchesTab and matchesSearch then
@@ -259,7 +252,7 @@ function apShopUI:RefreshList()
 end
 
 -- ============================================================================
--- UI COMPONENTS
+-- UI COMPONENTS (THEME APPLIED)
 -- ============================================================================
 
 function apShopUI:CreateItemCard(item)
@@ -268,93 +261,106 @@ function apShopUI:CreateItemCard(item)
 
 	local card = create("TextButton", {
 		Name = item.Id,
-		Size = UDim2.new(1, 0, 0, 70),
+		Size = UDim2.new(1, 0, 0, 60),
 		BackgroundColor3 = isSelected and COLORS.BG_HOVER or COLORS.BG_PANEL,
-		BackgroundTransparency = isSelected and 0.5 or 0.6,
+		BackgroundTransparency = 0,
 		AutoButtonColor = false,
 		Text = "",
+		BorderSizePixel = 0,
 		Parent = listContainer
 	})
-	addCorner(card, 12)
-	local stroke = addStroke(card, isSelected and COLORS.ACCENT_CYAN or COLORS.TEXT_DIM, 1)
-	stroke.Transparency = isSelected and 0.5 or 0.9
 
-	-- Icon Box
-	local iconBox = create("Frame", {
-		Size = UDim2.new(0, 50, 0, 50),
-		Position = UDim2.new(0, 10, 0.5, 0),
-		AnchorPoint = Vector2.new(0, 0.5),
-		BackgroundColor3 = COLORS.BG_ROOT,
+	-- Grunge texture
+	addGrunge(card, 0.95)
+
+	-- Border
+	local border = create("Frame", {
+		Size = UDim2.new(1, 0, 0, 1),
+		Position = UDim2.new(0, 0, 1, -1),
+		BackgroundColor3 = COLORS.TEXT_DIM,
+		BackgroundTransparency = 0.5,
 		Parent = card
 	})
-	addCorner(iconBox, 8)
-	addStroke(iconBox, rarityColor, 1).Transparency = 0.5
+
+	-- Selection Indicator (Left Bar)
+	if isSelected then
+		local bar = create("Frame", {
+			Size = UDim2.new(0, 4, 1, 0),
+			BackgroundColor3 = COLORS.ACCENT_HAZARD,
+			BorderSizePixel = 0,
+			Parent = card
+		})
+		-- Glow
+		local g = create("ImageLabel", {
+			Image = "rbxassetid://130424513",
+			ImageColor3 = COLORS.ACCENT_HAZARD,
+			ImageTransparency = 0.5,
+			Size = UDim2.new(4, 0, 1, 0),
+			BackgroundTransparency = 1,
+			Parent = bar
+		})
+	end
+
+	-- Icon Box (Rough looking)
+	local iconBox = create("Frame", {
+		Size = UDim2.new(0, 44, 0, 44),
+		Position = UDim2.new(0, 12, 0.5, 0),
+		AnchorPoint = Vector2.new(0, 0.5),
+		BackgroundColor3 = COLORS.BG_ROOT,
+		BorderSizePixel = 0,
+		Parent = card
+	})
+	addStroke(iconBox, rarityColor, 1)
 
 	create("TextLabel", {
 		Text = item.Unicode,
 		Size = UDim2.new(1, 0, 1, 0),
 		BackgroundTransparency = 1,
-		TextSize = 24,
-		TextColor3 = rarityColor,
+		TextSize = 20,
 		Parent = iconBox
 	})
 
-	-- Info Group
-	local infoGroup = create("Frame", {
-		Size = UDim2.new(1, -70, 1, 0),
-		Position = UDim2.new(0, 70, 0, 0),
-		BackgroundTransparency = 1,
-		Parent = card
-	})
-
-	-- Name & Owned Check
+	-- Info
 	local nameLabel = create("TextLabel", {
-		Text = item.Name,
-		Size = UDim2.new(1, 0, 0, 20),
-		Position = UDim2.new(0, 0, 0.2, 0),
-		Font = Enum.Font.GothamBold,
+		Text = item.Name:upper(),
+		Size = UDim2.new(0.6, 0, 0.4, 0),
+		Position = UDim2.new(0, 68, 0.15, 0),
+		Font = FONTS.Header,
 		TextSize = 16,
 		TextColor3 = COLORS.TEXT_MAIN,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		BackgroundTransparency = 1,
-		Parent = infoGroup
+		Parent = card
 	})
 
-	-- Type & Price Row
-	local metaRow = create("Frame", {
-		Size = UDim2.new(1, 0, 0, 20),
-		Position = UDim2.new(0, 0, 0.55, 0),
-		BackgroundTransparency = 1,
-		Parent = infoGroup
-	})
-
-	create("TextLabel", {
+	local typeLabel = create("TextLabel", {
 		Text = item.Type:upper(),
-		Size = UDim2.new(0.5, 0, 1, 0),
-		Font = Enum.Font.GothamBold,
-		TextSize = 11,
+		Size = UDim2.new(0.6, 0, 0.3, 0),
+		Position = UDim2.new(0, 68, 0.55, 0),
+		Font = FONTS.Tech,
+		TextSize = 12,
 		TextColor3 = COLORS.TEXT_DIM,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		BackgroundTransparency = 1,
-		Parent = metaRow
+		Parent = card
 	})
 
-	local priceColor = (state.currentAP >= item.Cost) and COLORS.ACCENT_AMBER or COLORS.ACCENT_RED
-	if item.Owned then priceColor = COLORS.ACCENT_GREEN end
+	-- Price
+	local priceColor = (state.currentAP >= item.Cost) and COLORS.ACCENT_TOXIC or COLORS.ACCENT_BLOOD
+	if item.Owned then priceColor = COLORS.TEXT_MAIN end
 
 	create("TextLabel", {
-		Text = item.Owned and "OWNED" or (formatNumber(item.Cost) .. " AP"),
-		Size = UDim2.new(1, -10, 1, 0),
-		AnchorPoint = Vector2.new(0, 0),
-		Font = Enum.Font.GothamBold,
+		Text = item.Owned and "ACQUIRED" or (formatNumber(item.Cost) .. " AP"),
+		Size = UDim2.new(0.3, 0, 1, 0),
+		Position = UDim2.new(0.7, -10, 0, 0),
+		Font = FONTS.Body,
 		TextSize = 14,
 		TextColor3 = priceColor,
 		TextXAlignment = Enum.TextXAlignment.Right,
 		BackgroundTransparency = 1,
-		Parent = metaRow
+		Parent = card
 	})
 
-	-- Selection Logic
 	card.MouseButton1Click:Connect(function()
 		self:SelectItem(item)
 	end)
@@ -362,7 +368,7 @@ end
 
 function apShopUI:SelectItem(item)
 	state.selectedItem = item
-	self:RefreshList() -- Refresh to update selection highlight
+	self:RefreshList()
 	self:UpdateDetails()
 end
 
@@ -370,21 +376,17 @@ function apShopUI:UpdateDetails()
 	if not state.selectedItem then return end
 	local item = state.selectedItem
 
-	-- Update Text
-	detailsPanel.InfoGroup.Title.Text = item.Name
-	detailsPanel.InfoGroup.Description.Text = item.Desc
-	detailsPanel.ActionGroup.PriceContainer.Price.Text = formatNumber(item.Cost) .. " AP"
+	-- Update Info
+	detailsPanel.Title.Text = item.Name:upper()
+	detailsPanel.Description.Text = "\"" .. item.Desc .. "\""
+	detailsPanel.PriceFrame.Amount.Text = formatNumber(item.Cost) .. " AP"
 
-	-- Rarity Tag
-	local rarityTag = detailsPanel.InfoGroup.MetaRow.RarityTag.TextLabel
-	rarityTag.Text = item.Rarity:upper()
-	rarityTag.TextColor3 = getRarityColor(item.Rarity)
+	-- Rarity
+	local rarityLabel = detailsPanel.MetaFrame.RarityLabel
+	rarityLabel.Text = item.Rarity:upper()
+	rarityLabel.TextColor3 = getRarityColor(item.Rarity)
 
-	local rarityBg = detailsPanel.InfoGroup.MetaRow.RarityTag
-	rarityBg.BackgroundColor3 = getRarityColor(item.Rarity)
-	rarityBg.UIStroke.Color = getRarityColor(item.Rarity)
-
-	-- Icon Preview
+	-- Preview
 	if state.activePreview then
 		ModelPreviewModule.destroy(state.activePreview)
 		state.activePreview = nil
@@ -395,7 +397,7 @@ function apShopUI:UpdateDetails()
 		previewIconLabel.Visible = false
 		local weaponDef = WeaponModule.Weapons[item.Weapon]
 		state.activePreview = ModelPreviewModule.create(previewViewport, weaponDef, item.Data)
-		ModelPreviewModule.startRotation(state.activePreview, 3.5) -- Zoom adjusted per request
+		ModelPreviewModule.startRotation(state.activePreview, 2.0)
 	else
 		previewViewport.Visible = false
 		previewIconLabel.Visible = true
@@ -403,30 +405,30 @@ function apShopUI:UpdateDetails()
 		previewIconLabel.TextColor3 = getRarityColor(item.Rarity)
 	end
 
-	-- Button State
-	local btn = detailsPanel.ActionGroup.BuyButton
-	local btnText = btn.TextLabel
+	-- Button
+	local btn = detailsPanel.BuySection.BuyButton
+	local btnText = btn.Label
+
 	if item.Owned then
-		btnText.Text = "OWNED " .. UNICODE_ICONS.Check
+		btnText.Text = "INVENTORY"
 		btn.BackgroundColor3 = COLORS.BG_HOVER
 		btn.AutoButtonColor = false
 	elseif state.currentAP < item.Cost then
-		btnText.Text = "NOT ENOUGH AP " .. UNICODE_ICONS.Lock
-		btn.BackgroundColor3 = COLORS.BG_HOVER
+		btnText.Text = "INSUFFICIENT FUNDS"
+		btn.BackgroundColor3 = COLORS.ACCENT_BLOOD
 		btn.AutoButtonColor = false
 	else
-		btnText.Text = "PURCHASE " .. UNICODE_ICONS.Cart
-		btn.BackgroundColor3 = COLORS.ACCENT_CYAN
+		btnText.Text = "PURCHASE SUPPLY"
+		btn.BackgroundColor3 = COLORS.ACCENT_HAZARD
 		btn.AutoButtonColor = true
 	end
 end
 
 -- ============================================================================
--- MAIN CREATION
+-- MAIN CREATION (REDESIGNED)
 -- ============================================================================
 
 function apShopUI:Create()
-	-- Clean up existing (though logic prevents this usually)
 	if playerGui:FindFirstChild("APShopUI") then
 		screenGui = playerGui.APShopUI
 		screenGui:Destroy()
@@ -435,363 +437,359 @@ function apShopUI:Create()
 	screenGui = create("ScreenGui", {
 		Name = "APShopUI",
 		Parent = playerGui,
-		ResetOnSpawn = false, -- IMPORTANT: Match LobbyRoomUI persistence
+		ResetOnSpawn = false,
 		IgnoreGuiInset = false,
-		Enabled = false -- Start hidden
+		Enabled = false
 	})
 
-	-- Main Interface Container (Glassmorphism Mockup)
-	local mainInterface = create("Frame", {
-		Name = "MainInterface",
-		Size = UDim2.new(0, 1000, 0, 650),
+	-- Dark Overlay
+	local overlay = create("Frame", {
+		Size = UDim2.new(1, 0, 1, 0),
+		BackgroundColor3 = Color3.new(0,0,0),
+		BackgroundTransparency = 0.3,
+		Parent = screenGui
+	})
+	addGrunge(overlay, 0.8)
+
+	-- Main Crate Container
+	local mainCrate = create("Frame", {
+		Name = "MainCrate",
+		Size = UDim2.new(0, 900, 0, 600),
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.new(0.5, 0, 0.5, 0),
 		BackgroundColor3 = COLORS.BG_ROOT,
-		BackgroundTransparency = 0, -- Solid background
 		BorderSizePixel = 0,
 		Parent = screenGui
 	})
-	addCorner(mainInterface, 24)
-	addStroke(mainInterface, Color3.new(1,1,1), 1).Transparency = 0.9
+	addStroke(mainCrate, Color3.fromRGB(60, 55, 50), 3) -- Thick metal border
+	addGrunge(mainCrate, 0.9)
 
-	-- Header
-	local header = create("Frame", {
-		Name = "Header",
-		Size = UDim2.new(1, 0, 0, 80),
-		BackgroundTransparency = 1,
-		Parent = mainInterface
-	})
-	addPadding(header, 24)
+	-- Decor: Bolts in corners
+	local function createBolt(pos)
+		local b = create("Frame", {
+			Size = UDim2.new(0, 8, 0, 8),
+			Position = pos,
+			BackgroundColor3 = Color3.new(0.3, 0.3, 0.3),
+			Parent = mainCrate
+		})
+		addCorner(b, 4)
+	end
+	createBolt(UDim2.new(0, 6, 0, 6))
+	createBolt(UDim2.new(1, -14, 0, 6))
+	createBolt(UDim2.new(0, 6, 1, -14))
+	createBolt(UDim2.new(1, -14, 1, -14))
 
-	local titleGroup = create("Frame", {
-		Size = UDim2.new(0, 300, 1, 0),
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 0), -- Centered Header
+	-- Top Bar / Header
+	local topBar = create("Frame", {
+		Size = UDim2.new(1, -40, 0, 50),
+		Position = UDim2.new(0, 20, 0, 20),
 		BackgroundTransparency = 1,
-		Parent = header
+		Parent = mainCrate
 	})
+
 	create("TextLabel", {
-		Text = "AP STORE",
-		Size = UDim2.new(1, 0, 0, 24),
-		Font = Enum.Font.GothamBlack,
-		TextSize = 24,
-		TextColor3 = COLORS.TEXT_MAIN,
-		TextXAlignment = Enum.TextXAlignment.Center, -- Centered Text
+		Text = "SUPPLY DEPOT // AP EXCHANGE",
+		Size = UDim2.new(0.7, 0, 1, 0),
+		Font = FONTS.Header,
+		TextSize = 28,
+		TextColor3 = COLORS.ACCENT_HAZARD,
+		TextXAlignment = Enum.TextXAlignment.Left,
 		BackgroundTransparency = 1,
-		Parent = titleGroup
-	})
-	create("TextLabel", {
-		Text = "Spend your hard-earned points",
-		Size = UDim2.new(1, 0, 0, 16),
-		Position = UDim2.new(0, 0, 0, 24),
-		Font = Enum.Font.Gotham,
-		TextSize = 12,
-		TextColor3 = COLORS.TEXT_DIM,
-		TextXAlignment = Enum.TextXAlignment.Center, -- Centered Text
-		BackgroundTransparency = 1,
-		Parent = titleGroup
+		Parent = topBar
 	})
 
-	-- Close Button
-	local closeBtn = create("TextButton", {
-		Text = UNICODE_ICONS.Close,
-		Size = UDim2.new(0, 40, 0, 40),
-		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, 0, 0, 0),
-		BackgroundColor3 = COLORS.BG_HOVER,
-		BackgroundTransparency = 0.5,
-		TextColor3 = COLORS.TEXT_DIM,
+	-- AP Balance Display (Stenciled)
+	local balanceFrame = create("Frame", {
+		Size = UDim2.new(0, 160, 1, 0),
+		Position = UDim2.new(1, -160, 0, 0),
+		BackgroundColor3 = COLORS.BG_PANEL,
+		Parent = topBar
+	})
+	addStroke(balanceFrame, COLORS.TEXT_DIM, 1)
+
+	apValueLabel = create("TextLabel", {
+		Text = "0",
+		Size = UDim2.new(1, -30, 1, 0),
+		Position = UDim2.new(0, 0, 0, 0),
+		Font = FONTS.Tech,
 		TextSize = 20,
-		Parent = header
+		TextColor3 = COLORS.ACCENT_TOXIC,
+		TextXAlignment = Enum.TextXAlignment.Right,
+		BackgroundTransparency = 1,
+		Parent = balanceFrame
 	})
-	addCorner(closeBtn, 8)
+	create("TextLabel", {
+		Text = UNICODE_ICONS.AP,
+		Size = UDim2.new(0, 30, 1, 0),
+		Position = UDim2.new(1, -30, 0, 0),
+		TextSize = 18,
+		BackgroundTransparency = 1,
+		Parent = balanceFrame
+	})
+
+	-- Close Button (Red Tape Style)
+	local closeBtn = create("TextButton", {
+		Text = "✖",
+		Size = UDim2.new(0, 30, 0, 30),
+		Position = UDim2.new(1, 15, 0, -15), -- Hanging off the edge
+		BackgroundColor3 = COLORS.ACCENT_BLOOD,
+		TextColor3 = COLORS.TEXT_MAIN,
+		TextSize = 18,
+		Font = Enum.Font.GothamBold,
+		Parent = mainCrate
+	})
+	addCorner(closeBtn, 4)
 	closeBtn.MouseButton1Click:Connect(function() apShopUI:Hide() end)
 
-
-	-- Content Area
-	local content = create("Frame", {
-		Size = UDim2.new(1, 0, 1, -80),
-		Position = UDim2.new(0, 0, 0, 80),
+	-- Content Split
+	local contentFrame = create("Frame", {
+		Size = UDim2.new(1, -40, 1, -90),
+		Position = UDim2.new(0, 20, 0, 80),
 		BackgroundTransparency = 1,
-		Parent = mainInterface
+		Parent = mainCrate
 	})
 
-	-- Sidebar
-	local sidebar = create("Frame", {
-		Size = UDim2.new(0, 380, 1, 0),
-		BackgroundColor3 = Color3.new(0,0,0),
-		BackgroundTransparency = 0.8,
-		BorderSizePixel = 0,
-		Parent = content
-	})
-	create("Frame", { -- Divider
-		Size = UDim2.new(0, 1, 1, 0),
-		Position = UDim2.new(1, 0, 0, 0),
-		BackgroundColor3 = COLORS.TEXT_DIM,
-		BackgroundTransparency = 0.9,
-		Parent = sidebar
-	})
-
-	-- Search & Tabs
-	local sidebarPad = create("Frame", {
-		Size = UDim2.new(1, 0, 0, 120),
-		BackgroundTransparency = 1,
-		Parent = sidebar
-	})
-	addPadding(sidebarPad, 16)
-
-	-- Search Input
-	local searchContainer = create("Frame", {
-		Size = UDim2.new(1, 0, 0, 40),
+	-- LEFT SIDE: Navigation & List
+	local leftCol = create("Frame", {
+		Size = UDim2.new(0, 340, 1, 0),
 		BackgroundColor3 = COLORS.BG_PANEL,
-		BackgroundTransparency = 0.5,
-		Parent = sidebarPad
+		Parent = contentFrame
 	})
-	addCorner(searchContainer, 8)
-	addStroke(searchContainer, COLORS.TEXT_DIM, 1).Transparency = 0.8
+	addStroke(leftCol, Color3.new(0,0,0), 2)
+	addGrunge(leftCol, 0.96)
 
-	create("TextLabel", {
-		Text = UNICODE_ICONS.Search,
-		Size = UDim2.new(0, 40, 1, 0),
+	-- Tabs Row
+	local tabRow = create("Frame", {
+		Size = UDim2.new(1, -20, 0, 30),
+		Position = UDim2.new(0, 10, 0, 10),
 		BackgroundTransparency = 1,
-		TextSize = 16,
-		TextColor3 = COLORS.TEXT_DIM,
-		Parent = searchContainer
+		Parent = leftCol
 	})
-	searchInput = create("TextBox", {
-		Text = "",
-		PlaceholderText = "Search items...",
-		PlaceholderColor3 = COLORS.TEXT_DIM,
-		Size = UDim2.new(1, -40, 1, 0),
-		Position = UDim2.new(0, 40, 0, 0),
-		BackgroundTransparency = 1,
-		TextColor3 = COLORS.TEXT_MAIN,
-		Font = Enum.Font.Gotham,
-		TextSize = 14,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		Parent = searchContainer
-	})
-	searchInput:GetPropertyChangedSignal("Text"):Connect(function() self:RefreshList() end)
+	create("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 5), Parent = tabRow })
 
-	-- Tabs
-	local tabContainer = create("Frame", {
-		Size = UDim2.new(1, 0, 0, 36),
-		Position = UDim2.new(0, 0, 0, 50),
-		BackgroundTransparency = 1,
-		Parent = sidebarPad
-	})
-	create("UIListLayout", {
-		FillDirection = Enum.FillDirection.Horizontal,
-		Padding = UDim.new(0, 6),
-		Parent = tabContainer
-	})
-
-	local function createTab(name)
+	local function createTab(name, label)
 		local btn = create("TextButton", {
 			Name = name,
-			Text = name,
+			Text = label or name,
 			Size = UDim2.new(0.23, 0, 1, 0),
-			BackgroundColor3 = (state.currentTab == name) and Color3.fromRGB(6, 182, 212) or COLORS.BG_HOVER,
-			BackgroundTransparency = (state.currentTab == name) and 0.85 or 0.95,
-			TextColor3 = (state.currentTab == name) and COLORS.ACCENT_CYAN or COLORS.TEXT_DIM,
-			Font = Enum.Font.GothamBold,
+			BackgroundColor3 = (state.currentTab == name) and COLORS.ACCENT_HAZARD or COLORS.BG_ROOT,
+			TextColor3 = (state.currentTab == name) and COLORS.BG_ROOT or COLORS.TEXT_DIM,
+			Font = FONTS.Body,
 			TextSize = 12,
-			Parent = tabContainer
+			Parent = tabRow
 		})
-		addCorner(btn, 6)
-		if state.currentTab == name then
-			addStroke(btn, COLORS.ACCENT_CYAN, 1).Transparency = 0.7
-		end
 		btn.MouseButton1Click:Connect(function()
 			state.currentTab = name
-			-- Refresh Tab Styles
-			for _, c in ipairs(tabContainer:GetChildren()) do
+			self:RefreshList()
+			-- Refresh visual state of tabs (simple redraw approach for simplicity)
+			for _, c in ipairs(tabRow:GetChildren()) do
 				if c:IsA("TextButton") then
-					local isActive = (c.Name == state.currentTab)
-					c.BackgroundColor3 = isActive and Color3.fromRGB(6, 182, 212) or COLORS.BG_HOVER
-					c.BackgroundTransparency = isActive and 0.85 or 0.95
-					c.TextColor3 = isActive and COLORS.ACCENT_CYAN or COLORS.TEXT_DIM
-					if c:FindFirstChild("UIStroke") then c.UIStroke:Destroy() end
-					if isActive then addStroke(c, COLORS.ACCENT_CYAN, 1).Transparency = 0.7 end
+					local active = (c.Name == state.currentTab)
+					c.BackgroundColor3 = active and COLORS.ACCENT_HAZARD or COLORS.BG_ROOT
+					c.TextColor3 = active and COLORS.BG_ROOT or COLORS.TEXT_DIM
 				end
 			end
-			self:RefreshList()
 		end)
 	end
 
-	createTab("All")
-	createTab("Skins")
-	createTab("Titles")
-	createTab("Utility")
+	createTab("All", "ALL")
+	createTab("Skins", "CAMO")
+	createTab("Titles", "TAGS")
+	createTab("Utility", "GEAR")
 
-	-- Item List
+	-- Search Bar
+	local searchFrame = create("Frame", {
+		Size = UDim2.new(1, -20, 0, 30),
+		Position = UDim2.new(0, 10, 0, 50),
+		BackgroundColor3 = COLORS.BG_ROOT,
+		Parent = leftCol
+	})
+	addStroke(searchFrame, COLORS.TEXT_DIM, 1)
+
+	searchInput = create("TextBox", {
+		Size = UDim2.new(1, -10, 1, 0),
+		Position = UDim2.new(0, 5, 0, 0),
+		BackgroundTransparency = 1,
+		Text = "",
+		PlaceholderText = "SEARCH MANIFEST...",
+		PlaceholderColor3 = COLORS.TEXT_DIM,
+		TextColor3 = COLORS.ACCENT_TOXIC,
+		Font = FONTS.Tech,
+		TextSize = 14,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = searchFrame
+	})
+	searchInput:GetPropertyChangedSignal("Text"):Connect(function() self:RefreshList() end)
+
+	-- List Container
 	listContainer = create("ScrollingFrame", {
-		Size = UDim2.new(1, 0, 1, -120),
-		Position = UDim2.new(0, 0, 0, 120),
+		Size = UDim2.new(1, -10, 1, -90),
+		Position = UDim2.new(0, 5, 0, 90),
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
-		ScrollBarThickness = 4,
-		ScrollBarImageColor3 = COLORS.TEXT_DIM,
-		ScrollBarImageTransparency = 0.8,
-		CanvasSize = UDim2.new(0, 0, 0, 0),
+		ScrollBarThickness = 6,
+		ScrollBarImageColor3 = COLORS.ACCENT_HAZARD,
+		CanvasSize = UDim2.new(0,0,0,0),
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
-		Parent = sidebar
+		Parent = leftCol
 	})
-	addPadding(listContainer, 16)
-	create("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = listContainer })
+	create("UIListLayout", { Padding = UDim.new(0, 4), Parent = listContainer })
 
-	-- RIGHT SIDE: Preview & Details
-	local rightSide = create("Frame", {
-		Size = UDim2.new(1, -380, 1, 0),
-		Position = UDim2.new(0, 380, 0, 0),
+
+	-- RIGHT SIDE: Details View
+	local rightCol = create("Frame", {
+		Size = UDim2.new(1, -360, 1, 0),
+		Position = UDim2.new(0, 360, 0, 0),
 		BackgroundTransparency = 1,
-		Parent = content
+		Parent = contentFrame
 	})
 
-	-- Preview Area (Top)
-	local previewArea = create("Frame", {
-		Size = UDim2.new(1, 0, 1, -220),
+	-- Preview Monitor
+	local monitorFrame = create("Frame", {
+		Size = UDim2.new(1, 0, 0.6, 0),
+		BackgroundColor3 = Color3.new(0,0,0),
+		Parent = rightCol
+	})
+	addStroke(monitorFrame, COLORS.TEXT_DIM, 2)
+
+	-- Grid Background for Monitor
+	local grid = create("ImageLabel", {
+		Size = UDim2.new(1, 0, 1, 0),
 		BackgroundTransparency = 1,
-		Parent = rightSide
+		Image = "rbxassetid://4801088331", -- Grid texture
+		ImageTransparency = 0.8,
+		ImageColor3 = COLORS.ACCENT_TOXIC,
+		ScaleType = Enum.ScaleType.Tile,
+		TileSize = UDim2.new(0, 64, 0, 64),
+		Parent = monitorFrame
 	})
 
 	previewViewport = create("ViewportFrame", {
 		Size = UDim2.new(1, 0, 1, 0),
 		BackgroundTransparency = 1,
 		Visible = false,
-		Parent = previewArea
+		Parent = monitorFrame
 	})
 
 	previewIconLabel = create("TextLabel", {
 		Text = "📦",
 		Size = UDim2.new(1, 0, 1, 0),
 		BackgroundTransparency = 1,
-		TextSize = 120,
+		TextSize = 100,
 		TextColor3 = COLORS.TEXT_DIM,
-		Visible = true,
-		Parent = previewArea
+		Parent = monitorFrame
 	})
 
-	-- Details Panel (Bottom)
+	create("TextLabel", { -- Monitor Scanline Text
+		Text = "SCANNING OBJECT...",
+		Size = UDim2.new(1, -10, 0, 20),
+		Position = UDim2.new(0, 10, 0, 10),
+		Font = FONTS.Tech,
+		TextSize = 12,
+		TextColor3 = COLORS.ACCENT_TOXIC,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		BackgroundTransparency = 1,
+		Parent = monitorFrame
+	})
+
+	-- Details Panel
 	detailsPanel = create("Frame", {
-		Name = "DetailsPanel",
-		Size = UDim2.new(1, 0, 0, 220),
-		Position = UDim2.new(0, 0, 1, -220),
+		Name = "Details",
+		Size = UDim2.new(1, 0, 0.38, 0),
+		Position = UDim2.new(0, 0, 0.62, 0),
 		BackgroundColor3 = COLORS.BG_PANEL,
-		BackgroundTransparency = 0.2,
-		Parent = rightSide
+		Parent = rightCol
 	})
-	addStroke(detailsPanel, Color3.new(1,1,1), 1).Transparency = 0.9
-	local detPad = addPadding(detailsPanel, 32)
+	addStroke(detailsPanel, COLORS.TEXT_DIM, 1)
+	addGrunge(detailsPanel, 0.95)
 
-	-- Info Group
-	local infoGroup = create("Frame", {
-		Name = "InfoGroup",
-		Size = UDim2.new(1, 0, 0, 100),
+	-- Info Area
+	local titleLabel = create("TextLabel", {
+		Name = "Title",
+		Text = "SELECT ITEM",
+		Size = UDim2.new(1, -20, 0, 30),
+		Position = UDim2.new(0, 10, 0, 10),
+		Font = FONTS.Header,
+		TextSize = 24,
+		TextColor3 = COLORS.TEXT_MAIN,
+		TextXAlignment = Enum.TextXAlignment.Left,
 		BackgroundTransparency = 1,
 		Parent = detailsPanel
 	})
 
-	-- Rarity Tag
-	local metaRow = create("Frame", { Name = "MetaRow", Size = UDim2.new(1, 0, 0, 20), BackgroundTransparency = 1, Parent = infoGroup })
-	local rarityTag = create("Frame", {
-		Name = "RarityTag",
-		Size = UDim2.new(0, 80, 0, 20),
-		BackgroundColor3 = COLORS.RARITY_COMMON,
-		BackgroundTransparency = 0.85,
-		Parent = metaRow
-	})
-	addCorner(rarityTag, 4)
-	local rStroke = addStroke(rarityTag, COLORS.RARITY_COMMON, 1)
-	create("TextLabel", {
-		Name = "TextLabel",
-		Text = "COMMON",
-		Size = UDim2.new(1, 0, 1, 0),
+	local metaFrame = create("Frame", {
+		Name = "MetaFrame",
+		Size = UDim2.new(1, -20, 0, 20),
+		Position = UDim2.new(0, 10, 0, 40),
 		BackgroundTransparency = 1,
-		Font = Enum.Font.GothamBlack,
-		TextSize = 10,
-		TextColor3 = COLORS.RARITY_COMMON,
-		Parent = rarityTag
+		Parent = detailsPanel
 	})
 
-	create("TextLabel", {
-		Name = "Title",
-		Text = "Select an item",
-		Size = UDim2.new(1, 0, 0, 32),
-		Position = UDim2.new(0, 0, 0, 24),
-		Font = Enum.Font.GothamBlack,
-		TextSize = 32,
-		TextColor3 = COLORS.TEXT_MAIN,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		BackgroundTransparency = 1,
-		Parent = infoGroup
-	})
+	create("TextLabel", { Name = "RarityLabel", Text = "---", Size = UDim2.new(0, 100, 1, 0), Font = FONTS.Tech, TextSize = 14, TextColor3 = COLORS.TEXT_DIM, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, Parent = metaFrame })
 
 	create("TextLabel", {
 		Name = "Description",
-		Text = "Select an item from the list to view details.",
-		Size = UDim2.new(1, 0, 0, 40),
-		Position = UDim2.new(0, 0, 0, 60),
-		Font = Enum.Font.Gotham,
+		Text = "Waiting for input...",
+		Size = UDim2.new(1, -20, 0, 50),
+		Position = UDim2.new(0, 10, 0, 65),
+		Font = FONTS.Body,
 		TextSize = 14,
 		TextColor3 = COLORS.TEXT_DIM,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextWrapped = true,
 		BackgroundTransparency = 1,
-		Parent = infoGroup
+		TextYAlignment = Enum.TextYAlignment.Top,
+		Parent = detailsPanel
 	})
 
-	-- Action Group (Price & Buy)
-	local actionGroup = create("Frame", {
-		Name = "ActionGroup",
-		Size = UDim2.new(1, 0, 0, 60),
-		Position = UDim2.new(0, 0, 1, -60),
+	-- Buy Section (Bottom Right of Details)
+	local buySection = create("Frame", {
+		Name = "BuySection",
+		Size = UDim2.new(1, 0, 0, 50),
+		Position = UDim2.new(0, 0, 1, -50),
 		BackgroundTransparency = 1,
 		Parent = detailsPanel
 	})
 
-	local priceCol = create("Frame", { Name = "PriceContainer", Size = UDim2.new(0.3, 0, 1, 0), Position = UDim2.new(0.7, 0, 0, 0), BackgroundTransparency = 1, Parent = actionGroup })
-	create("TextLabel", { Text = "PRICE", Size = UDim2.new(1, 0, 0, 20), Font = Enum.Font.GothamBold, TextSize = 10, TextColor3 = COLORS.TEXT_DIM, TextXAlignment = Enum.TextXAlignment.Right, BackgroundTransparency = 1, Parent = priceCol })
-	create("TextLabel", { Name = "Price", Text = "0 AP", Size = UDim2.new(1, 0, 0, 30), Position = UDim2.new(0, 0, 0, 20), Font = Enum.Font.GothamBlack, TextSize = 28, TextColor3 = COLORS.ACCENT_AMBER, TextXAlignment = Enum.TextXAlignment.Right, BackgroundTransparency = 1, Parent = priceCol })
+	local priceFrame = create("Frame", { Name = "PriceFrame", Size = UDim2.new(0.4, 0, 1, 0), Position = UDim2.new(0, 10, 0, 0), BackgroundTransparency = 1, Parent = buySection })
+	create("TextLabel", { Text = "COST:", Size = UDim2.new(1, 0, 0, 15), Font = FONTS.Tech, TextSize = 10, TextColor3 = COLORS.TEXT_DIM, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, Parent = priceFrame })
+	create("TextLabel", { Name = "Amount", Text = "0 AP", Size = UDim2.new(1, 0, 0, 30), Position = UDim2.new(0, 0, 0, 15), Font = FONTS.Header, TextSize = 24, TextColor3 = COLORS.ACCENT_HAZARD, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, Parent = priceFrame })
 
 	local buyBtn = create("TextButton", {
 		Name = "BuyButton",
 		Text = "",
-		Size = UDim2.new(0.6, 0, 1, 0),
-		BackgroundColor3 = COLORS.ACCENT_CYAN,
-		AutoButtonColor = true,
-		Parent = actionGroup
+		Size = UDim2.new(0.5, 0, 1, -10),
+		Position = UDim2.new(0.5, -10, 0, 0),
+		BackgroundColor3 = COLORS.ACCENT_HAZARD,
+		Parent = buySection
 	})
-	addCorner(buyBtn, 12)
+	create("TextLabel", { Name = "Label", Text = "PURCHASE", Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Font = FONTS.Body, TextSize = 16, TextColor3 = COLORS.BG_ROOT, Parent = buyBtn })
 
-	-- Gradient for button
-	local btnGrad = addGradient(buyBtn, Color3.fromRGB(36, 95, 230), Color3.fromRGB(34, 211, 238), 45)
-
-	create("TextLabel", {
-		Name = "TextLabel",
-		Text = "PURCHASE " .. UNICODE_ICONS.Cart,
-		Size = UDim2.new(1, 0, 1, 0),
-		BackgroundTransparency = 1,
-		Font = Enum.Font.GothamBold,
-		TextSize = 18,
-		TextColor3 = Color3.new(1,1,1),
+	-- Hazard Stripes on Button
+	local stripes = create("ImageLabel", {
+		Size = UDim2.new(1, 0, 0, 5),
+		Position = UDim2.new(0, 0, 1, -5),
+		Image = "rbxassetid://15264388636", -- Grunge fallback
+		BackgroundColor3 = Color3.new(0,0,0),
+		BackgroundTransparency = 0.5,
+		BorderSizePixel = 0,
 		Parent = buyBtn
 	})
 
-	buyBtn.MouseButton1Click:Connect(function()
-		self:PurchaseItem()
-	end)
+	buyBtn.MouseButton1Click:Connect(function() self:PurchaseItem() end)
 
+	self:RefreshList()
 end
+
 
 function apShopUI:PurchaseItem()
 	if not state.selectedItem then return end
 	if state.selectedItem.Owned then return end
 	if state.currentAP < state.selectedItem.Cost then return end
 
-	local btn = detailsPanel.ActionGroup.BuyButton
-	local originalText = btn.TextLabel.Text
-	btn.TextLabel.Text = "PROCESSING..."
+	local btn = detailsPanel.BuySection.BuyButton
+	local lbl = btn.Label
+	lbl.Text = "PROCESSING..."
 
 	local result
 	if state.selectedItem.Type == "Skins" then
@@ -802,16 +800,16 @@ function apShopUI:PurchaseItem()
 
 	if result.Success then
 		state.selectedItem.Owned = true
-		btn.TextLabel.Text = "SUCCESS!"
-		btn.BackgroundColor3 = COLORS.ACCENT_GREEN
-		self:UpdateAP() -- Update AP visually
+		lbl.Text = "ACQUIRED"
+		btn.BackgroundColor3 = COLORS.ACCENT_TOXIC
+		self:UpdateAP()
 		task.delay(1, function()
 			self:UpdateDetails()
 			self:RefreshList()
 		end)
 	else
-		btn.TextLabel.Text = "FAILED"
-		btn.BackgroundColor3 = COLORS.ACCENT_RED
+		lbl.Text = "ERROR"
+		btn.BackgroundColor3 = COLORS.ACCENT_BLOOD
 		task.delay(1, function()
 			self:UpdateDetails()
 		end)
@@ -819,7 +817,7 @@ function apShopUI:PurchaseItem()
 end
 
 -- ============================================================================
--- MAIN LOGIC (Refactored to match LobbyRoomUI)
+-- MAIN LOGIC
 -- ============================================================================
 
 function apShopUI:UpdateAP()
@@ -842,12 +840,11 @@ function apShopUI:Show()
 		self:RefreshList()
 		self:UpdateAP()
 
-		-- Intro Animation
-		if screenGui:FindFirstChild("MainInterface") then
-			local main = screenGui.MainInterface
-			main.Size = UDim2.new(0, 950, 0, 600)
-			TweenService:Create(main, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-				Size = UDim2.new(0, 1000, 0, 650)
+		-- Simple pop in
+		if screenGui:FindFirstChild("MainCrate") then
+			screenGui.MainCrate.Size = UDim2.new(0, 850, 0, 550)
+			TweenService:Create(screenGui.MainCrate, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+				Size = UDim2.new(0, 900, 0, 600)
 			}):Play()
 		end
 
@@ -866,13 +863,11 @@ function apShopUI:Hide()
 		ModelPreviewModule.destroy(state.activePreview) 
 		state.activePreview = nil 
 	end
-	-- Sync handler state
 	if proximityHandler then
 		proximityHandler:SetOpen(false)
 	end
 end
 
--- Event Listeners
 apChangedEvent.OnClientEvent:Connect(function(newAP)
 	state.currentAP = newAP
 	if apValueLabel then apValueLabel.Text = formatNumber(newAP) end
@@ -881,13 +876,11 @@ apChangedEvent.OnClientEvent:Connect(function(newAP)
 	end
 end)
 
--- Initialization
 local function initialize()
 	apShopUI:Create()
 	apShopUI:Hide()
 end
 
--- Start Execution
 if playerGui.Parent then
 	initialize()
 else
@@ -898,7 +891,7 @@ else
 	end)
 end
 
--- Register Proximity Interaction via Module
+-- Proximity Registration
 local ShopFolder = Workspace:WaitForChild("Shop", 10) or Workspace
 
 proximityHandler = ProximityUIHandler.Register({
