@@ -1,12 +1,14 @@
 -- DailyRewardUI.lua (LocalScript)
--- Path: DailyRewardUI.lua (Root)
+-- Path: StarterPlayer/StarterPlayerScripts/DailyRewardUI.lua
 -- Script Place: Lobby
--- Theme: Zombie Apocalypse "Doomsday Calendar" (Scratched Wall/Chalk)
+-- Theme: Zombie Apocalypse "Tactical Tablet" (Military/Digital)
 -- Redesigned by Lead Game Developer.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -14,18 +16,19 @@ local playerGui = player:WaitForChild("PlayerGui")
 -- ================== THEME CONSTANTS ==================
 local THEME = {
 	Colors = {
-		WallBase = Color3.fromRGB(45, 52, 54),      -- Dark Concrete
-		WallShadow = Color3.fromRGB(30, 30, 35),    -- Deep Shadow
-		ChalkWhite = Color3.fromRGB(223, 230, 233), -- Chalk
-		BloodRed = Color3.fromRGB(179, 57, 57),     -- Dried Blood
-		Scratch = Color3.fromRGB(100, 100, 110),    -- Metal Scratch
-		SafeGreen = Color3.fromRGB(85, 239, 196),   -- Safe Zone Marker
-		RustyMetal = Color3.fromRGB(99, 110, 114),  -- Metal Box
+		CaseDark = Color3.fromRGB(25, 25, 25),      -- Tablet Body
+		CaseLight = Color3.fromRGB(45, 45, 50),     -- Edges
+		ScreenBg = Color3.fromRGB(10, 15, 10),      -- CRT Black
+		Phosphor = Color3.fromRGB(50, 255, 100),    -- Primary Green
+		PhosphorDim = Color3.fromRGB(20, 100, 40),  -- Dimmed Green
+		Alert = Color3.fromRGB(255, 50, 50),        -- Red Alert
+		Amber = Color3.fromRGB(255, 180, 50),       -- Warning/Gold
+		Scanline = Color3.fromRGB(0, 0, 0)          -- Scanline Color
 	},
 	Fonts = {
-		Handwritten = Enum.Font.PermanentMarker, -- Marker/Chalk style
-		Scratched = Enum.Font.Creepster,         -- Horror/Scratched
-		Simple = Enum.Font.PatrickHand,          -- Handwritten Note
+		Digital = Enum.Font.Code,         -- Monospace/Code
+		Header = Enum.Font.Michroma,      -- Sci-fi Header
+		System = Enum.Font.RobotoMono     -- Readable Info
 	}
 }
 
@@ -45,96 +48,54 @@ end
 
 local function addStroke(parent, color, thickness)
 	return create("UIStroke", {
-		Parent = parent, Color = color or THEME.Colors.ChalkWhite, Thickness = thickness or 2,
-		ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Transparency = 0.3
+		Parent = parent, Color = color or THEME.Colors.Phosphor, Thickness = thickness or 1,
+		ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Transparency = 0
 	})
 end
 
--- Adds procedural scratches
-local function addScratches(parent, count)
-	for i = 1, count or 5 do
-		local scratch = create("Frame", {
-			Name = "Scratch", Parent = parent, Size = UDim2.new(0, math.random(10, 30), 0, 2),
-			Position = UDim2.new(math.random(), 0, math.random(), 0),
-			BackgroundColor3 = THEME.Colors.Scratch, BackgroundTransparency = 0.4,
-			Rotation = math.random(0, 360), ZIndex = parent.ZIndex
-		})
-		addCorner(scratch, 1)
-	end
+local function playSound(soundId, parent)
+	local s = create("Sound", {
+		Parent = parent or playerGui, SoundId = soundId, Volume = 0.5
+	})
+	s:Play()
+	s.Ended:Connect(function() s:Destroy() end)
+	return s
 end
 
--- Adds a "Chalk Circle" effect
-local function addChalkCircle(parent)
-	local circle = create("Frame", {
-		Name = "ChalkCircle", Parent = parent, Size = UDim2.new(0.9, 0, 0.9, 0), Position = UDim2.new(0.05, 0, 0.05, 0),
-		BackgroundTransparency = 1, ZIndex = parent.ZIndex + 1
-	})
-	local s = create("UIStroke", {
-		Parent = circle, Color = THEME.Colors.SafeGreen, Thickness = 3, Transparency = 0.2
-	})
-	addCorner(circle, 100)
-	return circle
-end
-
--- Adds a "Blood Cross" (X)
-local function addBloodCross(parent)
-	local container = create("Frame", {
-		Name = "BloodCross", Parent = parent, Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, ZIndex = parent.ZIndex + 2
-	})
-
-	local line1 = create("Frame", {
-		Parent = container, Size = UDim2.new(0.8, 0, 0.1, 0), Position = UDim2.new(0.1, 0, 0.45, 0),
-		BackgroundColor3 = THEME.Colors.BloodRed, Rotation = 45, BackgroundTransparency = 0.2
-	})
-	local line2 = create("Frame", {
-		Parent = container, Size = UDim2.new(0.8, 0, 0.1, 0), Position = UDim2.new(0.1, 0, 0.45, 0),
-		BackgroundColor3 = THEME.Colors.BloodRed, Rotation = -45, BackgroundTransparency = 0.2
-	})
-
-	-- Rough edges
-	addCorner(line1, 4)
-	addCorner(line2, 4)
-	return container
-end
-
--- ================== MAIN UI LOGIC ==================
+-- ================== UI CREATION ==================
 
 local gui
 local mainContainer
-local openButton
+local screenGroup
 local isOpening = false
+local currentSelection = 1 -- Currently selected day in the grid
 
--- State
-local rewardConfig = require(ReplicatedStorage.ModuleScript:WaitForChild("DailyRewardConfig"))
+-- Remotes
 local getRewardInfo
 local claimRewardEvent 
+local rewardConfig = require(ReplicatedStorage.ModuleScript:WaitForChild("DailyRewardConfig"))
 
 local function resolveRemotes()
-	-- Try RemoteFunctions folder first
 	local rfFolder = ReplicatedStorage:WaitForChild("RemoteFunctions", 1)
 	if rfFolder then
 		getRewardInfo = rfFolder:FindFirstChild("GetDailyRewardInfo")
 		claimRewardEvent = rfFolder:FindFirstChild("ClaimDailyReward")
 	end
-
-	-- Fallback to RemoteEvents folder (checking each individually if not found)
-	local reFolder = ReplicatedStorage:WaitForChild("RemoteEvents", 1)
-	if reFolder then
-		if not getRewardInfo then
-			getRewardInfo = reFolder:FindFirstChild("GetDailyRewardInfo")
-		end
-		if not claimRewardEvent then
-			claimRewardEvent = reFolder:FindFirstChild("ClaimDailyReward")
+	if not getRewardInfo or not claimRewardEvent then
+		local reFolder = ReplicatedStorage:WaitForChild("RemoteEvents", 1)
+		if reFolder then
+			getRewardInfo = getRewardInfo or reFolder:FindFirstChild("GetDailyRewardInfo")
+			claimRewardEvent = claimRewardEvent or reFolder:FindFirstChild("ClaimDailyReward")
 		end
 	end
 end
 resolveRemotes()
 
 -- ------------------------------------------------------
--- UI CONSTRUCTION
+-- TABLET VISUALS
 -- ------------------------------------------------------
 
-local function createDailyRewardUI()
+local function createTabletUI()
 	if gui then gui:Destroy() end
 
 	gui = create("ScreenGui", {
@@ -142,219 +103,300 @@ local function createDailyRewardUI()
 	})
 
 	local backdrop = create("Frame", {
-		Name = "Backdrop", Parent = gui, Size = UDim2.new(1,0,1,0), 
-		BackgroundColor3 = Color3.new(0,0,0), BackgroundTransparency = 0.2
+		Name = "Backdrop", Parent = gui, Size = UDim2.new(1,0,1,0),
+		BackgroundColor3 = Color3.new(0,0,0), BackgroundTransparency = 0.3, ZIndex = 0
 	})
 
-	-- === THE WALL SURFACE ===
-	mainContainer = create("CanvasGroup", {
-		Name = "WallFrame", Parent = gui, 
-		Size = UDim2.new(0, 900, 0, 600), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5),
-		BackgroundColor3 = THEME.Colors.WallBase, GroupTransparency = 1
+	-- === TABLET CASE ===
+	mainContainer = create("Frame", {
+		Name = "TabletCase", Parent = gui,
+		Size = UDim2.new(0, 800, 0, 500), Position = UDim2.new(0.5, 0, 1.5, 0), -- Start off-screen
+		AnchorPoint = Vector2.new(0.5, 0.5), BackgroundColor3 = THEME.Colors.CaseDark
 	})
-	addCorner(mainContainer, 8)
-	-- Wall Texture (Noise)
-	create("ImageLabel", {
-		Parent = mainContainer, Size = UDim2.new(1,0,1,0), BackgroundTransparency = 1,
-		Image = "rbxassetid://1316045217", ImageTransparency = 0.9, ScaleType = Enum.ScaleType.Tile, TileSize = UDim2.new(0, 200, 0, 200)
-	})
-	addScratches(mainContainer, 20)
+	addCorner(mainContainer, 16)
+	addStroke(mainContainer, Color3.new(0.1, 0.1, 0.1), 4)
 
-	-- Title Scrawled on Wall
+	-- Industrial details (screws/lines)
+	local decoTop = create("Frame", {
+		Parent = mainContainer, Size = UDim2.new(0.4, 0, 0.02, 0), Position = UDim2.new(0.3, 0, 0.02, 0),
+		BackgroundColor3 = THEME.Colors.CaseLight, BorderSizePixel = 0
+	})
+	addCorner(decoTop, 2)
+
+	-- === DIGITAL SCREEN (CANVAS GROUP) ===
+	screenGroup = create("CanvasGroup", {
+		Name = "ScreenGroup", Parent = mainContainer,
+		Size = UDim2.new(0.92, 0, 0.88, 0), Position = UDim2.new(0.04, 0, 0.08, 0),
+		BackgroundColor3 = THEME.Colors.ScreenBg, BorderSizePixel = 0
+	})
+	addCorner(screenGroup, 4)
+	-- Screen Glow
+	create("UIStroke", {
+		Parent = screenGroup, Color = THEME.Colors.Phosphor, Transparency = 0.8, Thickness = 2
+	})
+
+	-- Scanlines (Tiled Image or simple lines)
+	local scanline = create("ImageLabel", {
+		Name = "Scanlines", Parent = screenGroup, Size = UDim2.new(1, 0, 1, 0),
+		BackgroundTransparency = 1, Image = "rbxassetid://7200216447", -- Generic scanline texture
+		ImageTransparency = 0.9, ImageColor3 = THEME.Colors.Scanline,
+		ScaleType = Enum.ScaleType.Tile, TileSize = UDim2.new(0, 4, 0, 4), ZIndex = 10
+	})
+
+	-- === HEADER ===
+	local headerBar = create("Frame", {
+		Parent = screenGroup, Size = UDim2.new(1, 0, 0.1, 0), BackgroundTransparency = 1
+	})
+	create("Frame", { -- Divider
+		Parent = headerBar, Size = UDim2.new(1, 0, 0, 2), Position = UDim2.new(0, 0, 1, 0),
+		BackgroundColor3 = THEME.Colors.Phosphor, BackgroundTransparency = 0.5
+	})
 	create("TextLabel", {
-		Parent = mainContainer, Size = UDim2.new(1, 0, 0.15, 0), Position = UDim2.new(0, 0, 0.05, 0),
-		Text = "DAYS SURVIVED", Font = THEME.Fonts.Handwritten, TextSize = 48, TextColor3 = THEME.Colors.ChalkWhite,
-		BackgroundTransparency = 1, TextStrokeTransparency = 0.8
+		Parent = headerBar, Size = UDim2.new(0.5, 0, 1, 0), Position = UDim2.new(0.02, 0, 0, 0),
+		Text = "SUPPLY LOG // MIL-NET", Font = THEME.Fonts.Header, TextSize = 18,
+		TextColor3 = THEME.Colors.Phosphor, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
+	})
+	create("TextLabel", { -- Battery
+		Parent = headerBar, Size = UDim2.new(0.2, 0, 1, 0), Position = UDim2.new(0.78, 0, 0, 0),
+		Text = "PWR: 87% [ONLINE]", Font = THEME.Fonts.Digital, TextSize = 14,
+		TextColor3 = THEME.Colors.PhosphorDim, TextXAlignment = Enum.TextXAlignment.Right, BackgroundTransparency = 1
 	})
 
-	-- Close Button (Scribbled X)
-	local closeBtn = create("TextButton", {
-		Name = "CloseButton", Parent = mainContainer, Size = UDim2.new(0, 50, 0, 50), Position = UDim2.new(0.92, 0, 0.05, 0),
-		Text = "X", Font = THEME.Fonts.Handwritten, TextSize = 40, TextColor3 = THEME.Colors.BloodRed,
+	-- === CONTENT GRID ===
+	local gridArea = create("Frame", {
+		Name = "GridArea", Parent = screenGroup, Size = UDim2.new(0.65, 0, 0.85, 0), Position = UDim2.new(0.02, 0, 0.12, 0),
 		BackgroundTransparency = 1
 	})
-	closeBtn.MouseButton1Click:Connect(function() gui.Enabled = false end)
-
-	-- === LEFT: CALENDAR GRID (Chalk drawn) ===
-	local gridFrame = create("Frame", {
-		Name = "CalendarGrid", Parent = mainContainer, Size = UDim2.new(0.6, 0, 0.7, 0), Position = UDim2.new(0.05, 0, 0.25, 0),
-		BackgroundTransparency = 1
-	})
-
-	-- Grid Lines (Drawn with Frame borders)
 	local gridLayout = create("UIGridLayout", {
-		Parent = gridFrame, CellSize = UDim2.new(0.18, 0, 0.18, 0), CellPadding = UDim2.new(0.02, 0, 0.02, 0)
+		Parent = gridArea, CellSize = UDim2.new(0.13, 0, 0.22, 0), CellPadding = UDim2.new(0.01, 0, 0.01, 0)
 	})
 
-	-- === RIGHT: THE STASH (Reward Info) ===
-	local stashFrame = create("Frame", {
-		Name = "StashFrame", Parent = mainContainer, Size = UDim2.new(0.3, 0, 0.6, 0), Position = UDim2.new(0.68, 0, 0.25, 0),
-		BackgroundColor3 = Color3.fromRGB(40, 40, 40), Rotation = 2
+	-- === INFO PANEL ===
+	local infoPanel = create("Frame", {
+		Name = "InfoPanel", Parent = screenGroup, Size = UDim2.new(0.3, 0, 0.85, 0), Position = UDim2.new(0.68, 0, 0.12, 0),
+		BackgroundColor3 = Color3.fromRGB(15, 20, 15), BorderSizePixel = 0
 	})
-	addCorner(stashFrame, 4)
-	-- Taped to wall
-	create("Frame", {
-		Parent = stashFrame, Size = UDim2.new(0.4, 0, 0.1, 0), Position = UDim2.new(0.3, 0, -0.05, 0),
-		BackgroundColor3 = Color3.fromRGB(200, 190, 150), Rotation = -2
-	})
+	addCorner(infoPanel, 4)
+	addStroke(infoPanel, THEME.Colors.PhosphorDim, 1)
 
-	-- Reward Icon Area
-	local iconArea = create("Frame", {
-		Parent = stashFrame, Size = UDim2.new(0.8, 0, 0.5, 0), Position = UDim2.new(0.1, 0, 0.1, 0),
-		BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-	})
-	create("ImageLabel", {
-		Name = "RewardIcon", Parent = iconArea, Size = UDim2.new(0.8, 0, 0.8, 0), Position = UDim2.new(0.1, 0, 0.1, 0),
-		BackgroundTransparency = 1, ScaleType = Enum.ScaleType.Fit
-	})
-
-	-- Text
+	-- Info Content
 	create("TextLabel", {
-		Name = "RewardTitle", Parent = stashFrame, Size = UDim2.new(0.9, 0, 0.1, 0), Position = UDim2.new(0.05, 0, 0.65, 0),
-		Text = "AMMO BOX", Font = THEME.Fonts.Simple, TextSize = 24, TextColor3 = THEME.Colors.ChalkWhite,
-		BackgroundTransparency = 1
+		Name = "RewardTitle", Parent = infoPanel, Size = UDim2.new(0.9, 0, 0.1, 0), Position = UDim2.new(0.05, 0, 0.05, 0),
+		Text = "SELECT DAY", Font = THEME.Fonts.Header, TextSize = 20, TextColor3 = THEME.Colors.Phosphor,
+		BackgroundTransparency = 1, TextWrapped = true
 	})
 
-	-- CLAIM BUTTON (Scratch it off)
-	local claimBtn = create("TextButton", {
-		Name = "ClaimBtn", Parent = stashFrame, Size = UDim2.new(0.8, 0, 0.15, 0), Position = UDim2.new(0.1, 0, 0.8, 0),
-		BackgroundColor3 = THEME.Colors.BloodRed, Text = "TAKE IT", Font = THEME.Fonts.Scratched, TextSize = 24,
-		TextColor3 = Color3.new(0,0,0)
+	local previewBox = create("Frame", {
+		Parent = infoPanel, Size = UDim2.new(0.8, 0, 0.35, 0), Position = UDim2.new(0.1, 0, 0.2, 0),
+		BackgroundColor3 = Color3.new(0,0,0), BorderSizePixel = 0
 	})
-	addCorner(claimBtn, 8)
+	addStroke(previewBox, THEME.Colors.PhosphorDim, 1)
 
+	create("ImageLabel", {
+		Name = "RewardPreview", Parent = previewBox, Size = UDim2.new(0.8, 0, 0.8, 0), Position = UDim2.new(0.1, 0, 0.1, 0),
+		BackgroundTransparency = 1, ScaleType = Enum.ScaleType.Fit, ImageColor3 = THEME.Colors.Phosphor
+	})
+
+	create("TextLabel", {
+		Name = "RewardDesc", Parent = infoPanel, Size = UDim2.new(0.9, 0, 0.2, 0), Position = UDim2.new(0.05, 0, 0.6, 0),
+		Text = "---", Font = THEME.Fonts.System, TextSize = 14, TextColor3 = THEME.Colors.PhosphorDim,
+		BackgroundTransparency = 1, TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top
+	})
+
+	-- Action Button
+	local actionBtn = create("TextButton", {
+		Name = "ActionBtn", Parent = infoPanel, Size = UDim2.new(0.9, 0, 0.12, 0), Position = UDim2.new(0.05, 0, 0.85, 0),
+		BackgroundColor3 = THEME.Colors.PhosphorDim, Text = "LOCKED", Font = THEME.Fonts.Header, TextSize = 16,
+		TextColor3 = THEME.Colors.ScreenBg
+	})
+	addCorner(actionBtn, 4)
+
+	-- Close 'Button' (Physical button on tablet bezel)
+	local powerBtn = create("TextButton", {
+		Parent = mainContainer, Size = UDim2.new(0, 40, 0, 40), Position = UDim2.new(0.94, 0, 0.08, 0),
+		BackgroundColor3 = Color3.fromRGB(40, 40, 40), Text = "", AutoButtonColor = true
+	})
+	addCorner(powerBtn, 20)
+	create("ImageLabel", {
+		Parent = powerBtn, Size = UDim2.new(0.6, 0, 0.6, 0), Position = UDim2.new(0.2, 0, 0.2, 0),
+		BackgroundTransparency = 1, Image = "rbxassetid://7072718266", ImageColor3 = Color3.fromRGB(200, 50, 50) -- Power icon
+	})
+	powerBtn.MouseButton1Click:Connect(closeUI)
 end
 
 -- ------------------------------------------------------
--- LOGIC
+-- LOGIC & UPDATES
 -- ------------------------------------------------------
 
-local function populateCalendar(currentDay, canClaim)
-	local gridFrame = mainContainer:FindFirstChild("CalendarGrid")
-
-	-- Clear
-	for _, c in ipairs(gridFrame:GetChildren()) do
-		if c:IsA("Frame") then c:Destroy() end
-	end
-
-	for day = 1, #rewardConfig.Rewards do
-		local cell = create("Frame", {
-			Parent = gridFrame, BackgroundTransparency = 1
-		})
-		-- Drawn box
-		local border = create("Frame", {
-			Parent = cell, Size = UDim2.new(1,0,1,0), BackgroundTransparency = 1
-		})
-		addStroke(border, THEME.Colors.ChalkWhite, 2)
-		addCorner(border, 4)
-
-		-- Day Num
-		create("TextLabel", {
-			Parent = cell, Size = UDim2.new(1,0,1,0), Text = tostring(day), 
-			Font = THEME.Fonts.Handwritten, TextSize = 24, TextColor3 = THEME.Colors.ChalkWhite, BackgroundTransparency = 1
-		})
-
-		if day < currentDay then
-			-- Survived/Claimed (Crossed out)
-			addBloodCross(cell)
-			cell.BackgroundTransparency = 0.8
-			cell.BackgroundColor3 = Color3.new(0,0,0)
-		elseif day == currentDay then
-			-- Today
-			addChalkCircle(cell)
-		else
-			-- Future
-			border.UIStroke.Transparency = 0.7
-		end
-	end
-end
-
-local function updateStash(day, canClaim)
-	local panel = mainContainer:FindFirstChild("StashFrame")
+local function updateInfoPanel(day, stateInfo)
+	if not gui then return end
+	local panel = screenGroup:FindFirstChild("InfoPanel")
 	if not panel then return end
+
+	local title = panel:FindFirstChild("RewardTitle")
+	local desc = panel:FindFirstChild("RewardDesc")
+	local img = panel:FindFirstChild("RewardPreview", true)
+	local btn = panel:FindFirstChild("ActionBtn")
 
 	local reward = rewardConfig.Rewards[day]
 	if not reward then return end
 
-	local title = panel:FindFirstChild("RewardTitle")
-	local icon = panel:FindFirstChild("RewardIcon", true)
-	local btn = panel:FindFirstChild("ClaimBtn")
+	title.Text = "DAY " .. day
+	desc.Text = string.format("REWARD: %s\nVAL: %s", reward.Type, tostring(reward.Value))
 
-	-- Update Info
-	local typeText = reward.Type
-	if reward.Type == "Coins" then typeText = string.format("%d COINS", reward.Value) end
-
-	title.Text = typeText
-
-	local iconId = "rbxassetid://497939460" -- Crate
+	-- Icons
+	local iconId = "rbxassetid://497939460" -- Default Crate
 	if reward.Type == "Coins" then iconId = "rbxassetid://281938327" end
-	if icon then 
-		icon.Image = iconId 
-		icon.ImageColor3 = (canClaim and Color3.new(1,1,1) or Color3.fromRGB(150,150,150))
-	end
+	if img then img.Image = iconId end
 
 	-- Button State
-	if btn then
-		if btn:GetAttribute("Conn") then
-			local new = btn:Clone()
-			new.Parent = panel
-			btn:Destroy()
-			btn = new
-		end
-		btn:SetAttribute("Conn", true)
+	if btn:GetAttribute("Conn") then
+		-- In a real scenario, disconnect nicely. Here we clone to clear.
+		local new = btn:Clone()
+		new.Parent = panel
+		btn:Destroy()
+		btn = new
+	end
+	btn:SetAttribute("Conn", true)
 
-		if canClaim then
-			btn.Text = "TAKE IT"
-			btn.BackgroundColor3 = THEME.Colors.BloodRed
-			btn.Visible = true
-			btn.MouseButton1Click:Connect(function() attemptScratch(day) end)
+	if day < stateInfo.CurrentDay then
+		btn.Text = "CLAIMED"
+		btn.BackgroundColor3 = THEME.Colors.PhosphorDim
+		btn.TextColor3 = THEME.Colors.ScreenBg
+		btn.AutoButtonColor = false
+	elseif day == stateInfo.CurrentDay then
+		if stateInfo.CanClaim then
+			btn.Text = "CLAIM"
+			btn.BackgroundColor3 = THEME.Colors.Phosphor
+			btn.TextColor3 = THEME.Colors.ScreenBg
+			btn.AutoButtonColor = true
+
+			-- Pulse Effect
+			task.spawn(function()
+				while btn.Parent and btn.Text == "CLAIM" do
+					TweenService:Create(btn, TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {BackgroundColor3 = THEME.Colors.Amber}):Play()
+					task.wait(1.6)
+				end
+			end)
+
+			btn.MouseButton1Click:Connect(function()
+				attemptClaim(day)
+			end)
 		else
-			btn.Text = "TAKEN"
-			btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
-			btn.Visible = true -- Keep visible to show status
+			btn.Text = "WAIT..."
+			btn.BackgroundColor3 = THEME.Colors.Alert
+			btn.TextColor3 = THEME.Colors.ScreenBg
+			btn.AutoButtonColor = false
 		end
+	else
+		btn.Text = "LOCKED"
+		btn.BackgroundColor3 = Color3.fromRGB(30,30,30)
+		btn.TextColor3 = Color3.fromRGB(100,100,100)
+		btn.AutoButtonColor = false
 	end
 end
 
-function attemptScratch(day)
+function attemptClaim(day)
 	if not claimRewardEvent then return end
+	local panel = screenGroup:FindFirstChild("InfoPanel")
+	local btn = panel:FindFirstChild("ActionBtn")
 
-	local panel = mainContainer:FindFirstChild("StashFrame")
-	local btn = panel:FindFirstChild("ClaimBtn")
-
-	-- Animate "Taking"
-	btn.Text = "TAKING..."
+	btn.Text = "PROCESSING..."
+	btn.BackgroundColor3 = THEME.Colors.Amber
 
 	local success, result = pcall(function() return claimRewardEvent:InvokeServer() end)
 
 	if success and result and result.Success then
-		btn.Text = "GOT IT"
-		btn.BackgroundColor3 = THEME.Colors.SafeGreen
+		btn.Text = "APPROVED"
+		btn.BackgroundColor3 = THEME.Colors.Phosphor
+		playSound("rbxassetid://4612375233") -- Success beep
 
-		-- Find the grid cell and cross it out
-		local grid = mainContainer:FindFirstChild("CalendarGrid")
-		-- We need to find the specific cell that corresponds to the day claimed (result.NextDay - 1)
-		local targetDay = result.NextDay - 1
-		for _, c in ipairs(grid:GetChildren()) do
-			if c:IsA("Frame") and c:FindFirstChild("TextLabel") and c.TextLabel.Text == tostring(targetDay) then
-				-- Animate Blood Cross appearing
-				local cross = addBloodCross(c)
-				cross.Size = UDim2.new(0,0,0,0)
-				cross.Position = UDim2.new(0.5,0,0.5,0)
-				TweenService:Create(cross, TweenInfo.new(0.3, Enum.EasingStyle.Elastic), {Size = UDim2.new(1,0,1,0), Position = UDim2.new(0,0,0,0)}):Play()
-				break
+		-- Visual Update of Grid
+		local grid = screenGroup:FindFirstChild("GridArea"):FindFirstChild("UIGridLayout")
+		-- Re-populate to show updated status
+		populateGrid(result.NextDay, false) -- NextDay is technically correct for the loop logic
+		updateInfoPanel(day, {CurrentDay = result.NextDay, CanClaim = false})
+	else
+		btn.Text = "ERROR"
+		btn.BackgroundColor3 = THEME.Colors.Alert
+		task.wait(1)
+		btn.Text = "CLAIM"
+	end
+end
+
+function populateGrid(currentDay, canClaim)
+	local gridArea = screenGroup:FindFirstChild("GridArea")
+
+	-- Clear existing
+	for _, c in ipairs(gridArea:GetChildren()) do
+		if c:IsA("TextButton") then c:Destroy() end
+	end
+
+	for i = 1, #rewardConfig.Rewards do
+		local cell = create("TextButton", {
+			Parent = gridArea, BackgroundColor3 = THEME.Colors.ScreenBg,
+			Text = "", AutoButtonColor = true
+		})
+		addStroke(cell, THEME.Colors.PhosphorDim, 1)
+		addCorner(cell, 4)
+
+		-- Day Number
+		create("TextLabel", {
+			Parent = cell, Size = UDim2.new(1,0,0.4,0), Position = UDim2.new(0,0,0,0),
+			Text = tostring(i), Font = THEME.Fonts.Digital, TextSize = 16,
+			TextColor3 = THEME.Colors.PhosphorDim, BackgroundTransparency = 1
+		})
+
+		-- Icon (Mini)
+		local reward = rewardConfig.Rewards[i]
+		local iconId = "rbxassetid://497939460"
+		if reward.Type == "Coins" then iconId = "rbxassetid://281938327" end
+
+		create("ImageLabel", {
+			Parent = cell, Size = UDim2.new(0.5,0,0.5,0), Position = UDim2.new(0.25,0,0.35,0),
+			BackgroundTransparency = 1, Image = iconId, ImageColor3 = THEME.Colors.PhosphorDim
+		})
+
+		-- Logic State
+		if i < currentDay then
+			-- Claimed
+			cell.BackgroundColor3 = Color3.fromRGB(15, 30, 15)
+			cell.UIStroke.Color = THEME.Colors.PhosphorDim
+			cell.UIStroke.Transparency = 0.5
+			cell.ImageLabel.ImageColor3 = Color3.fromRGB(50, 80, 50)
+		elseif i == currentDay then
+			-- Today
+			cell.BackgroundColor3 = Color3.fromRGB(10, 25, 10)
+			cell.UIStroke.Color = canClaim and THEME.Colors.Phosphor or THEME.Colors.Amber
+			cell.UIStroke.Thickness = 2
+			cell.ImageLabel.ImageColor3 = canClaim and THEME.Colors.Phosphor or THEME.Colors.Amber
+			cell.TextLabel.TextColor3 = canClaim and THEME.Colors.Phosphor or THEME.Colors.Amber
+
+			if canClaim then
+				-- Blink
+				TweenService:Create(cell.UIStroke, TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Transparency = 0.5}):Play()
 			end
+		else
+			-- Locked
+			cell.UIStroke.Color = Color3.fromRGB(30, 30, 30)
+			cell.ImageLabel.ImageColor3 = Color3.fromRGB(40, 40, 40)
+			cell.TextLabel.TextColor3 = Color3.fromRGB(60, 60, 60)
 		end
 
-		task.wait(1)
-
-		populateCalendar(result.NextDay, false)
-		updateStash(result.NextDay - 1, false) 
-	else
-		btn.Text = "FAILED"
-		task.wait(1)
-		btn.Text = "TAKE IT"
+		cell.MouseButton1Click:Connect(function()
+			updateInfoPanel(i, {CurrentDay = currentDay, CanClaim = canClaim})
+		end)
 	end
+end
+
+function closeUI()
+	if not gui then return end
+
+	-- Animation: Screen Off
+	TweenService:Create(screenGroup, TweenInfo.new(0.2), {Size = UDim2.new(0.92, 0, 0, 2), Position = UDim2.new(0.04, 0, 0.5, 0)}):Play()
+	task.wait(0.2)
+	gui.Enabled = false
+	isOpening = false
 end
 
 local function loadData()
@@ -362,44 +404,73 @@ local function loadData()
 	isOpening = true
 
 	resolveRemotes()
-	if not getRewardInfo then isOpening = false return end
+	if not getRewardInfo then 
+		warn("DailyReward Remotes not found!")
+		isOpening = false 
+		return 
+	end
 
 	local success, result = pcall(function() return getRewardInfo:InvokeServer() end)
 
 	if success and result then
-		createDailyRewardUI()
+		createTabletUI()
 		gui.Enabled = true
 
-		populateCalendar(result.CurrentDay, result.CanClaim)
-		updateStash(result.CurrentDay, result.CanClaim)
+		populateGrid(result.CurrentDay, result.CanClaim)
+		updateInfoPanel(result.CurrentDay, result) -- Select current day by default
 
-		-- Fade In
-		mainContainer.GroupTransparency = 1
-		TweenService:Create(mainContainer, TweenInfo.new(1.0), {GroupTransparency = 0}):Play()
+		-- Animation: Slide Up + Boot
+		mainContainer.Position = UDim2.new(0.5, 0, 1.5, 0)
+		TweenService:Create(mainContainer, TweenInfo.new(0.5, Enum.EasingStyle.Back), {Position = UDim2.new(0.5, 0, 0.5, 0)}):Play()
+
+		-- Screen boot effect (Vertical expand)
+		screenGroup.Size = UDim2.new(0.92, 0, 0, 2)
+		screenGroup.Position = UDim2.new(0.04, 0, 0.5, 0)
+		task.wait(0.4)
+		TweenService:Create(screenGroup, TweenInfo.new(0.3), {Size = UDim2.new(0.92, 0, 0.88, 0), Position = UDim2.new(0.04, 0, 0.08, 0)}):Play()
+
+		playSound("rbxassetid://4501579366") -- Sci-fi boot sound
+
+	else
+		warn("Failed to fetch reward data")
+		isOpening = false
 	end
-	isOpening = false
 end
 
--- ================== HUD BUTTON ==================
+-- ================== HUD TRIGGER ==================
+-- Replaces/Creates the HUD button to open this menu
 local function createHUD()
 	if playerGui:FindFirstChild("DailyRewardHUD") then playerGui.DailyRewardHUD:Destroy() end
 
 	local hud = create("ScreenGui", {Name = "DailyRewardHUD", Parent = playerGui, ResetOnSpawn = false})
 
-	openButton = create("TextButton", {
-		Parent = hud, Size = UDim2.new(0, 70, 0, 70), Position = UDim2.new(0, 20, 0.5, 0),
-		BackgroundColor3 = THEME.Colors.WallBase, Text = "", BorderSizePixel = 0
+	-- Tablet Icon Button
+	local openBtn = create("TextButton", {
+		Parent = hud, Size = UDim2.new(0, 60, 0, 80), Position = UDim2.new(0, 20, 0.5, -40),
+		BackgroundColor3 = THEME.Colors.CaseDark, Text = ""
 	})
-	addCorner(openButton, 12)
-	addStroke(openButton, THEME.Colors.ChalkWhite, 3)
+	addCorner(openBtn, 8)
+	addStroke(openBtn, THEME.Colors.PhosphorDim, 2)
+
+	local screen = create("Frame", {
+		Parent = openBtn, Size = UDim2.new(0.8,0,0.8,0), Position = UDim2.new(0.1,0,0.1,0),
+		BackgroundColor3 = THEME.Colors.ScreenBg
+	})
+	addCorner(screen, 4)
 
 	create("TextLabel", {
-		Parent = openButton, Size = UDim2.new(1,0,0.6,0), Position = UDim2.new(0,0,0.2,0),
-		Text = "DAYS", Font = THEME.Fonts.Handwritten, TextSize = 24, TextColor3 = THEME.Colors.ChalkWhite, BackgroundTransparency = 1
+		Parent = screen, Size = UDim2.new(1,0,1,0), Text = "LOG",
+		Font = THEME.Fonts.Digital, TextSize = 14, TextColor3 = THEME.Colors.Phosphor
 	})
 
-	openButton.MouseButton1Click:Connect(loadData)
+	openBtn.MouseButton1Click:Connect(loadData)
+
+	-- Listen for Server Open Request (e.g. on join)
+	local remoteEvt = ReplicatedStorage:WaitForChild("RemoteEvents"):FindFirstChild("ShowDailyRewardUI")
+	if remoteEvt then
+		remoteEvt.OnClientEvent:Connect(loadData)
+	end
 end
 
 createHUD()
-print("DailyRewardUI (Calendar Theme) Loaded")
+print("DailyRewardUI (Tactical Tablet) Initialized")
