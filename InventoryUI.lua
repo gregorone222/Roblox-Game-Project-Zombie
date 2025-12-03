@@ -1,13 +1,13 @@
 -- InventoryUI.lua (LocalScript)
 -- Path: StarterGui/InventoryUI.lua
 -- Script Place: Lobby
+-- Theme: Zombie Apocalypse / Industrial Survival
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
-local Lighting = game:GetService("Lighting")
 local GuiService = game:GetService("GuiService")
 
 local player = Players.LocalPlayer
@@ -23,27 +23,27 @@ local BoosterUpdateEvent = ReplicatedStorage.RemoteEvents:WaitForChild("BoosterU
 local ActivateBoosterEvent = ReplicatedStorage.RemoteEvents:WaitForChild("ActivateBoosterEvent")
 local GetBoosterConfig = ReplicatedStorage.RemoteFunctions:WaitForChild("GetBoosterConfig")
 
--- --- RESPONSIVE DESIGN SYSTEM ---
-local COLORS = {
-	BG_DARK = Color3.fromRGB(5, 8, 20),      -- Slate 950 (More Opaque feel)
-	PANEL_BG = Color3.fromRGB(15, 23, 42),   -- Slate 900
-	PANEL_BORDER = Color3.fromRGB(30, 41, 59), -- Slate 800
-	PRIMARY = Color3.fromRGB(6, 182, 212),   -- Cyan 500
-	PRIMARY_GLOW = Color3.fromRGB(34, 211, 238), -- Cyan 400
-	TEXT_WHITE = Color3.fromRGB(241, 245, 249), -- Slate 100
-	TEXT_GRAY = Color3.fromRGB(148, 163, 184),  -- Slate 400
-	ACCENT_AMBER = Color3.fromRGB(245, 158, 11), -- Amber 500
-	ACCENT_RED = Color3.fromRGB(239, 68, 68),    -- Red 500
-	ACCENT_GREEN = Color3.fromRGB(34, 197, 94),  -- Green 500
-	ITEM_HOVER = Color3.fromRGB(30, 41, 59),
-	ITEM_ACTIVE = Color3.fromRGB(51, 65, 85)
-}
-
-local FONTS = {
-	TITLE = Enum.Font.GothamBlack,
-	HEADER = Enum.Font.GothamBold,
-	BODY = Enum.Font.GothamMedium,
-	MONO = Enum.Font.Code
+-- --- THEME CONFIGURATION ---
+local THEME = {
+	COLORS = {
+		BG_MAIN     = Color3.fromRGB(18, 16, 16),    -- Deep dark grunge
+		BG_PANEL    = Color3.fromRGB(30, 28, 28),    -- Panel background
+		BORDER      = Color3.fromRGB(70, 60, 55),    -- Rusted metal
+		PRIMARY     = Color3.fromRGB(210, 120, 60),  -- Hazard Orange / Rust
+		PRIMARY_DIM = Color3.fromRGB(140, 80, 40),
+		ACCENT_RED  = Color3.fromRGB(180, 50, 50),   -- Blood Red
+		ACCENT_GREEN= Color3.fromRGB(100, 180, 80),  -- Toxic Green
+		TEXT_MAIN   = Color3.fromRGB(230, 225, 220), -- Bone White
+		TEXT_DIM    = Color3.fromRGB(150, 140, 130), -- Dust Gray
+		ITEM_BG     = Color3.fromRGB(40, 38, 38),
+		ITEM_HOVER  = Color3.fromRGB(50, 48, 48),
+	},
+	FONTS = {
+		TITLE   = Enum.Font.GothamBlack,
+		HEADER  = Enum.Font.GothamBold,
+		BODY    = Enum.Font.GothamMedium,
+		TECH    = Enum.Font.Code, -- For stats
+	}
 }
 
 -- --- UI STATE ---
@@ -51,7 +51,7 @@ local inventoryData = nil
 local selectedWeapon = nil
 local selectedSkin = nil
 selectedCategory = "All"
-local currentTab = "Weapons" -- "Weapons" or "Boosters"
+local currentTab = "Weapons"
 local currentPreview = nil
 local boosterConfig = nil
 local boosterData = nil
@@ -59,1048 +59,662 @@ local assetCache = {}
 
 -- --- RESPONSIVE VARIABLES ---
 local isMobile = UserInputService.TouchEnabled
-local isTablet = false
-local isDesktop = not isMobile
-local screenSize = Vector2.new(1920, 1080) -- Default size
+local screenSize = Vector2.new(1920, 1080)
 
--- --- FIXED: SAFE SCREEN SIZE GETTER ---
 local function getScreenSize()
 	local camera = workspace.CurrentCamera
-	if camera then
-		return camera.ViewportSize
-	else
-		-- Fallback to PlayerGui if camera not available
-		local playerGui = player:FindFirstChild("PlayerGui")
-		if playerGui then
-			return playerGui.AbsoluteSize
-		else
-			return Vector2.new(1920, 1080) -- Final fallback
-		end
-	end
+	if camera then return camera.ViewportSize end
+	return player:WaitForChild("PlayerGui").AbsoluteSize
 end
 
--- --- RESPONSIVE FUNCTIONS ---
 local function updateDeviceType()
-	local success, result = pcall(function()
-		screenSize = getScreenSize()
-		isMobile = UserInputService.TouchEnabled
-
-		-- Deteksi tablet berdasarkan aspect ratio dan screen size
-		local aspectRatio = screenSize.X / screenSize.Y
-		isTablet = isMobile and (aspectRatio > 1.2 and aspectRatio < 1.8) and math.min(screenSize.X, screenSize.Y) > 700
-		isDesktop = not isMobile
-	end)
-
-	if not success then
-		-- Fallback values jika ada error
-		isMobile = UserInputService.TouchEnabled
-		isTablet = false
-		isDesktop = not isMobile
-	end
-end
-
-local function getResponsiveSize(desktopSize, mobileSize, tabletSize)
-	if isDesktop then
-		return desktopSize
-	elseif isTablet then
-		return tabletSize or ((desktopSize + mobileSize) / 2)
-	else
-		return mobileSize
-	end
-end
-
-local function setupResponsiveSizes()
-	local success, result = pcall(function()
-		updateDeviceType()
-
-		-- Main Panel Size
-		local panelWidth = getResponsiveSize(0.9, 0.98, 0.95)
-		local panelHeight = getResponsiveSize(0.85, 0.95, 0.9)
-		mainPanel.Size = UDim2.new(panelWidth, 0, panelHeight, 0)
-
-		-- Open Button
-		local openBtnWidth = getResponsiveSize(200, 280, 240)
-		local openBtnHeight = getResponsiveSize(50, 60, 55)
-		openButton.Size = UDim2.new(0, openBtnWidth, 0, openBtnHeight)
-
-		-- Layout untuk mobile/tablet
-		if isMobile then
-			-- Header adjustments
-			headerFrame.Size = UDim2.new(1, 0, 0, 60)
-			titleLabel.TextSize = 24
-			titleLabel.Position = UDim2.new(0, 20, 0, 0)
-
-			-- Tab container mobile
-			tabContainer.Size = UDim2.new(1, -100, 0, 35)
-			tabContainer.Position = UDim2.new(0, 50, 0.5, 0)
-
-			-- Tab buttons mobile
-			tabWeaponsBtn.Size = UDim2.new(0, 120, 1, 0)
-			tabBoostersBtn.Size = UDim2.new(0, 120, 1, 0)
-
-			-- Weapons Content Layout
-			if currentTab == "Weapons" then
-				-- Mobile vertical layout
-				leftSidebar.Size = UDim2.new(1, 0, 0.4, 0)
-				leftSidebar.Position = UDim2.new(0, 0, 0, 0)
-
-				centerPreview.Size = UDim2.new(1, 0, 0.35, 0)
-				centerPreview.Position = UDim2.new(0, 0, 0.4, 0)
-
-				rightSidebar.Size = UDim2.new(1, 0, 0.25, 0)
-				rightSidebar.Position = UDim2.new(0, 0, 0.75, 0)
-				rightSidebar.AnchorPoint = Vector2.new(0, 0)
-
-				-- Adjust weapon list height
-				weaponListScroll.Size = UDim2.new(1, 0, 1, -80)
-
-				-- Smaller preview slider for mobile
-				sliderContainer.Size = UDim2.new(0, 150, 0, 30)
-				sliderLabel.TextSize = 8
-
-				-- Adjust search and filter for mobile
-				filterContainer.Size = UDim2.new(1, 0, 0, 80)
-				searchBox.Size = UDim2.new(1, -20, 0, 32)
-				categoryScroll.Size = UDim2.new(1, 0, 0, 35)
-				categoryScroll.Position = UDim2.new(0, 0, 0, 45)
-			else
-				-- Boosters grid mobile
-				bgLayout.CellSize = UDim2.new(0, 170, 0, 200)
-			end
-
-			-- Font size adjustments for mobile
-			weaponNameLabel.TextSize = 28
-			weaponTypeLabel.TextSize = 10
-			weaponDescLabel.TextSize = 12
-			ebLabel.TextSize = 14
-
-			-- Stats container mobile
-			statsContainer.Position = UDim2.new(0, 0, 0, 90)
-			statsContainer.Size = UDim2.new(1, 0, 0, 120)
-
-			-- Skins grid mobile
-			skinsHeader.Position = UDim2.new(0, 0, 1, -120)
-			skinsGrid.Size = UDim2.new(1, 0, 0, 60)
-			skinsGrid.Position = UDim2.new(0, 0, 1, -95)
-			sgLayout.CellSize = UDim2.new(0, 50, 0, 50)
-
-		else
-			-- Desktop layout (default)
-			headerFrame.Size = UDim2.new(1, 0, 0, 70)
-			titleLabel.TextSize = 28
-			titleLabel.Position = UDim2.new(0, 30, 0, 0)
-
-			tabContainer.Size = UDim2.new(0, 300, 0, 40)
-			tabContainer.Position = UDim2.new(0, 250, 0.5, 0)
-
-			tabWeaponsBtn.Size = UDim2.new(0, 140, 1, 0)
-			tabBoostersBtn.Size = UDim2.new(0, 140, 1, 0)
-
-			-- Weapons Content Desktop
-			leftSidebar.Size = UDim2.new(0, 300, 1, 0)
-			centerPreview.Size = UDim2.new(1, -650, 1, 0)
-			rightSidebar.Size = UDim2.new(0, 350, 1, 0)
-			rightSidebar.Position = UDim2.new(1, 0, 0, 0)
-			rightSidebar.AnchorPoint = Vector2.new(1, 0)
-
-			weaponListScroll.Size = UDim2.new(1, 0, 1, -100)
-
-			sliderContainer.Size = UDim2.new(0, 200, 0, 40)
-			sliderLabel.TextSize = 10
-
-			-- Boosters grid desktop
-			bgLayout.CellSize = UDim2.new(0, 200, 0, 250)
-
-			-- Font sizes desktop
-			weaponNameLabel.TextSize = 36
-			weaponTypeLabel.TextSize = 12
-			weaponDescLabel.TextSize = 14
-			ebLabel.TextSize = 16
-
-			statsContainer.Position = UDim2.new(0, 0, 0, 110)
-			statsContainer.Size = UDim2.new(1, 0, 0, 150)
-
-			-- Skins grid desktop
-			skinsHeader.Position = UDim2.new(0, 0, 1, -150)
-			skinsGrid.Size = UDim2.new(1, 0, 0, 70)
-			skinsGrid.Position = UDim2.new(0, 0, 1, -125)
-			sgLayout.CellSize = UDim2.new(0, 60, 0, 60)
-		end
-	end)
-
-	if not success then
-		warn("Responsive setup failed, using default desktop layout")
-		-- Fallback to desktop layout
-		isMobile = false
-		isTablet = false
-		isDesktop = true
-	end
+	screenSize = getScreenSize()
+	isMobile = (screenSize.X < 800) or UserInputService.TouchEnabled
 end
 
 -- --- UI CREATION ---
-
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "InventoryUI"
 screenGui.IgnoreGuiInset = true
 screenGui.ResetOnSpawn = false
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
--- Open Button (Retained functionality, updated style)
+-- Helper: Create stylized panel
+local function createPanel(name, size, pos, parent)
+	local frame = Instance.new("Frame")
+	frame.Name = name
+	frame.Size = size
+	frame.Position = pos
+	frame.BackgroundColor3 = THEME.COLORS.BG_PANEL
+	frame.BorderSizePixel = 0
+	frame.Parent = parent
+
+	-- "Plating" effect (Top/Bottom borders)
+	local borderTop = Instance.new("Frame")
+	borderTop.Size = UDim2.new(1, 0, 0, 2)
+	borderTop.BackgroundColor3 = THEME.COLORS.BORDER
+	borderTop.BorderSizePixel = 0
+	borderTop.Parent = frame
+
+	local borderBot = Instance.new("Frame")
+	borderBot.Size = UDim2.new(1, 0, 0, 2)
+	borderBot.Position = UDim2.new(0, 0, 1, -2)
+	borderBot.BackgroundColor3 = THEME.COLORS.BORDER
+	borderBot.BorderSizePixel = 0
+	borderBot.Parent = frame
+
+	return frame
+end
+
+-- Open Button
 local openButton = Instance.new("TextButton")
-openButton.Name = "OpenInventoryBtn"
-openButton.Size = UDim2.new(0, 200, 0, 50)
-openButton.Position = UDim2.new(0.5, 0, 0.92, 0)
-openButton.AnchorPoint = Vector2.new(0.5, 1)
-openButton.BackgroundColor3 = COLORS.PANEL_BG
-openButton.BackgroundTransparency = 0
+openButton.Name = "OpenBtn"
+openButton.Size = UDim2.new(0, 80, 0, 80) -- Circle button on mobile? Or box on desktop
+openButton.Position = UDim2.new(0, 20, 0.5, 0)
+openButton.AnchorPoint = Vector2.new(0, 0.5)
+openButton.BackgroundColor3 = THEME.COLORS.BG_PANEL
 openButton.Text = ""
 openButton.AutoButtonColor = false
 openButton.Parent = screenGui
+
+local obStroke = Instance.new("UIStroke")
+obStroke.Color = THEME.COLORS.PRIMARY
+obStroke.Thickness = 3
+obStroke.Parent = openButton
 
 local obCorner = Instance.new("UICorner")
 obCorner.CornerRadius = UDim.new(0, 12)
 obCorner.Parent = openButton
 
-local obStroke = Instance.new("UIStroke")
-obStroke.Color = COLORS.PRIMARY
-obStroke.Thickness = 2
-obStroke.Parent = openButton
+local obIcon = Instance.new("TextLabel")
+obIcon.Size = UDim2.new(1,0,1,0)
+obIcon.BackgroundTransparency = 1
+obIcon.Text = "🎒"
+obIcon.TextSize = 32
+obIcon.Parent = openButton
 
 local obLabel = Instance.new("TextLabel")
-obLabel.Size = UDim2.new(1, 0, 1, 0)
+obLabel.Size = UDim2.new(2, 0, 0, 20)
+obLabel.Position = UDim2.new(0.5, 0, 1, 5)
+obLabel.AnchorPoint = Vector2.new(0.5, 0)
 obLabel.BackgroundTransparency = 1
-obLabel.Text = "🎒 INVENTORY"
-obLabel.Font = FONTS.HEADER
-obLabel.TextSize = 18
-obLabel.TextColor3 = COLORS.TEXT_WHITE
+obLabel.Text = "INVENTORY"
+obLabel.Font = THEME.FONTS.HEADER
+obLabel.TextSize = 12
+obLabel.TextColor3 = THEME.COLORS.TEXT_MAIN
+obLabel.TextStrokeTransparency = 0.5
 obLabel.Parent = openButton
 
--- Main Container (The "Glass Panel")
+-- Main Container (The "Tablet")
 local mainPanel = Instance.new("Frame")
 mainPanel.Name = "MainPanel"
 mainPanel.Size = UDim2.new(0.9, 0, 0.85, 0)
 mainPanel.Position = UDim2.new(0.5, 0, 0.5, 0)
 mainPanel.AnchorPoint = Vector2.new(0.5, 0.5)
-mainPanel.BackgroundColor3 = COLORS.BG_DARK
-mainPanel.BackgroundTransparency = 0 -- Opaque
+mainPanel.BackgroundColor3 = THEME.COLORS.BG_MAIN
+mainPanel.BackgroundTransparency = 0.05
 mainPanel.BorderSizePixel = 0
 mainPanel.Visible = false
 mainPanel.ClipsDescendants = true
 mainPanel.Parent = screenGui
 
-local mainCorner = Instance.new("UICorner")
-mainCorner.CornerRadius = UDim.new(0, 16)
-mainCorner.Parent = mainPanel
+-- Grunge Texture Overlay (Procedural scratches using Frame lines if needed, or simple gradient)
+local grungeGrad = Instance.new("UIGradient")
+grungeGrad.Rotation = 45
+grungeGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.new(0.8,0.8,0.8)),
+	ColorSequenceKeypoint.new(1, Color3.new(0.5,0.5,0.5))
+})
+grungeGrad.Parent = mainPanel
 
 local mainStroke = Instance.new("UIStroke")
-mainStroke.Color = COLORS.PANEL_BORDER
-mainStroke.Thickness = 1
+mainStroke.Color = THEME.COLORS.BORDER
+mainStroke.Thickness = 2
 mainStroke.Parent = mainPanel
 
--- 1. HEADER
-local headerFrame = Instance.new("Frame")
-headerFrame.Name = "Header"
-headerFrame.Size = UDim2.new(1, 0, 0, 70)
-headerFrame.BackgroundColor3 = COLORS.PANEL_BG
-headerFrame.BackgroundTransparency = 0 -- Opaque
-headerFrame.BorderSizePixel = 0
-headerFrame.Parent = mainPanel
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 4) -- Sharp industrial corners
+mainCorner.Parent = mainPanel
 
-local headerLine = Instance.new("Frame")
-headerLine.Size = UDim2.new(1, 0, 0, 1)
-headerLine.Position = UDim2.new(0, 0, 1, 0)
-headerLine.BackgroundColor3 = COLORS.PANEL_BORDER
-headerLine.BorderSizePixel = 0
-headerLine.Parent = headerFrame
+-- 1. LEFT SIDEBAR (Navigation)
+local sidebar = Instance.new("Frame")
+sidebar.Name = "Sidebar"
+sidebar.Size = UDim2.new(0, 80, 1, 0)
+sidebar.BackgroundColor3 = THEME.COLORS.BG_PANEL
+sidebar.BorderSizePixel = 0
+sidebar.Parent = mainPanel
 
-local titleLabel = Instance.new("TextLabel")
-titleLabel.Text = "ARSENAL"
-titleLabel.Font = FONTS.TITLE
-titleLabel.TextSize = 28
-titleLabel.TextColor3 = COLORS.TEXT_WHITE
-titleLabel.BackgroundTransparency = 1
-titleLabel.Size = UDim2.new(0, 200, 1, 0)
-titleLabel.Position = UDim2.new(0, 30, 0, 0)
-titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-titleLabel.Parent = headerFrame
+local sbDiv = Instance.new("Frame")
+sbDiv.Size = UDim2.new(0, 1, 1, 0)
+sbDiv.Position = UDim2.new(1, 0, 0, 0)
+sbDiv.BackgroundColor3 = THEME.COLORS.BORDER
+sbDiv.BorderSizePixel = 0
+sbDiv.Parent = sidebar
 
--- Tab Container
-local tabContainer = Instance.new("Frame")
-tabContainer.Size = UDim2.new(0, 300, 0, 40)
-tabContainer.Position = UDim2.new(0, 250, 0.5, 0)
-tabContainer.AnchorPoint = Vector2.new(0, 0.5)
-tabContainer.BackgroundTransparency = 1
-tabContainer.Parent = headerFrame
+local navContainer = Instance.new("Frame")
+navContainer.Size = UDim2.new(1, 0, 0.6, 0)
+navContainer.Position = UDim2.new(0, 0, 0.2, 0)
+navContainer.BackgroundTransparency = 1
+navContainer.Parent = sidebar
 
-local tabLayout = Instance.new("UIListLayout")
-tabLayout.FillDirection = Enum.FillDirection.Horizontal
-tabLayout.Padding = UDim.new(0, 10)
-tabLayout.Parent = tabContainer
+local navLayout = Instance.new("UIListLayout")
+navLayout.Padding = UDim.new(0, 20)
+navLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+navLayout.Parent = navContainer
 
-local function createTabButton(id, text, icon, isActive)
+local function createNavBtn(id, icon, isActive)
 	local btn = Instance.new("TextButton")
 	btn.Name = id
-	btn.Size = UDim2.new(0, 140, 1, 0)
-	btn.BackgroundColor3 = isActive and COLORS.PRIMARY or COLORS.PANEL_BG
-	btn.BackgroundTransparency = isActive and 0 or 0.8
+	btn.Size = UDim2.new(0, 60, 0, 60)
+	btn.BackgroundColor3 = isActive and THEME.COLORS.PRIMARY or THEME.COLORS.ITEM_BG
+	btn.BackgroundTransparency = isActive and 0.8 or 1
 	btn.Text = ""
-	btn.Parent = tabContainer
+	btn.Parent = navContainer
 
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 8)
-	corner.Parent = btn
+	local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 12); c.Parent = btn
 
-	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(1, 0, 1, 0)
-	label.BackgroundTransparency = 1
-	label.Text = icon .. "  " .. text
-	label.Font = FONTS.HEADER
-	label.TextSize = 14
-	label.TextColor3 = isActive and Color3.new(1,1,1) or COLORS.TEXT_GRAY
-	label.Parent = btn
+	local lbl = Instance.new("TextLabel")
+	lbl.Size = UDim2.new(1,0,1,0)
+	lbl.BackgroundTransparency = 1
+	lbl.Text = icon
+	lbl.TextSize = 28
+	lbl.Parent = btn
 
-	return btn, label
+	-- Selection Indicator line
+	if isActive then
+		local line = Instance.new("Frame")
+		line.Size = UDim2.new(0, 4, 0.6, 0)
+		line.Position = UDim2.new(0, 0, 0.2, 0)
+		line.BackgroundColor3 = THEME.COLORS.PRIMARY
+		line.BorderSizePixel = 0
+		line.Parent = btn
+	end
+
+	return btn
 end
 
-local tabWeaponsBtn, tabWeaponsLbl = createTabButton("Weapons", "WEAPONS", "🔫", true)
-local tabBoostersBtn, tabBoostersLbl = createTabButton("Boosters", "BOOSTERS", "⚡", false)
+local navWeapons = createNavBtn("Weapons", "🔫", true)
+local navBoosters = createNavBtn("Boosters", "⚡", false)
 
--- Right Header Area (Currency & Close)
-local closeButton = Instance.new("TextButton")
-closeButton.Size = UDim2.new(0, 40, 0, 40)
-closeButton.Position = UDim2.new(1, -30, 0.5, 0)
-closeButton.AnchorPoint = Vector2.new(1, 0.5)
-closeButton.BackgroundColor3 = COLORS.ACCENT_RED
-closeButton.BackgroundTransparency = 0.8
-closeButton.Text = "✕"
-closeButton.TextColor3 = COLORS.ACCENT_RED
-closeButton.Font = FONTS.HEADER
-closeButton.TextSize = 20
-closeButton.Parent = headerFrame
+-- 2. CONTENT AREA
+local contentArea = Instance.new("Frame")
+contentArea.Name = "Content"
+contentArea.Size = UDim2.new(1, -80, 1, 0)
+contentArea.Position = UDim2.new(0, 80, 0, 0)
+contentArea.BackgroundTransparency = 1
+contentArea.Parent = mainPanel
 
-local closeCorner = Instance.new("UICorner")
-closeCorner.CornerRadius = UDim.new(1, 0)
-closeCorner.Parent = closeButton
+-- HEADER
+local header = Instance.new("Frame")
+header.Size = UDim2.new(1, 0, 0, 60)
+header.BackgroundTransparency = 1
+header.Parent = contentArea
 
-local closeStroke = Instance.new("UIStroke")
-closeStroke.Color = COLORS.ACCENT_RED
-closeStroke.Thickness = 1
-closeStroke.Transparency = 0.5
-closeStroke.Parent = closeButton
+local title = Instance.new("TextLabel")
+title.Text = "SURVIVOR'S CACHE"
+title.Font = THEME.FONTS.TITLE
+title.TextSize = 24
+title.TextColor3 = THEME.COLORS.TEXT_MAIN
+title.Size = UDim2.new(0.5, 0, 1, 0)
+title.Position = UDim2.new(0, 20, 0, 0)
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.BackgroundTransparency = 1
+title.Parent = header
 
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 40, 0, 40)
+closeBtn.Position = UDim2.new(1, -20, 0.5, 0)
+closeBtn.AnchorPoint = Vector2.new(1, 0.5)
+closeBtn.BackgroundColor3 = THEME.COLORS.ACCENT_RED
+closeBtn.BackgroundTransparency = 0.8
+closeBtn.Text = "✕"
+closeBtn.TextColor3 = THEME.COLORS.ACCENT_RED
+closeBtn.Font = THEME.FONTS.HEADER
+closeBtn.TextSize = 20
+closeBtn.Parent = header
+local cc = Instance.new("UICorner"); cc.CornerRadius = UDim.new(0, 8); cc.Parent = closeBtn
+local cs = Instance.new("UIStroke"); cs.Color = THEME.COLORS.ACCENT_RED; cs.Transparency=0.5; cs.Parent = closeBtn
 
--- 2. CONTENT AREAS
-local contentContainer = Instance.new("Frame")
-contentContainer.Size = UDim2.new(1, 0, 1, -70)
-contentContainer.Position = UDim2.new(0, 0, 0, 70)
-contentContainer.BackgroundTransparency = 1
-contentContainer.Parent = mainPanel
+-- SPLIT VIEW (Grid vs Inspector)
+local splitContainer = Instance.new("Frame")
+splitContainer.Size = UDim2.new(1, 0, 1, -60)
+splitContainer.Position = UDim2.new(0, 0, 0, 60)
+splitContainer.BackgroundTransparency = 1
+splitContainer.Parent = contentArea
 
--- A. WEAPONS TAB CONTENT
-local weaponsContent = Instance.new("Frame")
-weaponsContent.Name = "WeaponsContent"
-weaponsContent.Size = UDim2.new(1, 0, 1, 0)
-weaponsContent.BackgroundTransparency = 1
-weaponsContent.Visible = true
-weaponsContent.Parent = contentContainer
+-- A. GRID SIDE
+local gridSide = Instance.new("Frame")
+gridSide.Name = "GridSide"
+gridSide.Size = UDim2.new(0.6, 0, 1, 0) -- 60% Width
+gridSide.BackgroundTransparency = 1
+gridSide.Parent = splitContainer
 
--- Left Sidebar (List)
-local leftSidebar = Instance.new("Frame")
-leftSidebar.Size = UDim2.new(0, 300, 1, 0)
-leftSidebar.BackgroundColor3 = COLORS.PANEL_BG
-leftSidebar.BackgroundTransparency = 0 -- Opaque
-leftSidebar.BorderSizePixel = 0
-leftSidebar.Parent = weaponsContent
+-- Filter Bar
+local filterBar = Instance.new("Frame")
+filterBar.Size = UDim2.new(1, -40, 0, 50)
+filterBar.Position = UDim2.new(0, 20, 0, 0)
+filterBar.BackgroundTransparency = 1
+filterBar.Parent = gridSide
 
-local leftBorder = Instance.new("Frame")
-leftBorder.Size = UDim2.new(0, 1, 1, 0)
-leftBorder.Position = UDim2.new(1, -1, 0, 0)
-leftBorder.BackgroundColor3 = COLORS.PANEL_BORDER
-leftBorder.BorderSizePixel = 0
-leftBorder.Parent = leftSidebar
+local search = Instance.new("TextBox")
+search.Size = UDim2.new(0.4, 0, 0.7, 0)
+search.Position = UDim2.new(0, 0, 0.15, 0)
+search.BackgroundColor3 = THEME.COLORS.ITEM_BG
+search.TextColor3 = THEME.COLORS.TEXT_MAIN
+search.PlaceholderText = "SEARCH..."
+search.PlaceholderColor3 = THEME.COLORS.TEXT_DIM
+search.Font = THEME.FONTS.BODY
+search.TextSize = 12
+search.Parent = filterBar
+local sc = Instance.new("UICorner"); sc.CornerRadius = UDim.new(0, 6); sc.Parent = search
+local ss = Instance.new("UIStroke"); ss.Color = THEME.COLORS.BORDER; ss.Parent = search
+local sp = Instance.new("UIPadding"); sp.PaddingLeft = UDim.new(0,10); sp.Parent = search
 
--- Search & Filter
-local filterContainer = Instance.new("Frame")
-filterContainer.Size = UDim2.new(1, 0, 0, 100)
-filterContainer.BackgroundTransparency = 1
-filterContainer.Parent = leftSidebar
+local catScroll = Instance.new("ScrollingFrame")
+catScroll.Size = UDim2.new(0.55, 0, 0.7, 0)
+catScroll.Position = UDim2.new(0.45, 0, 0.15, 0)
+catScroll.BackgroundTransparency = 1
+catScroll.ScrollBarThickness = 0
+catScroll.ScrollingDirection = Enum.ScrollingDirection.X
+catScroll.Parent = filterBar
 
-local searchBox = Instance.new("TextBox")
-searchBox.Size = UDim2.new(1, -30, 0, 36)
-searchBox.Position = UDim2.new(0.5, 0, 0, 15)
-searchBox.AnchorPoint = Vector2.new(0.5, 0)
-searchBox.BackgroundColor3 = Color3.new(0,0,0)
-searchBox.BackgroundTransparency = 0.6
-searchBox.TextColor3 = COLORS.TEXT_WHITE
-searchBox.PlaceholderText = "🔍 Search weapon..."
-searchBox.PlaceholderColor3 = COLORS.TEXT_GRAY
-searchBox.Font = FONTS.BODY
-searchBox.TextSize = 14
-searchBox.TextXAlignment = Enum.TextXAlignment.Left
-searchBox.ClearTextOnFocus = false
-searchBox.Parent = filterContainer
+local cl = Instance.new("UIListLayout")
+cl.FillDirection = Enum.FillDirection.Horizontal
+cl.Padding = UDim.new(0, 5)
+cl.Parent = catScroll
 
-local sbPad = Instance.new("UIPadding")
-sbPad.PaddingLeft = UDim.new(0, 12)
-sbPad.Parent = searchBox
+-- Grid
+local itemScroll = Instance.new("ScrollingFrame")
+itemScroll.Name = "ItemGrid"
+itemScroll.Size = UDim2.new(1, -20, 1, -60)
+itemScroll.Position = UDim2.new(0, 20, 0, 60)
+itemScroll.BackgroundTransparency = 1
+itemScroll.ScrollBarThickness = 4
+itemScroll.ScrollBarImageColor3 = THEME.COLORS.PRIMARY_DIM
+itemScroll.Parent = gridSide
 
-local sbCorner = Instance.new("UICorner")
-sbCorner.CornerRadius = UDim.new(0, 8)
-sbCorner.Parent = searchBox
+local gridLayout = Instance.new("UIGridLayout")
+gridLayout.CellSize = UDim2.new(0, 140, 0, 160)
+gridLayout.CellPadding = UDim2.new(0, 10, 0, 10)
+gridLayout.Parent = itemScroll
 
-local sbStroke = Instance.new("UIStroke")
-sbStroke.Color = COLORS.PANEL_BORDER
-sbStroke.Thickness = 1
-sbStroke.Parent = searchBox
+-- B. INSPECTOR SIDE
+local inspectorSide = Instance.new("Frame")
+inspectorSide.Name = "Inspector"
+inspectorSide.Size = UDim2.new(0.4, 0, 1, 0)
+inspectorSide.Position = UDim2.new(0.6, 0, 0, 0)
+inspectorSide.BackgroundColor3 = THEME.COLORS.BG_PANEL
+inspectorSide.BorderSizePixel = 0
+inspectorSide.Parent = splitContainer
 
-local categoryScroll = Instance.new("ScrollingFrame")
-categoryScroll.Size = UDim2.new(1, 0, 0, 40)
-categoryScroll.Position = UDim2.new(0, 0, 0, 60)
-categoryScroll.BackgroundTransparency = 1
-categoryScroll.ScrollBarThickness = 0
-categoryScroll.CanvasSize = UDim2.new(2, 0, 0, 0)
-categoryScroll.ScrollingDirection = Enum.ScrollingDirection.X
-categoryScroll.Parent = filterContainer
+local inspBorder = Instance.new("Frame")
+inspBorder.Size = UDim2.new(0, 1, 1, 0)
+inspBorder.BackgroundColor3 = THEME.COLORS.BORDER
+inspBorder.BorderSizePixel = 0
+inspBorder.Parent = inspectorSide
 
-local catLayout = Instance.new("UIListLayout")
-catLayout.FillDirection = Enum.FillDirection.Horizontal
-catLayout.Padding = UDim.new(0, 8)
-catLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-catLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-catLayout.Parent = categoryScroll
+-- Viewport (Top half)
+local viewport = Instance.new("ViewportFrame")
+viewport.Size = UDim2.new(1, 0, 0.45, 0)
+viewport.BackgroundTransparency = 1
+viewport.LightColor = Color3.fromRGB(255, 240, 220)
+viewport.LightDirection = Vector3.new(-1, -0.5, -1)
+viewport.Parent = inspectorSide
 
-local catPadding = Instance.new("UIPadding")
-catPadding.PaddingLeft = UDim.new(0, 15)
-catPadding.Parent = categoryScroll
+-- Viewport "Scanline" animation (Purely visual)
+local scanLine = Instance.new("Frame")
+scanLine.Size = UDim2.new(1, 0, 0, 2)
+scanLine.BackgroundColor3 = THEME.COLORS.PRIMARY
+scanLine.BackgroundTransparency = 0.5
+scanLine.Parent = viewport
+task.spawn(function()
+	while viewport.Parent do
+		scanLine.Position = UDim2.new(0,0,0,0)
+		TweenService:Create(scanLine, TweenInfo.new(2, Enum.EasingStyle.Linear), {Position = UDim2.new(0,0,1,0)}):Play()
+		task.wait(2.5)
+	end
+end)
 
-local categoryButtons = {}
-local CATEGORIES = {"All", "Rifle", "SMG", "Shotgun", "Sniper", "Pistol", "LMG"}
+-- Details (Bottom half)
+local detailsFrame = Instance.new("Frame")
+detailsFrame.Size = UDim2.new(1, -30, 0.55, -20)
+detailsFrame.Position = UDim2.new(0, 15, 0.45, 10)
+detailsFrame.BackgroundTransparency = 1
+detailsFrame.Parent = inspectorSide
 
-local weaponListScroll = Instance.new("ScrollingFrame")
-weaponListScroll.Name = "WeaponList"
-weaponListScroll.Size = UDim2.new(1, 0, 1, -100)
-weaponListScroll.Position = UDim2.new(0, 0, 0, 100)
-weaponListScroll.BackgroundTransparency = 1
-weaponListScroll.BorderSizePixel = 0
-weaponListScroll.ScrollBarThickness = 4
-weaponListScroll.ScrollBarImageColor3 = COLORS.PANEL_BORDER
-weaponListScroll.Parent = leftSidebar
+local dName = Instance.new("TextLabel")
+dName.Text = "WEAPON NAME"
+dName.Font = THEME.FONTS.TITLE
+dName.TextSize = 26
+dName.TextColor3 = THEME.COLORS.TEXT_MAIN
+dName.Size = UDim2.new(1, 0, 0, 30)
+dName.TextXAlignment = Enum.TextXAlignment.Left
+dName.BackgroundTransparency = 1
+dName.Parent = detailsFrame
 
-local wlLayout = Instance.new("UIListLayout")
-wlLayout.Padding = UDim.new(0, 4)
-wlLayout.SortOrder = Enum.SortOrder.Name
-wlLayout.Parent = weaponListScroll
+local dType = Instance.new("TextLabel")
+dType.Text = "RIFLE // AUTOMATIC"
+dType.Font = THEME.FONTS.TECH
+dType.TextSize = 12
+dType.TextColor3 = THEME.COLORS.PRIMARY
+dType.Size = UDim2.new(1, 0, 0, 15)
+dType.Position = UDim2.new(0, 0, 0, 30)
+dType.TextXAlignment = Enum.TextXAlignment.Left
+dType.BackgroundTransparency = 1
+dType.Parent = detailsFrame
 
--- Center (Preview)
-local centerPreview = Instance.new("Frame")
-centerPreview.Size = UDim2.new(1, -650, 1, 0) -- 300 left + 350 right = 650
-centerPreview.Position = UDim2.new(0, 300, 0, 0)
-centerPreview.BackgroundTransparency = 1
-centerPreview.ClipsDescendants = true
-centerPreview.Parent = weaponsContent
+-- Stats Grid
+local statsGrid = Instance.new("Frame")
+statsGrid.Size = UDim2.new(1, 0, 0, 100)
+statsGrid.Position = UDim2.new(0, 0, 0, 60)
+statsGrid.BackgroundTransparency = 1
+statsGrid.Parent = detailsFrame
 
--- Grid Background
-local gridBg = Instance.new("ImageLabel")
-gridBg.Size = UDim2.new(2, 0, 2, 0)
-gridBg.Position = UDim2.new(-0.5, 0, -0.5, 0)
-gridBg.Image = "rbxassetid://2743169888" -- Generic grid texture
-gridBg.ImageColor3 = COLORS.PRIMARY
-gridBg.ImageTransparency = 0.95
-gridBg.ScaleType = Enum.ScaleType.Tile
-gridBg.TileSize = UDim2.new(0, 50, 0, 50)
-gridBg.BackgroundTransparency = 1
-gridBg.Parent = centerPreview
-
--- Viewport Frame
-local viewportFrame = Instance.new("ViewportFrame")
-viewportFrame.Size = UDim2.new(1, 0, 1, 0)
-viewportFrame.BackgroundTransparency = 1
-viewportFrame.LightColor = Color3.new(1, 1, 1)
-viewportFrame.LightDirection = Vector3.new(-1, -1, -1)
-viewportFrame.Parent = centerPreview
-
-local loadingLabel = Instance.new("TextLabel")
-loadingLabel.Size = UDim2.new(1, 0, 0, 50)
-loadingLabel.Position = UDim2.new(0, 0, 0.5, 0)
-loadingLabel.BackgroundTransparency = 1
-loadingLabel.Text = "LOADING MODEL..."
-loadingLabel.Font = FONTS.MONO
-loadingLabel.TextColor3 = COLORS.TEXT_GRAY
-loadingLabel.Visible = false
-loadingLabel.Parent = centerPreview
-
--- Rotation Slider
-local sliderContainer = Instance.new("Frame")
-sliderContainer.Size = UDim2.new(0, 200, 0, 40)
-sliderContainer.Position = UDim2.new(0.5, 0, 0.9, 0)
-sliderContainer.AnchorPoint = Vector2.new(0.5, 1)
-sliderContainer.BackgroundTransparency = 1
-sliderContainer.Visible = false -- Hidden until preview loaded
-sliderContainer.Parent = centerPreview
-
-local sliderLabel = Instance.new("TextLabel")
-sliderLabel.Text = "ROTATE VIEW"
-sliderLabel.Font = FONTS.MONO
-sliderLabel.TextSize = 10
-sliderLabel.TextColor3 = COLORS.TEXT_GRAY
-sliderLabel.Size = UDim2.new(1, 0, 0, 15)
-sliderLabel.Position = UDim2.new(0, 0, 1, 0)
-sliderLabel.BackgroundTransparency = 1
-sliderLabel.Parent = sliderContainer
-
-local sliderTrack = Instance.new("Frame")
-sliderTrack.Size = UDim2.new(1, 0, 0, 4)
-sliderTrack.Position = UDim2.new(0, 0, 0.5, 0)
-sliderTrack.BackgroundColor3 = COLORS.PANEL_BORDER
-sliderTrack.BorderSizePixel = 0
-sliderTrack.Parent = sliderContainer
-
-local sliderFill = Instance.new("Frame")
-sliderFill.Size = UDim2.new(0.5, 0, 1, 0)
-sliderFill.BackgroundColor3 = COLORS.PRIMARY
-sliderFill.BorderSizePixel = 0
-sliderFill.Parent = sliderTrack
-
-local sliderKnob = Instance.new("ImageButton")
-sliderKnob.Size = UDim2.new(0, 16, 0, 16)
-sliderKnob.AnchorPoint = Vector2.new(0.5, 0.5)
-sliderKnob.Position = UDim2.new(0.5, 0, 0.5, 0)
-sliderKnob.BackgroundColor3 = COLORS.TEXT_WHITE
-sliderKnob.Parent = sliderTrack
-local knobCorner = Instance.new("UICorner")
-knobCorner.CornerRadius = UDim.new(1, 0)
-knobCorner.Parent = sliderKnob
-
--- Right Sidebar (Details)
-local rightSidebar = Instance.new("Frame")
-rightSidebar.Size = UDim2.new(0, 350, 1, 0)
-rightSidebar.Position = UDim2.new(1, 0, 0, 0)
-rightSidebar.AnchorPoint = Vector2.new(1, 0)
-rightSidebar.BackgroundColor3 = COLORS.PANEL_BG
-rightSidebar.BackgroundTransparency = 0 -- Opaque
-rightSidebar.BorderSizePixel = 0
-rightSidebar.Parent = weaponsContent
-
-local rightBorder = Instance.new("Frame")
-rightBorder.Size = UDim2.new(0, 1, 1, 0)
-rightBorder.BackgroundColor3 = COLORS.PANEL_BORDER
-rightBorder.BorderSizePixel = 0
-rightBorder.Parent = rightSidebar
-
-local rightPadding = Instance.new("UIPadding")
-rightPadding.PaddingTop = UDim.new(0, 20)
-rightPadding.PaddingBottom = UDim.new(0, 20)
-rightPadding.PaddingLeft = UDim.new(0, 20)
-rightPadding.PaddingRight = UDim.new(0, 20)
-rightPadding.Parent = rightSidebar
-
--- Weapon Info
-local weaponTypeLabel = Instance.new("TextLabel")
-weaponTypeLabel.Text = "ASSAULT RIFLE"
-weaponTypeLabel.Font = FONTS.MONO
-weaponTypeLabel.TextSize = 12
-weaponTypeLabel.TextColor3 = COLORS.PRIMARY
-weaponTypeLabel.TextXAlignment = Enum.TextXAlignment.Left
-weaponTypeLabel.Size = UDim2.new(1, 0, 0, 20)
-weaponTypeLabel.BackgroundTransparency = 1
-weaponTypeLabel.Parent = rightSidebar
-
-local weaponNameLabel = Instance.new("TextLabel")
-weaponNameLabel.Text = "AK-47"
-weaponNameLabel.Font = FONTS.TITLE
-weaponNameLabel.TextSize = 36
-weaponNameLabel.TextColor3 = COLORS.TEXT_WHITE
-weaponNameLabel.TextXAlignment = Enum.TextXAlignment.Left
-weaponNameLabel.Size = UDim2.new(1, 0, 0, 40)
-weaponNameLabel.Position = UDim2.new(0, 0, 0, 20)
-weaponNameLabel.BackgroundTransparency = 1
-weaponNameLabel.Parent = rightSidebar
-
-local weaponDescLabel = Instance.new("TextLabel")
-weaponDescLabel.Text = "Senjata damage tinggi, efektif jarak menengah."
-weaponDescLabel.Font = FONTS.BODY
-weaponDescLabel.TextSize = 14
-weaponDescLabel.TextColor3 = COLORS.TEXT_GRAY
-weaponDescLabel.TextXAlignment = Enum.TextXAlignment.Left
-weaponDescLabel.TextWrapped = true
-weaponDescLabel.Size = UDim2.new(1, 0, 0, 40)
-weaponDescLabel.Position = UDim2.new(0, 0, 0, 60)
-weaponDescLabel.BackgroundTransparency = 1
-weaponDescLabel.Parent = rightSidebar
-
--- Stats
-local statsContainer = Instance.new("Frame")
-statsContainer.Size = UDim2.new(1, 0, 0, 150)
-statsContainer.Position = UDim2.new(0, 0, 0, 110)
-statsContainer.BackgroundTransparency = 1
-statsContainer.Parent = rightSidebar
-
-local statsLayout = Instance.new("UIListLayout")
-statsLayout.Padding = UDim.new(0, 15)
-statsLayout.Parent = statsContainer
-
-local function createStatRow(name, color)
-	local frame = Instance.new("Frame")
-	frame.Size = UDim2.new(1, 0, 0, 35)
-	frame.BackgroundTransparency = 1
-	frame.Parent = statsContainer
-
-	local label = Instance.new("TextLabel")
-	label.Text = name
-	label.Font = FONTS.HEADER
-	label.TextSize = 12
-	label.TextColor3 = COLORS.TEXT_GRAY
-	label.Size = UDim2.new(0.5, 0, 0, 15)
-	label.BackgroundTransparency = 1
-	label.TextXAlignment = Enum.TextXAlignment.Left
-	label.Parent = frame
-
-	local valLabel = Instance.new("TextLabel")
-	valLabel.Name = "Val"
-	valLabel.Text = "0"
-	valLabel.Font = FONTS.HEADER
-	valLabel.TextSize = 12
-	valLabel.TextColor3 = COLORS.TEXT_WHITE
-	valLabel.Size = UDim2.new(0.5, 0, 0, 15)
-	valLabel.Position = UDim2.new(0.5, 0, 0, 0)
-	valLabel.BackgroundTransparency = 1
-	valLabel.TextXAlignment = Enum.TextXAlignment.Right
-	valLabel.Parent = frame
-
-	local barBg = Instance.new("Frame")
-	barBg.Size = UDim2.new(1, 0, 0, 6)
-	barBg.Position = UDim2.new(0, 0, 0, 20)
-	barBg.BackgroundColor3 = Color3.new(0,0,0)
-	barBg.BackgroundTransparency = 0.5
-	barBg.BorderSizePixel = 0
-	barBg.Parent = frame
-
-	local barBgCorner = Instance.new("UICorner")
-	barBgCorner.CornerRadius = UDim.new(1, 0)
-	barBgCorner.Parent = barBg
-
-	local barFill = Instance.new("Frame")
-	barFill.Name = "Fill"
-	barFill.Size = UDim2.new(0, 0, 1, 0)
-	barFill.BackgroundColor3 = color
-	barFill.BorderSizePixel = 0
-	barFill.Parent = barBg
-
-	local barCorner = Instance.new("UICorner")
-	barCorner.CornerRadius = UDim.new(1, 0)
-	barCorner.Parent = barFill
-
-	return barFill, valLabel
-end
-
-local statDmgBar, statDmgVal = createStatRow("DAMAGE", COLORS.ACCENT_RED)
-local statRpmBar, statRpmVal = createStatRow("FIRE RATE", COLORS.PRIMARY)
-local statRecoilBar, statRecoilVal = createStatRow("RECOIL", COLORS.ACCENT_AMBER)
-
--- Skins
-local skinsHeader = Instance.new("TextLabel")
-skinsHeader.Text = "AVAILABLE SKINS"
-skinsHeader.Font = FONTS.MONO
-skinsHeader.TextSize = 10
-skinsHeader.TextColor3 = COLORS.TEXT_GRAY
-skinsHeader.Size = UDim2.new(1, 0, 0, 20)
-skinsHeader.Position = UDim2.new(0, 0, 1, -150)
-skinsHeader.TextXAlignment = Enum.TextXAlignment.Left
-skinsHeader.BackgroundTransparency = 1
-skinsHeader.Parent = rightSidebar
-
-local skinsGrid = Instance.new("ScrollingFrame")
-skinsGrid.Size = UDim2.new(1, 0, 0, 70)
-skinsGrid.Position = UDim2.new(0, 0, 1, -125)
-skinsGrid.BackgroundTransparency = 1
-skinsGrid.BorderSizePixel = 0
-skinsGrid.ScrollBarThickness = 4
-skinsGrid.Parent = rightSidebar
-
-local sgLayout = Instance.new("UIGridLayout")
-sgLayout.CellSize = UDim2.new(0, 60, 0, 60)
-sgLayout.CellPadding = UDim2.new(0, 10, 0, 10)
-sgLayout.Parent = skinsGrid
+local sl = Instance.new("UIListLayout")
+sl.Padding = UDim.new(0, 8)
+sl.Parent = statsGrid
 
 -- Equip Button
-local equipButton = Instance.new("TextButton")
-equipButton.Size = UDim2.new(1, 0, 0, 50)
-equipButton.Position = UDim2.new(0, 0, 1, 0)
-equipButton.AnchorPoint = Vector2.new(0, 1)
-equipButton.BackgroundColor3 = COLORS.PRIMARY
-equipButton.Text = ""
-equipButton.AutoButtonColor = false
-equipButton.Parent = rightSidebar
+local equipBtn = Instance.new("TextButton")
+equipBtn.Size = UDim2.new(1, 0, 0, 50)
+equipBtn.Position = UDim2.new(0, 0, 1, 0)
+equipBtn.AnchorPoint = Vector2.new(0, 1)
+equipBtn.BackgroundColor3 = THEME.COLORS.PRIMARY
+equipBtn.Text = ""
+equipBtn.AutoButtonColor = false
+equipBtn.Parent = detailsFrame
 
-local ebCorner = Instance.new("UICorner")
-ebCorner.CornerRadius = UDim.new(0, 10)
-ebCorner.Parent = equipButton
+local ec = Instance.new("UICorner"); ec.CornerRadius = UDim.new(0, 4); ec.Parent = equipBtn
+local el = Instance.new("TextLabel")
+el.Text = "EQUIP ITEM"
+el.Font = THEME.FONTS.HEADER
+el.TextSize = 16
+el.TextColor3 = THEME.COLORS.TEXT_MAIN
+el.Size = UDim2.new(1,0,1,0)
+el.BackgroundTransparency = 1
+el.Parent = equipBtn
 
-local ebLabel = Instance.new("TextLabel")
-ebLabel.Size = UDim2.new(1, 0, 1, 0)
-ebLabel.BackgroundTransparency = 1
-ebLabel.Text = "EQUIP WEAPON  ›"
-ebLabel.Font = FONTS.HEADER
-ebLabel.TextSize = 16
-ebLabel.TextColor3 = COLORS.TEXT_WHITE
-ebLabel.Parent = equipButton
+-- SKINS DROPDOWN (Mini grid inside details)
+local skinsLabel = Instance.new("TextLabel")
+skinsLabel.Text = "VARIANTS / SKINS"
+skinsLabel.Font = THEME.FONTS.TECH
+skinsLabel.TextSize = 10
+skinsLabel.TextColor3 = THEME.COLORS.TEXT_DIM
+skinsLabel.Size = UDim2.new(1, 0, 0, 15)
+skinsLabel.Position = UDim2.new(0, 0, 1, -110)
+skinsLabel.TextXAlignment = Enum.TextXAlignment.Left
+skinsLabel.BackgroundTransparency = 1
+skinsLabel.Parent = detailsFrame
 
-local ebGlow = Instance.new("ImageLabel")
-ebGlow.Image = "rbxassetid://4996891970" -- Glow texture
-ebGlow.ImageColor3 = COLORS.PRIMARY
-ebGlow.ImageTransparency = 0.6
-ebGlow.Size = UDim2.new(1, 40, 1, 40)
-ebGlow.Position = UDim2.new(0, -20, 0, -20)
-ebGlow.BackgroundTransparency = 1
-ebGlow.ZIndex = 0
-ebGlow.Parent = equipButton
+local skinsArea = Instance.new("ScrollingFrame")
+skinsArea.Size = UDim2.new(1, 0, 0, 50)
+skinsArea.Position = UDim2.new(0, 0, 1, -60)
+skinsArea.BackgroundTransparency = 1
+skinsArea.BorderSizePixel = 0
+skinsArea.ScrollingDirection = Enum.ScrollingDirection.X
+skinsArea.Parent = detailsFrame
 
--- B. BOOSTERS TAB CONTENT
-local boostersContent = Instance.new("Frame")
-boostersContent.Name = "BoostersContent"
-boostersContent.Size = UDim2.new(1, 0, 1, 0)
-boostersContent.BackgroundTransparency = 1
-boostersContent.Visible = false
-boostersContent.Parent = contentContainer
+local sal = Instance.new("UIListLayout")
+sal.FillDirection = Enum.FillDirection.Horizontal
+sal.Padding = UDim.new(0, 5)
+sal.Parent = skinsArea
 
-local boostersGrid = Instance.new("ScrollingFrame")
-boostersGrid.Size = UDim2.new(1, -60, 1, -60)
-boostersGrid.Position = UDim2.new(0, 30, 0, 30)
-boostersGrid.BackgroundTransparency = 1
-boostersGrid.BorderSizePixel = 0
-boostersGrid.ScrollBarThickness = 4
-boostersGrid.Parent = boostersContent
 
-local bgLayout = Instance.new("UIGridLayout")
-bgLayout.CellSize = UDim2.new(0, 200, 0, 250)
-bgLayout.CellPadding = UDim2.new(0, 20, 0, 20)
-bgLayout.Parent = boostersGrid
+-- --- LOGIC HELPERS ---
 
--- --- LOGIC FUNCTIONS ---
+local categoryButtons = {}
+local CATEGORIES = {"All", "Rifle", "SMG", "Shotgun", "Sniper", "Pistol"}
 
--- Helper: Create Category Filter Buttons
-local function createCategoryButtons()
-	for _, child in ipairs(categoryScroll:GetChildren()) do
-		if child:IsA("TextButton") then child:Destroy() end
+local function createStatBar(name, color, parent)
+	local f = Instance.new("Frame")
+	f.Size = UDim2.new(1, 0, 0, 24)
+	f.BackgroundTransparency = 1
+	f.Parent = parent
+
+	local lbl = Instance.new("TextLabel")
+	lbl.Text = name
+	lbl.Font = THEME.FONTS.TECH
+	lbl.TextSize = 10
+	lbl.TextColor3 = THEME.COLORS.TEXT_DIM
+	lbl.Size = UDim2.new(0.3, 0, 1, 0)
+	lbl.TextXAlignment = Enum.TextXAlignment.Left
+	lbl.BackgroundTransparency = 1
+	lbl.Parent = f
+
+	local bg = Instance.new("Frame")
+	bg.Size = UDim2.new(0.5, 0, 0.3, 0)
+	bg.Position = UDim2.new(0.3, 0, 0.35, 0)
+	bg.BackgroundColor3 = Color3.new(0,0,0)
+	bg.BackgroundTransparency = 0.5
+	bg.BorderSizePixel = 0
+	bg.Parent = f
+
+	local fill = Instance.new("Frame")
+	fill.Size = UDim2.new(0, 0, 1, 0)
+	fill.BackgroundColor3 = color
+	fill.BorderSizePixel = 0
+	fill.Parent = bg
+
+	local val = Instance.new("TextLabel")
+	val.Text = "0"
+	val.Font = THEME.FONTS.TECH
+	val.TextSize = 10
+	val.TextColor3 = THEME.COLORS.TEXT_MAIN
+	val.Size = UDim2.new(0.2, 0, 1, 0)
+	val.Position = UDim2.new(0.8, 0, 0, 0)
+	val.TextXAlignment = Enum.TextXAlignment.Right
+	val.BackgroundTransparency = 1
+	val.Parent = f
+
+	return fill, val
+end
+
+local statDmg, valDmg = createStatBar("DMG", THEME.COLORS.ACCENT_RED, statsGrid)
+local statRpm, valRpm = createStatBar("RPM", THEME.COLORS.PRIMARY, statsGrid)
+local statRec, valRec = createStatBar("STAB", THEME.COLORS.ACCENT_GREEN, statsGrid)
+
+local function updateNavState(tab)
+	currentTab = tab
+	-- Reset styles
+	navWeapons.BackgroundTransparency = 1
+	navBoosters.BackgroundTransparency = 1
+
+	-- Highlight active
+	if tab == "Weapons" then
+		navWeapons.BackgroundTransparency = 0.8
+		itemScroll.Visible = true
+		inspectorSide.Visible = true
+		-- Rebuild grid
+		updateWeaponList()
+	else
+		navBoosters.BackgroundTransparency = 0.8
+		itemScroll.Visible = true
+		-- Hide inspector for boosters (or different inspector)
+		inspectorSide.Visible = false
+		updateBoosterList()
 	end
-	categoryButtons = {}
+end
 
-	for _, cat in ipairs(CATEGORIES) do
+-- --- CORE UPDATE FUNCTIONS ---
+
+function updateWeaponList()
+	-- Clear Grid
+	for _, c in ipairs(itemScroll:GetChildren()) do
+		if c:IsA("Frame") or c:IsA("TextButton") then c:Destroy() end
+	end
+
+	local term = search.Text:lower()
+	local list = {}
+
+	for id, data in pairs(WeaponModule.Weapons) do
+		local catMatch = (selectedCategory == "All") or (data.Category == selectedCategory)
+		if selectedCategory == "Rifle" and data.Category == "Assault Rifle" then catMatch = true end
+
+		local searchMatch = (term == "") or string.find(id:lower(), term, 1, true) or string.find((data.DisplayName or ""):lower(), term, 1, true)
+
+		if catMatch and searchMatch then
+			table.insert(list, {id=id, name=data.DisplayName or id})
+		end
+	end
+	table.sort(list, function(a,b) return a.name < b.name end)
+
+	for _, w in ipairs(list) do
 		local btn = Instance.new("TextButton")
-		btn.Size = UDim2.new(0, 0, 0, 30) -- Auto width
-		btn.AutomaticSize = Enum.AutomaticSize.X
-		btn.BackgroundColor3 = (cat == selectedCategory) and COLORS.PRIMARY or COLORS.PANEL_BORDER
-		btn.BackgroundTransparency = (cat == selectedCategory) and 0.8 or 0.8
-		btn.Text = "  " .. cat .. "  "
-		btn.Font = FONTS.HEADER
-		btn.TextSize = 12
-		btn.TextColor3 = (cat == selectedCategory) and COLORS.PRIMARY or COLORS.TEXT_GRAY
-		btn.Parent = categoryScroll
+		btn.BackgroundColor3 = (w.id == selectedWeapon) and THEME.COLORS.ITEM_HOVER or THEME.COLORS.ITEM_BG
+		btn.BorderSizePixel = 0
+		btn.Text = ""
+		btn.AutoButtonColor = false
+		btn.Parent = itemScroll
 
-		local c = Instance.new("UICorner")
-		c.CornerRadius = UDim.new(0, 6)
-		c.Parent = btn
+		local bc = Instance.new("UICorner"); bc.CornerRadius = UDim.new(0, 6); bc.Parent = btn
+		if w.id == selectedWeapon then
+			local bs = Instance.new("UIStroke")
+			bs.Color = THEME.COLORS.PRIMARY
+			bs.Thickness = 2
+			bs.Parent = btn
+		end
 
-		local s = Instance.new("UIStroke")
-		s.Color = (cat == selectedCategory) and COLORS.PRIMARY or COLORS.PANEL_BORDER
-		s.Thickness = 1
-		s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-		s.Parent = btn
+		-- Weapon Name
+		local n = Instance.new("TextLabel")
+		n.Text = w.name
+		n.Font = THEME.FONTS.HEADER
+		n.TextSize = 14
+		n.TextColor3 = THEME.COLORS.TEXT_MAIN
+		n.Size = UDim2.new(1, -10, 0, 20)
+		n.Position = UDim2.new(0, 5, 0, 5)
+		n.BackgroundTransparency = 1
+		n.Parent = btn
+
+		-- Image Placeholder (Ideally we'd have icons)
+		local ph = Instance.new("TextLabel")
+		ph.Text = string.sub(w.name, 1, 2)
+		ph.Font = THEME.FONTS.TITLE
+		ph.TextSize = 30
+		ph.TextColor3 = THEME.COLORS.TEXT_DIM
+		ph.Size = UDim2.new(1, 0, 1, -20)
+		ph.Position = UDim2.new(0, 0, 0, 20)
+		ph.BackgroundTransparency = 1
+		ph.Parent = btn
 
 		btn.MouseButton1Click:Connect(function()
-			selectedCategory = cat
-			createCategoryButtons() -- Refresh visual state
+			selectedWeapon = w.id
+			if inventoryData and inventoryData.Skins then
+				selectedSkin = inventoryData.Skins.Equipped[selectedWeapon] or "Default Skin"
+			end
 			updateWeaponList()
+			updateDetails(selectedWeapon)
 		end)
 	end
 end
 
--- Helper: Stat Bar Animation
-local function updateStat(bar, valLabel, value, max, suffix)
-	valLabel.Text = tostring(value) .. (suffix or "")
-	local pct = math.clamp(value / max, 0, 1)
-	TweenService:Create(bar, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Size = UDim2.new(pct, 0, 1, 0)}):Play()
-end
-
--- Core: Update Details Panel
-local function updateDetails(weaponName)
-	if not weaponName then 
-		rightSidebar.Visible = false 
-		return 
-	end
-	rightSidebar.Visible = true
-
+function updateDetails(weaponName)
+	if not weaponName then return end
 	local data = WeaponModule.Weapons[weaponName]
 	if not data then return end
 
-	weaponTypeLabel.Text = string.upper(data.Category or "WEAPON")
-	weaponNameLabel.Text = data.DisplayName or weaponName
-	weaponDescLabel.Text = "High power " .. string.lower(data.Category or "weapon") .. " with balanced stats."
+	dName.Text = string.upper(data.DisplayName or weaponName)
+	dType.Text = string.upper(data.Category or "UNKNOWN CLASS")
 
-	updateStat(statDmgBar, statDmgVal, data.Damage, 100)
-	updateStat(statRpmBar, statRpmVal, math.floor(60 / data.FireRate), 1000, " RPM")
-	updateStat(statRecoilBar, statRecoilVal, data.Recoil, 5, "")
+	-- Update Stats
+	local function animStat(bar, label, val, max)
+		label.Text = tostring(val)
+		local pct = math.clamp(val/max, 0, 1)
+		TweenService:Create(bar, TweenInfo.new(0.4), {Size = UDim2.new(pct, 0, 1, 0)}):Play()
+	end
 
-	-- Update Skins Grid
-	for _, c in ipairs(skinsGrid:GetChildren()) do
-		if not c:IsA("UIGridLayout") then c:Destroy() end
+	animStat(statDmg, valDmg, data.Damage or 0, 100)
+	animStat(statRpm, valRpm, math.floor(60 / (data.FireRate or 1)), 1000)
+	animStat(statRec, valRec, 5 - (data.Recoil or 0), 5) -- Inverse recoil for stability
+
+	-- Update Skins
+	for _, c in ipairs(skinsArea:GetChildren()) do
+		if c:IsA("Frame") or c:IsA("TextButton") then c:Destroy() end
 	end
 
 	if inventoryData and inventoryData.Skins then
 		local owned = inventoryData.Skins.Owned[weaponName] or {}
 		local equipped = inventoryData.Skins.Equipped[weaponName]
 
-		-- Ensure Default Skin is always there
 		local allSkins = {}
-		if data.Skins then
-			for sName, _ in pairs(data.Skins) do
-				table.insert(allSkins, sName)
-			end
-		end
+		if data.Skins then for k,_ in pairs(data.Skins) do table.insert(allSkins, k) end end
 		table.sort(allSkins)
 
+		-- Always add Default
+		local hasDefault = false
+		for _,s in ipairs(allSkins) do if s == "Default Skin" then hasDefault=true end end
+		if not hasDefault then table.insert(allSkins, 1, "Default Skin") end
+
 		for _, sName in ipairs(allSkins) do
-			local sData = data.Skins[sName]
-			local isOwned = false
+			local sData = data.Skins and data.Skins[sName]
+			local isOwned = (sName == "Default Skin")
 			for _, o in ipairs(owned) do if o == sName then isOwned = true break end end
-			if sName == "Default Skin" then isOwned = true end
 
-			local item = Instance.new("Frame")
-			item.BackgroundColor3 = isOwned and COLORS.PANEL_BORDER or Color3.new(0,0,0)
-			item.BorderSizePixel = 0
-			item.Parent = skinsGrid
-			local ic = Instance.new("UICorner"); ic.Parent = item
+			local item = Instance.new("TextButton")
+			item.Size = UDim2.new(0, 40, 0, 40)
+			item.BackgroundColor3 = (sName == selectedSkin) and THEME.COLORS.PRIMARY or THEME.COLORS.ITEM_BG
+			item.Text = ""
+			item.Parent = skinsArea
+			local ic = Instance.new("UICorner"); ic.CornerRadius = UDim.new(0, 4); ic.Parent = item
 
-			-- Selection/Equip Status
-			if sName == selectedSkin then
-				local stroke = Instance.new("UIStroke")
-				stroke.Color = COLORS.PRIMARY
-				stroke.Thickness = 2
-				stroke.Parent = item
+			-- Color swatch if possible, or just icon
+			if sData and sData.TextureId then
+				-- simplified for now
 			end
 
-			-- Button interaction
-			local btn = Instance.new("TextButton")
-			btn.Size = UDim2.new(1,0,1,0)
-			btn.BackgroundTransparency = 1
-			btn.Text = ""
-			btn.Parent = item
-			btn.MouseButton1Click:Connect(function()
-				selectedSkin = sName
-				updateDetails(selectedWeapon) -- Refresh UI
-				-- Update Preview
-				updatePreview(selectedWeapon, selectedSkin)
-
-				-- Update Equip Button Text
-				if isOwned then
-					if selectedSkin == equipped then
-						ebLabel.Text = "EQUIPPED"
-						equipButton.BackgroundColor3 = COLORS.ITEM_ACTIVE
-						equipButton.AutoButtonColor = false
-					else
-						ebLabel.Text = "EQUIP SKIN"
-						equipButton.BackgroundColor3 = COLORS.PRIMARY
-						equipButton.AutoButtonColor = true
-					end
-				else
-					ebLabel.Text = "LOCKED"
-					equipButton.BackgroundColor3 = COLORS.ACCENT_RED
-					equipButton.AutoButtonColor = false
-				end
-			end)
-
-			-- Skin Preview (Texture)
-			if sData.TextureId then
-				local img = Instance.new("ImageLabel")
-				img.Size = UDim2.new(0.8,0,0.8,0)
-				img.Position = UDim2.new(0.1,0,0.1,0)
-				img.BackgroundTransparency = 1
-				img.Image = sData.TextureId
-				img.ImageTransparency = isOwned and 0 or 0.7
-				img.Parent = item
-			end
-
-			-- Lock Icon
 			if not isOwned then
-				local lock = Instance.new("TextLabel")
-				lock.Text = "🔒"
-				lock.Size = UDim2.new(1,0,1,0)
-				lock.BackgroundTransparency = 1
-				lock.Parent = item
+				local l = Instance.new("TextLabel")
+				l.Text = "🔒"
+				l.Size = UDim2.new(1,0,1,0)
+				l.BackgroundTransparency = 1
+				l.Parent = item
 			end
+
+			item.MouseButton1Click:Connect(function()
+				selectedSkin = sName
+				updateDetails(weaponName) -- refresh highlights
+				updatePreview(weaponName, sName)
+			end)
 		end
 
-		-- Initial Button State logic
-		local isSelectedOwned = false
-		if inventoryData.Skins.Owned[weaponName] then
-			for _, o in ipairs(inventoryData.Skins.Owned[weaponName]) do 
-				if o == selectedSkin then isSelectedOwned = true break end 
-			end
-		end
-		if selectedSkin == "Default Skin" then isSelectedOwned = true end
+		-- Equip Button State
+		local isCurrentOwned = (selectedSkin == "Default Skin")
+		for _, o in ipairs(owned) do if o == selectedSkin then isCurrentOwned = true end end
 
-		if not isSelectedOwned then
-			ebLabel.Text = "LOCKED"
-			equipButton.BackgroundColor3 = COLORS.ACCENT_RED
-			equipButton.AutoButtonColor = false
-		elseif selectedSkin == equipped then
-			ebLabel.Text = "EQUIPPED"
-			equipButton.BackgroundColor3 = COLORS.ITEM_ACTIVE
-			equipButton.AutoButtonColor = false
+		if selectedSkin == equipped then
+			el.Text = "EQUIPPED"
+			equipBtn.BackgroundColor3 = THEME.COLORS.ITEM_BG
+		elseif isCurrentOwned then
+			el.Text = "EQUIP"
+			equipBtn.BackgroundColor3 = THEME.COLORS.PRIMARY
 		else
-			ebLabel.Text = "EQUIP SKIN"
-			equipButton.BackgroundColor3 = COLORS.PRIMARY
-			equipButton.AutoButtonColor = true
+			el.Text = "LOCKED"
+			equipBtn.BackgroundColor3 = THEME.COLORS.BORDER
 		end
 	end
+
+	updatePreview(weaponName, selectedSkin)
 end
 
--- Core: Update Weapon List
-function updateWeaponList()
-	for _, c in ipairs(weaponListScroll:GetChildren()) do
-		if not c:IsA("UIListLayout") then c:Destroy() end
-	end
-
-	local term = searchBox.Text:lower()
-	local list = {}
-
-	for id, data in pairs(WeaponModule.Weapons) do
-		local catMatch = (selectedCategory == "All") or (data.Category == selectedCategory)
-		-- Handle short names in category logic
-		if selectedCategory == "Rifle" and data.Category == "Assault Rifle" then catMatch = true end
-
-		local searchMatch = false
-		if term == "" then
-			searchMatch = true
-		elseif string.find(id:lower(), term, 1, true) then
-			searchMatch = true
-		end
-
-		if catMatch and searchMatch then
-			table.insert(list, {id=id, name=data.DisplayName})
-		end
-	end
-
-	table.sort(list, function(a,b) return a.name < b.name end)
-
-	for _, w in ipairs(list) do
-		local btn = Instance.new("TextButton")
-		btn.Size = UDim2.new(1, -10, 0, 50)
-		btn.BackgroundColor3 = (w.id == selectedWeapon) and COLORS.ITEM_ACTIVE or Color3.new(0,0,0)
-		btn.BackgroundTransparency = (w.id == selectedWeapon) and 0.0 or 0.6
-		btn.Text = ""
-		btn.AutoButtonColor = false
-		btn.Parent = weaponListScroll
-
-		local c = Instance.new("UICorner")
-		c.CornerRadius = UDim.new(0, 8)
-		c.Parent = btn
-
-		-- Active Indicator
-		if w.id == selectedWeapon then
-			local bar = Instance.new("Frame")
-			bar.Size = UDim2.new(0, 4, 1, 0)
-			bar.BackgroundColor3 = COLORS.PRIMARY
-			bar.BorderSizePixel = 0
-			bar.Parent = btn
-		end
-
-		-- Icon Placeholder (or Text initials)
-		local iconBox = Instance.new("Frame")
-		iconBox.Size = UDim2.new(0, 34, 0, 34)
-		iconBox.Position = UDim2.new(0, 12, 0.5, 0)
-		iconBox.AnchorPoint = Vector2.new(0, 0.5)
-		iconBox.BackgroundColor3 = COLORS.PANEL_BORDER
-		iconBox.Parent = btn
-		local ic = Instance.new("UICorner"); ic.CornerRadius = UDim.new(0, 6); ic.Parent = iconBox
-
-		local initials = Instance.new("TextLabel")
-		initials.Size = UDim2.new(1,0,1,0)
-		initials.BackgroundTransparency = 1
-		initials.Text = string.sub(w.name, 1, 2)
-		initials.Font = FONTS.MONO
-		initials.TextColor3 = COLORS.TEXT_GRAY
-		initials.Parent = iconBox
-
-		-- Name
-		local nameLbl = Instance.new("TextLabel")
-		nameLbl.Text = w.name
-		nameLbl.Font = FONTS.HEADER
-		nameLbl.TextSize = 16
-		nameLbl.TextColor3 = (w.id == selectedWeapon) and COLORS.TEXT_WHITE or COLORS.TEXT_GRAY
-		nameLbl.Size = UDim2.new(1, -60, 1, 0)
-		nameLbl.Position = UDim2.new(0, 60, 0, 0)
-		nameLbl.TextXAlignment = Enum.TextXAlignment.Left
-		nameLbl.BackgroundTransparency = 1
-		nameLbl.Parent = btn
-
-		-- Interaction
-		btn.MouseEnter:Connect(function()
-			if w.id ~= selectedWeapon then
-				TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundTransparency = 0.4}):Play()
-				nameLbl.TextColor3 = COLORS.TEXT_WHITE
-			end
-		end)
-		btn.MouseLeave:Connect(function()
-			if w.id ~= selectedWeapon then
-				TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundTransparency = 0.6}):Play()
-				nameLbl.TextColor3 = COLORS.TEXT_GRAY
-			end
-		end)
-		btn.MouseButton1Click:Connect(function()
-			selectedWeapon = w.id
-			-- Default skin selection logic
-			if inventoryData and inventoryData.Skins then
-				selectedSkin = inventoryData.Skins.Equipped[selectedWeapon] or "Default Skin"
-			end
-			updateWeaponList() -- Refresh list highlights
-			updateDetails(selectedWeapon)
-			updatePreview(selectedWeapon, selectedSkin)
-		end)
-	end
-end
-
--- Core: Update Preview
 function updatePreview(weaponName, skinName)
 	if currentPreview then
 		ModelPreviewModule.destroy(currentPreview)
 		currentPreview = nil
 	end
+	if not weaponName then return end
 
-	if not weaponName or not skinName then
-		sliderContainer.Visible = false
-		loadingLabel.Visible = false
-		return
-	end
+	local wData = WeaponModule.Weapons[weaponName]
+	local sData = wData and wData.Skins and wData.Skins[skinName]
 
-	local weaponData = WeaponModule.Weapons[weaponName]
-	local skinData = weaponData and weaponData.Skins[skinName]
-	if not weaponData or not skinData then return end
-
-	local cacheKey = weaponName .. "_" .. skinName
-	local isCached = assetCache[cacheKey]
-
-	if not isCached then
-		loadingLabel.Visible = true
-	end
-
-	currentPreview = ModelPreviewModule.create(viewportFrame, weaponData, skinData, function(loadedPreview)
-		assetCache[cacheKey] = true
-		loadingLabel.Visible = false
-
-		if loadedPreview == currentPreview then
-			ModelPreviewModule.startRotation(currentPreview, 2.5)
-			sliderContainer.Visible = true
-			ModelPreviewModule.connectZoomSlider(currentPreview, sliderTrack, sliderKnob, sliderFill, 2.5, 10)
+	currentPreview = ModelPreviewModule.create(viewport, wData, sData, function(prev)
+		if prev == currentPreview then
+			ModelPreviewModule.startRotation(prev, 1.0)
 		end
 	end)
 end
 
--- Core: Update Boosters List
 function updateBoosterList()
-	for _, c in ipairs(boostersGrid:GetChildren()) do
-		if not c:IsA("UIGridLayout") then c:Destroy() end
-	end
+	-- Simple grid for boosters
+	for _, c in ipairs(itemScroll:GetChildren()) do if c:IsA("Frame") or c:IsA("TextButton") then c:Destroy() end end
 
 	if not boosterData or not boosterConfig then return end
 
@@ -1108,304 +722,140 @@ function updateBoosterList()
 		local count = boosterData.Owned[id] or 0
 
 		local card = Instance.new("Frame")
-		card.BackgroundColor3 = COLORS.PANEL_BG
-		card.BackgroundTransparency = 0.4
-		card.BorderSizePixel = 0
-		card.Parent = boostersGrid
+		card.BackgroundColor3 = THEME.COLORS.ITEM_BG
+		card.Parent = itemScroll
+		local cc = Instance.new("UICorner"); cc.CornerRadius = UDim.new(0, 6); cc.Parent = card
 
-		local cc = Instance.new("UICorner"); cc.CornerRadius = UDim.new(0, 12); cc.Parent = card
-		local cs = Instance.new("UIStroke"); cs.Color = COLORS.PANEL_BORDER; cs.Parent = card
-
-		-- Icon
-		local icon = Instance.new("TextLabel")
-		icon.Text = info.Icon or "⚡"
-		icon.TextSize = 40
-		icon.Size = UDim2.new(1, 0, 0.4, 0)
-		icon.BackgroundTransparency = 1
-		icon.Parent = card
-
-		-- Name
 		local name = Instance.new("TextLabel")
 		name.Text = info.Name or id
-		name.Font = FONTS.HEADER
-		name.TextSize = 14
-		name.TextColor3 = COLORS.TEXT_WHITE
-		name.Size = UDim2.new(1, 0, 0, 20)
-		name.Position = UDim2.new(0, 0, 0.4, 0)
+		name.Font = THEME.FONTS.HEADER
+		name.TextColor3 = THEME.COLORS.TEXT_MAIN
+		name.Size = UDim2.new(1,0,0,20)
 		name.BackgroundTransparency = 1
 		name.Parent = card
 
-		-- Count
-		local countLbl = Instance.new("TextLabel")
-		countLbl.Text = "Owned: " .. count
-		countLbl.Font = FONTS.MONO
-		countLbl.TextSize = 10
-		countLbl.TextColor3 = (count > 0) and COLORS.PRIMARY or COLORS.TEXT_GRAY
-		countLbl.Size = UDim2.new(1, 0, 0, 15)
-		countLbl.Position = UDim2.new(0, 0, 0.5, 0)
-		countLbl.BackgroundTransparency = 1
-		countLbl.Parent = card
+		local qty = Instance.new("TextLabel")
+		qty.Text = "x"..count
+		qty.Font = THEME.FONTS.TECH
+		qty.TextColor3 = THEME.COLORS.PRIMARY
+		qty.Position = UDim2.new(0,0,0.5,0)
+		qty.Size = UDim2.new(1,0,0,20)
+		qty.BackgroundTransparency = 1
+		qty.Parent = card
 
-		-- Desc
-		local desc = Instance.new("TextLabel")
-		desc.Text = info.Description or ""
-		desc.Font = FONTS.BODY
-		desc.TextSize = 10
-		desc.TextColor3 = COLORS.TEXT_GRAY
-		desc.TextWrapped = true
-		desc.Size = UDim2.new(0.9, 0, 0.25, 0)
-		desc.Position = UDim2.new(0.05, 0, 0.55, 0)
-		desc.BackgroundTransparency = 1
-		desc.Parent = card
+		local useBtn = Instance.new("TextButton")
+		useBtn.Size = UDim2.new(0.8, 0, 0, 30)
+		useBtn.Position = UDim2.new(0.1, 0, 0.8, 0)
+		useBtn.BackgroundColor3 = (count > 0) and THEME.COLORS.PRIMARY or THEME.COLORS.BORDER
+		useBtn.Text = "USE"
+		useBtn.Font = THEME.FONTS.HEADER
+		useBtn.TextColor3 = THEME.COLORS.TEXT_MAIN
+		useBtn.Parent = card
+		local bc = Instance.new("UICorner"); bc.CornerRadius = UDim.new(0,4); bc.Parent = useBtn
 
-		-- Action Button
-		local btn = Instance.new("TextButton")
-		btn.Size = UDim2.new(0.9, 0, 0, 30)
-		btn.Position = UDim2.new(0.05, 0, 0.85, 0)
-		btn.BackgroundColor3 = (count > 0) and COLORS.PRIMARY or COLORS.ACCENT_AMBER
-		btn.Text = (count > 0) and "ACTIVATE" or "BUY"
-		if boosterData.Active == id then 
-			btn.Text = "ACTIVE"
-			btn.BackgroundColor3 = COLORS.ACCENT_GREEN
-		end
-		btn.Font = FONTS.HEADER
-		btn.TextColor3 = COLORS.TEXT_WHITE
-		btn.TextSize = 12
-		btn.Parent = card
-		local bc = Instance.new("UICorner"); bc.CornerRadius = UDim.new(0, 6); bc.Parent = btn
-
-		btn.MouseButton1Click:Connect(function()
-			if count > 0 then
-				ActivateBoosterEvent:FireServer(id)
-			else
-				-- Shop logic placeholder
-			end
+		useBtn.MouseButton1Click:Connect(function()
+			if count > 0 then ActivateBoosterEvent:FireServer(id) end
 		end)
 	end
 end
 
--- --- MAIN LOGIC ---
-
-local function switchTab(tabName)
-	currentTab = tabName
-	if tabName == "Weapons" then
-		weaponsContent.Visible = true
-		boostersContent.Visible = false
-
-		tabWeaponsBtn.BackgroundColor3 = COLORS.PRIMARY
-		tabWeaponsBtn.BackgroundTransparency = 0
-		tabWeaponsLbl.TextColor3 = Color3.new(1,1,1)
-
-		tabBoostersBtn.BackgroundColor3 = COLORS.PANEL_BG
-		tabBoostersBtn.BackgroundTransparency = 0.8
-		tabBoostersLbl.TextColor3 = COLORS.TEXT_GRAY
-	else
-		weaponsContent.Visible = false
-		boostersContent.Visible = true
-
-		tabWeaponsBtn.BackgroundColor3 = COLORS.PANEL_BG
-		tabWeaponsBtn.BackgroundTransparency = 0.8
-		tabWeaponsLbl.TextColor3 = COLORS.TEXT_GRAY
-
-		tabBoostersBtn.BackgroundColor3 = COLORS.PRIMARY
-		tabBoostersBtn.BackgroundTransparency = 0
-		tabBoostersLbl.TextColor3 = Color3.new(1,1,1)
-
-		if not boosterData then
-			BoosterUpdateEvent:FireServer()
-		else
-			updateBoosterList()
-		end
-	end
-	setupResponsiveSizes() -- Update layout when switching tabs
-end
-
-local function openUI()
-	if not inventoryData then
-		inventoryData = inventoryRemote:InvokeServer()
-	end
-
-	mainPanel.Visible = true
-	openButton.Visible = false
-
-	-- Apply responsive sizing before animation
-	setupResponsiveSizes()
-
-	-- Animation
-	mainPanel.Size = UDim2.new(0.85, 0, 0.8, 0)
-	mainPanel.BackgroundTransparency = 1
-
-	local info = TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-	TweenService:Create(mainPanel, info, {Size = mainPanel.Size, BackgroundTransparency = 0}):Play()
-
-	createCategoryButtons()
-	updateWeaponList()
-
-	-- Select first weapon if none
-	if not selectedWeapon then
-		-- Find AK-47 or first
-		for id, _ in pairs(WeaponModule.Weapons) do
-			selectedWeapon = id
-			break
-		end
-		if WeaponModule.Weapons["AK-47"] then selectedWeapon = "AK-47" end
-	end
-
-	if inventoryData and inventoryData.Skins then
-		selectedSkin = inventoryData.Skins.Equipped[selectedWeapon] or "Default Skin"
-	end
-
-	updateDetails(selectedWeapon)
-	updatePreview(selectedWeapon, selectedSkin)
-
-	switchTab("Weapons")
-end
-
-local function closeUI()
-	local info = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-	TweenService:Create(mainPanel, info, {Size = UDim2.new(0.85, 0, 0.8, 0), BackgroundTransparency = 1}):Play()
-
-	task.delay(0.2, function()
-		mainPanel.Visible = false
-		openButton.Visible = true
-		updatePreview(nil, nil) -- Cleanup viewport
-	end)
-end
-
--- --- MOBILE GESTURES ---
-local function setupMobileGestures()
-	if not isMobile then return end
-
-	local touchStartPos = nil
-	local touchStartTime = 0
-	local isDragging = false
-
-	UserInputService.TouchStarted:Connect(function(touch)
-		touchStartPos = touch.Position
-		touchStartTime = tick()
-		isDragging = true
-	end)
-
-	UserInputService.TouchEnded:Connect(function(touch)
-		if not touchStartPos or not isDragging then return end
-
-		local touchEndPos = touch.Position
-		local delta = touchEndPos - touchStartPos
-		local timeDelta = tick() - touchStartTime
-
-		-- Swipe detection
-		if timeDelta < 0.5 and delta.Magnitude > 50 then
-			if math.abs(delta.X) > math.abs(delta.Y) then
-				-- Horizontal swipe - switch tabs
-				if delta.X > 0 then
-					-- Swipe right
-					switchTab("Weapons")
-				else
-					-- Swipe left  
-					switchTab("Boosters")
-				end
-			end
-		end
-
-		isDragging = false
-		touchStartPos = nil
-	end)
-end
-
--- --- SAFE AREA SUPPORT ---
-local function updateSafeArea()
-	if not isMobile then return end
-
-	local success, result = pcall(function()
-		local safeArea = GuiService:GetSafeZoneInsets()
-
-		-- Apply safe area padding to main panel
-		mainPanel.Position = UDim2.new(
-			0.5, 
-			(safeArea.Left - safeArea.Right) / 2, 
-			0.5, 
-			(safeArea.Top - safeArea.Bottom) / 2
-		)
-	end)
-end
-
--- --- PERFORMANCE OPTIMIZATION ---
-local function optimizeForMobile()
-	if isMobile then
-		-- Reduce rendering quality for better performance
-		settings().Rendering.QualityLevel = 1
-		-- Enable frame rate throttling
-		RunService:SetThrottleFramerateEnabled(true)
+-- --- CATEGORY TABS ---
+local function setupCats()
+	for _, c in ipairs(catScroll:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
+	for _, cat in ipairs(CATEGORIES) do
+		local b = Instance.new("TextButton")
+		b.Text = cat
+		b.Size = UDim2.new(0, 60, 1, 0)
+		b.BackgroundColor3 = (cat == selectedCategory) and THEME.COLORS.PRIMARY or THEME.COLORS.ITEM_BG
+		b.TextColor3 = THEME.COLORS.TEXT_MAIN
+		b.Parent = catScroll
+		local bc = Instance.new("UICorner"); bc.CornerRadius = UDim.new(0,4); bc.Parent = b
+		b.MouseButton1Click:Connect(function()
+			selectedCategory = cat
+			setupCats()
+			updateWeaponList()
+		end)
 	end
 end
 
 -- --- CONNECTIONS ---
-openButton.MouseButton1Click:Connect(openUI)
-closeButton.MouseButton1Click:Connect(closeUI)
+openButton.MouseButton1Click:Connect(function()
+	if not inventoryData then inventoryData = inventoryRemote:InvokeServer() end
+	mainPanel.Visible = true
+	mainPanel.Size = UDim2.new(0.8, 0, 0.8, 0) -- pop effect
+	openButton.Visible = false
+	TweenService:Create(mainPanel, TweenInfo.new(0.3, Enum.EasingStyle.Back), {Size = UDim2.new(0.9, 0, 0.85, 0)}):Play()
 
-tabWeaponsBtn.MouseButton1Click:Connect(function() switchTab("Weapons") end)
-tabBoostersBtn.MouseButton1Click:Connect(function() switchTab("Boosters") end)
+	updateNavState("Weapons")
+	setupCats()
 
-searchBox:GetPropertyChangedSignal("Text"):Connect(updateWeaponList)
+	if not selectedWeapon then
+		for k,_ in pairs(WeaponModule.Weapons) do selectedWeapon = k break end
+	end
+	updateDetails(selectedWeapon)
+end)
 
-equipButton.MouseButton1Click:Connect(function()
+closeBtn.MouseButton1Click:Connect(function()
+	mainPanel.Visible = false
+	openButton.Visible = true
+	if currentPreview then ModelPreviewModule.destroy(currentPreview) currentPreview=nil end
+end)
+
+navWeapons.MouseButton1Click:Connect(function() updateNavState("Weapons") end)
+navBoosters.MouseButton1Click:Connect(function() updateNavState("Boosters") end)
+
+search:GetPropertyChangedSignal("Text"):Connect(updateWeaponList)
+
+equipBtn.MouseButton1Click:Connect(function()
 	if selectedWeapon and selectedSkin then
-		-- Double check ownership locally
-		local owned = inventoryData.Skins.Owned[selectedWeapon] or {}
-		local isOwned = (selectedSkin == "Default Skin")
-		for _, s in ipairs(owned) do if s == selectedSkin then isOwned = true break end end
-
-		if isOwned then
-			skinEvent:FireServer("EquipSkin", selectedWeapon, selectedSkin)
-			-- Optimistic update
-			inventoryData.Skins.Equipped[selectedWeapon] = selectedSkin
-			updateDetails(selectedWeapon) -- Refresh UI state
-		end
+		skinEvent:FireServer("EquipSkin", selectedWeapon, selectedSkin)
+		inventoryData.Skins.Equipped[selectedWeapon] = selectedSkin
+		updateDetails(selectedWeapon)
 	end
 end)
 
-BoosterUpdateEvent.OnClientEvent:Connect(function(newData)
-	boosterData = newData
+BoosterUpdateEvent.OnClientEvent:Connect(function(d)
+	boosterData = d
 	if currentTab == "Boosters" then updateBoosterList() end
 end)
 
--- Screen resize handler dengan error handling
-local function handleScreenResize()
-	local success, result = pcall(function()
-		updateDeviceType()
-		setupResponsiveSizes()
-		updateSafeArea()
-	end)
+-- Responsive Handler
+local function handleResize()
+	updateDeviceType()
+	if isMobile then
+		-- Mobile Layout Shifts
+		openButton.Size = UDim2.new(0, 60, 0, 60)
+		sidebar.Size = UDim2.new(0, 60, 1, 0)
+		contentArea.Size = UDim2.new(1, -60, 1, 0)
+		contentArea.Position = UDim2.new(0, 60, 0, 0)
 
-	if not success then
-		warn("Screen resize handler failed")
+		-- On mobile, make grid full width and inspector a modal popup?
+		-- For simplicity in this iteration: Stack them 50/50 vertically
+		gridSide.Size = UDim2.new(1, 0, 0.5, 0)
+		inspectorSide.Size = UDim2.new(1, 0, 0.5, 0)
+		inspectorSide.Position = UDim2.new(0, 0, 0.5, 0)
+
+		gridLayout.CellSize = UDim2.new(0, 100, 0, 120)
+	else
+		-- Desktop
+		openButton.Size = UDim2.new(0, 120, 0, 50)
+		sidebar.Size = UDim2.new(0, 80, 1, 0)
+		contentArea.Size = UDim2.new(1, -80, 1, 0)
+		contentArea.Position = UDim2.new(0, 80, 0, 0)
+
+		gridSide.Size = UDim2.new(0.6, 0, 1, 0)
+		inspectorSide.Size = UDim2.new(0.4, 0, 1, 0)
+		inspectorSide.Position = UDim2.new(0.6, 0, 0, 0)
+
+		gridLayout.CellSize = UDim2.new(0, 140, 0, 160)
 	end
 end
 
--- Gunakan PlayerGui untuk mendeteksi perubahan ukuran layar
-local playerGui = player:WaitForChild("PlayerGui")
-playerGui:GetPropertyChangedSignal("AbsoluteSize"):Connect(handleScreenResize)
-
--- Safe area changes
-GuiService:GetPropertyChangedSignal("SafeZoneCompatibility"):Connect(updateSafeArea)
-
--- Fetch booster config once
+screenGui:GetPropertyChangedSignal("AbsoluteSize"):Connect(handleResize)
 task.spawn(function()
-	local success, result = pcall(function() return GetBoosterConfig:InvokeServer() end)
-	if success then boosterConfig = result end
+	local s, r = pcall(function() return GetBoosterConfig:InvokeServer() end)
+	if s then boosterConfig = r end
 end)
 
--- Initialize responsive features dengan delay untuk memastikan semua komponen siap
-task.delay(0.5, function()
-	local success, result = pcall(function()
-		updateDeviceType()
-		setupResponsiveSizes()
-		setupMobileGestures()
-		updateSafeArea()
-		optimizeForMobile()
-	end)
-
-	if not success then
-		warn("Responsive features initialization failed, using default layout")
-	end
-end)
+task.wait(0.1)
+handleResize()
