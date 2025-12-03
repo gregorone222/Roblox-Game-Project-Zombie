@@ -1,16 +1,18 @@
 -- MissionUI.lua (LocalScript)
 -- Path: StarterGui/MissionUI.client.lua
 -- Script Place: Lobby
+-- Theme: SCAVENGER TECH (DIY, Rusted Metal, Duct Tape, Graffiti)
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local StarterGui = game:GetService("StarterGui")
+local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Cleanup
+-- Cleanup existing
 if playerGui:FindFirstChild("MissionUI") then
 	playerGui.MissionUI:Destroy()
 end
@@ -19,22 +21,29 @@ if playerGui:FindFirstChild("MissionButton") then
 end
 
 -- ======================================================
--- CONFIGURATION & ASSETS
+-- 1. CONFIGURATION & THEME (Scavenger Tech)
 -- ======================================================
 
 local THEME = {
-	Slate950 = Color3.fromRGB(2, 6, 23),
-	Slate900 = Color3.fromRGB(15, 23, 42),
-	Slate800 = Color3.fromRGB(30, 41, 59),
-	Slate700 = Color3.fromRGB(51, 65, 85),
-	Slate400 = Color3.fromRGB(148, 163, 184),
-	Cyan600 = Color3.fromRGB(8, 145, 178),
-	Cyan500 = Color3.fromRGB(6, 182, 212),
-	Green600 = Color3.fromRGB(22, 163, 74),
-	Indigo600 = Color3.fromRGB(79, 70, 229),
-	Red600 = Color3.fromRGB(220, 38, 38),
-	Amber400 = Color3.fromRGB(251, 191, 36),
-	White = Color3.fromRGB(255, 255, 255),
+	-- Materials
+	RustedMetal = Color3.fromRGB(60, 55, 50),   -- Main Body
+	DarkIron = Color3.fromRGB(35, 35, 35),      -- Inner Screen/Recess
+	DuctTape = Color3.fromRGB(180, 180, 190),   -- Tape Accents
+
+	-- Spray Paint Colors
+	SprayRed = Color3.fromRGB(220, 50, 40),     -- Warning / Cancel
+	SprayGreen = Color3.fromRGB(80, 200, 60),   -- Success
+	SprayOrange = Color3.fromRGB(255, 140, 20), -- Highlight
+	SprayWhite = Color3.fromRGB(240, 240, 235), -- Text
+
+	-- Text
+	TextDark = Color3.fromRGB(30, 30, 30),
+}
+
+local FONTS = {
+	Graffiti = Enum.Font.AmaticSC,     -- Handwritten headers (Marker on metal)
+	Industrial = Enum.Font.Oswald,     -- Sturdy labels
+	Body = Enum.Font.GothamBold,       -- Readable data
 }
 
 -- Remote Functions/Events
@@ -54,664 +63,650 @@ local currentTab = "Daily"
 local missionToRerollId = nil
 local missionToRerollType = nil
 
+-- UI References
+local screenGui, mainTablet
+local missionsScroll
+local dailyTabBtn, weeklyTabBtn
+local toastContainer
+
 -- ======================================================
--- UI CONSTRUCTION
+-- 2. UI UTILITIES
 -- ======================================================
 
--- 1. ScreenGui & Button
-local screenGui = Instance.new("ScreenGui")
+local function addStroke(instance, color, thickness)
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = color or Color3.new(0,0,0)
+	stroke.Thickness = thickness or 2
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	stroke.Parent = instance
+	return stroke
+end
+
+local function addCorner(instance, radius)
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, radius)
+	corner.Parent = instance
+	return corner
+end
+
+-- Create a "Duct Tape" visual
+local function createTape(parent, rotation)
+	local tape = Instance.new("Frame")
+	tape.Name = "DuctTape"
+	tape.Size = UDim2.fromOffset(60, 20)
+	tape.BackgroundColor3 = THEME.DuctTape
+	tape.BorderSizePixel = 0
+	tape.Rotation = rotation or math.random(-25, 25)
+	tape.ZIndex = parent.ZIndex + 5
+	tape.Parent = parent
+
+	-- Texture for tape (wrinkles)
+	local tex = Instance.new("ImageLabel")
+	tex.BackgroundTransparency = 1
+	tex.Image = "rbxassetid://15541607567" -- Noise overlay
+	tex.ImageTransparency = 0.8
+	tex.Size = UDim2.fromScale(1,1)
+	tex.Parent = tape
+
+	return tape
+end
+
+-- Create a "Bolt" visual
+local function createBolt(parent, position)
+	local bolt = Instance.new("Frame")
+	bolt.Size = UDim2.fromOffset(12, 12)
+	bolt.Position = position
+	bolt.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
+	bolt.Parent = parent
+	addCorner(bolt, 6)
+	addStroke(bolt, Color3.new(0,0,0), 1)
+
+	local shine = Instance.new("Frame")
+	shine.Size = UDim2.fromOffset(4, 4)
+	shine.Position = UDim2.fromOffset(2, 2)
+	shine.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+	shine.BorderSizePixel = 0
+	shine.Parent = bolt
+	addCorner(shine, 2)
+end
+
+-- Sounds (Rough, Industrial)
+local SOUNDS = {
+	Clunk = 6052554659, -- Heavy
+	Static = 6052554472, -- Noise
+	Spray = 6052553974, -- Hiss (reused placeholder, ideally spray can)
+	Click = 6895079853,
+}
+
+local function playSound(soundId, pitch)
+	local s = Instance.new("Sound")
+	s.SoundId = "rbxassetid://" .. soundId
+	s.Volume = 0.6
+	s.Pitch = pitch or math.random(90, 110)/100
+	s.Parent = playerGui
+	s:Play()
+	s.Ended:Connect(function() s:Destroy() end)
+end
+
+-- ======================================================
+-- 3. UI CONSTRUCTION
+-- ======================================================
+
+screenGui = Instance.new("ScreenGui")
 screenGui.Name = "MissionUI"
 screenGui.Enabled = false
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 screenGui.DisplayOrder = 10
 
+-- >>> HUD BUTTON (Scrap Metal Plate) <<<
 local buttonGui = Instance.new("ScreenGui")
 buttonGui.Name = "MissionButton"
 buttonGui.ResetOnSpawn = false
 buttonGui.Parent = playerGui
 
-local openButton = Instance.new("TextButton")
-openButton.Name = "OpenMission"
-openButton.Text = "?? Open Missions" -- ENGLISH
-openButton.AnchorPoint = Vector2.new(0, 0)
-openButton.Size = UDim2.fromOffset(140, 50)
-openButton.Position = UDim2.new(0, 20, 0, 20)
-openButton.Font = Enum.Font.GothamBold
-openButton.TextSize = 16
-openButton.BackgroundColor3 = THEME.Amber400
-openButton.TextColor3 = THEME.Slate900
-openButton.Parent = buttonGui
-Instance.new("UICorner", openButton).CornerRadius = UDim.new(0, 8)
+local hudContainer = Instance.new("Frame")
+hudContainer.Name = "HUD"
+hudContainer.Size = UDim2.fromOffset(80, 80)
+hudContainer.Position = UDim2.new(0, 20, 0, 20)
+hudContainer.BackgroundColor3 = THEME.RustedMetal
+hudContainer.Rotation = 2
+hudContainer.Parent = buttonGui
+addCorner(hudContainer, 8)
+addStroke(hudContainer, Color3.new(0,0,0), 3)
 
--- 2. Modal Main Frame
+-- Bolts
+createBolt(hudContainer, UDim2.new(0, 5, 0, 5))
+createBolt(hudContainer, UDim2.new(1, -17, 0, 5))
+createBolt(hudContainer, UDim2.new(0, 5, 1, -17))
+createBolt(hudContainer, UDim2.new(1, -17, 1, -17))
+
+-- Graffiti
+local hudText = Instance.new("TextLabel")
+hudText.Text = "JOBS"
+hudText.Font = FONTS.Graffiti
+hudText.TextSize = 42
+hudText.TextColor3 = THEME.SprayWhite
+hudText.Rotation = -10
+hudText.Size = UDim2.fromScale(1, 1)
+hudText.BackgroundTransparency = 1
+hudText.Parent = hudContainer
+
+local hudBtn = Instance.new("TextButton")
+hudBtn.Size = UDim2.fromScale(1, 1)
+hudBtn.BackgroundTransparency = 1
+hudBtn.Text = ""
+hudBtn.Parent = hudContainer
+
+hudBtn.MouseEnter:Connect(function()
+	TweenService:Create(hudContainer, TweenInfo.new(0.1), {Rotation = -2, Size = UDim2.fromOffset(85, 85)}):Play()
+	playSound(SOUNDS.Static)
+end)
+hudBtn.MouseLeave:Connect(function()
+	TweenService:Create(hudContainer, TweenInfo.new(0.2), {Rotation = 2, Size = UDim2.fromOffset(80, 80)}):Play()
+end)
+
+-- >>> MAIN TABLET (Rugged Device) <<<
 local blur = Instance.new("BlurEffect")
 blur.Size = 0
 blur.Parent = workspace.CurrentCamera
 
-local mainFrame = Instance.new("Frame")
-mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.fromOffset(700, 500)
-mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-mainFrame.Position = UDim2.fromScale(0.5, 0.5)
-mainFrame.BackgroundColor3 = THEME.Slate900
-mainFrame.Parent = screenGui
-Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 16)
-Instance.new("UIStroke", mainFrame).Color = THEME.Slate700
-mainFrame.UIStroke.Thickness = 2
+mainTablet = Instance.new("Frame")
+mainTablet.Name = "Tablet"
+mainTablet.Size = UDim2.fromOffset(750, 520)
+mainTablet.AnchorPoint = Vector2.new(0.5, 0.5)
+mainTablet.Position = UDim2.fromScale(0.5, 0.5)
+mainTablet.BackgroundColor3 = THEME.RustedMetal
+mainTablet.Parent = screenGui
+addCorner(mainTablet, 12)
+addStroke(mainTablet, Color3.new(0.1,0.1,0.1), 4)
 
--- 3. Header
-local header = Instance.new("Frame")
-header.Name = "Header"
-header.Size = UDim2.new(1, 0, 0, 70)
-header.BackgroundColor3 = THEME.Slate800
-header.BorderSizePixel = 0
-header.Parent = mainFrame
-local headerCorner = Instance.new("UICorner", header)
-headerCorner.CornerRadius = UDim.new(0, 16)
+-- Tablet Details
+local screenBezel = Instance.new("Frame")
+screenBezel.Size = UDim2.new(1, -30, 1, -30)
+screenBezel.Position = UDim2.new(0, 15, 0, 15)
+screenBezel.BackgroundColor3 = Color3.fromRGB(20, 20, 20) -- Rubber gasket
+screenBezel.Parent = mainTablet
+addCorner(screenBezel, 8)
 
-local titleContainer = Instance.new("Frame")
-titleContainer.BackgroundTransparency = 1
-titleContainer.Size = UDim2.fromScale(1, 1) -- Full Width
-titleContainer.Position = UDim2.fromOffset(0, 0)
-titleContainer.Parent = header
+-- The "Screen" (Dirty glass look)
+local innerScreen = Instance.new("Frame")
+innerScreen.Name = "Screen"
+innerScreen.Size = UDim2.new(1, -20, 1, -20)
+innerScreen.Position = UDim2.new(0, 10, 0, 10)
+innerScreen.BackgroundColor3 = THEME.DarkIron
+innerScreen.Parent = screenBezel
+addCorner(innerScreen, 4)
 
--- Removed Icon Construction as requested
+-- Crack/Dirt overlay
+local dirt = Instance.new("ImageLabel")
+dirt.Size = UDim2.fromScale(1, 1)
+dirt.BackgroundTransparency = 1
+dirt.Image = "rbxassetid://15541607567" -- Dirt noise
+dirt.ImageColor3 = Color3.new(0,0,0)
+dirt.ImageTransparency = 0.6
+dirt.Parent = innerScreen
 
-local titleLabel = Instance.new("TextLabel")
-titleLabel.Text = "MISSIONS" -- ENGLISH & UPPERCASE
-titleLabel.Font = Enum.Font.GothamBlack
-titleLabel.TextSize = 24
-titleLabel.TextColor3 = THEME.White
-titleLabel.BackgroundTransparency = 1
-titleLabel.Size = UDim2.new(1, 0, 1, 0)
-titleLabel.Position = UDim2.new(0, 0, 0, 0)
-titleLabel.TextXAlignment = Enum.TextXAlignment.Center
-titleLabel.Parent = header
+-- HEADER (Painted on metal)
+local headerText = Instance.new("TextLabel")
+headerText.Text = "SCAVENGER LOG"
+headerText.Font = FONTS.Graffiti
+headerText.TextSize = 48
+headerText.TextColor3 = THEME.SprayOrange
+headerText.Size = UDim2.new(1, 0, 0, 60)
+headerText.Position = UDim2.new(0, 20, 0, 0)
+headerText.BackgroundTransparency = 1
+headerText.TextXAlignment = Enum.TextXAlignment.Left
+headerText.Rotation = -1
+headerText.Parent = innerScreen
 
 local closeBtn = Instance.new("TextButton")
-closeBtn.Name = "CloseButton"
 closeBtn.Size = UDim2.fromOffset(40, 40)
-closeBtn.AnchorPoint = Vector2.new(1, 0.5)
-closeBtn.Position = UDim2.new(1, -20, 0.5, 0)
-closeBtn.BackgroundColor3 = THEME.Slate700
+closeBtn.Position = UDim2.new(1, -50, 0, 10)
+closeBtn.BackgroundColor3 = THEME.SprayRed
 closeBtn.Text = "X"
-closeBtn.Font = Enum.Font.GothamBold
-closeBtn.TextSize = 18
-closeBtn.TextColor3 = THEME.White
-closeBtn.Parent = header
-Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(1, 0)
+closeBtn.Font = FONTS.Graffiti
+closeBtn.TextSize = 32
+closeBtn.TextColor3 = THEME.SprayWhite
+closeBtn.Rotation = 5
+closeBtn.Parent = innerScreen
+addCorner(closeBtn, 8)
+local tape = createTape(innerScreen, 45)
+tape.Position = UDim2.new(1, -50, 0, 0) -- Tape holding the button
 
--- 4. Tabs
-local tabsContainer = Instance.new("Frame")
-tabsContainer.Name = "Tabs"
-tabsContainer.Size = UDim2.new(1, 0, 0, 60)
-tabsContainer.Position = UDim2.new(0, 0, 0, 70)
-tabsContainer.BackgroundColor3 = THEME.Slate800
-tabsContainer.BorderSizePixel = 0
-tabsContainer.Parent = mainFrame
+-- TABS (Taped Notes)
+local tabContainer = Instance.new("Frame")
+tabContainer.Size = UDim2.new(1, -40, 0, 50)
+tabContainer.Position = UDim2.new(0, 20, 0, 60)
+tabContainer.BackgroundTransparency = 1
+tabContainer.Parent = innerScreen
 
-local tabsLayout = Instance.new("UIListLayout")
-tabsLayout.FillDirection = Enum.FillDirection.Horizontal
-tabsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-tabsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-tabsLayout.Padding = UDim.new(0, 10)
-tabsLayout.Parent = tabsContainer
+local tabLayout = Instance.new("UIListLayout")
+tabLayout.FillDirection = Enum.FillDirection.Horizontal
+tabLayout.Padding = UDim.new(0, 30)
+tabLayout.Parent = tabContainer
 
-local function createTabButton(name, text)
+local function createTab(text, color)
 	local btn = Instance.new("TextButton")
-	btn.Name = name
-	btn.Size = UDim2.new(0.45, 0, 0.7, 0)
-	btn.Text = text
-	btn.Font = Enum.Font.GothamBold
-	btn.TextSize = 16
-	btn.BackgroundColor3 = THEME.Slate700
-	btn.TextColor3 = THEME.Slate400
-	btn.Parent = tabsContainer
-	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
-	return btn
+	btn.Name = text
+	btn.Size = UDim2.new(0, 160, 1, 0)
+	btn.BackgroundColor3 = Color3.fromRGB(240, 230, 200) -- Paper note
+	btn.Rotation = math.random(-2, 2)
+	btn.Text = ""
+	btn.Parent = tabContainer
+	addStroke(btn, Color3.new(0,0,0), 1)
+
+	-- Tape it
+	local t = createTape(btn, 0)
+	t.Size = UDim2.new(0, 40, 0, 15)
+	t.Position = UDim2.new(0.5, -20, 0, -5)
+
+	local lbl = Instance.new("TextLabel")
+	lbl.Text = text
+	lbl.Font = FONTS.Graffiti
+	lbl.TextSize = 28
+	lbl.TextColor3 = Color3.new(0,0,0)
+	lbl.Size = UDim2.fromScale(1,1)
+	lbl.BackgroundTransparency = 1
+	lbl.Parent = btn
+
+	-- Marker underline
+	local line = Instance.new("Frame")
+	line.Size = UDim2.new(0.8, 0, 0, 3)
+	line.Position = UDim2.new(0.1, 0, 0.8, 0)
+	line.BackgroundColor3 = color
+	line.BorderSizePixel = 0
+	line.Visible = false
+	line.Parent = btn
+
+	return btn, line
 end
 
-local dailyTabBtn = createTabButton("DailyTab", "Daily") -- ENGLISH
-local weeklyTabBtn = createTabButton("WeeklyTab", "Weekly") -- ENGLISH
+local dailyTabBtnRef, dailyLine = createTab("DAILY", THEME.SprayRed)
+local weeklyTabBtnRef, weeklyLine = createTab("WEEKLY", THEME.SprayGreen)
 
--- 5. Content Area
-local contentArea = Instance.new("Frame")
-contentArea.Name = "ContentArea"
-contentArea.Size = UDim2.new(1, -40, 1, -150)
-contentArea.Position = UDim2.new(0, 20, 0, 140)
-contentArea.BackgroundColor3 = THEME.Slate800
-contentArea.Parent = mainFrame
-Instance.new("UICorner", contentArea).CornerRadius = UDim.new(0, 8)
+dailyTabBtn = dailyTabBtnRef
+weeklyTabBtn = weeklyTabBtnRef
 
-local contentHeader = Instance.new("Frame")
-contentHeader.Name = "ContentHeader"
-contentHeader.Size = UDim2.new(1, 0, 0, 50)
-contentHeader.BackgroundTransparency = 1
-contentHeader.Parent = contentArea
-
-local contentTitle = Instance.new("TextLabel")
-contentTitle.Name = "Title"
-contentTitle.Text = "Daily Missions" -- ENGLISH
-contentTitle.Font = Enum.Font.GothamBold
-contentTitle.TextSize = 18
-contentTitle.TextColor3 = THEME.White
-contentTitle.BackgroundTransparency = 1
-contentTitle.Size = UDim2.new(0.5, 0, 1, 0)
-contentTitle.Position = UDim2.new(0, 20, 0, 0)
-contentTitle.TextXAlignment = Enum.TextXAlignment.Left
-contentTitle.Parent = contentHeader
-
-local rerollStatus = Instance.new("TextLabel")
-rerollStatus.Name = "RerollStatus"
-rerollStatus.Text = "Rerolls Left: 1" -- ENGLISH
-rerollStatus.Font = Enum.Font.Gotham
-rerollStatus.TextSize = 14
-rerollStatus.TextColor3 = THEME.Slate400
-rerollStatus.BackgroundTransparency = 1
-rerollStatus.Size = UDim2.new(0.5, 0, 1, 0)
-rerollStatus.Position = UDim2.new(0.5, -20, 0, 0)
-rerollStatus.TextXAlignment = Enum.TextXAlignment.Right
-rerollStatus.Parent = contentHeader
-
-local separator = Instance.new("Frame")
-separator.Size = UDim2.new(1, 0, 0, 1)
-separator.Position = UDim2.new(0, 0, 1, -1)
-separator.BackgroundColor3 = THEME.Slate700
-separator.BorderSizePixel = 0
-separator.Parent = contentHeader
-
-local missionsScroll = Instance.new("ScrollingFrame")
-missionsScroll.Name = "MissionsList"
-missionsScroll.Size = UDim2.new(1, -20, 1, -60)
-missionsScroll.Position = UDim2.new(0, 10, 0, 55)
+-- CONTENT SCROLL
+missionsScroll = Instance.new("ScrollingFrame")
+missionsScroll.Size = UDim2.new(1, -40, 1, -140)
+missionsScroll.Position = UDim2.new(0, 20, 0, 130)
 missionsScroll.BackgroundTransparency = 1
 missionsScroll.BorderSizePixel = 0
-missionsScroll.ScrollBarThickness = 6
-missionsScroll.ScrollBarImageColor3 = THEME.Slate700
-missionsScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-missionsScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-missionsScroll.Parent = contentArea
+missionsScroll.ScrollBarThickness = 8
+missionsScroll.ScrollBarImageColor3 = THEME.RustedMetal
+missionsScroll.Parent = innerScreen
 
 local listLayout = Instance.new("UIListLayout")
-listLayout.Padding = UDim.new(0, 10)
+listLayout.Padding = UDim.new(0, 15)
 listLayout.SortOrder = Enum.SortOrder.LayoutOrder
 listLayout.Parent = missionsScroll
 
--- 6. Toast Container
-local toastContainer = Instance.new("Frame")
-toastContainer.Name = "ToastContainer"
-toastContainer.Size = UDim2.new(0, 300, 1, 0)
-toastContainer.Position = UDim2.new(1, -320, 0, 0)
-toastContainer.AnchorPoint = Vector2.new(0, 0)
+-- TOASTS (Spray Paint Stencil)
+toastContainer = Instance.new("Frame")
+toastContainer.Size = UDim2.new(0, 400, 1, -20)
+toastContainer.Position = UDim2.new(1, -420, 0, 20)
 toastContainer.BackgroundTransparency = 1
 toastContainer.Parent = screenGui
 
-local toastListLayout = Instance.new("UIListLayout")
-toastListLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
-toastListLayout.Padding = UDim.new(0, 10)
-toastListLayout.Parent = toastContainer
-Instance.new("UIPadding", toastContainer).PaddingBottom = UDim.new(0, 20)
+local toastLayout = Instance.new("UIListLayout")
+toastLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
+toastLayout.Padding = UDim.new(0, 5)
+toastLayout.Parent = toastContainer
 
--- 7. Confirmation Dialog
-local confirmOverlay = Instance.new("Frame")
-confirmOverlay.Name = "ConfirmOverlay"
-confirmOverlay.Size = UDim2.fromScale(1, 1)
-confirmOverlay.BackgroundColor3 = Color3.new(0, 0, 0)
-confirmOverlay.BackgroundTransparency = 0.5
-confirmOverlay.Visible = false
-confirmOverlay.ZIndex = 20
-confirmOverlay.Parent = screenGui
+-- DIALOG (Scrap Metal Modal)
+local overlay = Instance.new("Frame")
+overlay.Size = UDim2.fromScale(1, 1)
+overlay.BackgroundColor3 = Color3.new(0, 0, 0)
+overlay.BackgroundTransparency = 0.5
+overlay.Visible = false
+overlay.ZIndex = 200
+overlay.Parent = screenGui
 
-local confirmFrame = Instance.new("Frame")
-confirmFrame.Size = UDim2.fromOffset(320, 180)
-confirmFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-confirmFrame.Position = UDim2.fromScale(0.5, 0.5)
-confirmFrame.BackgroundColor3 = THEME.Slate900
-confirmFrame.Parent = confirmOverlay
-Instance.new("UICorner", confirmFrame).CornerRadius = UDim.new(0, 12)
-Instance.new("UIStroke", confirmFrame).Color = THEME.Slate700
-confirmFrame.UIStroke.Thickness = 2
+local dialog = Instance.new("Frame")
+dialog.Size = UDim2.fromOffset(400, 220)
+dialog.AnchorPoint = Vector2.new(0.5, 0.5)
+dialog.Position = UDim2.fromScale(0.5, 0.5)
+dialog.BackgroundColor3 = THEME.RustedMetal
+dialog.Parent = overlay
+addCorner(dialog, 4)
+addStroke(dialog, Color3.new(0,0,0), 3)
+createBolt(dialog, UDim2.new(0, 5, 0, 5))
+createBolt(dialog, UDim2.new(1, -17, 0, 5))
+createBolt(dialog, UDim2.new(0, 5, 1, -17))
+createBolt(dialog, UDim2.new(1, -17, 1, -17))
 
-local confirmTitle = Instance.new("TextLabel")
-confirmTitle.Text = "Confirm Reroll" -- ENGLISH
-confirmTitle.Font = Enum.Font.GothamBold
-confirmTitle.TextSize = 18
-confirmTitle.TextColor3 = THEME.White
-confirmTitle.BackgroundTransparency = 1
-confirmTitle.Size = UDim2.new(1, 0, 0, 40)
-confirmTitle.Parent = confirmFrame
+local dialogTitle = Instance.new("TextLabel")
+dialogTitle.Text = "SCRAP MISSION?"
+dialogTitle.Font = FONTS.Graffiti
+dialogTitle.TextSize = 36
+dialogTitle.TextColor3 = THEME.SprayWhite
+dialogTitle.Size = UDim2.new(1, 0, 0, 50)
+dialogTitle.BackgroundTransparency = 1
+dialogTitle.Parent = dialog
 
-local confirmDesc = Instance.new("TextLabel")
-confirmDesc.Text = "Are you sure you want to reroll this mission?" -- ENGLISH
-confirmDesc.Font = Enum.Font.Gotham
-confirmDesc.TextSize = 14
-confirmDesc.TextColor3 = THEME.Slate400
-confirmDesc.BackgroundTransparency = 1
-confirmDesc.Size = UDim2.new(1, -40, 0, 60)
-confirmDesc.Position = UDim2.new(0, 20, 0, 40)
-confirmDesc.TextWrapped = true
-confirmDesc.Parent = confirmFrame
+local dialogText = Instance.new("TextLabel")
+dialogText.Text = "Toss this job and look for another?\n(No going back)"
+dialogText.Font = FONTS.Body
+dialogText.TextSize = 16
+dialogText.TextColor3 = Color3.new(0.9,0.9,0.9)
+dialogText.Size = UDim2.new(1, -40, 0, 80)
+dialogText.Position = UDim2.new(0, 20, 0, 50)
+dialogText.BackgroundTransparency = 1
+dialogText.TextWrapped = true
+dialogText.Parent = dialog
 
-local confirmBtnContainer = Instance.new("Frame")
-confirmBtnContainer.Size = UDim2.new(1, -40, 0, 40)
-confirmBtnContainer.Position = UDim2.new(0, 20, 1, -60)
-confirmBtnContainer.BackgroundTransparency = 1
-confirmBtnContainer.Parent = confirmFrame
+local btnContainer = Instance.new("Frame")
+btnContainer.Size = UDim2.new(1, -40, 0, 60)
+btnContainer.Position = UDim2.new(0, 20, 1, -70)
+btnContainer.BackgroundTransparency = 1
+btnContainer.Parent = dialog
 
-local confirmListLayout = Instance.new("UIListLayout")
-confirmListLayout.FillDirection = Enum.FillDirection.Horizontal
-confirmListLayout.Padding = UDim.new(0, 10)
-confirmListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-confirmListLayout.Parent = confirmBtnContainer
+local function createDialogBtn(text, color, pos, rotation)
+	local b = Instance.new("TextButton")
+	b.Text = text
+	b.Font = FONTS.Graffiti
+	b.TextSize = 28
+	b.BackgroundColor3 = Color3.fromRGB(20,20,20)
+	b.TextColor3 = color
+	b.Size = UDim2.new(0.45, 0, 1, 0)
+	b.Position = UDim2.new(pos, 0, 0, 0)
+	b.Rotation = rotation
+	b.Parent = btnContainer
+	addStroke(b, color, 2)
+	-- Tape corners
+	local t = createTape(b, -45)
+	t.Size = UDim2.fromOffset(20, 10)
+	t.Position = UDim2.new(0, -5, 0, -5)
+	return b
+end
 
-local btnCancel = Instance.new("TextButton")
-btnCancel.Name = "Cancel"
-btnCancel.Text = "No" -- ENGLISH
-btnCancel.Size = UDim2.new(0.45, 0, 1, 0)
-btnCancel.Font = Enum.Font.GothamBold
-btnCancel.TextSize = 14
-btnCancel.BackgroundColor3 = THEME.Slate700
-btnCancel.TextColor3 = THEME.White
-btnCancel.Parent = confirmBtnContainer
-Instance.new("UICorner", btnCancel).CornerRadius = UDim.new(0, 6)
+local cancelBtn = createDialogBtn("NAH", THEME.SprayRed, 0, -2)
+local confirmBtn = createDialogBtn("DO IT", THEME.SprayGreen, 0.55, 2)
 
-local btnConfirm = Instance.new("TextButton")
-btnConfirm.Name = "Confirm"
-btnConfirm.Text = "Yes" -- ENGLISH
-btnConfirm.Size = UDim2.new(0.45, 0, 1, 0)
-btnConfirm.Font = Enum.Font.GothamBold
-btnConfirm.TextSize = 14
-btnConfirm.BackgroundColor3 = THEME.Indigo600
-btnConfirm.TextColor3 = THEME.White
-btnConfirm.Parent = confirmBtnContainer
-Instance.new("UICorner", btnConfirm).CornerRadius = UDim.new(0, 6)
 
 -- ======================================================
--- HELPER FUNCTIONS
+-- 4. HELPER FUNCTIONS
 -- ======================================================
 
-local function createMissionCard(id, missionInfo, type)
-	local card = Instance.new("Frame")
-	card.Name = id
-	card.Size = UDim2.new(1, -10, 0, 100)
-	card.BackgroundColor3 = THEME.Slate900
-	card.BorderSizePixel = 1
-	card.BorderColor3 = THEME.Slate800
+local function showToast(title, msg, isError)
+	local t = Instance.new("Frame")
+	t.Size = UDim2.new(1, 0, 0, 60)
+	t.BackgroundColor3 = Color3.new(0,0,0)
+	t.BackgroundTransparency = 0.3
+	t.Parent = toastContainer
 
-	Instance.new("UICorner", card).CornerRadius = UDim.new(0, 8)
-	Instance.new("UIStroke", card).Color = THEME.Slate800
-	card.UIStroke.Thickness = 1
+	-- Paint Splatter effect (Simulated with rotation/color)
+	local paint = Instance.new("Frame")
+	paint.Size = UDim2.new(0, 10, 1, 0)
+	paint.BackgroundColor3 = isError and THEME.SprayRed or THEME.SprayGreen
+	paint.Parent = t
 
-	-- Left Side Info
-	local infoContainer = Instance.new("Frame")
-	infoContainer.BackgroundTransparency = 1
-	infoContainer.Size = UDim2.new(0.65, 0, 1, 0)
-	infoContainer.Position = UDim2.new(0, 15, 0, 0)
-	infoContainer.Parent = card
+	local tl = Instance.new("TextLabel")
+	tl.Text = title
+	tl.Font = FONTS.Graffiti
+	tl.TextSize = 24
+	tl.TextColor3 = isError and THEME.SprayRed or THEME.SprayGreen
+	tl.Size = UDim2.new(1, -20, 0, 25)
+	tl.Position = UDim2.new(0, 20, 0, 5)
+	tl.BackgroundTransparency = 1
+	tl.TextXAlignment = Enum.TextXAlignment.Left
+	tl.Parent = t
 
-	local descLabel = Instance.new("TextLabel")
-	descLabel.Text = missionInfo.Description
-	descLabel.Font = Enum.Font.GothamBold
-	descLabel.TextSize = 16
-	descLabel.TextColor3 = THEME.White
-	descLabel.BackgroundTransparency = 1
-	descLabel.Size = UDim2.new(1, 0, 0, 30)
-	descLabel.Position = UDim2.new(0, 0, 0, 10)
-	descLabel.TextXAlignment = Enum.TextXAlignment.Left
-	descLabel.TextWrapped = true
-	descLabel.TextScaled = true
-	descLabel.Parent = infoContainer
+	local ml = Instance.new("TextLabel")
+	ml.Text = msg
+	ml.Font = FONTS.Body
+	ml.TextSize = 14
+	ml.TextColor3 = THEME.SprayWhite
+	ml.Size = UDim2.new(1, -20, 0, 25)
+	ml.Position = UDim2.new(0, 20, 0, 30)
+	ml.BackgroundTransparency = 1
+	ml.TextXAlignment = Enum.TextXAlignment.Left
+	ml.Parent = t
 
-	local descConstraint = Instance.new("UITextSizeConstraint")
-	descConstraint.MaxTextSize = 16
-	descConstraint.Parent = descLabel
+	playSound(SOUNDS.Spray)
 
-	local rewardContainer = Instance.new("Frame")
-	rewardContainer.BackgroundTransparency = 1
-	rewardContainer.Size = UDim2.new(1, 0, 0, 20)
-	rewardContainer.Position = UDim2.new(0, 0, 0, 40)
-	rewardContainer.Parent = infoContainer
+	task.delay(4, function() t:Destroy() end)
+end
 
-	local mpIcon = Instance.new("ImageLabel")
-	mpIcon.BackgroundTransparency = 1
-	mpIcon.Size = UDim2.fromOffset(16, 16)
-	mpIcon.Image = "rbxassetid://6031243319"
-	mpIcon.ImageColor3 = THEME.Amber400
-	mpIcon.Parent = rewardContainer
+local function createEntry(id, info, type)
+	local frame = Instance.new("Frame")
+	frame.Name = id
+	frame.Size = UDim2.new(1, 0, 0, 90)
+	frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40) -- Dark metal plate
+	frame.LayoutOrder = info.Completed and 2 or (info.Claimed and 3 or 1)
+	addStroke(frame, Color3.new(0,0,0), 2)
 
-	local rewardLabel = Instance.new("TextLabel")
-	rewardLabel.Text = missionInfo.Reward.Value .. " MP"
-	rewardLabel.Font = Enum.Font.GothamBold
-	rewardLabel.TextSize = 14
-	rewardLabel.TextColor3 = THEME.Amber400
-	rewardLabel.BackgroundTransparency = 1
-	rewardLabel.Size = UDim2.new(1, -20, 1, 0)
-	rewardLabel.Position = UDim2.new(0, 20, 0, 0)
-	rewardLabel.TextXAlignment = Enum.TextXAlignment.Left
-	rewardLabel.Parent = rewardContainer
+	-- Rivets
+	createBolt(frame, UDim2.new(0, 5, 0, 5))
+	createBolt(frame, UDim2.new(1, -17, 0, 5))
 
-	-- Progress Bar
-	local progressBg = Instance.new("Frame")
-	progressBg.Size = UDim2.new(0.9, 0, 0, 10)
-	progressBg.Position = UDim2.new(0, 0, 0, 65)
-	progressBg.BackgroundColor3 = THEME.Slate700
-	progressBg.Parent = infoContainer
-	Instance.new("UICorner", progressBg).CornerRadius = UDim.new(1, 0)
+	local statusColor = THEME.SprayWhite
+	if info.Claimed then statusColor = Color3.fromRGB(100,100,100) end
+	if info.Completed and not info.Claimed then statusColor = THEME.SprayGreen end
 
-	local progressFill = Instance.new("Frame")
-	local pct = math.clamp(missionInfo.Progress / missionInfo.Target, 0, 1)
-	progressFill.Size = UDim2.new(pct, 0, 1, 0)
-	progressFill.BackgroundColor3 = THEME.Cyan500
-	progressFill.Parent = progressBg
-	Instance.new("UICorner", progressFill).CornerRadius = UDim.new(1, 0)
+	local desc = Instance.new("TextLabel")
+	desc.Text = info.Description
+	desc.Font = FONTS.Industrial
+	desc.TextSize = 18
+	desc.TextColor3 = statusColor
+	desc.Size = UDim2.new(0.65, 0, 0, 50)
+	desc.Position = UDim2.new(0, 20, 0, 10)
+	desc.BackgroundTransparency = 1
+	desc.TextXAlignment = Enum.TextXAlignment.Left
+	desc.TextWrapped = true
+	desc.Parent = frame
 
-	local progressText = Instance.new("TextLabel")
-	progressText.Text = missionInfo.Progress .. " / " .. missionInfo.Target
-	progressText.Font = Enum.Font.Gotham
-	progressText.TextSize = 12
-	progressText.TextColor3 = THEME.Slate400
-	progressText.BackgroundTransparency = 1
-	progressText.Size = UDim2.new(1, 0, 0, 15)
-	progressText.Position = UDim2.new(0, 0, 0, 80)
-	progressText.TextXAlignment = Enum.TextXAlignment.Left
-	progressText.Parent = infoContainer
+	local reward = Instance.new("TextLabel")
+	reward.Text = "+"..info.Reward.Value.." MP"
+	reward.Font = FONTS.Graffiti
+	reward.TextSize = 24
+	reward.TextColor3 = THEME.SprayOrange
+	reward.Size = UDim2.new(0.3, 0, 0, 30)
+	reward.Position = UDim2.new(0.65, 0, 0, 10)
+	reward.BackgroundTransparency = 1
+	reward.TextXAlignment = Enum.TextXAlignment.Right
+	reward.Rotation = -2
+	reward.Parent = frame
 
-	-- Right Side Buttons
-	local btnContainer = Instance.new("Frame")
-	btnContainer.BackgroundTransparency = 1
-	btnContainer.Size = UDim2.new(0.3, 0, 1, 0)
-	btnContainer.Position = UDim2.new(0.7, -10, 0, 0)
-	btnContainer.Parent = card
+	local prog = Instance.new("TextLabel")
+	prog.Text = info.Progress .. "/" .. info.Target
+	prog.Font = FONTS.Body
+	prog.TextSize = 14
+	prog.TextColor3 = Color3.fromRGB(150,150,150)
+	prog.Size = UDim2.new(0.3, 0, 0, 20)
+	prog.Position = UDim2.new(0.65, 0, 0, 35)
+	prog.BackgroundTransparency = 1
+	prog.TextXAlignment = Enum.TextXAlignment.Right
+	prog.Parent = frame
 
-	local listLayoutBtn = Instance.new("UIListLayout")
-	listLayoutBtn.FillDirection = Enum.FillDirection.Vertical
-	listLayoutBtn.HorizontalAlignment = Enum.HorizontalAlignment.Right
-	listLayoutBtn.VerticalAlignment = Enum.VerticalAlignment.Center
-	listLayoutBtn.Padding = UDim.new(0, 8)
-	listLayoutBtn.Parent = btnContainer
+	-- Button Area
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(0.25, 0, 0, 30)
+	btn.Position = UDim2.new(0.7, 0, 1, -40)
+	btn.Font = FONTS.Industrial
+	btn.TextSize = 16
+	btn.Parent = frame
+	addCorner(btn, 4)
 
-	-- Claim Button Logic
-	local claimBtn = Instance.new("TextButton")
-	claimBtn.Size = UDim2.new(1, 0, 0, 35)
-	claimBtn.Font = Enum.Font.GothamBold
-	claimBtn.TextSize = 14
-	claimBtn.Parent = btnContainer
-	Instance.new("UICorner", claimBtn).CornerRadius = UDim.new(0, 8)
-
-	if missionInfo.Claimed then
-		claimBtn.Text = "? Claimed" -- ENGLISH
-		claimBtn.BackgroundColor3 = THEME.Slate700
-		claimBtn.TextColor3 = THEME.Slate400
-		claimBtn.AutoButtonColor = false
-	elseif missionInfo.Completed then
-		claimBtn.Text = "Claim" -- ENGLISH
-		claimBtn.BackgroundColor3 = THEME.Green600
-		claimBtn.TextColor3 = THEME.White
-	else
-		claimBtn.Text = "In Progress" -- ENGLISH
-		claimBtn.BackgroundColor3 = THEME.Slate700
-		claimBtn.TextColor3 = THEME.Slate400
-		claimBtn.AutoButtonColor = false
-	end
-
-	-- Reroll Button Logic
 	local rerollUsed = (type == "Daily") and currentMissionData.Daily.RerollUsed or currentMissionData.Weekly.RerollUsed
 
-	local rerollBtn = Instance.new("TextButton")
-	rerollBtn.Size = UDim2.new(1, 0, 0, 30)
-	rerollBtn.Font = Enum.Font.GothamBold
-	rerollBtn.TextSize = 12
-	rerollBtn.Text = " ?? Reroll"
-	rerollBtn.Parent = btnContainer
-	Instance.new("UICorner", rerollBtn).CornerRadius = UDim.new(0, 8)
+	if info.Claimed then
+		btn.Text = "DONE"
+		btn.BackgroundColor3 = Color3.fromRGB(30,30,30)
+		btn.TextColor3 = Color3.fromRGB(80,80,80)
+		btn.AutoButtonColor = false
+		-- Crossed out with "Tape"
+		local t = createTape(frame, math.random(-10, 10))
+		t.Position = UDim2.new(0.5, -30, 0.5, -10)
+		t.Size = UDim2.new(0.8, 0, 0, 10)
+		t.BackgroundColor3 = Color3.new(0,0,0)
+		t.BackgroundTransparency = 0.5
 
-	if missionInfo.Claimed or rerollUsed then
-		rerollBtn.BackgroundColor3 = THEME.Slate700
-		rerollBtn.TextColor3 = THEME.Slate400
-		rerollBtn.AutoButtonColor = false
-	else
-		rerollBtn.BackgroundColor3 = THEME.Indigo600
-		rerollBtn.TextColor3 = THEME.White
-	end
+	elseif info.Completed then
+		btn.Text = "TAKE IT"
+		btn.BackgroundColor3 = THEME.SprayGreen
+		btn.TextColor3 = Color3.new(0,0,0)
 
-	-- EVENTS
-	claimBtn.MouseButton1Click:Connect(function()
-		if missionInfo.Completed and not missionInfo.Claimed then
+		btn.MouseButton1Click:Connect(function()
 			local success, result = pcall(function() return claimMissionReward:InvokeServer(id) end)
 			if success and result.Success then
-				-- Optimistic update
-				missionInfo.Claimed = true
-				claimBtn.Text = "? Claimed" -- ENGLISH
-				claimBtn.BackgroundColor3 = THEME.Slate700
-				claimBtn.TextColor3 = THEME.Slate400
-				claimBtn.AutoButtonColor = false
-
-				rerollBtn.BackgroundColor3 = THEME.Slate700
-				rerollBtn.TextColor3 = THEME.Slate400
-				rerollBtn.AutoButtonColor = false
-
-				showToast("Success", "You received " .. result.Reward.Value .. " Mission Points!") -- ENGLISH
+				info.Claimed = true
+				showToast("SCORED", "+"..result.Reward.Value.." MP", false)
+				populateList()
 			else
-				warn("Failed to claim: " .. (result and result.Reason or "Unknown"))
+				showToast("JAMMED", "Try again.", true)
 			end
-		end
-	end)
+		end)
+	else
+		-- In Progress
+		if rerollUsed then
+			btn.Visible = false
+		else
+			btn.Text = "SWAP"
+			btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+			btn.TextColor3 = THEME.SprayWhite
+			addStroke(btn, Color3.new(0,0,0), 1)
 
-	rerollBtn.MouseButton1Click:Connect(function()
-		if not missionInfo.Claimed and not rerollUsed then
-			-- Show Confirmation Dialog
-			missionToRerollId = id
-			missionToRerollType = type
-			confirmOverlay.Visible = true
+			btn.MouseButton1Click:Connect(function()
+				missionToRerollId = id
+				missionToRerollType = type
+				overlay.Visible = true
+				playSound(SOUNDS.Clunk)
+			end)
 		end
-	end)
+	end
 
-	return card
+	return frame
 end
 
-function showToast(title, message)
-	local toast = Instance.new("Frame")
-	toast.Size = UDim2.new(1, 0, 0, 80)
-	toast.BackgroundColor3 = (title == "Error") and THEME.Red600 or THEME.Green600
-	toast.Parent = toastContainer
-	Instance.new("UICorner", toast).CornerRadius = UDim.new(0, 8)
 
-	local tLabel = Instance.new("TextLabel")
-	tLabel.Text = title
-	tLabel.Font = Enum.Font.GothamBlack
-	tLabel.TextSize = 16
-	tLabel.TextColor3 = THEME.White
-	tLabel.BackgroundTransparency = 1
-	tLabel.Size = UDim2.new(1, -20, 0, 25)
-	tLabel.Position = UDim2.new(0, 10, 0, 5)
-	tLabel.TextXAlignment = Enum.TextXAlignment.Left
-	tLabel.Parent = toast
-
-	local mLabel = Instance.new("TextLabel")
-	mLabel.Text = message
-	mLabel.Font = Enum.Font.Gotham
-	mLabel.TextSize = 14
-	mLabel.TextColor3 = THEME.White
-	mLabel.BackgroundTransparency = 1
-	mLabel.Size = UDim2.new(1, -20, 0, 40)
-	mLabel.Position = UDim2.new(0, 10, 0, 30)
-	mLabel.TextXAlignment = Enum.TextXAlignment.Left
-	mLabel.TextWrapped = true
-	mLabel.Parent = toast
-
-	-- Animation
-	toast.BackgroundTransparency = 1
-	tLabel.TextTransparency = 1
-	mLabel.TextTransparency = 1
-
-	local ti = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-	TweenService:Create(toast, ti, {BackgroundTransparency = 0}):Play()
-	TweenService:Create(tLabel, ti, {TextTransparency = 0}):Play()
-	TweenService:Create(mLabel, ti, {TextTransparency = 0}):Play()
-
-	task.delay(3, function()
-		local out = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-		TweenService:Create(toast, out, {BackgroundTransparency = 1}):Play()
-		TweenService:Create(tLabel, out, {TextTransparency = 1}):Play()
-		TweenService:Create(mLabel, out, {TextTransparency = 1}):Play()
-		task.wait(0.5)
-		toast:Destroy()
-	end)
-end
-
-local function populateList()
+function populateList()
 	if not currentMissionData then return end
-
-	for _, child in ipairs(missionsScroll:GetChildren()) do
-		if child:IsA("Frame") then child:Destroy() end
+	for _, c in ipairs(missionsScroll:GetChildren()) do
+		if c:IsA("Frame") then c:Destroy() end
 	end
 
 	local data = (currentTab == "Daily") and currentMissionData.Daily or currentMissionData.Weekly
 
-	contentTitle.Text = (currentTab == "Daily") and "Daily Missions" or "Weekly Missions" -- ENGLISH
-	rerollStatus.Text = "Rerolls Left: " .. (data.RerollUsed and "0" or "1") -- ENGLISH
-
-	local sortedMissions = {}
-	for id, info in pairs(data.Missions) do
-		table.insert(sortedMissions, {id = id, info = info})
-	end
-
-	table.sort(sortedMissions, function(a, b)
-		local aState = a.info.Claimed and 3 or (a.info.Completed and 1 or 2)
-		local bState = b.info.Claimed and 3 or (b.info.Completed and 1 or 2)
-		return aState < bState
+	local sorted = {}
+	for id, info in pairs(data.Missions) do table.insert(sorted, {id=id, info=info}) end
+	table.sort(sorted, function(a, b)
+		local function sc(i) if i.Claimed then return 3 elseif i.Completed then return 1 else return 2 end end
+		return sc(a.info) < sc(b.info)
 	end)
 
-	for _, item in ipairs(sortedMissions) do
-		local card = createMissionCard(item.id, item.info, currentTab)
-		card.Parent = missionsScroll
+	for _, item in ipairs(sorted) do
+		local c = createEntry(item.id, item.info, currentTab)
+		c.Parent = missionsScroll
 	end
 end
 
-local function updateTabVisuals()
+local function updateTabs()
 	if currentTab == "Daily" then
-		dailyTabBtn.BackgroundColor3 = THEME.Cyan600
-		dailyTabBtn.TextColor3 = THEME.White
-		weeklyTabBtn.BackgroundColor3 = THEME.Slate700
-		weeklyTabBtn.TextColor3 = THEME.Slate400
+		dailyLine.Visible = true
+		weeklyLine.Visible = false
 	else
-		weeklyTabBtn.BackgroundColor3 = THEME.Cyan600
-		weeklyTabBtn.TextColor3 = THEME.White
-		dailyTabBtn.BackgroundColor3 = THEME.Slate700
-		dailyTabBtn.TextColor3 = THEME.Slate400
+		dailyLine.Visible = false
+		weeklyLine.Visible = true
 	end
 end
 
 -- ======================================================
--- CONFIRMATION LOGIC
--- ======================================================
-
-btnCancel.MouseButton1Click:Connect(function()
-	confirmOverlay.Visible = false
-	missionToRerollId = nil
-	missionToRerollType = nil
-end)
-
-btnConfirm.MouseButton1Click:Connect(function()
-	if missionToRerollId and missionToRerollType then
-		local success, msg = rerollMission:InvokeServer(missionToRerollType, missionToRerollId)
-		if success then
-			showToast("Info", "Mission successfully swapped!") -- ENGLISH
-		else
-			showToast("Error", msg or "Reroll failed.")
-		end
-	end
-	confirmOverlay.Visible = false
-	missionToRerollId = nil
-	missionToRerollType = nil
-end)
-
--- ======================================================
--- MAIN LOGIC
+-- 5. INTERACTION LOGIC
 -- ======================================================
 
 local function openUI()
-	local success, result = pcall(function() return getMissionData:InvokeServer() end)
-	if not success then
-		warn("Failed to fetch mission data")
-		return
-	end
-	currentMissionData = result
+	local s, r = pcall(function() return getMissionData:InvokeServer() end)
+	if not s then return end
+	currentMissionData = r
+	populateList()
+	updateTabs()
 
 	screenGui.Enabled = true
-	TweenService:Create(blur, TweenInfo.new(0.5), {Size = 20}):Play()
+	playSound(SOUNDS.Clunk)
 
-	mainFrame.Position = UDim2.new(0.5, 0, 0.5, 50)
-	mainFrame.BackgroundTransparency = 1
-	for _, c in ipairs(mainFrame:GetDescendants()) do
-		if c:IsA("GuiObject") then c.Visible = false end
-	end
-
-	local ti = TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-	local fade = TweenService:Create(mainFrame, TweenInfo.new(0.3), {BackgroundTransparency = 0})
-	local slide = TweenService:Create(mainFrame, ti, {Position = UDim2.fromScale(0.5, 0.5)})
-
-	fade:Play()
-	slide:Play()
-
-	task.wait(0.1)
-	for _, c in ipairs(mainFrame:GetDescendants()) do
-		if c:IsA("GuiObject") then c.Visible = true end
-	end
-
-	updateTabVisuals()
-	populateList()
+	-- Heavy bounce
+	mainTablet.Position = UDim2.new(0.5, 0, -0.5, 0)
+	TweenService:Create(mainTablet, TweenInfo.new(0.6, Enum.EasingStyle.Bounce, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 0.5)}):Play()
+	TweenService:Create(blur, TweenInfo.new(0.5), {Size = 15}):Play()
 end
 
 local function closeUI()
-	local ti = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-	TweenService:Create(blur, ti, {Size = 0}):Play()
-	TweenService:Create(mainFrame, ti, {Position = UDim2.new(0.5, 0, 0.5, 50), BackgroundTransparency = 1}):Play()
-
-	task.wait(0.3)
+	playSound(SOUNDS.Clunk)
+	TweenService:Create(blur, TweenInfo.new(0.2), {Size = 0}):Play()
+	local t = TweenService:Create(mainTablet, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Position = UDim2.new(0.5, 0, 1.5, 0)})
+	t:Play()
+	t.Completed:Wait()
 	screenGui.Enabled = false
 end
 
-openButton.MouseButton1Click:Connect(openUI)
+hudBtn.MouseButton1Click:Connect(openUI)
 closeBtn.MouseButton1Click:Connect(closeUI)
 
-dailyTabBtn.MouseButton1Click:Connect(function()
-	currentTab = "Daily"
-	updateTabVisuals()
-	populateList()
+dailyTabBtnRef.MouseButton1Click:Connect(function()
+	if currentTab ~= "Daily" then
+		currentTab = "Daily"
+		playSound(SOUNDS.Click)
+		updateTabs()
+		populateList()
+	end
 end)
 
-weeklyTabBtn.MouseButton1Click:Connect(function()
-	currentTab = "Weekly"
-	updateTabVisuals()
-	populateList()
+weeklyTabBtnRef.MouseButton1Click:Connect(function()
+	if currentTab ~= "Weekly" then
+		currentTab = "Weekly"
+		playSound(SOUNDS.Click)
+		updateTabs()
+		populateList()
+	end
+end)
+
+cancelBtn.MouseButton1Click:Connect(function()
+	overlay.Visible = false
+	missionToRerollId = nil
+	playSound(SOUNDS.Click)
+end)
+
+confirmBtn.MouseButton1Click:Connect(function()
+	overlay.Visible = false
+	if missionToRerollId and missionToRerollType then
+		local s, msg = rerollMission:InvokeServer(missionToRerollType, missionToRerollId)
+		if s then
+			showToast("DONE", "Job scrapped.", false)
+			currentMissionData = getMissionData:InvokeServer()
+			populateList()
+		else
+			showToast("NOPE", "Can't swap.", true)
+		end
+	end
+	missionToRerollId = nil
+	playSound(SOUNDS.Static)
 end)
 
 missionsReset.OnClientEvent:Connect(function()
 	if screenGui.Enabled then
-		local success, result = pcall(function() return getMissionData:InvokeServer() end)
-		if success then
-			currentMissionData = result
-			populateList()
-		end
+		currentMissionData = getMissionData:InvokeServer()
+		populateList()
+		showToast("NEW JOBS", "Board updated.", false)
 	end
 end)
 
-missionProgressUpdated.OnClientEvent:Connect(function(updateData)
-	if screenGui.Enabled and currentMissionData then
-		local data = currentMissionData.Daily.Missions[updateData.missionID] and currentMissionData.Daily or currentMissionData.Weekly
-		if data.Missions[updateData.missionID] then
-			data.Missions[updateData.missionID].Progress = updateData.newProgress
-			data.Missions[updateData.missionID].Completed = updateData.completed
-
-			if updateData.justCompleted then
-				showToast("Mission Complete!", "Check mission menu to claim reward.") -- ENGLISH
+missionProgressUpdated.OnClientEvent:Connect(function(ud)
+	if currentMissionData then
+		local dc = currentMissionData.Daily.Missions[ud.missionID] and currentMissionData.Daily or currentMissionData.Weekly
+		if dc and dc.Missions[ud.missionID] then
+			local m = dc.Missions[ud.missionID]
+			m.Progress = ud.newProgress
+			m.Completed = ud.completed
+			if screenGui.Enabled then populateList() end
+			if ud.justCompleted then
+				showToast("GOOD WORK", "Job done.", false)
+				playSound(SOUNDS.Spray)
 			end
-
-			populateList()
 		end
 	end
 end)
 
-print("MissionUI V2 Loaded")
+print("MissionUI: Scavenger Tech Loaded")
