@@ -1,12 +1,12 @@
 -- AmmoUI.lua (LocalScript)
 -- Path: StarterGui/AmmoUI.lua
 -- Script Place: ACT 1: Village
+-- Theme: Zombie Apocalypse (Bio-Tactical HUD / Military Tech)
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -14,35 +14,32 @@ local playerGui = player:WaitForChild("PlayerGui")
 local RemoteEvents = game.ReplicatedStorage.RemoteEvents
 local AmmoUpdateEvent = RemoteEvents:WaitForChild("AmmoUpdateEvent")
 
--- Hapus UI lama jika ada
+-- Remove existing UI
 if playerGui:FindFirstChild("AmmoUI") then
 	playerGui.AmmoUI:Destroy()
 end
 
 -- ============================================================================
--- KONFIGURASI & STYLE
+-- THEME CONFIGURATION
 -- ============================================================================
-local COLORS = {
-	Cyan = Color3.fromRGB(6, 182, 212),      -- Cyan-500 (Aksen Utama)
-	SlateDark = Color3.fromRGB(15, 23, 42),  -- Slate-900 (Background)
-	SlateLight = Color3.fromRGB(51, 65, 85), -- Slate-700
-	Amber = Color3.fromRGB(245, 158, 11),    -- Amber-500 (Level Badge)
-	Red = Color3.fromRGB(239, 68, 68),       -- Red-500 (Low Ammo)
-	White = Color3.fromRGB(255, 255, 255),
-	TextGray = Color3.fromRGB(148, 163, 184) -- Slate-400
+local THEME = {
+	ScreenBg = Color3.fromRGB(10, 15, 10),         -- Deep Dark Green/Black
+
+	ToxicGreen = Color3.fromRGB(50, 255, 100),     -- Main HUD Color
+	WarningYellow = Color3.fromRGB(255, 200, 0),   -- Mid Ammo
+	AlertRed = Color3.fromRGB(255, 50, 50),        -- Low Ammo/Crit
+
+	ScanlineColor = Color3.fromRGB(0, 0, 0),
+
+	FontHeader = Enum.Font.Michroma,               -- Tech Header
+	FontDigital = Enum.Font.Code,                  -- Digital Numbers
+	FontDetail = Enum.Font.RobotoMono,             -- Small Data
 }
 
-local FONTS = {
-	Main = Enum.Font.GothamBlack,
-	Secondary = Enum.Font.GothamBold,
-	Detail = Enum.Font.GothamMedium
-}
-
--- Ambang batas peluru rendah (persentase)
 local LOW_AMMO_PERCENT = 0.25
 
 -- ============================================================================
--- HELPER UI
+-- HELPER FUNCTIONS
 -- ============================================================================
 local function create(className, props)
 	local inst = Instance.new(className)
@@ -52,8 +49,55 @@ local function create(className, props)
 	return inst
 end
 
+local function addStroke(parent, color, thickness)
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = color or Color3.new(0,0,0)
+	stroke.Thickness = thickness or 1
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	stroke.Parent = parent
+	return stroke
+end
+
+local function addCorner(parent, radius)
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, radius)
+	corner.Parent = parent
+	return corner
+end
+
+-- Create a "Segmented" Bar for reload
+local function createSegmentedBar(parent, count)
+	local segments = {}
+	local container = create("Frame", {
+		Name = "SegmentContainer",
+		Size = UDim2.new(1, 0, 1, 0),
+		BackgroundTransparency = 1,
+		Parent = parent
+	})
+
+	local layout = create("UIListLayout", {
+		FillDirection = Enum.FillDirection.Horizontal,
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Padding = UDim.new(0, 2),
+		Parent = container
+	})
+
+	for i = 1, count do
+		local seg = create("Frame", {
+			Name = "Seg"..i,
+			Size = UDim2.new(1/count, -2, 1, 0), -- Rough calc
+			BackgroundColor3 = THEME.ToxicGreen,
+			BackgroundTransparency = 0.8,
+			LayoutOrder = i,
+			Parent = container
+		})
+		table.insert(segments, seg)
+	end
+	return segments
+end
+
 -- ============================================================================
--- PEMBUATAN UI
+-- UI CONSTRUCTION
 -- ============================================================================
 local screenGui = create("ScreenGui", {
 	Name = "AmmoUI",
@@ -62,426 +106,336 @@ local screenGui = create("ScreenGui", {
 	Parent = playerGui
 })
 
--- Container Utama (Posisi akan diatur ulang oleh script resize)
-local mainContainer = create("Frame", {
-	Name = "MainContainer",
-	Size = UDim2.new(0.35, 0, 0.18, 0),
-	BackgroundTransparency = 1,
+-- Main Monitor Frame
+local monitorFrame = create("Frame", {
+	Name = "MonitorFrame",
+	Size = UDim2.new(0, 280, 0, 100),
+	BackgroundColor3 = THEME.ScreenBg,
+	BackgroundTransparency = 0.1,
+	BorderSizePixel = 0,
+	ClipsDescendants = true, -- For scanlines
 	Parent = screenGui
 })
+-- Tech Border
+addStroke(monitorFrame, THEME.ToxicGreen, 2)
+-- Cut Corners
+addCorner(monitorFrame, 8)
 
--- 1. Header: Level & Nama Senjata
-local headerFrame = create("Frame", {
-	Name = "HeaderFrame",
-	Size = UDim2.new(1, 0, 0.27, 0),
-	Position = UDim2.new(0, 0, 0, 0),
-	BackgroundTransparency = 1,
-	Parent = mainContainer
-})
-
--- Lencana Level (Kuning/Amber)
-local levelBadge = create("Frame", {
-	Name = "LevelBadge",
-	Size = UDim2.new(0.19, 0, 0.6, 0),
-	Position = UDim2.new(0.65, 0, 0, 0), -- Sedikit offset ke kiri
-	BackgroundColor3 = COLORS.Amber,
-	Parent = headerFrame
-})
-create("UICorner", { CornerRadius = UDim.new(0, 4), Parent = levelBadge })
-
-local levelText = create("TextLabel", {
-	Name = "LevelText",
+-- Scanlines (Striped Gradient Overlay)
+local scanlineOverlay = create("Frame", {
+	Name = "Scanlines",
 	Size = UDim2.new(1, 0, 1, 0),
-	BackgroundTransparency = 1,
-	Text = "LV.1",
-	TextColor3 = COLORS.SlateDark,
-	Font = FONTS.Main,
-	TextSize = 16,
-	Parent = levelBadge
+	BackgroundTransparency = 0.5,
+	BackgroundColor3 = THEME.ScanlineColor,
+	ZIndex = 10,
+	Parent = monitorFrame
 })
-
--- Nama Senjata
-local weaponNameLabel = create("TextLabel", {
-	Name = "WeaponName",
-	Size = UDim2.new(1, 0, 0.75, 0),
-	Position = UDim2.new(0, 0, 0, 0),
-	BackgroundTransparency = 1,
-	Text = "ASSAULT RIFLE",
-	TextColor3 = COLORS.White,
-	Font = FONTS.Main,
-	TextSize = 24,
-	TextXAlignment = Enum.TextXAlignment.Right,
-	Parent = headerFrame
-})
-
--- Garis Bawah (Gradient Line)
-local underline = create("Frame", {
-	Name = "Underline",
-	Size = UDim2.new(1, 0, 0.075, 0),
-	Position = UDim2.new(0, 0, 0.8, 0),
-	BorderSizePixel = 0,
-	BackgroundColor3 = COLORS.White,
-	Parent = headerFrame
-})
-local underlineGradient = create("UIGradient", {
-	Color = ColorSequence.new{
-		ColorSequenceKeypoint.new(0, COLORS.SlateDark),
-		ColorSequenceKeypoint.new(0.5, COLORS.Cyan),
-		ColorSequenceKeypoint.new(1, COLORS.Cyan)
-	},
-	Transparency = NumberSequence.new{
-		NumberSequenceKeypoint.new(0, 1),
+local scanGradient = create("UIGradient", {
+	Rotation = 90,
+	Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0),
+		NumberSequenceKeypoint.new(0.5, 0.5),
 		NumberSequenceKeypoint.new(1, 0)
-	},
-	Parent = underline
+	}),
+	Parent = scanlineOverlay
 })
+-- Animate scanlines later
 
--- 2. Kotak Utama (Ammo Count & Bar)
-local ammoBox = create("Frame", {
-	Name = "AmmoBox",
-	Size = UDim2.new(1, 0, 0.67, 0),
-	Position = UDim2.new(0, 0, 0.27, 0),
-	BackgroundColor3 = COLORS.SlateDark,
-	BackgroundTransparency = 0.2, -- Sedikit transparan
+-- 1. Status Header
+local headerBar = create("Frame", {
+	Name = "HeaderBar",
+	Size = UDim2.new(1, 0, 0.2, 0),
+	BackgroundColor3 = THEME.ToxicGreen,
+	BackgroundTransparency = 0.8,
 	BorderSizePixel = 0,
-	Parent = mainContainer
-})
--- Gradient Latar Belakang (Kiri transparan ke Kanan gelap)
-local boxGradient = create("UIGradient", {
-	Transparency = NumberSequence.new{
-		NumberSequenceKeypoint.new(0, 1),
-		NumberSequenceKeypoint.new(0.3, 0.5),
-		NumberSequenceKeypoint.new(1, 0.1)
-	},
-	Parent = ammoBox
+	Parent = monitorFrame
 })
 
--- Aksen Kanan (Cyan Border)
-local rightAccent = create("Frame", {
-	Name = "RightAccent",
-	Size = UDim2.new(0.01, 0, 1, 0),
-	Position = UDim2.new(0.99, 0, 0, 0),
-	BackgroundColor3 = COLORS.Cyan,
-	BorderSizePixel = 0,
-	Parent = ammoBox
-})
-
--- Teks Ammo Saat Ini (Besar)
-local currentAmmoLabel = create("TextLabel", {
-	Name = "CurrentAmmo",
-	Size = UDim2.new(0.5, 0, 0.8, 0),
-	Position = UDim2.new(0.15, 0, 0.1, 0),
+local weaponLabel = create("TextLabel", {
+	Name = "WeaponName",
+	Size = UDim2.new(0.7, 0, 1, 0),
+	Position = UDim2.new(0.05, 0, 0, 0),
 	BackgroundTransparency = 1,
-	Text = "30",
-	TextColor3 = COLORS.White,
-	Font = FONTS.Main,
-	TextSize = 70,
-	TextXAlignment = Enum.TextXAlignment.Right,
-	Parent = ammoBox
-})
-
--- Pemisah Slash
-local slashLabel = create("TextLabel", {
-	Name = "Slash",
-	Size = UDim2.new(0.1, 0, 0.8, 0),
-	Position = UDim2.new(0.66, 0, 0.1, 0),
-	BackgroundTransparency = 1,
-	Text = "/",
-	TextColor3 = COLORS.TextGray,
-	Font = FONTS.Detail,
-	TextSize = 30,
-	Parent = ammoBox
-})
-
--- Teks Ammo Cadangan (Kecil)
-local reserveAmmoLabel = create("TextLabel", {
-	Name = "ReserveAmmo",
-	Size = UDim2.new(0.2, 0, 0.8, 0),
-	Position = UDim2.new(0.76, 0, 0.15, 0), -- Sedikit turun agar sejajar dasar angka
-	BackgroundTransparency = 1,
-	Text = "120",
-	TextColor3 = COLORS.TextGray,
-	Font = FONTS.Secondary,
-	TextSize = 30,
+	Text = "SYSTEM::RIFLE",
+	TextColor3 = THEME.ToxicGreen,
+	Font = THEME.FontHeader,
+	TextSize = 14,
 	TextXAlignment = Enum.TextXAlignment.Left,
-	Parent = ammoBox
+	Parent = headerBar
 })
 
--- Peringatan Low Ammo (Awalnya tidak terlihat)
-local lowAmmoLabel = create("TextLabel", {
-	Name = "LowAmmoWarning",
-	Size = UDim2.new(0.97, 0, 0.2, 0),
-	Position = UDim2.new(0, 0, 0.025, 0),
+local levelBadge = create("TextLabel", {
+	Name = "Level",
+	Size = UDim2.new(0.25, 0, 1, 0),
+	Position = UDim2.new(0.75, 0, 0, 0),
 	BackgroundTransparency = 1,
-	Text = "LOW AMMO",
-	TextColor3 = COLORS.Red,
-	Font = FONTS.Secondary,
+	Text = "[LVL:01]",
+	TextColor3 = THEME.ToxicGreen,
+	Font = THEME.FontDetail,
 	TextSize = 14,
 	TextXAlignment = Enum.TextXAlignment.Right,
-	Visible = false,
-	Parent = ammoBox
+	Parent = headerBar
 })
 
--- Container Reload Bar (Di bawah kotak utama)
-local reloadContainer = create("Frame", {
-	Name = "ReloadContainer",
-	Size = UDim2.new(1, 0, 0.04, 0),
-	Position = UDim2.new(0, 0, 0.96, 0),
-	BackgroundColor3 = COLORS.SlateLight,
-	BorderSizePixel = 0,
-	BackgroundTransparency = 0.5,
-	Visible = false, -- Hanya muncul saat reload
-	Parent = ammoBox
-})
-
-local reloadFill = create("Frame", {
-	Name = "ReloadFill",
-	Size = UDim2.new(0, 0, 1, 0),
-	BackgroundColor3 = COLORS.Cyan,
-	BorderSizePixel = 0,
-	Parent = reloadContainer
-})
--- Efek kilau pada bar reload
-create("UIGradient", {
-	Color = ColorSequence.new{
-		ColorSequenceKeypoint.new(0, COLORS.Cyan),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 220, 255))
-	},
-	Parent = reloadFill
-})
-
--- Hint Reload (Di luar kotak utama)
-local reloadHint = create("TextLabel", {
-	Name = "ReloadHint",
-	Size = UDim2.new(1, 0, 0.13, 0),
-	Position = UDim2.new(0, 0, 1, 0.03), -- Di bawah mainContainer
+-- 2. Digital Ammo Count
+local ammoCountLabel = create("TextLabel", {
+	Name = "AmmoCount",
+	Size = UDim2.new(0.5, 0, 0.6, 0),
+	Position = UDim2.new(0.05, 0, 0.25, 0),
 	BackgroundTransparency = 1,
-	Text = "TEKAN [R] UNTUK RELOAD",
-	TextColor3 = COLORS.TextGray,
-	Font = FONTS.Detail,
-	TextSize = 12,
-	TextXAlignment = Enum.TextXAlignment.Right,
-	Visible = false,
-	Parent = mainContainer
+	Text = "30",
+	TextColor3 = THEME.ToxicGreen,
+	Font = THEME.FontDigital,
+	TextSize = 60,
+	TextXAlignment = Enum.TextXAlignment.Left,
+	Parent = monitorFrame
 })
+
+-- 3. Reserve (Vertical Data Stack)
+local reserveLabel = create("TextLabel", {
+	Name = "Reserve",
+	Size = UDim2.new(0.3, 0, 0.2, 0),
+	Position = UDim2.new(0.65, 0, 0.35, 0),
+	BackgroundTransparency = 1,
+	Text = "RES: 120",
+	TextColor3 = THEME.ToxicGreen,
+	Font = THEME.FontDetail,
+	TextSize = 16,
+	TextXAlignment = Enum.TextXAlignment.Right,
+	Parent = monitorFrame
+})
+
+-- 4. Status Indicator (Text)
+local statusLabel = create("TextLabel", {
+	Name = "Status",
+	Size = UDim2.new(0.3, 0, 0.2, 0),
+	Position = UDim2.new(0.65, 0, 0.55, 0),
+	BackgroundTransparency = 1,
+	Text = "STATUS: OK",
+	TextColor3 = THEME.ToxicGreen,
+	Font = THEME.FontDetail,
+	TextSize = 14,
+	TextXAlignment = Enum.TextXAlignment.Right,
+	Parent = monitorFrame
+})
+
+-- 5. Segmented Reload Bar (Bottom)
+local reloadBarFrame = create("Frame", {
+	Name = "ReloadBarFrame",
+	Size = UDim2.new(0.9, 0, 0.08, 0),
+	Position = UDim2.new(0.05, 0, 0.85, 0),
+	BackgroundTransparency = 1,
+	Parent = monitorFrame
+})
+local reloadSegments = createSegmentedBar(reloadBarFrame, 10)
+
+-- 6. Glitch Overlay (Invisible normally)
 
 -- ============================================================================
--- LOGIKA & ANIMASI
+-- LOGIC & ANIMATION
 -- ============================================================================
 
 local currentTweens = {}
-local activeWeapon = nil -- Track senjata aktif
+local activeWeapon = nil
+local isGlitching = false
 
--- Fungsi untuk mendeteksi perangkat mobile
 local function isMobile()
 	return UserInputService.TouchEnabled and not UserInputService.MouseEnabled
 end
 
--- Update Posisi berdasarkan perangkat
 local function updateLayout()
 	if isMobile() then
-		-- Mobile: Kanan Atas (di bawah minimap biasanya, atau sesuaikan)
-		-- Ukuran lebih kecil
-		mainContainer.Size = UDim2.new(0.24, 0, 0.12, 0)
-		mainContainer.AnchorPoint = Vector2.new(1, 0)
-		mainContainer.Position = UDim2.new(0.99, 0, 0, 0.12) -- Sesuaikan Y agar tidak menabrak kontrol lain
+		-- Mobile Compact Mode
+		monitorFrame.Size = UDim2.new(0, 200, 0, 80)
+		monitorFrame.AnchorPoint = Vector2.new(1, 0)
+		monitorFrame.Position = UDim2.new(0.98, 0, 0, 60)
 
-		currentAmmoLabel.TextSize = 50
-		reserveAmmoLabel.TextSize = 24
-		reloadHint.Visible = false -- Mobile tidak butuh hint tombol R
+		ammoCountLabel.TextSize = 45
+		weaponLabel.TextSize = 12
+		reserveLabel.TextSize = 14
+		statusLabel.Visible = false -- Hide non-essential
 	else
-		-- Desktop: Kanan Bawah
-		mainContainer.Size = UDim2.new(0.35, 0, 0.17, 0)
-		mainContainer.AnchorPoint = Vector2.new(1, 1)
-		mainContainer.Position = UDim2.new(0.99, 0, 0.99, 0)
+		-- Desktop Full Mode
+		monitorFrame.Size = UDim2.new(0, 280, 0, 100)
+		monitorFrame.AnchorPoint = Vector2.new(1, 1)
+		monitorFrame.Position = UDim2.new(0.98, 0, 0.98, 0)
 
-		currentAmmoLabel.TextSize = 70
-		reserveAmmoLabel.TextSize = 30
+		ammoCountLabel.TextSize = 60
+		weaponLabel.TextSize = 14
+		reserveLabel.TextSize = 16
+		statusLabel.Visible = true
 	end
 end
 
--- Jalankan layout awal
 updateLayout()
--- Perbarui jika ukuran layar berubah
 workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(updateLayout)
 
--- Animasi Low Ammo Pulse
-local function setLowAmmoState(isLow)
-	if isLow then
-		lowAmmoLabel.Visible = true
-		rightAccent.BackgroundColor3 = COLORS.Red
-		currentAmmoLabel.TextColor3 = COLORS.Red
+-- Apply Color Theme to all elements
+local function applyColor(color)
+	monitorFrame.UIStroke.Color = color
+	weaponLabel.TextColor3 = color
+	levelBadge.TextColor3 = color
+	ammoCountLabel.TextColor3 = color
+	reserveLabel.TextColor3 = color
+	statusLabel.TextColor3 = color
 
-		if not currentTweens.Pulse then
-			local tweenInfo = TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
-			local tween = TweenService:Create(currentAmmoLabel, tweenInfo, {TextTransparency = 0.4})
-			tween:Play()
-			currentTweens.Pulse = tween
-		end
-	else
-		lowAmmoLabel.Visible = false
-		rightAccent.BackgroundColor3 = COLORS.Cyan
-		currentAmmoLabel.TextColor3 = COLORS.White
-
-		if currentTweens.Pulse then
-			currentTweens.Pulse:Cancel()
-			currentTweens.Pulse = nil
-			currentAmmoLabel.TextTransparency = 0
-		end
+	-- Update segment backgrounds
+	for _, seg in ipairs(reloadSegments) do
+		seg.BackgroundColor3 = color
 	end
 end
 
--- Logika update utama dari event
+-- Glitch Effect (Random transparency/offset)
+local function triggerGlitch(duration)
+	if isGlitching then return end
+	isGlitching = true
+	task.spawn(function()
+		local startTime = tick()
+		local originalPos = ammoCountLabel.Position
+
+		while tick() - startTime < duration do
+			-- Random offset
+			ammoCountLabel.Position = originalPos + UDim2.new(0, math.random(-3,3), 0, math.random(-3,3))
+			-- Random text corruption visual (transparency flickering)
+			ammoCountLabel.TextTransparency = math.random(0, 5) / 10
+
+			monitorFrame.BackgroundTransparency = math.clamp(math.random(1, 5) / 10, 0, 0.5) -- Glitchy background
+
+			task.wait(0.03)
+		end
+
+		-- Reset
+		ammoCountLabel.Position = originalPos
+		ammoCountLabel.TextTransparency = 0
+		isGlitching = false
+	end)
+end
+
 AmmoUpdateEvent.OnClientEvent:Connect(function(weaponName, ammo, reserveAmmo, isVisible, isReloading)
-	mainContainer.Visible = isVisible
+	monitorFrame.Visible = isVisible
 
 	if not isVisible then 
 		activeWeapon = nil
 		return 
 	end
 
-	-- Set active weapon untuk tracking unequip
-	activeWeapon = weaponName
+	-- Equip Sound / Effect Logic could go here
+	if activeWeapon ~= weaponName then
+		-- New weapon equipped, maybe boot up effect?
+		activeWeapon = weaponName
+		-- "Boot Sequence" text
+		weaponLabel.Text = "INIT::" .. string.upper(weaponName)
+		task.delay(0.5, function()
+			if activeWeapon == weaponName then
+				weaponLabel.Text = "SYSTEM::" .. string.upper(weaponName)
+			end
+		end)
+	end
 
-	-- Cek Tool yang sedang dipegang untuk update Level
+	-- Get Weapon Data
 	local currentTool = player.Character and player.Character:FindFirstChildOfClass("Tool")
 	local level = 0
+	local maxAmmo = 30
 
 	if currentTool and currentTool.Name == weaponName then
 		level = currentTool:GetAttribute("UpgradeLevel") or 0
+		maxAmmo = currentTool:GetAttribute("CustomMaxAmmo") or 30
 	end
 
-	-- Update Teks
-	weaponNameLabel.Text = string.upper(weaponName)
-	levelText.Text = "LV." .. tostring(level)
+	levelBadge.Text = string.format("[LVL:%02d]", level)
 
-	-- Logika Reloading
 	if isReloading then
-		-- Mode Reload
-		reloadContainer.Visible = true
-		reloadHint.Visible = false
-		lowAmmoLabel.Visible = false
+		-- Reload UX: Fill Segments
+		local progress = ammo / 100 -- 0 to 1
+		local activeSegments = math.floor(progress * #reloadSegments)
 
-		-- Matikan pulse jika ada
-		if currentTweens.Pulse then
-			currentTweens.Pulse:Cancel()
-			currentTweens.Pulse = nil
-			currentAmmoLabel.TextTransparency = 0.5 -- Redupkan teks saat reload
-		end
-
-		-- Animasi bar reload
-		local progress = ammo / 100 -- Ammo dikirim sebagai persentase 0-100 saat reload
-		currentAmmoLabel.Text = "..." -- Atau tampilkan persentase
-
-		-- Tween Bar
-		if not currentTweens.Reload then
-			-- Reset bar jika baru mulai
-			if progress < 0.1 then reloadFill.Size = UDim2.new(0,0,1,0) end
-		end
-
-		local tween = TweenService:Create(reloadFill, TweenInfo.new(0.1, Enum.EasingStyle.Linear), { Size = UDim2.new(progress, 0, 1, 0) })
-		tween:Play()
-		currentTweens.Reload = tween
-
-	else
-		-- Mode Normal
-		reloadContainer.Visible = false
-		currentAmmoLabel.TextTransparency = 0
-		currentAmmoLabel.Text = tostring(ammo)
-		reserveAmmoLabel.Text = tostring(reserveAmmo)
-
-		-- Cek Low Ammo
-		local maxAmmo = currentTool and currentTool:GetAttribute("CustomMaxAmmo") or 30 -- Fallback
-		local isLow = (ammo / maxAmmo) <= LOW_AMMO_PERCENT and ammo > 0
-
-		setLowAmmoState(isLow)
-
-		-- Cek Hint Reload (hanya desktop, jika peluru tidak penuh dan ada cadangan)
-		if not isMobile() then
-			if ammo < maxAmmo and reserveAmmo > 0 then
-				reloadHint.Visible = true
-				-- Animasi fade in hint
-				if reloadHint.TextTransparency == 1 then
-					TweenService:Create(reloadHint, TweenInfo.new(0.3), {TextTransparency = 0.5}):Play()
-				end
+		for i, seg in ipairs(reloadSegments) do
+			if i <= activeSegments then
+				seg.BackgroundTransparency = 0 -- Lit
 			else
-				reloadHint.Visible = false
-				reloadHint.TextTransparency = 1
+				seg.BackgroundTransparency = 0.8 -- Dim
 			end
 		end
 
-		-- Efek 'Kick' visual pada container saat menembak (ammo berkurang)
-		-- Kita simpan ammo sebelumnya untuk mendeteksi pengurangan
-		local lastAmmo = tonumber(mainContainer:GetAttribute("LastAmmo")) or ammo
-		if ammo < lastAmmo then
-			local kickTween = TweenService:Create(mainContainer, TweenInfo.new(0.05, Enum.EasingStyle.Sine, Enum.EasingDirection.Out, 0, true), {
-				Position = mainContainer.Position + UDim2.new(0.005, 0, 0, 0) -- Geser sedikit ke kanan
-			})
-			kickTween:Play()
+		statusLabel.Text = "STATUS: RECHARGING..."
+		statusLabel.TextColor3 = THEME.WarningYellow
+		applyColor(THEME.WarningYellow)
+
+		-- "Scrambling" numbers effect for ammo count during reload
+		local randomChars = {"#", "%", "0", "1", "X"}
+		ammoCountLabel.Text = randomChars[math.random(1, #randomChars)] .. randomChars[math.random(1, #randomChars)]
+
+	else
+		-- Normal State
+		ammoCountLabel.Text = string.format("%02d", ammo) -- Digital padding
+		reserveLabel.Text = "RES: " .. tostring(reserveAmmo)
+
+		-- Reset segments
+		for _, seg in ipairs(reloadSegments) do
+			seg.BackgroundTransparency = 0.8
 		end
-		mainContainer:SetAttribute("LastAmmo", ammo)
+
+		-- Fire Glitch
+		local lastAmmo = tonumber(monitorFrame:GetAttribute("LastAmmo")) or ammo
+		if ammo < lastAmmo then
+			triggerGlitch(0.1)
+		end
+		monitorFrame:SetAttribute("LastAmmo", ammo)
+
+		-- Color Logic
+		if ammo == 0 then
+			applyColor(THEME.AlertRed)
+			statusLabel.Text = "STATUS: CRITICAL"
+			-- Pulse Red
+			if not currentTweens.Pulse then
+				local t = TweenService:Create(monitorFrame.UIStroke, TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Transparency = 0.5})
+				t:Play()
+				currentTweens.Pulse = t
+			end
+		elseif (ammo / maxAmmo) <= LOW_AMMO_PERCENT then
+			applyColor(THEME.AlertRed)
+			statusLabel.Text = "STATUS: LOW AMMO"
+			if currentTweens.Pulse then currentTweens.Pulse:Cancel() currentTweens.Pulse = nil end
+			monitorFrame.UIStroke.Transparency = 0
+		else
+			applyColor(THEME.ToxicGreen)
+			statusLabel.Text = "STATUS: OPTIMAL"
+			if currentTweens.Pulse then currentTweens.Pulse:Cancel() currentTweens.Pulse = nil end
+			monitorFrame.UIStroke.Transparency = 0
+		end
 	end
 end)
 
--- --- FIX: DETECT WEAPON EQUIP & UNEQUIP LOCALLY ---
+-- Character Handling
 local function setupCharacter(char)
-
-	-- Function to handle equip (Show UI)
 	local function onChildAdded(child)
 		if child:IsA("Tool") then
-			-- Tampilkan UI segera
 			activeWeapon = child.Name
-			mainContainer.Visible = true
-
-			-- Update visual sementara (Loading state)
-			weaponNameLabel.Text = string.upper(child.Name)
-			-- Kita tidak tahu ammo pasti, biarkan kosong atau "..." sampai server update masuk (biasanya instan)
-			-- Tapi jangan reset ke 0/0 karena terlihat jelek.
-			-- Server event akan menimpa ini dalam <100ms.
-
-			-- Cek level jika atribut ada
-			local level = child:GetAttribute("UpgradeLevel") or 0
-			levelText.Text = "LV." .. tostring(level)
+			monitorFrame.Visible = true
+			weaponLabel.Text = "DETECTING..."
+			-- "Turn On" Effect (Scale Y from 0 to 1)
+			monitorFrame.Size = UDim2.new(monitorFrame.Size.X.Scale, monitorFrame.Size.X.Offset, 0, 0)
+			local open = TweenService:Create(monitorFrame, TweenInfo.new(0.3, Enum.EasingStyle.Bounce, Enum.EasingDirection.Out), {
+				Size = (isMobile() and UDim2.new(0, 200, 0, 80) or UDim2.new(0, 280, 0, 100))
+			})
+			open:Play()
 		end
 	end
 
-	-- Listen for tools being added (Equip)
 	char.ChildAdded:Connect(onChildAdded)
-
-	-- Check existing tools (in case of respawn/race condition)
-	for _, child in ipairs(char:GetChildren()) do
-		if child:IsA("Tool") then
-			onChildAdded(child)
-		end
+	for _, c in ipairs(char:GetChildren()) do
+		if c:IsA("Tool") then onChildAdded(c) end
 	end
 
-	-- Listen for tools being removed (Unequip)
 	char.ChildRemoved:Connect(function(child)
-		if child:IsA("Tool") then
-			-- If the tool being removed is the active weapon, hide UI
-			if activeWeapon and child.Name == activeWeapon then
-				mainContainer.Visible = false
-				activeWeapon = nil
-			elseif mainContainer.Visible then
-				-- Safety check: if visible but no tool equipped at all
-				task.delay(0.1, function()
-					if char and not char:FindFirstChildOfClass("Tool") then
-						mainContainer.Visible = false
-						activeWeapon = nil
-					end
-				end)
-			end
+		if child:IsA("Tool") and activeWeapon == child.Name then
+			monitorFrame.Visible = false
+			activeWeapon = nil
 		end
 	end)
 end
 
-if player.Character then
-	setupCharacter(player.Character)
-end
-
+if player.Character then setupCharacter(player.Character) end
 player.CharacterAdded:Connect(setupCharacter)
 
--- Inisialisasi awal (sembunyikan sampai ada event/equip)
-if not activeWeapon then
-	mainContainer.Visible = false
-end
+if not activeWeapon then monitorFrame.Visible = false end
