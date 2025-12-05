@@ -37,10 +37,19 @@ local COLORS = {
 	TEXT_MAIN = Color3.fromRGB(220, 220, 210), -- Off-white
 	TEXT_DIM = Color3.fromRGB(120, 110, 110),
 	BORDER = Color3.fromRGB(60, 50, 50),
+	STAT_POSITIVE = Color3.fromRGB(80, 255, 80), -- Green
+	STAT_NEGATIVE = Color3.fromRGB(255, 80, 80), -- Red
+	STAT_NEUTRAL = Color3.fromRGB(200, 200, 200), -- Neutral
+	GOLD = Color3.fromRGB(255, 215, 0), -- Gold for Victory
 }
 
 local FONT_HEADER = Enum.Font.SpecialElite
 local FONT_BODY = Enum.Font.PatrickHand
+
+local SOUNDS = {
+	TICK = "rbxassetid://4612375233",
+	WIN = "rbxassetid://5153734233",
+}
 
 -- Create Main ScreenGui
 local screenGui = Instance.new("ScreenGui")
@@ -59,7 +68,6 @@ local function createPanel(parent, size, pos, name)
 	frame.BorderSizePixel = 0
 	frame.Parent = parent
 
-	-- Add visual noise/grunge (simulated with strokes and corners)
 	local corner = Instance.new("UICorner", frame)
 	corner.CornerRadius = UDim.new(0, 4)
 
@@ -98,7 +106,7 @@ local function createWeaponViewport(weaponName, parentFrame)
 	if data and data.Skins and data.Skins["Default Skin"] then
 		mesh.MeshId = data.Skins["Default Skin"].MeshId
 		mesh.TextureId = data.Skins["Default Skin"].TextureId
-		mesh.Scale = Vector3.new(1.5, 1.5, 1.5) -- Slightly larger for visibility
+		mesh.Scale = Vector3.new(1.5, 1.5, 1.5)
 	else
 		mesh.MeshType = Enum.MeshType.Brick
 	end
@@ -107,7 +115,6 @@ local function createWeaponViewport(weaponName, parentFrame)
 
 	cam.CFrame = CFrame.new(Vector3.new(2, 1, 2), Vector3.new(0, 0, 0))
 
-	-- Spin animation
 	local rot = 0
 	local conn 
 	conn = RunService.RenderStepped:Connect(function(dt)
@@ -129,15 +136,20 @@ local replaceUIOverlay = nil
 local cardButtons = {}
 local currentSelectionIndex = -1
 local replaceBtnRef = nil
+local updateStatsFunction = nil 
 
 local function closeReplaceUI(wasCancelled)
+	-- Remove bindings if they exist
+	ContextActionService:UnbindAction("ReplaceUI_Up")
+	ContextActionService:UnbindAction("ReplaceUI_Down")
+	ContextActionService:UnbindAction("ReplaceUI_Select")
+
 	if wasCancelled then
 		replaceChoiceEv:FireServer(-1)
 	end
 
 	if replaceUIOverlay then replaceUIOverlay:Destroy() replaceUIOverlay = nil end
 
-	-- Remove global blur
 	for _, v in pairs(game.Lighting:GetChildren()) do
 		if v:IsA("BlurEffect") and v.Name == "ShopBlur" then
 			v:Destroy()
@@ -146,6 +158,73 @@ local function closeReplaceUI(wasCancelled)
 
 	isUIOpen = false
 	pendingReplaceData = nil
+	updateStatsFunction = nil
+end
+
+-- Helper: Create a stat row for the new "Versus" layout (Center Column)
+-- Format: [Value New] - [Stat Name] - [Value Old]
+local function createVersusStatRow(parent, labelText, order)
+	local frame = Instance.new("Frame")
+	frame.Size = UDim2.new(1, 0, 0, 30)
+	frame.LayoutOrder = order
+	frame.BackgroundTransparency = 1
+	frame.Parent = parent
+
+	-- New Value (Left)
+	local newVal = Instance.new("TextLabel")
+	newVal.Name = "NewValue"
+	newVal.Size = UDim2.new(0.3, 0, 1, 0)
+	newVal.Position = UDim2.new(0, 0, 0, 0)
+	newVal.BackgroundTransparency = 1
+	newVal.Text = "-"
+	newVal.Font = FONT_BODY
+	newVal.TextSize = 18
+	newVal.TextColor3 = COLORS.TEXT_MAIN
+	newVal.TextXAlignment = Enum.TextXAlignment.Right
+	newVal.Parent = frame
+
+	-- Stat Label (Center)
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(0.4, 0, 1, 0)
+	label.Position = UDim2.new(0.3, 0, 0, 0)
+	label.BackgroundTransparency = 1
+	label.Text = labelText
+	label.Font = FONT_HEADER
+	label.TextSize = 16
+	label.TextColor3 = COLORS.TEXT_DIM
+	label.TextXAlignment = Enum.TextXAlignment.Center
+	label.Parent = frame
+
+	-- Old Value (Right)
+	local oldVal = Instance.new("TextLabel")
+	oldVal.Name = "OldValue"
+	oldVal.Size = UDim2.new(0.3, 0, 1, 0)
+	oldVal.Position = UDim2.new(0.7, 0, 0, 0)
+	oldVal.BackgroundTransparency = 1
+	oldVal.Text = "-"
+	oldVal.Font = FONT_BODY
+	oldVal.TextSize = 18
+	oldVal.TextColor3 = COLORS.TEXT_DIM
+	oldVal.TextXAlignment = Enum.TextXAlignment.Left
+	oldVal.Parent = frame
+
+	return newVal, oldVal
+end
+
+local function getWeaponStat(weaponName, statName)
+	local data = WeaponModule.Weapons[weaponName]
+	if not data then return 0 end
+
+	if statName == "Damage" then
+		return data.Damage or 0
+	elseif statName == "RPM" then
+		local fr = data.FireRate or 1
+		if fr <= 0 then return 0 end
+		return math.floor(60 / fr)
+	elseif statName == "Ammo" then
+		return data.MaxAmmo or 0
+	end
+	return 0
 end
 
 local function createCard(parent, weaponName, index, onSelect)
@@ -167,7 +246,6 @@ local function createCard(parent, weaponName, index, onSelect)
 	stroke.Thickness = 1
 	stroke.Name = "UIStroke"
 
-	-- Icon Viewport
 	local iconBg = Instance.new("Frame", btn)
 	iconBg.Size = UDim2.new(0, 60, 0, 60)
 	iconBg.Position = UDim2.new(0, 10, 0.5, -30)
@@ -175,7 +253,6 @@ local function createCard(parent, weaponName, index, onSelect)
 	iconBg.BackgroundTransparency = 0.5
 	createWeaponViewport(weaponName, iconBg)
 
-	-- Name
 	local nameLabel = Instance.new("TextLabel", btn)
 	nameLabel.Size = UDim2.new(0, 200, 0, 25)
 	nameLabel.Position = UDim2.new(0, 80, 0, 10)
@@ -187,9 +264,8 @@ local function createCard(parent, weaponName, index, onSelect)
 	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
 	nameLabel.Parent = btn
 
-	-- Selection Logic
 	btn.MouseButton1Click:Connect(function()
-		onSelect(index, btn)
+		onSelect(index, btn, weaponName)
 	end)
 
 	return btn
@@ -202,7 +278,6 @@ local function showReplaceUI()
 
 	isUIOpen = true
 
-	-- Ensure Blur persists
 	local blur = game.Lighting:FindFirstChild("ShopBlur")
 	if not blur then
 		blur = Instance.new("BlurEffect", game.Lighting)
@@ -217,83 +292,227 @@ local function showReplaceUI()
 	replaceUIOverlay.ZIndex = 110
 	replaceUIOverlay.Parent = screenGui
 
-	local container = createPanel(replaceUIOverlay, UDim2.new(0.8, 0, 0.8, 0), UDim2.new(0.5, -0.4*screenGui.AbsoluteSize.X, 0.5, -0.4*screenGui.AbsoluteSize.Y), "Container")
+	-- Redesigned Container: More compact height (0.6 instead of 0.8)
+	local container = createPanel(replaceUIOverlay, UDim2.new(0.9, 0, 0.6, 0), UDim2.new(0.5, 0, 0.5, 0), "Container")
 	container.AnchorPoint = Vector2.new(0.5, 0.5)
-	container.Position = UDim2.new(0.5, 0, 0.5, 0)
 
-	-- Title
-	local title = Instance.new("TextLabel", container)
-	title.Text = "INVENTORY FULL"
+	-- Header Area
+	local headerFrame = Instance.new("Frame", container)
+	headerFrame.Size = UDim2.new(1, 0, 0, 50)
+	headerFrame.BackgroundTransparency = 1
+
+	local title = Instance.new("TextLabel", headerFrame)
+	title.Text = "TACTICAL DECISION" -- More thematic title
 	title.Font = FONT_HEADER
-	title.TextSize = 40
+	title.TextSize = 32
 	title.TextColor3 = COLORS.ACCENT_ORANGE
-	title.Size = UDim2.new(1, 0, 0, 60)
+	title.Size = UDim2.new(1, 0, 1, 0)
 	title.BackgroundTransparency = 1
-	title.Parent = container
+	title.Parent = headerFrame
 
-	local sub = Instance.new("TextLabel", container)
-	sub.Text = "Scrap the new find, or swap it with an old trusty?"
-	sub.Font = FONT_BODY
-	sub.TextSize = 20
-	sub.TextColor3 = COLORS.TEXT_DIM
-	sub.Size = UDim2.new(1, 0, 0, 30)
-	sub.Position = UDim2.new(0, 0, 0, 50)
-	sub.BackgroundTransparency = 1
-	sub.Parent = container
-
-	-- Content Layout (Split Left/Right)
+	-- Main Content: 3 Columns
 	local content = Instance.new("Frame", container)
-	content.Size = UDim2.new(1, -40, 1, -140)
-	content.Position = UDim2.new(0, 20, 0, 90)
+	content.Size = UDim2.new(1, -40, 1, -110) -- Less bottom padding due to smaller height
+	content.Position = UDim2.new(0, 20, 0, 55)
 	content.BackgroundTransparency = 1
 	content.Parent = container
 
-	-- Left: New Weapon
-	local left = Instance.new("Frame", content)
-	left.Size = UDim2.new(0.4, -10, 1, 0)
-	left.BackgroundColor3 = Color3.new(0,0,0)
-	left.BackgroundTransparency = 0.5
-	left.Parent = content
+	-- === LEFT COLUMN: NEW WEAPON ===
+	local leftCol = Instance.new("Frame", content)
+	leftCol.Name = "NewWeaponCol"
+	leftCol.Size = UDim2.new(0.35, -10, 1, 0)
+	leftCol.BackgroundColor3 = Color3.new(0,0,0)
+	leftCol.BackgroundTransparency = 0.6
+	leftCol.Parent = content
 
-	local newLabel = Instance.new("TextLabel", left)
-	newLabel.Text = "NEW ACQUISITION"
-	newLabel.Size = UDim2.new(1, 0, 0, 30)
-	newLabel.Font = FONT_HEADER
-	newLabel.TextColor3 = COLORS.ACCENT_GREEN
-	newLabel.BackgroundTransparency = 1
-	newLabel.Parent = left
+	-- Label "ACQUIRED"
+	local newHeader = Instance.new("TextLabel", leftCol)
+	newHeader.Text = "NEW ACQUISITION"
+	newHeader.Size = UDim2.new(1, 0, 0, 30)
+	newHeader.Font = FONT_HEADER
+	newHeader.TextColor3 = COLORS.ACCENT_GREEN
+	newHeader.BackgroundTransparency = 1
+	newHeader.Parent = leftCol
 
-	local vpFrame = Instance.new("Frame", left)
-	vpFrame.Size = UDim2.new(0.8, 0, 0.4, 0)
-	vpFrame.Position = UDim2.new(0.1, 0, 0.15, 0)
+	-- Big Viewport (Increased size to fill empty space)
+	local vpFrame = Instance.new("Frame", leftCol)
+	vpFrame.Size = UDim2.new(1, 0, 0.6, 0)
+	vpFrame.Position = UDim2.new(0, 0, 0.1, 0)
 	vpFrame.BackgroundTransparency = 1
-	vpFrame.Parent = left
+	vpFrame.Parent = leftCol
 	createWeaponViewport(newName, vpFrame)
 
-	local nameLbl = Instance.new("TextLabel", left)
-	nameLbl.Text = (WeaponModule.Weapons[newName] and WeaponModule.Weapons[newName].DisplayName) or newName
+	-- Weapon Name (Moved up)
+	local wName = (WeaponModule.Weapons[newName] and WeaponModule.Weapons[newName].DisplayName) or newName
+	local nameLbl = Instance.new("TextLabel", leftCol)
+	nameLbl.Text = wName
 	nameLbl.Size = UDim2.new(1, 0, 0, 40)
-	nameLbl.Position = UDim2.new(0, 0, 0.6, 0)
+	nameLbl.Position = UDim2.new(0, 0, 0.75, 0)
 	nameLbl.Font = FONT_HEADER
-	nameLbl.TextSize = 28
+	nameLbl.TextSize = 24
 	nameLbl.TextColor3 = COLORS.TEXT_MAIN
 	nameLbl.BackgroundTransparency = 1
-	nameLbl.Parent = left
+	nameLbl.Parent = leftCol
 
-	-- Right: Inventory List
-	local right = Instance.new("ScrollingFrame", content)
-	right.Size = UDim2.new(0.6, -10, 1, 0)
-	right.Position = UDim2.new(0.4, 20, 0, 0)
-	right.BackgroundTransparency = 1
-	right.ScrollBarThickness = 4
-	right.Parent = content
+	-- === CENTER COLUMN: STATS BRIDGE ===
+	local centerCol = Instance.new("Frame", content)
+	centerCol.Name = "StatsCol"
+	centerCol.Size = UDim2.new(0.2, 0, 1, 0)
+	centerCol.Position = UDim2.new(0.35, 5, 0, 0)
+	centerCol.BackgroundTransparency = 1
+	centerCol.Parent = content
 
-	local listLayout = Instance.new("UIListLayout", right)
+	-- Vertical Divider Lines
+	local divLeft = Instance.new("Frame", centerCol)
+	divLeft.Size = UDim2.new(0, 1, 0.8, 0)
+	divLeft.Position = UDim2.new(0, 0, 0.1, 0)
+	divLeft.BackgroundColor3 = COLORS.BORDER
+	divLeft.BorderSizePixel = 0
+	divLeft.Parent = centerCol
+
+	local divRight = Instance.new("Frame", centerCol)
+	divRight.Size = UDim2.new(0, 1, 0.8, 0)
+	divRight.Position = UDim2.new(1, 0, 0.1, 0)
+	divRight.BackgroundColor3 = COLORS.BORDER
+	divRight.BorderSizePixel = 0
+	divRight.Parent = centerCol
+
+	-- Stats Header "VS" (Centered)
+	local vsLabel = Instance.new("TextLabel", centerCol)
+	vsLabel.Text = "VS"
+	vsLabel.Size = UDim2.new(1, 0, 0, 40)
+	vsLabel.Position = UDim2.new(0, 0, 0.1, 0)
+	vsLabel.Font = FONT_HEADER
+	vsLabel.TextSize = 28
+	vsLabel.TextColor3 = COLORS.ACCENT_ORANGE
+	vsLabel.BackgroundTransparency = 1
+	vsLabel.Parent = centerCol
+
+	-- Stats List Container (Vertically Centered)
+	local statsList = Instance.new("Frame", centerCol)
+	statsList.Size = UDim2.new(1, -10, 0.5, 0)
+	statsList.AnchorPoint = Vector2.new(0.5, 0.5)
+	statsList.Position = UDim2.new(0.5, 0, 0.5, 0)
+	statsList.BackgroundTransparency = 1
+	statsList.Parent = centerCol
+
+	local centerLayout = Instance.new("UIListLayout", statsList)
+	centerLayout.Padding = UDim.new(0, 10)
+	centerLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	centerLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+
+	local dmgNew, dmgOld = createVersusStatRow(statsList, "DMG", 1)
+	local rpmNew, rpmOld = createVersusStatRow(statsList, "RPM", 2)
+	local magNew, magOld = createVersusStatRow(statsList, "MAG", 3)
+
+	-- === RIGHT COLUMN: INVENTORY ===
+	local rightCol = Instance.new("ScrollingFrame", content)
+	rightCol.Name = "InventoryCol"
+	rightCol.Size = UDim2.new(0.45, -10, 1, 0)
+	rightCol.Position = UDim2.new(0.55, 10, 0, 0)
+	rightCol.BackgroundTransparency = 1
+	rightCol.ScrollBarThickness = 4
+	rightCol.Parent = content
+
+	local listLayout = Instance.new("UIListLayout", rightCol)
 	listLayout.Padding = UDim.new(0, 10)
 
-	cardButtons = {}
+	-- Footer Buttons
+	local footer = Instance.new("Frame", container)
+	footer.Size = UDim2.new(1, -40, 0, 50)
+	footer.Position = UDim2.new(0, 20, 1, -60)
+	footer.BackgroundTransparency = 1
+	footer.Parent = container
 
-	local function updateSelection(idx, clickedBtn)
+	local discardBtn = Instance.new("TextButton", footer)
+	discardBtn.Text = "DISCARD NEW"
+	discardBtn.Size = UDim2.new(0.3, 0, 1, 0)
+	discardBtn.BackgroundColor3 = COLORS.PANEL
+	discardBtn.TextColor3 = COLORS.STAT_NEGATIVE -- Make it Red for visibility
+	discardBtn.Font = FONT_HEADER
+	discardBtn.TextSize = 20
+	discardBtn.Parent = footer
+
+	-- Subtle border for Discard to make it pop
+	local dStroke = Instance.new("UIStroke", discardBtn)
+	dStroke.Color = COLORS.BORDER
+	dStroke.Thickness = 2
+
+	local replaceBtn = Instance.new("TextButton", footer)
+	replaceBtn.Text = "SWAP SELECTED"
+	replaceBtn.Size = UDim2.new(0.3, 0, 1, 0)
+	replaceBtn.Position = UDim2.new(0.7, 0, 0, 0) -- Far right
+	replaceBtn.BackgroundColor3 = COLORS.PANEL 
+	replaceBtn.TextColor3 = COLORS.TEXT_MAIN
+	replaceBtn.TextTransparency = 0.5
+	replaceBtn.Font = FONT_HEADER
+	replaceBtn.TextSize = 20
+	replaceBtn.Parent = footer
+	replaceBtnRef = replaceBtn
+
+	-- Stylize buttons
+	for _, btn in pairs({discardBtn, replaceBtn}) do
+		local c = Instance.new("UICorner", btn); c.CornerRadius = UDim.new(0, 6); c.Parent = btn
+		if btn ~= discardBtn then
+			local s = Instance.new("UIStroke", btn); s.Color = COLORS.BORDER; s.Thickness = 2; s.Parent = btn
+		end
+	end
+
+	-- Logic Integration
+
+	updateStatsFunction = function(oldWeaponName)
+		-- Get NEW stats
+		local nDmg = getWeaponStat(newName, "Damage")
+		local nRPM = getWeaponStat(newName, "RPM")
+		local nMag = getWeaponStat(newName, "Ammo")
+
+		-- Set NEW labels (Left Side of Center Col)
+		dmgNew.Text = tostring(nDmg)
+		rpmNew.Text = tostring(nRPM)
+		magNew.Text = tostring(nMag)
+
+		if not oldWeaponName then
+			-- No selection: Clear Old side and colors
+			dmgOld.Text = "-"
+			rpmOld.Text = "-"
+			magOld.Text = "-"
+
+			dmgNew.TextColor3 = COLORS.TEXT_MAIN
+			rpmNew.TextColor3 = COLORS.TEXT_MAIN
+			magNew.TextColor3 = COLORS.TEXT_MAIN
+		else
+			-- Selection made: Compare!
+			local oDmg = getWeaponStat(oldWeaponName, "Damage")
+			local oRPM = getWeaponStat(oldWeaponName, "RPM")
+			local oMag = getWeaponStat(oldWeaponName, "Ammo")
+
+			dmgOld.Text = tostring(oDmg)
+			rpmOld.Text = tostring(oRPM)
+			magOld.Text = tostring(oMag)
+
+			-- Color logic for NEW value (Is it an upgrade?)
+			local function setColor(label, newVal, oldVal)
+				if newVal > oldVal then
+					label.TextColor3 = COLORS.STAT_POSITIVE
+				elseif newVal < oldVal then
+					label.TextColor3 = COLORS.STAT_NEGATIVE
+				else
+					label.TextColor3 = COLORS.STAT_NEUTRAL
+				end
+			end
+
+			setColor(dmgNew, nDmg, oDmg)
+			setColor(rpmNew, nRPM, oRPM)
+			setColor(magNew, nMag, oMag)
+		end
+	end
+
+	-- Initialize
+	updateStatsFunction(nil)
+
+	-- Populate Inventory
+	cardButtons = {}
+	local function updateSelection(idx, clickedBtn, weaponName)
 		currentSelectionIndex = idx
 		for _, btn in ipairs(cardButtons) do
 			local s = btn:FindFirstChild("UIStroke")
@@ -309,47 +528,62 @@ local function showReplaceUI()
 			replaceBtnRef.BackgroundColor3 = COLORS.ACCENT_ORANGE
 			replaceBtnRef.TextTransparency = 0
 		end
+
+		if updateStatsFunction then
+			updateStatsFunction(weaponName)
+		end
 	end
 
 	for i, name in ipairs(currentNames) do
-		local btn = createCard(right, name, i, updateSelection)
+		local btn = createCard(rightCol, name, i, updateSelection)
 		table.insert(cardButtons, btn)
 	end
-	right.CanvasSize = UDim2.new(0, 0, 0, #cardButtons * 90)
+	rightCol.CanvasSize = UDim2.new(0, 0, 0, #cardButtons * 90)
 
-	-- Footer Buttons
-	local footer = Instance.new("Frame", container)
-	footer.Size = UDim2.new(1, -40, 0, 50)
-	footer.Position = UDim2.new(0, 20, 1, -60)
-	footer.BackgroundTransparency = 1
-	footer.Parent = container
-
-	local discardBtn = Instance.new("TextButton", footer)
-	discardBtn.Text = "SCRAP NEW (-)"
-	discardBtn.Size = UDim2.new(0.45, 0, 1, 0)
-	discardBtn.BackgroundColor3 = COLORS.PANEL
-	discardBtn.TextColor3 = COLORS.TEXT_DIM
-	discardBtn.Font = FONT_HEADER
-	discardBtn.TextSize = 20
-	discardBtn.Parent = footer
-
-	local replaceBtn = Instance.new("TextButton", footer)
-	replaceBtn.Text = "SWAP SELECTED"
-	replaceBtn.Size = UDim2.new(0.45, 0, 1, 0)
-	replaceBtn.Position = UDim2.new(0.55, 0, 0, 0)
-	replaceBtn.BackgroundColor3 = COLORS.PANEL -- Dim until selected
-	replaceBtn.TextColor3 = COLORS.TEXT_MAIN
-	replaceBtn.TextTransparency = 0.5
-	replaceBtn.Font = FONT_HEADER
-	replaceBtn.TextSize = 20
-	replaceBtn.Parent = footer
-	replaceBtnRef = replaceBtn
-
-	-- Stylize buttons
-	for _, btn in pairs({discardBtn, replaceBtn}) do
-		local c = Instance.new("UICorner", btn); c.CornerRadius = UDim.new(0, 6); c.Parent = btn
-		local s = Instance.new("UIStroke", btn); s.Color = COLORS.BORDER; s.Thickness = 2; s.Parent = btn
+	-- === KEYBOARD NAVIGATION ===
+	local function selectCardByIndex(idx)
+		if idx < 1 then idx = 1 end
+		if idx > #cardButtons then idx = #cardButtons end
+		local btn = cardButtons[idx]
+		local weaponName = currentNames[idx]
+		if btn and weaponName then
+			updateSelection(idx, btn, weaponName)
+			-- Auto scroll
+			rightCol.CanvasPosition = Vector2.new(0, (idx - 1) * 90)
+		end
 	end
+
+	local function onNavAction(actionName, inputState, inputObject)
+		if inputState ~= Enum.UserInputState.Begin then return Enum.ContextActionResult.Pass end
+
+		if actionName == "ReplaceUI_Up" then
+			if currentSelectionIndex <= 0 then
+				selectCardByIndex(#cardButtons) -- Wrap to bottom or start
+			else
+				selectCardByIndex(currentSelectionIndex - 1)
+			end
+			return Enum.ContextActionResult.Sink
+		elseif actionName == "ReplaceUI_Down" then
+			if currentSelectionIndex <= 0 then
+				selectCardByIndex(1)
+			else
+				selectCardByIndex(currentSelectionIndex + 1)
+			end
+			return Enum.ContextActionResult.Sink
+		elseif actionName == "ReplaceUI_Select" then
+			if currentSelectionIndex ~= -1 then
+				replaceChoiceEv:FireServer(currentSelectionIndex)
+				closeReplaceUI(false)
+			end
+			return Enum.ContextActionResult.Sink
+		end
+		return Enum.ContextActionResult.Pass
+	end
+
+	ContextActionService:BindAction("ReplaceUI_Up", onNavAction, false, Enum.KeyCode.Up, Enum.KeyCode.W)
+	ContextActionService:BindAction("ReplaceUI_Down", onNavAction, false, Enum.KeyCode.Down, Enum.KeyCode.S)
+	ContextActionService:BindAction("ReplaceUI_Select", onNavAction, false, Enum.KeyCode.Return, Enum.KeyCode.KeypadEnter)
+	-- === END KEYBOARD NAVIGATION ===
 
 	discardBtn.MouseButton1Click:Connect(function()
 		closeReplaceUI(true)
@@ -367,6 +601,42 @@ end
 -- MYSTERY CRATE / SPINNING UI
 -- ============================================================================
 local spinFrame = nil
+
+local function playLocalSound(soundId)
+	local s = Instance.new("Sound")
+	s.SoundId = soundId
+	s.Volume = 0.5
+	s.Parent = SoundService
+	s:Play()
+	game.Debris:AddItem(s, 2)
+end
+
+local function spawnConfetti(parent)
+	-- Simple 2D particles using frames
+	local center = Vector2.new(parent.AbsoluteSize.X / 2, parent.AbsoluteSize.Y / 2)
+	for i = 1, 20 do
+		local p = Instance.new("Frame")
+		p.Size = UDim2.new(0, 8, 0, 8)
+		p.Position = UDim2.new(0.5, 0, 0.5, 0)
+		p.BackgroundColor3 = i % 2 == 0 and COLORS.ACCENT_ORANGE or COLORS.GOLD
+		p.BorderSizePixel = 0
+		p.Parent = parent
+
+		local angle = math.rad(math.random(0, 360))
+		local dist = math.random(50, 200)
+		local duration = math.random(5, 10) / 10
+
+		local targetPos = UDim2.new(0.5, math.cos(angle) * dist, 0.5, math.sin(angle) * dist)
+
+		TweenService:Create(p, TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			Position = targetPos,
+			Rotation = math.random(-180, 180),
+			BackgroundTransparency = 1
+		}):Play()
+
+		game.Debris:AddItem(p, duration)
+	end
+end
 
 local function showSpinUI(finalWeaponName, onComplete)
 	if spinFrame then spinFrame:Destroy() end
@@ -407,6 +677,12 @@ local function showSpinUI(finalWeaponName, onComplete)
 	reelFrame.BorderSizePixel = 2
 	reelFrame.BorderColor3 = COLORS.ACCENT_GREEN
 
+	-- Reel Glow (Hidden initially)
+	local reelStroke = Instance.new("UIStroke", reelFrame)
+	reelStroke.Color = COLORS.GOLD
+	reelStroke.Thickness = 0
+	reelStroke.Transparency = 1
+
 	local itemLabel = Instance.new("TextLabel", container)
 	itemLabel.Size = UDim2.new(1, 0, 0, 40)
 	itemLabel.Position = UDim2.new(0, 0, 0.85, 0)
@@ -430,21 +706,27 @@ local function showSpinUI(finalWeaponName, onComplete)
 		if currentVP then currentVP:Destroy() end
 		currentVP = createWeaponViewport(name, reelFrame)
 		itemLabel.Text = (WeaponModule.Weapons[name] and WeaponModule.Weapons[name].DisplayName) or name
+		playLocalSound(SOUNDS.TICK) -- Audio Feedback
 	end
 
 	-- Spin Logic
 	task.spawn(function()
-		local duration = 2.5 -- seconds
+		local duration = 3.0 -- Slightly longer for effect
 		local elapsed = 0
 		local speed = 0.05
 
-		-- Ramp down speed
+		-- Exponential Decay Logic
+		-- We want speed (delay) to increase exponentially: speed = base * e^(k * t)
+		-- To reach a final delay of roughly 0.5s at t=3.0
+
 		while elapsed < duration do
 			local randName = pool[math.random(1, #pool)]
 			showItem(randName)
+
+			-- Simple friction simulation: Increase delay
 			task.wait(speed)
 			elapsed = elapsed + speed
-			speed = speed * 1.1 -- Slow down
+			speed = speed * 1.15 -- Increased friction factor for juicier slowdown
 		end
 
 		-- LAND ON FINAL
@@ -452,21 +734,36 @@ local function showSpinUI(finalWeaponName, onComplete)
 		itemLabel.Text = (WeaponModule.Weapons[finalWeaponName] and WeaponModule.Weapons[finalWeaponName].DisplayName) or finalWeaponName
 		itemLabel.TextColor3 = COLORS.ACCENT_GREEN
 
-		-- Flash Effect
-		local flash = Instance.new("Frame", reelFrame)
+		-- VICTORY EFFECTS
+		playLocalSound(SOUNDS.WIN)
+		spawnConfetti(reelFrame) -- Particles inside reel
+
+		-- Pulse Reel Border
+		reelStroke.Transparency = 0
+		reelStroke.Thickness = 5
+		TweenService:Create(reelStroke, TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Thickness = 0, Transparency = 1}):Play()
+
+		-- Flash Effect (White Overlay)
+		local flash = Instance.new("Frame", screenGui) -- Full screen flash
 		flash.Size = UDim2.new(1,0,1,0)
 		flash.BackgroundColor3 = Color3.new(1,1,1)
 		flash.BackgroundTransparency = 0
-		flash.Parent = reelFrame
+		flash.ZIndex = 200
+		flash.Parent = screenGui
 		TweenService:Create(flash, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
+		game.Debris:AddItem(flash, 0.6)
 
-		task.wait(1) -- Show the winner for a second
+		-- Slight Scale Punch on Container
+		local originalSize = container.Size
+		container.Size = UDim2.new(originalSize.X.Scale, originalSize.X.Offset + 20, originalSize.Y.Scale, originalSize.Y.Offset + 20)
+		TweenService:Create(container, TweenInfo.new(0.5, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out), {Size = originalSize}):Play()
+
+		task.wait(1.5) -- Show the winner
 
 		-- COMPLETE
 		if onComplete then onComplete() end
 
 		-- CLEANUP
-		-- We need to check if Replace UI took over (replaceUIOverlay exists)
 		if spinFrame then spinFrame:Destroy() spinFrame = nil end
 
 		if replaceUIOverlay and replaceUIOverlay.Parent then
@@ -482,6 +779,36 @@ end
 -- ============================================================================
 -- MAIN LOGIC
 -- ============================================================================
+
+local function startDistanceCheck(part)
+	task.spawn(function()
+		while isUIOpen and player.Character do
+			task.wait(0.5)
+			if not isUIOpen then break end
+			local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+			if hrp and part then
+				local dist = (hrp.Position - part.Position).Magnitude
+				if dist > 5 then
+					-- Too far, close UI
+					-- If replace UI is open, we consider this a "Cancel/Discard"
+					if spinFrame or replaceUIOverlay then
+						closeReplaceUI(true)
+					end
+					-- Also ensure spin frame is killed if running
+					if spinFrame then spinFrame:Destroy() spinFrame = nil end
+
+					-- Remove blur just in case
+					for _, v in pairs(game.Lighting:GetChildren()) do
+						if v:IsA("BlurEffect") and v.Name == "ShopBlur" then
+							v:Destroy()
+						end
+					end
+					isUIOpen = false
+				end
+			end
+		end
+	end)
+end
 
 local function purchaseRandomWeapon()
 	if isUIOpen then return end
@@ -518,11 +845,13 @@ local function purchaseRandomWeapon()
 					showReplaceUI()
 				end
 			end)
+			startDistanceCheck(workspace:WaitForChild("Random"))
 		end
 	elseif result.success == true then
 		-- Success Case (Inventory Not Full)
 		local newWep = result.weaponName
 		showSpinUI(newWep, nil)
+		startDistanceCheck(workspace:WaitForChild("Random"))
 	end
 end
 
