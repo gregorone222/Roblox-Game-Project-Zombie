@@ -1,17 +1,17 @@
 -- BossTimerUI.lua (LocalScript)
 -- Path: StarterGui/BossTimerUI.lua
 -- Script Place: ACT 1: Village
+-- Theme: Zombie Apocalypse / Containment Breach HUD
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
-
 local RemoteEvents = game.ReplicatedStorage.RemoteEvents
-
 local BossTimerEvent = RemoteEvents:WaitForChild("BossTimerEvent")
 
 local screenGui = Instance.new("ScreenGui")
@@ -21,309 +21,368 @@ screenGui.ResetOnSpawn = true
 screenGui.Parent = playerGui
 
 local timerContainer = nil
-local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+local updateConnection = nil
 
--- Colors (Based on Prototype)
-local C_DARK_BG = Color3.fromRGB(15, 23, 42) -- Slate 900
-local C_BORDER_NORMAL = Color3.fromRGB(51, 65, 85) -- Slate 700
-local C_BORDER_DANGER = Color3.fromRGB(239, 68, 68) -- Red 500
-local C_TEXT_WHITE = Color3.fromRGB(248, 250, 252)
-local C_TEXT_SUB = Color3.fromRGB(148, 163, 184) -- Slate 400
+-- State for animation loop
+local currentRemainingTime = 0
+local cachedElements = {}
 
--- Gradients
-local C_BAR_NORMAL_A = Color3.fromRGB(59, 130, 246) -- Blue 500
-local C_BAR_NORMAL_B = Color3.fromRGB(96, 165, 250) -- Blue 400
-local C_BAR_WARN_A = Color3.fromRGB(249, 115, 22) -- Orange 500
-local C_BAR_WARN_B = Color3.fromRGB(251, 191, 36) -- Amber 400
-local C_BAR_CRIT_A = Color3.fromRGB(239, 68, 68) -- Red 500
-local C_BAR_CRIT_B = Color3.fromRGB(255, 0, 0)   -- Red Bright
+-- Tween info for smooth bar
+local barTweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+-- --- THEME CONSTANTS ---
+local THEME = {
+	COLORS = {
+		BG_DARK = Color3.fromRGB(15, 5, 5),       -- Almost black red
+		BG_PANEL = Color3.fromRGB(30, 10, 10),    -- Deep rusted metal
+		ACCENT_RED = Color3.fromRGB(200, 20, 20), -- Fresh blood
+		ACCENT_YELLOW = Color3.fromRGB(220, 180, 20), -- Hazard yellow
+		TEXT_PRIMARY = Color3.fromRGB(230, 230, 230),
+		TEXT_DIM = Color3.fromRGB(150, 100, 100),
+		GLOW_CRIT = Color3.fromRGB(255, 0, 0),
+		SAFE_GREEN = Color3.fromRGB(50, 180, 80)
+	},
+	FONTS = {
+		HEADER = Enum.Font.Sarpanch, -- Military/Sci-Fi
+		DIGITAL = Enum.Font.SciFi,   -- Digital readout
+		BODY = Enum.Font.SpecialElite -- Gritty typewriter
+	}
+}
+
+-- --- UTILITY FUNCTIONS ---
+
+-- Create Hazard Stripes Pattern without assets
+local function createHazardPattern(parentFrame)
+	local pattern = Instance.new("Frame")
+	pattern.Name = "HazardPattern"
+	pattern.Size = UDim2.new(1.5, 0, 1.5, 0) -- Larger to allow rotation coverage
+	pattern.Position = UDim2.new(-0.25, 0, -0.25, 0)
+	pattern.BackgroundColor3 = THEME.COLORS.ACCENT_YELLOW
+	pattern.BackgroundTransparency = 0
+	pattern.ZIndex = 1
+	pattern.ClipsDescendants = true
+	pattern.Parent = parentFrame
+
+	-- Simple gradient approach for pattern look
+	pattern.BackgroundColor3 = THEME.COLORS.ACCENT_YELLOW
+	local grad = Instance.new("UIGradient")
+
+	-- ColorSequence is limited to 20 keypoints.
+	grad.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, THEME.COLORS.ACCENT_YELLOW),
+		ColorSequenceKeypoint.new(0.125, THEME.COLORS.ACCENT_YELLOW),
+		ColorSequenceKeypoint.new(0.126, Color3.new(0,0,0)),
+		ColorSequenceKeypoint.new(0.25, Color3.new(0,0,0)),
+
+		ColorSequenceKeypoint.new(0.251, THEME.COLORS.ACCENT_YELLOW),
+		ColorSequenceKeypoint.new(0.375, THEME.COLORS.ACCENT_YELLOW),
+		ColorSequenceKeypoint.new(0.376, Color3.new(0,0,0)),
+		ColorSequenceKeypoint.new(0.5, Color3.new(0,0,0)),
+
+		ColorSequenceKeypoint.new(0.501, THEME.COLORS.ACCENT_YELLOW),
+		ColorSequenceKeypoint.new(0.625, THEME.COLORS.ACCENT_YELLOW),
+		ColorSequenceKeypoint.new(0.626, Color3.new(0,0,0)),
+		ColorSequenceKeypoint.new(0.75, Color3.new(0,0,0)),
+
+		ColorSequenceKeypoint.new(0.751, THEME.COLORS.ACCENT_YELLOW),
+		ColorSequenceKeypoint.new(0.875, THEME.COLORS.ACCENT_YELLOW),
+		ColorSequenceKeypoint.new(0.876, Color3.new(0,0,0)),
+		ColorSequenceKeypoint.new(1, Color3.new(0,0,0)),
+	})
+
+	grad.Rotation = 60
+	grad.Parent = pattern
+
+	return pattern
+end
+
+local function createGlitchText(parent, text, font, size, color, pos, zindex)
+	local label = Instance.new("TextLabel")
+	label.Text = text
+	label.Font = font
+	label.TextSize = size
+	label.TextColor3 = color
+	label.BackgroundTransparency = 1
+	label.Position = pos
+	label.Size = UDim2.new(1, 0, 1, 0) -- Fill parent usually
+	label.ZIndex = zindex or 2
+	label.Parent = parent
+
+	-- Shadow/Glitch Copy
+	local shadow = label:Clone()
+	shadow.Name = "GlitchShadow"
+	shadow.TextColor3 = Color3.fromRGB(255, 0, 0)
+	shadow.TextTransparency = 0.8
+	shadow.Position = UDim2.new(0, 2, 0, 2)
+	shadow.ZIndex = (zindex or 2) - 1
+	shadow.Parent = label
+
+	return label
+end
+
+-- --- UI CREATION ---
 
 local function createTimerUI()
 	if timerContainer then return end
 
 	local isMobile = UserInputService.TouchEnabled
 
-	-- Main Container (The Widget)
+	-- 1. Main Widget Container
 	timerContainer = Instance.new("Frame")
-	timerContainer.Name = "BossWidget"
-	-- Adjust size for mobile/desktop
-	timerContainer.Size = isMobile and UDim2.new(0.6, 0, 0, 130) or UDim2.new(0, 400, 0, 140)
-	timerContainer.Position = UDim2.new(0.5, 0, 0.08, 0)
+	timerContainer.Name = "ContainmentMonitor"
+	timerContainer.Size = isMobile and UDim2.new(0.7, 0, 0, 100) or UDim2.new(0, 450, 0, 120)
+	timerContainer.Position = UDim2.new(0.5, 0, 0.05, 0)
 	timerContainer.AnchorPoint = Vector2.new(0.5, 0)
-	timerContainer.BackgroundColor3 = C_DARK_BG
-	timerContainer.BackgroundTransparency = 0.1
-	timerContainer.BorderSizePixel = 0
-	timerContainer.Visible = true
+	timerContainer.BackgroundTransparency = 1 -- Custom BG constructed below
 	timerContainer.Parent = screenGui
 
-	-- Stroke (Border)
-	local uiStroke = Instance.new("UIStroke")
-	uiStroke.Name = "BorderStroke"
-	uiStroke.Color = C_BORDER_NORMAL
-	uiStroke.Thickness = 2
-	uiStroke.Parent = timerContainer
+	-- 2. Visual Structure (The "Device")
+	-- Main Panel
+	local mainPanel = Instance.new("Frame")
+	mainPanel.Name = "MainPanel"
+	mainPanel.Size = UDim2.new(1, 0, 1, 0)
+	mainPanel.BackgroundColor3 = THEME.COLORS.BG_PANEL
+	mainPanel.BorderSizePixel = 0
+	mainPanel.Parent = timerContainer
 
-	-- Corner
-	local uiCorner = Instance.new("UICorner")
-	uiCorner.CornerRadius = UDim.new(0, 6)
-	uiCorner.Parent = timerContainer
+	-- Rough Border
+	local stroke = Instance.new("UIStroke")
+	stroke.Thickness = 3
+	stroke.Color = Color3.fromRGB(60, 20, 20)
+	stroke.Parent = mainPanel
 
-	-- Padding
-	local uiPadding = Instance.new("UIPadding")
-	uiPadding.PaddingTop = UDim.new(0, 12)
-	uiPadding.PaddingBottom = UDim.new(0, 15)
-	uiPadding.PaddingLeft = UDim.new(0, 20)
-	uiPadding.PaddingRight = UDim.new(0, 20)
-	uiPadding.Parent = timerContainer
+	-- Top Hazard Strip
+	local hazardStrip = Instance.new("Frame")
+	hazardStrip.Name = "HazardStrip"
+	hazardStrip.Size = UDim2.new(1, 0, 0, 12)
+	hazardStrip.Position = UDim2.new(0, 0, 0, 0)
+	hazardStrip.ClipsDescendants = true
+	hazardStrip.BorderSizePixel = 0
+	hazardStrip.Parent = mainPanel
 
-	-- === HEADER SECTION ===
-	local headerFrame = Instance.new("Frame")
-	headerFrame.Name = "Header"
-	headerFrame.Size = UDim2.new(1, 0, 0, 40)
-	headerFrame.BackgroundTransparency = 1
-	headerFrame.Parent = timerContainer
+	createHazardPattern(hazardStrip)
 
-	-- Icon Box
-	local iconBox = Instance.new("Frame")
-	iconBox.Name = "IconBox"
-	iconBox.Size = UDim2.new(0, 36, 0, 36)
-	iconBox.BackgroundColor3 = Color3.fromRGB(69, 10, 10) -- Dark Red
-	iconBox.BackgroundTransparency = 0.5
-	iconBox.Parent = headerFrame
+	-- Dark Inner Display
+	local displayScreen = Instance.new("Frame")
+	displayScreen.Name = "DisplayScreen"
+	displayScreen.Size = UDim2.new(0.95, 0, 0.75, 0)
+	displayScreen.Position = UDim2.new(0.5, 0, 0.55, 0)
+	displayScreen.AnchorPoint = Vector2.new(0.5, 0.5)
+	displayScreen.BackgroundColor3 = Color3.new(0, 0, 0)
+	displayScreen.BorderColor3 = Color3.fromRGB(80, 0, 0)
+	displayScreen.Parent = mainPanel
 
-	local iconStroke = Instance.new("UIStroke")
-	iconStroke.Color = Color3.fromRGB(239, 68, 68)
-	iconStroke.Thickness = 1
-	iconStroke.Parent = iconBox
+	-- Scanline Effect (Fake)
+	local scanlines = Instance.new("Frame")
+	scanlines.Size = UDim2.new(1, 0, 1, 0)
+	scanlines.BackgroundColor3 = Color3.new(1,1,1)
+	scanlines.BackgroundTransparency = 0.95
+	scanlines.BorderSizePixel = 0
+	scanlines.ZIndex = 5
+	scanlines.Parent = displayScreen
 
-	local iconCorner = Instance.new("UICorner")
-	iconCorner.CornerRadius = UDim.new(0, 6)
-	iconCorner.Parent = iconBox
-
-	local iconText = Instance.new("TextLabel")
-	iconText.Text = "☠" -- Unicode Skull
-	iconText.Font = Enum.Font.GothamBold
-	iconText.TextSize = 20
-	iconText.TextColor3 = Color3.fromRGB(248, 113, 113) -- Red 400
-	iconText.BackgroundTransparency = 1
-	iconText.Size = UDim2.new(1, 0, 1, 0)
-	iconText.Parent = iconBox
-
-	-- Boss Info
-	local infoFrame = Instance.new("Frame")
-	infoFrame.Name = "Info"
-	infoFrame.Position = UDim2.new(0, 46, 0, 0)
-	infoFrame.Size = UDim2.new(1, -120, 1, 0)
-	infoFrame.BackgroundTransparency = 1
-	infoFrame.Parent = headerFrame
-
-	local subLabel = Instance.new("TextLabel")
-	subLabel.Text = "TARGET PRIORITY"
-	subLabel.Font = Enum.Font.GothamBold
-	subLabel.TextSize = 10
-	subLabel.TextColor3 = Color3.fromRGB(239, 68, 68)
-	subLabel.TextXAlignment = Enum.TextXAlignment.Left
-	subLabel.Size = UDim2.new(1, 0, 0, 12)
-	subLabel.BackgroundTransparency = 1
-	subLabel.Parent = infoFrame
-
-	local bossName = Instance.new("TextLabel")
-	bossName.Name = "BossName"
-	bossName.Text = "BOSS TARGET"
-	bossName.Font = Enum.Font.GothamBlack
-	bossName.TextSize = 20
-	bossName.TextColor3 = C_TEXT_WHITE
-	bossName.TextXAlignment = Enum.TextXAlignment.Left
-	bossName.Position = UDim2.new(0, 0, 0, 14)
-	bossName.Size = UDim2.new(1, 0, 0, 22)
-	bossName.BackgroundTransparency = 1
-	bossName.Parent = infoFrame
-
-	-- Phase Tag (Right Side)
-	local phaseFrame = Instance.new("Frame")
-	phaseFrame.Name = "PhaseFrame"
-	phaseFrame.Size = UDim2.new(0, 60, 0, 20)
-	phaseFrame.Position = UDim2.new(1, -60, 0, 8)
-	phaseFrame.BackgroundColor3 = Color3.fromRGB(30, 41, 59)
-	phaseFrame.Parent = headerFrame
-
-	local pCorner = Instance.new("UICorner")
-	pCorner.CornerRadius = UDim.new(0, 4)
-	pCorner.Parent = phaseFrame
-
-	local pStroke = Instance.new("UIStroke")
-	pStroke.Color = Color3.fromRGB(71, 85, 105)
-	pStroke.Thickness = 1
-	pStroke.Parent = phaseFrame
-
-	local phaseText = Instance.new("TextLabel")
-	phaseText.Name = "PhaseText"
-	phaseText.Text = "ACTIVE"
-	phaseText.Font = Enum.Font.GothamBold
-	phaseText.TextSize = 10
-	phaseText.TextColor3 = C_TEXT_SUB
-	phaseText.Size = UDim2.new(1, 0, 1, 0)
-	phaseText.BackgroundTransparency = 1
-	phaseText.Parent = phaseFrame
-
-	-- Separator
-	local sep = Instance.new("Frame")
-	sep.Name = "Separator"
-	sep.Size = UDim2.new(1, 0, 0, 1)
-	sep.Position = UDim2.new(0, 0, 0, 48)
-	sep.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	sep.BorderSizePixel = 0
-	sep.Parent = timerContainer
-
-	local sepGrad = Instance.new("UIGradient")
-	sepGrad.Transparency = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 1),
-		NumberSequenceKeypoint.new(0.2, 0.5),
-		NumberSequenceKeypoint.new(0.8, 0.5),
-		NumberSequenceKeypoint.new(1, 1),
+	local slGrad = Instance.new("UIGradient")
+	slGrad.Rotation = 90
+	slGrad.Color = ColorSequence.new(Color3.new(0,0,0), Color3.new(0,0,0))
+	slGrad.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.5),
+		NumberSequenceKeypoint.new(0.5, 0.8),
+		NumberSequenceKeypoint.new(1, 0.5)
 	})
-	sepGrad.Parent = sep
+	slGrad.Parent = scanlines
 
-	-- === TIMER SECTION ===
-	local timerSection = Instance.new("Frame")
-	timerSection.Name = "TimerSection"
-	timerSection.Size = UDim2.new(1, 0, 0, 60)
-	timerSection.Position = UDim2.new(0, 0, 0, 55)
-	timerSection.BackgroundTransparency = 1
-	timerSection.Parent = timerContainer
+	-- 3. Content
 
-	-- Label
-	local tLabel = Instance.new("TextLabel")
-	tLabel.Text = "TIME REMAINING"
-	tLabel.Font = Enum.Font.GothamBold
-	tLabel.TextSize = 10
-	tLabel.TextColor3 = C_TEXT_SUB
-	tLabel.Size = UDim2.new(1, 0, 0, 12)
-	tLabel.BackgroundTransparency = 1
-	tLabel.Parent = timerSection
+	-- Header Label (On Hazard Strip)
+	local headerLbl = Instance.new("TextLabel")
+	headerLbl.Text = "⚠ CONTAINMENT BREACH DETECTED ⚠"
+	headerLbl.Size = UDim2.new(1, 0, 1, 0)
+	headerLbl.BackgroundTransparency = 1
+	headerLbl.Font = Enum.Font.GothamBold
+	headerLbl.TextSize = 10
+	headerLbl.TextColor3 = Color3.new(0,0,0) -- Black on Yellow
+	headerLbl.Parent = hazardStrip
 
-	-- Big Timer
-	local bigTimer = Instance.new("TextLabel")
-	bigTimer.Name = "BigTimer"
-	bigTimer.Text = "00:00"
-	bigTimer.Font = Enum.Font.Code -- Monospace
-	bigTimer.TextSize = 36
-	bigTimer.TextColor3 = C_TEXT_WHITE
-	bigTimer.Size = UDim2.new(1, 0, 0, 40)
-	bigTimer.Position = UDim2.new(0, 0, 0, 12)
-	bigTimer.BackgroundTransparency = 1
-	bigTimer.Parent = timerSection
+	-- Boss Name (Left)
+	local nameLabel = createGlitchText(
+		displayScreen, 
+		"TARGET: UNKNOWN", 
+		THEME.FONTS.HEADER, 
+		20, 
+		THEME.COLORS.ACCENT_RED, 
+		UDim2.new(0, 10, 0, 5)
+	)
+	nameLabel.Name = "BossName"
+	nameLabel.Size = UDim2.new(0.6, 0, 0, 25)
+	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-	-- Progress Bar BG
-	local barBg = Instance.new("Frame")
-	barBg.Name = "BarBG"
-	barBg.Size = UDim2.new(1, 0, 0, 8)
-	barBg.Position = UDim2.new(0, 0, 1, 0)
-	barBg.BackgroundColor3 = Color3.fromRGB(30, 41, 59)
-	barBg.BorderSizePixel = 0
-	barBg.Parent = timerSection
+	-- Phase Label (Under Name)
+	local phaseLabel = Instance.new("TextLabel")
+	phaseLabel.Name = "PhaseLabel"
+	phaseLabel.Text = "STATUS: ACTIVE"
+	phaseLabel.Font = THEME.FONTS.BODY
+	phaseLabel.TextSize = 12
+	phaseLabel.TextColor3 = THEME.COLORS.TEXT_DIM
+	phaseLabel.BackgroundTransparency = 1
+	phaseLabel.Position = UDim2.new(0, 10, 0, 30)
+	phaseLabel.Size = UDim2.new(0.6, 0, 0, 15)
+	phaseLabel.TextXAlignment = Enum.TextXAlignment.Left
+	phaseLabel.Parent = displayScreen
 
-	local bgCorner = Instance.new("UICorner")
-	bgCorner.CornerRadius = UDim.new(1, 0)
-	bgCorner.Parent = barBg
+	-- Timer (Right)
+	local timeLabel = createGlitchText(
+		displayScreen,
+		"00:00",
+		THEME.FONTS.DIGITAL,
+		32,
+		THEME.COLORS.TEXT_PRIMARY,
+		UDim2.new(0.65, 0, 0, 5)
+	)
+	timeLabel.Name = "TimeLabel"
+	timeLabel.Size = UDim2.new(0.3, 0, 0, 40)
+	timeLabel.TextXAlignment = Enum.TextXAlignment.Right
 
-	-- Progress Bar Fill
-	local barFill = Instance.new("Frame")
-	barFill.Name = "BarFill"
-	barFill.Size = UDim2.new(1, 0, 1, 0)
-	barFill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	barFill.BorderSizePixel = 0
-	barFill.Parent = barBg
+	-- Integrity Meter (Bottom of Display)
+	local meterFrame = Instance.new("Frame")
+	meterFrame.Name = "MeterFrame"
+	meterFrame.Size = UDim2.new(0.95, 0, 0, 6)
+	meterFrame.Position = UDim2.new(0.5, 0, 0.85, 0)
+	meterFrame.AnchorPoint = Vector2.new(0.5, 0)
+	meterFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+	meterFrame.BorderSizePixel = 0
+	meterFrame.Parent = displayScreen
 
-	local fillCorner = Instance.new("UICorner")
-	fillCorner.CornerRadius = UDim.new(1, 0)
-	fillCorner.Parent = barFill
+	local meterFill = Instance.new("Frame")
+	meterFill.Name = "Fill"
+	meterFill.Size = UDim2.new(1, 0, 1, 0)
+	meterFill.BackgroundColor3 = Color3.new(1,1,1)
+	meterFill.BorderSizePixel = 0
+	meterFill.Parent = meterFrame
 
-	local barGrad = Instance.new("UIGradient")
-	barGrad.Color = ColorSequence.new(C_BAR_NORMAL_A, C_BAR_NORMAL_B)
-	barGrad.Parent = barFill
+	local mGrad = Instance.new("UIGradient")
+	mGrad.Color = ColorSequence.new(THEME.COLORS.SAFE_GREEN, THEME.COLORS.ACCENT_RED)
+	mGrad.Parent = meterFill
+
+	-- Small Text "INTEGRITY"
+	local integLbl = Instance.new("TextLabel")
+	integLbl.Text = "FAILSAFE INTEGRITY"
+	integLbl.Font = Enum.Font.Code
+	integLbl.TextSize = 8
+	integLbl.TextColor3 = THEME.COLORS.TEXT_DIM
+	integLbl.BackgroundTransparency = 1
+	integLbl.Position = UDim2.new(0, 0, -1.5, 0)
+	integLbl.Size = UDim2.new(1, 0, 1, 0)
+	integLbl.Parent = meterFrame
+
+	-- Cache elements for optimized loop
+	cachedElements = {
+		container = timerContainer,
+		nameLbl = nameLabel,
+		timeLbl = timeLabel,
+		shadow = timeLabel:FindFirstChild("GlitchShadow"),
+		fill = meterFill
+	}
 end
 
 local function destroyTimerUI()
+	if updateConnection then
+		updateConnection:Disconnect()
+		updateConnection = nil
+	end
 	if timerContainer then
 		timerContainer:Destroy()
 		timerContainer = nil
+	end
+	cachedElements = {}
+end
+
+
+-- --- ANIMATION & LOGIC ---
+
+local lastShakeTime = 0
+local shakeIntensity = 0
+
+local function updateEffects(dt)
+	if not cachedElements.container or not cachedElements.container.Parent then return end
+
+	-- Use file-level variable 'currentRemainingTime'
+	local remTime = currentRemainingTime
+
+	local nameLbl = cachedElements.nameLbl
+	local timeLbl = cachedElements.timeLbl
+	local shadow = cachedElements.shadow
+
+	-- 1. Heartbeat Pulse (Critical Time)
+	if remTime <= 30 then
+		local pulseSpeed = (30 - remTime) * 0.5 + 5 -- Faster as time drops
+		local scale = 1 + (math.sin(tick() * pulseSpeed) * 0.05)
+		timeLbl.TextSize = 32 * scale
+		timeLbl.TextColor3 = Color3.new(1, 0, 0) -- Turn red
+
+		-- Shadow shake
+		if shadow then
+			shadow.Position = UDim2.new(0, math.random(-2,2), 0, math.random(-2,2))
+			shadow.TextTransparency = 0.5
+		end
+	else
+		timeLbl.TextSize = 32
+		timeLbl.TextColor3 = THEME.COLORS.TEXT_PRIMARY
+		if shadow then
+			shadow.Position = UDim2.new(0, 2, 0, 2)
+			shadow.TextTransparency = 0.8
+		end
+	end
+
+	-- 2. Container Shake (Very Critical)
+	if remTime <= 10 then
+		shakeIntensity = (10 - remTime) * 0.5
+		local ox = math.random(-1, 1) * shakeIntensity
+		local oy = math.random(-1, 1) * shakeIntensity
+		cachedElements.container.Position = UDim2.new(0.5, ox, 0.05, oy)
+	else
+		cachedElements.container.Position = UDim2.new(0.5, 0, 0.05, 0)
+	end
+
+	-- 3. Random Glitch on Name
+	if math.random() > 0.98 then
+		nameLbl.Position = UDim2.new(0, 10 + math.random(-2,2), 0, 5 + math.random(-2,2))
+	else
+		nameLbl.Position = UDim2.new(0, 10, 0, 5)
 	end
 end
 
 local function updateTimerUI(remainingTime, totalTime, bossName, phase)
 	if not timerContainer then return end
 
-	if bossName then
-		local header = timerContainer:FindFirstChild("Header")
-		local info = header and header:FindFirstChild("Info")
-		local nameLabel = info and info:FindFirstChild("BossName")
-		if nameLabel then nameLabel.Text = string.upper(tostring(bossName)) end
-	end
+	-- Update state
+	currentRemainingTime = remainingTime
 
-	if phase then
-		local header = timerContainer:FindFirstChild("Header")
-		local phaseFrame = header and header:FindFirstChild("PhaseFrame")
-		local phaseText = phaseFrame and phaseFrame:FindFirstChild("PhaseText")
-		if phaseText then phaseText.Text = string.upper(tostring(phase)) end
-	end
+	local display = timerContainer:FindFirstChild("MainPanel"):FindFirstChild("DisplayScreen")
+	if not display then return end
 
-	local timerSection = timerContainer:FindFirstChild("TimerSection")
-	if not timerSection then return end
+	-- Update Text
+	local nameLbl = cachedElements.nameLbl
+	local phaseLbl = display:FindFirstChild("PhaseLabel")
+	local timeLbl = cachedElements.timeLbl
+	local fill = cachedElements.fill
 
-	local bigTimer = timerSection:FindFirstChild("BigTimer")
-	local barBg = timerSection:FindFirstChild("BarBG")
-	local barFill = barBg and barBg:FindFirstChild("BarFill")
-	local uiStroke = timerContainer:FindFirstChild("BorderStroke")
+	if bossName and nameLbl then nameLbl.Text = "TARGET: " .. string.upper(bossName) end
+	if phase and phaseLbl then phaseLbl.Text = "STATUS: " .. string.upper(phase) end
 
-	if not bigTimer or not barFill then return end
+	local m = math.floor(remainingTime / 60)
+	local s = math.floor(remainingTime % 60)
+	if timeLbl then timeLbl.Text = string.format("%02d:%02d", m, s) end
 
-	-- Timer Text
-	local minutes = math.floor(remainingTime / 60)
-	local seconds = math.floor(remainingTime % 60)
-	bigTimer.Text = string.format("%02d:%02d", minutes, seconds)
+	-- Update Bar with Smooth Tween
+	if fill then
+		local pct = math.clamp(remainingTime / totalTime, 0, 1)
 
-	-- Bar Width
-	local pct = math.clamp(remainingTime / totalTime, 0, 1)
-	local tween = TweenService:Create(barFill, tweenInfo, {Size = UDim2.new(pct, 0, 1, 0)})
-	tween:Play()
+		-- Use TweenService for smooth slide
+		local tween = TweenService:Create(fill, barTweenInfo, {Size = UDim2.new(pct, 0, 1, 0)})
+		tween:Play()
 
-	-- Visual States
-	local currentState = "Normal"
-	if remainingTime <= 30 then
-		currentState = "Critical"
-	elseif remainingTime <= 120 then
-		currentState = "Warning"
-	end
-
-	local barGrad = barFill:FindFirstChildWhichIsA("UIGradient")
-
-	if currentState == "Critical" then
-		if uiStroke then uiStroke.Color = C_BORDER_DANGER end
-		bigTimer.TextColor3 = C_BAR_CRIT_B
-		if barGrad then
-			barGrad.Color = ColorSequence.new(C_BAR_CRIT_A, C_BAR_CRIT_B)
-		end
-
-		-- Pulse
-		local pulse = (math.sin(tick() * 10) + 1) / 2
-		bigTimer.TextTransparency = pulse * 0.5
-
-	elseif currentState == "Warning" then
-		if uiStroke then uiStroke.Color = C_BORDER_NORMAL end
-		bigTimer.TextColor3 = C_BAR_WARN_B
-		bigTimer.TextTransparency = 0
-		if barGrad then
-			barGrad.Color = ColorSequence.new(C_BAR_WARN_A, C_BAR_WARN_B)
-		end
-
-	else
-		if uiStroke then uiStroke.Color = C_BORDER_NORMAL end
-		bigTimer.TextColor3 = C_TEXT_WHITE
-		bigTimer.TextTransparency = 0
-		if barGrad then
-			barGrad.Color = ColorSequence.new(C_BAR_NORMAL_A, C_BAR_NORMAL_B)
-		end
+		-- Color Shift Green -> Red based on percentage
+		fill.BackgroundColor3 = THEME.COLORS.ACCENT_RED:Lerp(THEME.COLORS.SAFE_GREEN, pct)
 	end
 end
 
@@ -333,7 +392,19 @@ BossTimerEvent.OnClientEvent:Connect(function(remainingTime, totalTime, bossName
 	else
 		if not timerContainer then
 			createTimerUI()
+			-- Start Render Loop for effects
+			if not updateConnection then
+				updateConnection = RunService.RenderStepped:Connect(function(dt)
+					updateEffects(dt) 
+				end)
+			end
 		end
+
 		updateTimerUI(remainingTime, totalTime, bossName, phase)
 	end
+end)
+
+-- Cleanup on respawn
+player.CharacterAdded:Connect(function()
+	destroyTimerUI()
 end)
