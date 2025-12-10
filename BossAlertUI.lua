@@ -1,318 +1,333 @@
 -- BossAlertUI.lua (LocalScript)
 -- Path: StarterGui/BossAlertUI.lua
 -- Script Place: ACT 1: Village
--- Based on PrototypeBossAlertUI.html (Tailwind/CSS Style)
+-- Aesthetic: Analog Horror / Corrupted Emergency Broadcast (Procedural Only)
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 
 local player = Players.LocalPlayer
 local gui = player:WaitForChild("PlayerGui")
-local camera = workspace.CurrentCamera
 
-local RemoteEvents = game.ReplicatedStorage:WaitForChild("RemoteEvents", 10)
-local bossIncoming = nil
-if RemoteEvents then
-	bossIncoming = RemoteEvents:WaitForChild("BossIncoming", 10)
-end
+local RemoteEvents = ReplicatedStorage:WaitForChild("RemoteEvents", 10)
+local bossIncoming = RemoteEvents and RemoteEvents:WaitForChild("BossIncoming", 10)
 
--- Fallback for testing if RemoteEvent doesn't exist
--- CONFIGURATION --
-local BOSS_THEMES = {
-	["Plague Titan"] = {
-		Color = Color3.fromHex("#ef4444"), -- Red-500
-		Class = "BIOLOGICAL",
-		Icon = "?"
-	},
-	["Void Ascendant"] = {
-		Color = Color3.fromHex("#a855f7"), -- Purple-500
-		Class = "DIMENSIONAL",
-		Icon = "??"
-	},
-	["Blighted Alchemist"] = {
-		Color = Color3.fromHex("#84cc16"), -- Lime-500
-		Class = "CHEMICAL",
-		Icon = "?"
-	},
-	["Default"] = {
-		Color = Color3.fromHex("#ef4444"),
-		Class = "UNKNOWN",
-		Icon = "?"
-	}
+-- CONSTANTS --
+local COLORS = {
+	PHOSPHOR_RED = Color3.fromRGB(255, 50, 50),
+	PHOSPHOR_AMBER = Color3.fromRGB(255, 180, 0),
+	CRT_BLACK = Color3.fromRGB(10, 5, 5),
+	STATIC_WHITE = Color3.fromRGB(240, 240, 255)
 }
 
-local function GetTheme(name)
-	return BOSS_THEMES[name] or BOSS_THEMES["Default"]
+local FONTS = {
+	PRIMARY = Enum.Font.SpecialElite, -- Typewriter/Analog
+	DIGITAL = Enum.Font.Code, -- Computer
+	HEADER = Enum.Font.Michroma -- Modern Block
+}
+
+-- UI STATE --
+local activeTweens = {}
+local activeEffects = {}
+local connections = {}
+
+-- UTILITY --
+local function cleanUp()
+	for _, conn in ipairs(connections) do conn:Disconnect() end
+	connections = {}
+	for _, t in ipairs(activeTweens) do t:Cancel() end
+	activeTweens = {}
+	for _, eff in ipairs(activeEffects) do eff:Destroy() end
+	activeEffects = {}
+
+	-- Robust Cleanup: Check for lingering effects by name (fixes persistence on respawn)
+	local existingCC = Lighting:FindFirstChild("AnalogFX")
+	if existingCC then existingCC:Destroy() end
+	local existingBlur = Lighting:FindFirstChild("AnalogBlur")
+	if existingBlur then existingBlur:Destroy() end
+
+	local existing = gui:FindFirstChild("BossAlertScreen")
+	if existing then existing:Destroy() end
 end
 
--- UTILITY FUNCTIONS --
+-- Init Cleanup (in case of respawn during effect)
+cleanUp()
 
-local function CreateStroke(parent, color, thickness)
-	local stroke = Instance.new("UIStroke")
-	stroke.Color = color
-	stroke.Thickness = thickness
-	stroke.Transparency = 0
-	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-	stroke.Parent = parent
-	return stroke
+local function playTween(instance, info, props)
+	local t = TweenService:Create(instance, info, props)
+	table.insert(activeTweens, t)
+	t:Play()
+	return t
 end
 
-local function CreateCorner(parent, radius)
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, radius)
-	corner.Parent = parent
-	return corner
+-- PROCEDURAL VISUALS --
+
+local function createScanlines(parent)
+	-- Creates a faux-scanline effect using UIGradient transparency
+	-- Roblox allows max 20 keypoints. We can make ~10 lines.
+	local scanFrame = Instance.new("Frame")
+	scanFrame.Name = "Scanlines"
+	scanFrame.Size = UDim2.new(1, 0, 1, 0)
+	scanFrame.BackgroundTransparency = 0
+	scanFrame.BackgroundColor3 = COLORS.CRT_BLACK
+	scanFrame.ZIndex = 50
+	scanFrame.Parent = parent
+
+	local grad = Instance.new("UIGradient")
+	grad.Rotation = 90
+
+	-- Hardcoded bands for stability
+	grad.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.2),
+		NumberSequenceKeypoint.new(0.1, 0.8),
+		NumberSequenceKeypoint.new(0.2, 0.2),
+		NumberSequenceKeypoint.new(0.3, 0.8),
+		NumberSequenceKeypoint.new(0.4, 0.2),
+		NumberSequenceKeypoint.new(0.5, 0.8),
+		NumberSequenceKeypoint.new(0.6, 0.2),
+		NumberSequenceKeypoint.new(0.7, 0.8),
+		NumberSequenceKeypoint.new(0.8, 0.2),
+		NumberSequenceKeypoint.new(0.9, 0.8),
+		NumberSequenceKeypoint.new(1.0, 0.2)
+	})
+
+	grad.Parent = scanFrame
+
+	return scanFrame
 end
 
--- UI CREATION --
+local function createVignette(parent)
+	local v = Instance.new("ImageLabel") -- No assets? Use Frames.
+	-- Using the 4-frame method again as it's reliable for no-asset vignettes
+	local thickness = 0.1
+	local color = COLORS.CRT_BLACK
 
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "BossAlertUI"
-screenGui.IgnoreGuiInset = true
-screenGui.ResetOnSpawn = false
-screenGui.DisplayOrder = 20 -- Ensure it renders ON TOP of other HUDs
-screenGui.Parent = gui
-
--- Hazard Strip Generator (Striped Pattern)
-local function CreateHazardStrip(themeColor, positionY)
-	-- Container for the strip
-	local stripContainer = Instance.new("Frame")
-	stripContainer.Name = "HazardStrip"
-	stripContainer.Size = UDim2.new(0.7, 0, 0, 24) -- Slightly taller
-	stripContainer.Position = UDim2.new(0.5, 0, 0, positionY)
-	stripContainer.AnchorPoint = Vector2.new(0.5, 0.5)
-	stripContainer.BackgroundColor3 = Color3.new(0,0,0)
-	stripContainer.BackgroundTransparency = 0.5
-	stripContainer.ClipsDescendants = true -- CRITICAL: Keeps stripes inside
-	stripContainer.ZIndex = 5 -- Behind text (which will be 10)
-
-	CreateCorner(stripContainer, 4)
-	CreateStroke(stripContainer, themeColor, 2)
-
-	-- Holder for the stripes
-	local patternHolder = Instance.new("Frame")
-	patternHolder.Name = "PatternHolder"
-	patternHolder.Size = UDim2.new(1.5, 0, 1, 0) -- No rotation needed, just wider for scroll
-	patternHolder.Position = UDim2.new(0.5, 0, 0.5, 0)
-	patternHolder.AnchorPoint = Vector2.new(0.5, 0.5)
-	patternHolder.BackgroundTransparency = 1
-	patternHolder.ZIndex = 5
-	patternHolder.Parent = stripContainer
-
-	-- Generate Stripes
-	local numStripes = 60
-	local stripeWidth = 8
-	local gap = 20 
-
-	for i = 0, numStripes do
-		local bar = Instance.new("Frame")
-		bar.Name = "Stripe"
-		bar.Size = UDim2.new(0, stripeWidth, 1, 0)
-		bar.Position = UDim2.new(0, (i * gap) - (numStripes * gap / 2), 0, 0) -- Center distribution
-		bar.BackgroundColor3 = themeColor
-		bar.BorderSizePixel = 0
-		bar.ZIndex = 5
-		bar.Parent = patternHolder
+	local function makeSide(name, size, pos, rot)
+		local f = Instance.new("Frame")
+		f.Name = name
+		f.Size = size
+		f.Position = pos
+		f.BackgroundColor3 = color
+		f.BorderSizePixel = 0
+		f.ZIndex = 40
+		f.Parent = parent
+		local g = Instance.new("UIGradient")
+		g.Rotation = rot
+		g.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0),
+			NumberSequenceKeypoint.new(1, 1)
+		})
+		g.Parent = f
 	end
 
-	-- Animate Scroll
-	task.spawn(function()
-		local t = 0
-		while stripContainer.Parent do
-			t = t + 1
-			-- Reset every gap distance (approximate visual loop)
-			local offset = math.fmod(t, gap) 
-			patternHolder.Position = UDim2.new(0.5, offset, 0.5, 0) 
-			task.wait(0.03)
-		end
-	end)
-
-	return stripContainer
+	makeSide("Top", UDim2.new(1,0,thickness,0), UDim2.new(0,0,0,0), 90)
+	makeSide("Bot", UDim2.new(1,0,thickness,0), UDim2.new(0,0,1-thickness,0), -90)
+	makeSide("Left", UDim2.new(thickness*0.6,0,1,0), UDim2.new(0,0,0,0), 0)
+	makeSide("Right", UDim2.new(thickness*0.6,0,1,0), UDim2.new(1-thickness*0.6,0,0,0), 180)
 end
 
--- MAIN LOGIC --
+local function applyGlitchText(label, originalText)
+	local chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*"
+	local duration = 0.15
+	local nextGlitch = tick() + duration
 
-local function OnBossIncoming(bossName)
-	-- 1. Cleanup Old
-	for _, child in pairs(screenGui:GetChildren()) do child:Destroy() end
+	local conn = RunService.RenderStepped:Connect(function()
+		if tick() >= nextGlitch then
+			nextGlitch = tick() + math.random(0.05, 0.2)
 
-	local theme = GetTheme(bossName)
-	local sound = game:GetService("SoundService"):FindFirstChild("BossAlertSound") or Instance.new("Sound", workspace)
+			local r = math.random()
+			if r > 0.7 then
+				-- Swap a char
+				local idx = math.random(1, #originalText)
+				local sub = string.sub(chars, math.random(1, #chars), math.random(1, #chars))
+				label.Text = string.sub(originalText, 1, idx-1) .. sub .. string.sub(originalText, idx+1)
+			else
+				label.Text = originalText
+			end
 
-	-- 2. Cinematic Bars (Black Bars)
-	local topBar = Instance.new("Frame")
-	topBar.Size = UDim2.new(1, 0, 0, 0)
-	topBar.BackgroundColor3 = Color3.new(0,0,0)
-	topBar.BorderSizePixel = 0
-	topBar.ZIndex = 1
-	topBar.Parent = screenGui
-
-	local botBar = Instance.new("Frame")
-	botBar.Size = UDim2.new(1, 0, 0, 0)
-	botBar.Position = UDim2.new(0, 0, 1, 0)
-	botBar.AnchorPoint = Vector2.new(0, 1)
-	botBar.BackgroundColor3 = Color3.new(0,0,0)
-	botBar.BorderSizePixel = 0
-	botBar.ZIndex = 1
-	botBar.Parent = screenGui
-
-	TweenService:Create(topBar, TweenInfo.new(0.5, Enum.EasingStyle.Quart), {Size = UDim2.new(1, 0, 0.15, 0)}):Play()
-	TweenService:Create(botBar, TweenInfo.new(0.5, Enum.EasingStyle.Quart), {Size = UDim2.new(1, 0, 0.15, 0)}):Play()
-
-	-- 3. Screen Overlay (Vignette/Darken)
-	local overlay = Instance.new("Frame")
-	overlay.Size = UDim2.new(1, 0, 1, 0)
-	overlay.BackgroundColor3 = Color3.fromRGB(15, 23, 42) -- Dark Slate
-	overlay.BackgroundTransparency = 1
-	overlay.ZIndex = 2
-	overlay.Parent = screenGui
-	TweenService:Create(overlay, TweenInfo.new(0.5), {BackgroundTransparency = 0.4}):Play()
-
-	-- 4. Main Container (Centered)
-	local centerFrame = Instance.new("Frame")
-	centerFrame.Size = UDim2.new(0, 700, 0, 450)
-	centerFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-	centerFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-	centerFrame.BackgroundTransparency = 1
-	centerFrame.ZIndex = 10
-	centerFrame.Parent = screenGui
-
-	-- Hazard Strips (Top/Bottom of Center Frame)
-	-- Placed BEFORE text in code, but we also set ZIndex explicitly.
-	-- Relative Y positions for strips inside the 450px high frame
-	local hTop = CreateHazardStrip(theme.Color, 40) -- Top of frame
-	hTop.Parent = centerFrame
-	local hBot = CreateHazardStrip(theme.Color, 410) -- Bottom of frame
-	hBot.Parent = centerFrame
-
-	-- Icon Background
-	local iconBg = Instance.new("Frame")
-	iconBg.Size = UDim2.new(0, 90, 0, 90)
-	iconBg.Position = UDim2.new(0.5, 0, 0.25, 0)
-	iconBg.AnchorPoint = Vector2.new(0.5, 0.5)
-	iconBg.BackgroundColor3 = Color3.new(0,0,0)
-	iconBg.BackgroundTransparency = 0.4
-	iconBg.ZIndex = 15
-	iconBg.Parent = centerFrame
-	CreateCorner(iconBg, 100)
-	local iconStroke = CreateStroke(iconBg, theme.Color, 3)
-
-	local iconLbl = Instance.new("TextLabel")
-	iconLbl.Text = theme.Icon
-	iconLbl.Size = UDim2.new(1,0,1,0)
-	iconLbl.BackgroundTransparency = 1
-	iconLbl.TextSize = 50
-	iconLbl.TextColor3 = Color3.new(1,1,1)
-	iconLbl.ZIndex = 16
-	iconLbl.Parent = iconBg
-
-	-- Pulse Animation
-	TweenService:Create(iconBg, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 110, 0, 110)}):Play()
-
-	-- "MASSIVE SIGNAL" Warning
-	local signalLbl = Instance.new("TextLabel")
-	signalLbl.Text = "? MASSIVE SIGNAL DETECTED ?"
-	signalLbl.Font = Enum.Font.GothamBold
-	signalLbl.TextSize = 18
-	signalLbl.TextColor3 = Color3.fromHex("#22d3ee") -- Cyan-400
-	signalLbl.Size = UDim2.new(1, 0, 0, 25)
-	signalLbl.Position = UDim2.new(0, 0, 0.40, 0)
-	signalLbl.BackgroundTransparency = 1
-	signalLbl.TextTransparency = 1
-	signalLbl.ZIndex = 20
-	signalLbl.Parent = centerFrame
-
-	TweenService:Create(signalLbl, TweenInfo.new(0.5, Enum.EasingStyle.Linear, Enum.EasingDirection.Out, 0, false, 0.3), {TextTransparency = 0}):Play()
-
-	-- BOSS NAME Container
-	local titleContainer = Instance.new("Frame")
-	titleContainer.Size = UDim2.new(1, 0, 0, 90)
-	titleContainer.Position = UDim2.new(0, 0, 0.5, 0) -- Center
-	titleContainer.BackgroundTransparency = 1
-	titleContainer.ZIndex = 20
-	titleContainer.Parent = centerFrame
-
-	local function CreateGlitchText(color, z, offset, transparency)
-		local t = Instance.new("TextLabel")
-		t.Text = string.upper(bossName)
-		t.Font = Enum.Font.GothamBlack
-		t.TextSize = 65
-		t.TextColor3 = color
-		t.Size = UDim2.new(1, 0, 1, 0)
-		t.Position = UDim2.new(0, offset, 0, offset)
-		t.BackgroundTransparency = 1
-		t.TextTransparency = transparency or 1
-		t.ZIndex = z
-		t.Parent = titleContainer
-		return t
-	end
-
-	local mainTitle = CreateGlitchText(Color3.new(1,1,1), 22, 0)
-	local glitch1 = CreateGlitchText(Color3.fromHex("#00ffff"), 21, 2, 0.8)
-	local glitch2 = CreateGlitchText(Color3.fromHex("#ff00ff"), 21, -2, 0.8)
-
-	-- Enter Anim
-	TweenService:Create(mainTitle, TweenInfo.new(0.6, Enum.EasingStyle.Bounce, Enum.EasingDirection.Out, 0, false, 0.5), {TextTransparency = 0}):Play()
-
-	-- Shake Glitch
-	task.spawn(function()
-		while titleContainer.Parent do
-			local offset = math.random(-3, 3)
-			glitch1.Position = UDim2.new(0, offset, 0, 0)
-			glitch2.Position = UDim2.new(0, -offset, 0, 0)
-			task.wait(0.05)
+			-- Position Jitter
+			if r > 0.8 then
+				label.Position = UDim2.new(
+					label.Position.X.Scale, math.random(-2, 2),
+					label.Position.Y.Scale, math.random(-2, 2)
+				)
+			end
 		end
 	end)
+	table.insert(connections, conn)
+end
 
-	-- Subtitle
-	local subContainer = Instance.new("Frame")
-	subContainer.Size = UDim2.new(0, 450, 0, 30)
-	subContainer.Position = UDim2.new(0.5, 0, 0.75, 0)
-	subContainer.AnchorPoint = Vector2.new(0.5, 0)
-	subContainer.BackgroundColor3 = Color3.new(0,0,0)
-	subContainer.BackgroundTransparency = 1
-	subContainer.BorderSizePixel = 0
-	subContainer.ZIndex = 15
-	subContainer.Parent = centerFrame
+-- MAIN ANIMATION --
 
-	local subLbl = Instance.new("TextLabel")
-	subLbl.Text = string.format("CLASS: %s CONSTRUCT // THREAT: EXTREME", theme.Class)
-	subLbl.Font = Enum.Font.Gotham
-	subLbl.TextSize = 14
-	subLbl.TextColor3 = Color3.fromHex("#94a3b8") -- Slate-400
-	subLbl.Size = UDim2.new(1, 0, 1, 0)
-	subLbl.BackgroundTransparency = 1
-	subLbl.TextTransparency = 1
-	subLbl.ZIndex = 16
-	subLbl.Parent = subContainer
+local function playAnalogAlert(bossName)
+	cleanUp()
+	bossName = string.upper(bossName or "UNKNOWN")
 
-	TweenService:Create(subContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, 0, false, 0.8), {BackgroundTransparency = 0.4}):Play()
-	TweenService:Create(subLbl, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, 0, false, 0.8), {TextTransparency = 0}):Play()
+	-- 1. SCREEN FX
+	local cc = Instance.new("ColorCorrectionEffect")
+	cc.Name = "AnalogFX"
+	cc.TintColor = Color3.fromRGB(255, 220, 220)
+	cc.Contrast = 0.5 -- High contrast
+	cc.Saturation = -0.6 -- Desaturated
+	cc.Parent = Lighting
+	table.insert(activeEffects, cc)
 
-	-- CLEANUP --
+	local blur = Instance.new("BlurEffect")
+	blur.Name = "AnalogBlur"
+	blur.Size = 0
+	blur.Parent = Lighting
+	table.insert(activeEffects, blur)
+
+	-- 2. GUI SETUP
+	local screen = Instance.new("ScreenGui")
+	screen.Name = "BossAlertScreen"
+	screen.IgnoreGuiInset = true
+	screen.DisplayOrder = 100
+	screen.ResetOnSpawn = false
+	screen.Parent = gui
+
+	-- CRT Turn-On Animation (Scale Y from center)
+	local contentRoot = Instance.new("Frame")
+	contentRoot.Name = "ContentRoot"
+	contentRoot.Size = UDim2.new(1, 0, 0, 2) -- Start thin
+	contentRoot.Position = UDim2.new(0, 0, 0.5, 0)
+	contentRoot.AnchorPoint = Vector2.new(0, 0.5)
+	contentRoot.BackgroundColor3 = COLORS.CRT_BLACK
+	contentRoot.BorderSizePixel = 0
+	contentRoot.ClipsDescendants = true
+	contentRoot.Parent = screen
+
+	-- White Flash
+	local flash = Instance.new("Frame")
+	flash.Size = UDim2.new(1, 0, 1, 0)
+	flash.BackgroundColor3 = COLORS.STATIC_WHITE
+	flash.ZIndex = 100
+	flash.Parent = contentRoot
+
+	-- 3. ANIMATION: TURN ON
+	playTween(contentRoot, TweenInfo.new(0.2, Enum.EasingStyle.Sine), {Size = UDim2.new(1, 0, 1, 0)})
+	playTween(flash, TweenInfo.new(0.3), {BackgroundTransparency = 1})
+	playTween(blur, TweenInfo.new(0.3, Enum.EasingStyle.Bounce, Enum.EasingDirection.Out, 0, true), {Size = 20}) -- Blur pulse
+
+	-- 4. VISUAL ELEMENTS
+	createScanlines(contentRoot)
+	createVignette(contentRoot)
+
+	-- Main Box
+	local box = Instance.new("Frame")
+	box.Size = UDim2.new(0, 600, 0, 300)
+	box.Position = UDim2.new(0.5, 0, 0.5, 0)
+	box.AnchorPoint = Vector2.new(0.5, 0.5)
+	box.BackgroundTransparency = 1
+	box.ZIndex = 10
+	box.Parent = contentRoot
+
+	-- Borders (Top/Bottom)
+	local borderTop = Instance.new("Frame")
+	borderTop.Size = UDim2.new(1, 0, 0, 4)
+	borderTop.BackgroundColor3 = COLORS.PHOSPHOR_RED
+	borderTop.BorderSizePixel = 0
+	borderTop.Parent = box
+
+	local borderBot = borderTop:Clone()
+	borderBot.Position = UDim2.new(0, 0, 1, -4)
+	borderBot.Parent = box
+
+	-- Header
+	local header = Instance.new("TextLabel")
+	header.Text = "EMERGENCY BROADCAST SYSTEM"
+	header.Font = FONTS.HEADER
+	header.TextSize = 24
+	header.TextColor3 = COLORS.PHOSPHOR_RED
+	header.Size = UDim2.new(1, 0, 0, 30)
+	header.Position = UDim2.new(0, 0, 0.1, 0)
+	header.BackgroundTransparency = 1
+	header.Parent = box
+
+	-- Sub Header
+	local sub = Instance.new("TextLabel")
+	sub.Text = "THREAT DETECTED IN SECTOR 7"
+	sub.Font = FONTS.DIGITAL
+	sub.TextSize = 18
+	sub.TextColor3 = COLORS.STATIC_WHITE
+	sub.Size = UDim2.new(1, 0, 0, 20)
+	sub.Position = UDim2.new(0, 0, 0.2, 0)
+	sub.BackgroundTransparency = 1
+	sub.Parent = box
+
+	-- BOSS NAME (Big)
+	local bossLbl = Instance.new("TextLabel")
+	bossLbl.Text = bossName
+	bossLbl.Font = FONTS.PRIMARY
+	bossLbl.TextSize = 60
+	bossLbl.TextColor3 = COLORS.PHOSPHOR_RED
+	bossLbl.Size = UDim2.new(1, 0, 0, 100)
+	bossLbl.Position = UDim2.new(0, 0, 0.4, 0)
+	bossLbl.BackgroundTransparency = 1
+	bossLbl.TextScaled = false
+	bossLbl.Parent = box
+
+	applyGlitchText(bossLbl, bossName)
+
+	-- Footer (Blinking)
+	local footer = Instance.new("TextLabel")
+	footer.Text = "SEEK SHELTER IMMEDIATELY"
+	footer.Font = FONTS.PRIMARY
+	footer.TextSize = 24
+	footer.TextColor3 = COLORS.PHOSPHOR_AMBER
+	footer.Size = UDim2.new(1, 0, 0, 30)
+	footer.Position = UDim2.new(0, 0, 0.8, 0)
+	footer.BackgroundTransparency = 1
+	footer.Parent = box
+
+	local blinkTween = playTween(footer, TweenInfo.new(0.5, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, true), {TextTransparency = 1})
+
+	-- 5. NOISE OVERLAY
+	local noise = Instance.new("Frame")
+	noise.Size = UDim2.new(1, 0, 1, 0)
+	noise.BackgroundColor3 = COLORS.STATIC_WHITE
+	noise.BackgroundTransparency = 0.95
+	noise.ZIndex = 60
+	noise.Parent = contentRoot
+
+	-- Shake Screen Loop
+	local shakeConn = RunService.RenderStepped:Connect(function()
+		local offsetX = math.random(-2, 2)
+		local offsetY = math.random(-2, 2)
+		contentRoot.Position = UDim2.new(0, offsetX, 0.5, offsetY)
+
+		-- Random Noise Bar
+		if math.random() > 0.9 then
+			local bar = Instance.new("Frame")
+			bar.Size = UDim2.new(1, 0, 0, math.random(2, 10))
+			bar.Position = UDim2.new(0, 0, math.random(), 0)
+			bar.BackgroundColor3 = COLORS.STATIC_WHITE
+			bar.BorderSizePixel = 0
+			bar.BackgroundTransparency = 0.8
+			bar.ZIndex = 55
+			bar.Parent = contentRoot
+			game.Debris:AddItem(bar, 0.05)
+		end
+	end)
+	table.insert(connections, shakeConn)
+
+	-- 6. EXIT SEQUENCE
 	task.delay(6, function()
-		-- Animate Out
-		TweenService:Create(topBar, TweenInfo.new(0.5), {Size = UDim2.new(1, 0, 0, 0)}):Play()
-		TweenService:Create(botBar, TweenInfo.new(0.5), {Size = UDim2.new(1, 0, 0, 0)}):Play()
+		-- Turn Off Animation (Collapse Y)
+		playTween(contentRoot, TweenInfo.new(0.3, Enum.EasingStyle.Sine), {Size = UDim2.new(1, 0, 0, 2)})
+		playTween(cc, TweenInfo.new(0.5), {Contrast = 0, Saturation = 0})
 
-		for _, d in pairs(screenGui:GetDescendants()) do
-			if d:IsA("Frame") or d:IsA("TextLabel") then
-				TweenService:Create(d, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
-				if d:IsA("TextLabel") then TweenService:Create(d, TweenInfo.new(0.5), {TextTransparency = 1}):Play() end
-			end
-			if d:IsA("UIStroke") then
-				TweenService:Create(d, TweenInfo.new(0.5), {Transparency = 1}):Play()
-			end
-		end
-		task.wait(0.5)
-		screenGui:ClearAllChildren()
+		task.wait(0.3)
+		cleanUp()
 	end)
 end
 
--- Connect Event
-bossIncoming.OnClientEvent:Connect(OnBossIncoming)
+if bossIncoming then
+	bossIncoming.OnClientEvent:Connect(playAnalogAlert)
+end
 
--- Testing for sandbox (uncomment to self-test in studio)
--- task.spawn(function() task.wait(2); OnBossIncoming("Plague Titan"); end)
+-- TEST (Uncomment to test)
+-- task.delay(3, function() playAnalogAlert("PLAGUE TITAN") end)
