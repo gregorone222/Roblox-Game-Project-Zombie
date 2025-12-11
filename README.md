@@ -1,69 +1,81 @@
 # Zombie?
 
-**Zombie?** is an intense Co-op Zombie Survival (Wave Shooter) game on Roblox. Players must work together to survive endless waves of the undead, complete challenging missions, and upgrade their arsenal to face powerful bosses.
+**Zombie?** adalah game Co-op Zombie Survival (Wave Shooter) yang intens di Roblox. Pemain harus bekerja sama untuk bertahan hidup dari gelombang mayat hidup yang tak ada habisnya, menyelesaikan misi yang menantang, dan meningkatkan persenjataan mereka untuk menghadapi bos yang kuat.
 
-## 🎮 Game Overview
+## 🎮 Gambaran Game
 
 *   **Genre:** Co-op Survival / Wave Shooter
-*   **Goal:** Survive increasingly difficult waves, defeat bosses, and complete the story (Wave 50).
-*   **Perspective:** First-Person / Third-Person Shooter
+*   **Tujuan:** Bertahan dari gelombang yang semakin sulit, kalahkan bos, dan selesaikan cerita (Wave 50).
+*   **Perspektif:** First-Person / Third-Person Shooter
 
-## 🕹️ Game Modes
+## 🕹️ Mode Permainan
 
-*   **Story Mode:** The standard mode where players aim to survive until Wave 50 to complete the chapter.
-*   **Crazy Mode:** A hardcore challenge for veteran players.
-    *   *Rules:* No Revives, Friendly Fire ON, Limited Perks, Increased Enemy Stats.
+*   **Story Mode:** Mode standar di mana pemain bertujuan untuk bertahan hidup hingga Wave 50 untuk menyelesaikan bab cerita.
+*   **Crazy Mode:** Tantangan hardcore untuk pemain veteran.
+    *   *Aturan:* Tidak ada Revive, Friendly Fire AKTIF, Perk Terbatas, Statistik Musuh Meningkat.
 
-## ✨ Key Features
+## ✨ Fitur Utama
 
-### Combat System
-*   **Raycast Ballistics:** Accurate shooting mechanics with recoil, spread, and damage drop-off.
-*   **Critical Hits:** Headshot multipliers reward precision aiming.
-*   **Weapon Variety:** Pistols, Assault Rifles, Shotguns, SMGs, LMGs, and Snipers.
-*   **Upgrades:** In-game "Pack-a-Punch" style weapon upgrades (Levels 1-3).
+### Sistem Tempur
+*   **Balistik Raycast:** Mekanisme menembak yang akurat dengan recoil, spread, dan pengurangan damage berdasarkan jarak.
+*   **Critical Hits:** Multiplier headshot menghargai bidikan yang presisi.
+*   **Variasi Senjata:** Pistol, Assault Rifle, Shotgun, SMG, LMG, dan Sniper.
+*   **Upgrade:** Peningkatan senjata dalam game gaya "Pack-a-Punch" (Level 1-3).
 
-### Enemy Roster
-*   **Common Infected:** Standard zombies.
-*   **Runner:** Low HP but high speed.
-*   **Shooter:** Ranged attacker that leaves acid pools.
-*   **Tank:** Massive HP pool, requires focused fire.
-*   **Bosses:** Unique encounters with multi-phase mechanics:
-    *   *Plague Titan:* Radiation aura and corrosive slams.
-    *   *Void Ascendant:* Orbital strikes and platforming phases.
-    *   *The Blighted Alchemist:* Chemical warfare.
+### Daftar Musuh
+*   **Common Infected:** Zombie standar.
+*   **Runner:** HP rendah tapi kecepatan tinggi.
+*   **Shooter:** Penyerang jarak jauh yang meninggalkan genangan asam.
+*   **Tank:** Kumpulan HP yang sangat besar, membutuhkan tembakan terfokus.
+*   **Bos:** Pertemuan unik dengan mekanik multi-fase:
+    *   *Plague Titan:* Aura radiasi dan hantaman korosif.
+    *   *Void Ascendant:* Serangan orbital dan fase platforming.
+    *   *The Blighted Alchemist:* Peperangan kimia.
 
-### Progression & Economy
-*   **Points (Session):** Earned by damaging zombies. Used for buying weapons, perks, and unlocking map areas. Reset after game over.
-*   **Coins (Persistent):** Earned by completing waves and games. Used for skins and permanent unlocks.
-*   **XP & Levels:** Account progression that unlocks Titles and Rewards.
-*   **Skill Tree:** Permanent passive buffs (Health+, Reload Speed+, etc.).
-*   **Perks:** In-game buffs (Juggernog-style HP boost, Speed Cola-style reload boost, etc.).
+### Progresi & Ekonomi
+*   **Points (Sesi):** Diperoleh dengan memberikan damage pada zombie. Digunakan untuk membeli senjata, perk, dan membuka area peta. Direset setelah game over.
+*   **Coins (Persisten):** Diperoleh dengan menyelesaikan wave dan game. Digunakan untuk skin dan item permanen.
+*   **XP & Level:** Progresi akun yang membuka Title dan Hadiah.
+*   **Skill Tree:** Buff pasif permanen (Health+, Kecepatan Reload+, dll).
+*   **Perks:** Buff dalam game (Boost HP gaya Juggernog, Boost reload gaya Speed Cola, dll).
 
-### Mission System
-*   **Daily & Weekly Tasks:** Rotating objectives (e.g., "Get 50 Headshots") to earn rewards.
-*   **Reroll System:** Players can reroll missions they don't like.
+### Sistem Misi
+*   **Tugas Harian & Mingguan:** Objektif bergilir (misalnya, "Dapatkan 50 Headshot") untuk mendapatkan hadiah.
+*   **Sistem Reroll:** Pemain dapat mengacak ulang misi yang tidak mereka sukai.
 
-## 🛠️ Technical Architecture
+## 🛠️ Arsitektur Teknis
 
-The project utilizes a robust **Service-Manager Pattern** to ensure scalability and maintainability.
+Proyek ini menggunakan **Pola Service-Manager** yang kuat untuk memastikan skalabilitas dan kemudahan pemeliharaan.
 
-### Core Structure
+### Struktur Inti
 *   **ServerScriptService (Logic):**
-    *   `GameManager`: Orchestrates the main game loop (Wave State, Voting, Win/Loss).
-    *   `WeaponManager`: Server-side validation for combat and hit registration.
-    *   `DataStoreManager`: Handles all data persistence (Player Data & Global Data) with caching.
-    *   `LobbyManager`: Manages pre-game logic, profiles, and daily rewards.
+    *   `GameManager`: Mengatur loop utama permainan (Status Wave, Voting, Menang/Kalah).
+    *   `WeaponManager`: Validasi sisi server untuk pertempuran dan registrasi hit.
+    *   `DataStoreManager`: Menangani semua persistensi data (Data Pemain & Data Global) dengan caching.
+    *   `LobbyManager`: Mengelola logika pra-permainan, profil, dan hadiah harian.
 *   **ReplicatedStorage (Shared):**
-    *   `GameConfig`: Centralized configuration for balancing (Economy, Difficulty).
-    *   `ZombieConfig` & `WeaponModule`: Data definitions for entities and items.
+    *   `GameConfig`: Konfigurasi terpusat untuk penyeimbangan (Ekonomi, Kesulitan).
+    *   `ZombieConfig` & `WeaponModule`: Definisi data untuk entitas dan item.
 
-### Key Technologies
-*   **DataStoreService:** For saving player stats, inventory, and leaderboards.
-*   **RemoteEvents/Functions:** Secured networking for Client-Server communication.
-*   **ModuleScripts:** Modular code organization.
+### Teknologi Kunci
+*   **DataStoreService:** Untuk menyimpan statistik pemain, inventaris, dan papan peringkat.
+*   **RemoteEvents/Functions:** Jaringan aman untuk komunikasi Client-Server.
+*   **ModuleScripts:** Organisasi kode modular.
 
-## 📝 Credits
-*   **Development:** One-Man Army Agent (Game Design, UI/UX, Programming, VFX, Building, Audio, Physics, Animation).
+## 📝 Kredit
+*   **Pengembangan:** Agen One-Man Army (Desain Game, UI/UX, Pemrograman, VFX, Bangunan, Audio, Fisika, Animasi).
+
+### 🏗️ Lingkungan Lobi (Pembuatan Prosedural)
+Lobi dibuat secara dinamis melalui `LobbyBuilderSubway.lua`, menampilkan tema **Stasiun Kereta Bawah Tanah Terbengkalai**.
+*   **Atmosfer:** Estetika industri yang gelap dan berpasir dengan pencahayaan dinamis (lampu tabung berkedip, api unggun hangat).
+*   **Zona:**
+    *   *Platform Pusat:* Area spawn dengan api unggun untuk berkumpul.
+    *   *Rel Kereta:* Berisi gerbong kereta yang tergelincir yang berfungsi sebagai bagian depan toko.
+    *   *Quartermaster:* "Penukaran Achievement" & "Penukaran Misi".
+    *   *Tenda Medis:* Toko Booster.
+    *   *Supply Drop:* Titik klaim Hadiah Harian.
+    *   *Vending Machine:* Sistem Gacha ("Mystery Cache").
+    *   *Papan Misi:* NPC "Alexander" untuk manajemen ruang lobi.
 
 ---
-*Documentation generated automatically based on project analysis.*
+*Dokumentasi dibuat secara otomatis berdasarkan analisis proyek.*
