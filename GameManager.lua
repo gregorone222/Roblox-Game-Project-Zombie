@@ -301,6 +301,9 @@ local function ResetGame()
 	-- Reset Objectives
 	ObjectiveManager:Reset()
 
+	-- Load Lobby Map
+	BuildingManager.LoadMap("Lobby")
+
 	-- Reset perks, points & leaderstats untuk semua player
 	for _, player in ipairs(game.Players:GetPlayers()) do
 		PerkHandler.clearPlayerPerks(player)
@@ -318,6 +321,9 @@ end)
 -- Fungsi start loop game
 local function startGameLoop()
 	if gameStarted then return end
+
+	-- Load Village Map for Game
+	BuildingManager.LoadMap("Village")
 
 	-- Atur tingkat kesulitan di GameStatus
 	GameStatus:SetDifficulty(difficulty)
