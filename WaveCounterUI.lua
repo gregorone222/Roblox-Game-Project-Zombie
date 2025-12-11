@@ -13,6 +13,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 local RemoteEvents = ReplicatedStorage:WaitForChild("RemoteEvents")
 local WaveUpdateEvent = RemoteEvents:WaitForChild("WaveUpdateEvent")
 local WaveCountdownEvent = RemoteEvents:WaitForChild("WaveCountdownEvent")
+local ObjectiveUpdateEvent = RemoteEvents:WaitForChild("ObjectiveUpdateEvent")
 
 -- Note: GameConfig is server-side, so we use defaults here or rely on events
 local ZOMBIES_PER_PLAYER_DEFAULT = 5
@@ -205,7 +206,48 @@ safeTimer.BackgroundTransparency = 1
 safeTimer.Parent = safeContent
 
 
--- 4. Splash Text (Center Screen)
+-- 4. Objective Content (Lower Panel)
+local objContainer = Instance.new("Frame")
+objContainer.Name = "ObjectiveContainer"
+objContainer.Size = UDim2.new(1, -20, 0, 25)
+objContainer.Position = UDim2.new(0, 20, 1, 5) -- Below StatusPanel
+objContainer.BackgroundColor3 = COLORS.BG_METAL
+objContainer.BackgroundTransparency = 0.3
+objContainer.BorderSizePixel = 0
+objContainer.Visible = false
+objContainer.Parent = statusPanel
+
+local objStroke = Instance.new("UIStroke")
+objStroke.Color = COLORS.ACCENT_HAZARD
+objStroke.Thickness = 1
+objStroke.Parent = objContainer
+
+local objText = Instance.new("TextLabel")
+objText.Name = "ObjText"
+objText.Text = "OBJECTIVE: FIND FUEL"
+objText.Font = FONTS.TECH
+objText.TextSize = 14
+objText.TextColor3 = COLORS.ACCENT_HAZARD
+objText.Size = UDim2.new(0.7, 0, 1, 0)
+objText.Position = UDim2.new(0, 5, 0, 0)
+objText.TextXAlignment = Enum.TextXAlignment.Left
+objText.BackgroundTransparency = 1
+objText.Parent = objContainer
+
+local objCounter = Instance.new("TextLabel")
+objCounter.Name = "ObjCounter"
+objCounter.Text = "0/3"
+objCounter.Font = FONTS.DIGITAL
+objCounter.TextSize = 16
+objCounter.TextColor3 = COLORS.TEXT_LIGHT
+objCounter.Size = UDim2.new(0.3, -5, 1, 0)
+objCounter.Position = UDim2.new(0.7, 0, 0, 0)
+objCounter.TextXAlignment = Enum.TextXAlignment.Right
+objCounter.BackgroundTransparency = 1
+objCounter.Parent = objContainer
+
+
+-- 5. Splash Text (Center Screen)
 local splashContainer = Instance.new("Frame")
 splashContainer.Size = UDim2.new(1, 0, 0, 100)
 splashContainer.Position = UDim2.new(0, 0, 0.35, 0)
@@ -275,6 +317,7 @@ WaveUpdateEvent.OnClientEvent:Connect(function(wave, activePlayers)
 	container.Visible = true
 	combatContent.Visible = true
 	safeContent.Visible = false
+	objContainer.Visible = false -- Hide objective initially
 
 	-- Update Badge
 	waveNumber.Text = tostring(wave)
@@ -335,6 +378,34 @@ WaveCountdownEvent.OnClientEvent:Connect(function(seconds)
 	else
 		isIntermission = false
 		safeContent.Visible = false
+	end
+end)
+
+ObjectiveUpdateEvent.OnClientEvent:Connect(function(type, data)
+	if type == "START" then
+		objContainer.Visible = true
+		objText.Text = data.Desc
+		objCounter.Text = string.format("%d/%d", data.Progress, data.Target)
+		triggerSplash("OBJECTIVE UPDATE", COLORS.ACCENT_HAZARD)
+
+	elseif type == "UPDATE" then
+		objContainer.Visible = true
+		objText.Text = data.Desc
+		objCounter.Text = string.format("%d/%d", data.Progress, data.Target)
+
+		if data.IsCritical then
+			objText.TextColor3 = COLORS.ACCENT_CRITICAL
+		else
+			objText.TextColor3 = COLORS.ACCENT_HAZARD
+		end
+
+	elseif type == "COMPLETE" then
+		objContainer.Visible = false
+		triggerSplash("OBJECTIVE SECURED", COLORS.ACCENT_TOXIC)
+
+	elseif type == "ALERT" then
+		-- Just a quick subtitle alert (reuse splash logic or add a new one, keeping it simple)
+		triggerSplash(data, COLORS.ACCENT_HAZARD)
 	end
 end)
 

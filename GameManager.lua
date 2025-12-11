@@ -102,6 +102,7 @@ local MissionManager = require(ModuleScriptServerScriptService:WaitForChild("Mis
 local GlobalMissionManager = require(ModuleScriptServerScriptService:WaitForChild("GlobeMissionManager"))
 local AchievementManager = require(ModuleScriptServerScriptService:WaitForChild("AchievementManager"))
 local DataStoreManager = require(ModuleScriptServerScriptService:WaitForChild("DataStoreManager"))
+local ObjectiveManager = require(ModuleScriptServerScriptService:WaitForChild("ObjectiveManager"))
 DataStoreManager:Init()
 
 local WaveCountdownEvent = RemoteEvents:WaitForChild(Constants.Events.WAVE_COUNTDOWN)
@@ -237,6 +238,9 @@ local function HandleGameOver()
 	-- Kirim event ke semua client untuk menampilkan layar Game Over
 	GameOverEvent:FireAllClients()
 
+	-- Reset Objectives to prevent softlock on next game
+	ObjectiveManager:Reset()
+
 	-- Di sini kita tidak langsung teleport. Client akan memiliki tombol untuk kembali ke lobi.
 end
 
@@ -293,6 +297,9 @@ local function ResetGame()
 	ClearChams()
 	-- Reset purchased elements
 	ElementModule.ClearPurchasedElements()
+
+	-- Reset Objectives
+	ObjectiveManager:Reset()
 
 	-- Reset perks, points & leaderstats untuk semua player
 	for _, player in ipairs(game.Players:GetPlayers()) do
@@ -433,16 +440,60 @@ local function startGameLoop()
 			ClearChams()
 			waveDamageTracker = {}
 
+			-- Check for Special Objective Waves
+			local objectiveActive = false
+
+			if wave == 8 then
+				-- Wave 8: Power Restoration
+				objectiveActive = true
+				ObjectiveManager:StartObjective("SCAVENGE", {
+					Count = 3,
+					Spawns = {Vector3.new(50, 2, 50), Vector3.new(-50, 2, 50), Vector3.new(0, 2, -60)},
+					GenPos = Vector3.new(0, 2, 0)
+				})
+			elseif wave == 22 then
+				-- Wave 22: Data Uplink
+				objectiveActive = true
+				ObjectiveManager:StartObjective("DEFEND", {
+					Duration = 60,
+					ZonePos = Vector3.new(0, 2, 0), -- Town Square
+					Radius = 15
+				})
+			elseif wave == 38 then
+				-- Wave 38: Retrieval
+				objectiveActive = true
+				ObjectiveManager:StartObjective("RETRIEVE", {
+					Count = 4,
+					Spawns = {Vector3.new(40, 2, 40), Vector3.new(-40, 2, 40), Vector3.new(40, 2, -40), Vector3.new(-40, 2, -40)}
+				})
+			end
+
 			-- Panggil SpawnWave setelah semua modifier ditentukan
 			SpawnerModule.SpawnWave(zombiesToSpawn, wave, activePlayers, gameMode, difficulty, waveModifiers, bossType)
 
-			print("Waiting for " .. zombiesToSpawn .. " zombies to be defeated.")
-			while zombiesKilled < zombiesToSpawn do
-				local remaining = math.max(0, zombiesToSpawn - zombiesKilled)
-				if (not chamsApplied) and remaining <= 3 then
+			print("Waiting for completion...")
+
+			-- Modified Loop: Wait for BOTH zombies and Objective (if active)
+			while true do
+				local remainingZombies = math.max(0, zombiesToSpawn - zombiesKilled)
+				local objectiveDone = (not objectiveActive) or (not ObjectiveManager:IsObjectiveActive())
+
+				-- Objective waves continue until objective is done, even if zombies are dead (infinite spawn logic could be added here later)
+				if objectiveActive then
+					if objectiveDone and remainingZombies <= 0 then
+						break -- All done
+					end
+				else
+					if remainingZombies <= 0 then
+						break -- Only zombies mattered
+					end
+				end
+
+				if (not chamsApplied) and remainingZombies <= 3 and not objectiveActive then
 					chamsApplied = true
 					ApplyChamsToZombies()
 				end
+
 				if (myToken ~= runToken) or (not gameStarted) then return end
 				task.wait(1)
 			end
