@@ -310,17 +310,61 @@ function LobbyBuilder.Build()
 	spawn.Anchored = true
 	spawn.Parent = env
 
-	-- Mission Board Area (Alexander)
+	-- Mission Command Center (Alexander) - REVISED FOR STORY
 	local boardPos = CFrame.new(0, PLATFORM_HEIGHT + 6, STATION_WIDTH/2 - 2)
-	local mapBoard = createPart("MapBoard", Vector3.new(20, 10, 1), boardPos, env, COLORS.Concrete, Enum.Material.Wood)
-	-- Posters on board
-	for j = -1, 1 do
-		createPart("Poster", Vector3.new(4, 5, 0.1), boardPos * CFrame.new(j*5, 0, -0.6), env, Color3.new(1,1,1), Enum.Material.SmoothPlastic)
-	end
 
-	local alexPos = boardPos * CFrame.new(-12, -3, -10)
-	spawnNPC("Alexander", alexPos * CFrame.Angles(0, math.rad(180), 0), env, COLORS.ConcreteDark)
-	createInteraction("LobbyRoom", alexPos, Vector3.new(6, 6, 6), "Discuss Mission", env)
+	-- Command Table (Map of The Village)
+	local tablePos = boardPos * CFrame.new(0, -6, -15)
+	local tableBase = createPart("CommandTable", Vector3.new(12, 1, 8), tablePos, env, COLORS.DarkMetal, Enum.Material.Metal)
+	createPart("TableLeg1", Vector3.new(1, 3, 1), tablePos * CFrame.new(5, -2, 3), env, COLORS.DarkMetal, Enum.Material.Metal)
+	createPart("TableLeg2", Vector3.new(1, 3, 1), tablePos * CFrame.new(-5, -2, 3), env, COLORS.DarkMetal, Enum.Material.Metal)
+	createPart("TableLeg3", Vector3.new(1, 3, 1), tablePos * CFrame.new(5, -2, -3), env, COLORS.DarkMetal, Enum.Material.Metal)
+	createPart("TableLeg4", Vector3.new(1, 3, 1), tablePos * CFrame.new(-5, -2, -3), env, COLORS.DarkMetal, Enum.Material.Metal)
+
+	-- Holographic Map (Visual)
+	local mapPart = createPart("HoloMap", Vector3.new(10, 0.1, 6), tablePos * CFrame.new(0, 0.6, 0), env, Color3.fromRGB(0, 50, 0), Enum.Material.Neon)
+	local mapLight = createLight(mapPart, Vector3.new(0, 1, 0), Color3.fromRGB(50, 255, 50), 10, 2)
+
+	-- Strategic Map Board (Wall)
+	local mapBoard = createPart("MapBoard", Vector3.new(24, 12, 1), boardPos, env, COLORS.Concrete, Enum.Material.Slate)
+	-- Act 1: Village Zone (Highlighted)
+	local villageZone = createPart("VillageZone", Vector3.new(8, 6, 0.2), boardPos * CFrame.new(-6, 0, -0.6), env, Color3.fromRGB(200, 50, 50), Enum.Material.Plastic)
+	local villageLabel = Instance.new("SurfaceGui")
+	villageLabel.Face = Enum.NormalId.Front
+	villageLabel.Parent = villageZone
+	local txt = Instance.new("TextLabel")
+	txt.Size = UDim2.fromScale(1,1)
+	txt.BackgroundTransparency = 1
+	txt.Text = "ACT 1: THE VILLAGE\n(GROUND ZERO)"
+	txt.TextColor3 = Color3.new(1,1,1)
+	txt.TextSize = 40
+	txt.Font = Enum.Font.Sarpanch
+	txt.Parent = villageLabel
+
+	-- Act 2: Locked Zone
+	local cityZone = createPart("CityZone", Vector3.new(8, 6, 0.2), boardPos * CFrame.new(6, 0, -0.6), env, Color3.fromRGB(50, 50, 50), Enum.Material.DiamondPlate)
+	local lockLabel = Instance.new("SurfaceGui")
+	lockLabel.Face = Enum.NormalId.Front
+	lockLabel.Parent = cityZone
+	local txt2 = Instance.new("TextLabel")
+	txt2.Size = UDim2.fromScale(1,1)
+	txt2.BackgroundTransparency = 1
+	txt2.Text = "ACT 2: ???\n(LOCKED)"
+	txt2.TextColor3 = Color3.fromRGB(150, 0, 0)
+	txt2.TextSize = 40
+	txt2.Font = Enum.Font.Sarpanch
+	txt2.Parent = lockLabel
+
+	-- Alexander NPC (Commanding Position)
+	local alexPos = tablePos * CFrame.new(0, 2, 6) * CFrame.Angles(0, math.rad(180), 0)
+	spawnNPC("Alexander", alexPos, env, COLORS.ConcreteDark)
+
+	-- Radio Equipment
+	createPart("RadioSet", Vector3.new(2, 1, 1), tablePos * CFrame.new(4, 0.6, 2), env, Color3.new(0.2, 0.2, 0.2), Enum.Material.Plastic)
+	createSoundEmitter("RadioChatter", tableBase, "rbxassetid://9063255294", 0.4, true, 20) -- Static chatter
+
+	-- Interaction Point
+	createInteraction("LobbyRoom", alexPos, Vector3.new(8, 8, 8), "Mission Briefing", env)
 
 	-- C. SHOPS & UTILITIES
 	-- Booster Shop (Medical Tent)
