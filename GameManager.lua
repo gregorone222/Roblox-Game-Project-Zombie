@@ -33,10 +33,18 @@ local function initializeGameSettings(player)
 
 	-- DEBUG / PREVIEW MODE: Load Act 1 Map immediately if requested
 	-- For this task, we default to Village to satisfy "Make map without needing to start game"
-	task.spawn(function()
-		task.wait(1)
-		BuildingManager.LoadMap("Village")
-	end)
+	if GameConfig.DebugMode then
+		task.spawn(function()
+			task.wait(1)
+			BuildingManager.LoadMap("Village")
+		end)
+	else
+		-- Default Production Flow
+		task.spawn(function()
+			task.wait(1)
+			BuildingManager.LoadMap("Lobby")
+		end)
+	end
 end
 
 -- Connect to PlayerAdded to get the game mode from the first player

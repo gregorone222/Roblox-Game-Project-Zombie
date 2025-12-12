@@ -1,6 +1,7 @@
 -- Boss2Module.lua (ModuleScript)
 -- Path: ServerScriptService/ModuleScript/BossModule/Boss2Module.lua
 -- Script Place: ACT 1: Village
+-- Boss: The Hive Mother (Insectoid/Summoner)
 
 local Boss2 = {}
 
@@ -13,398 +14,187 @@ local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
 local RunService = game:GetService("RunService")
 
--- Memanggil modul VFX
-local OrbOfAnnihilationVFX = require(ServerScriptService.ModuleScript:WaitForChild("OrbOfAnnihilationVFX"))
-local Boss2PhaseTransitionVFX = require(ServerScriptService.ModuleScript:WaitForChild("Boss2PhaseTransitionVFX"))
-local CurseOfBanishmentVFX = require(ServerScriptService.ModuleScript:WaitForChild("CurseOfBanishmentVFX"))
-local VoidMeteorVFX = require(ServerScriptService.ModuleScript:WaitForChild("VoidMeteorVFX"))
+-- Modules
 local Boss2VFXModule = require(ReplicatedStorage.ZombieVFX:WaitForChild("Boss2VFXModule"))
 local ElementModule = require(ServerScriptService.ModuleScript:WaitForChild("ElementConfigModule"))
 local ShieldModule = require(ServerScriptService.ModuleScript:WaitForChild("ShieldModule"))
+local SpawnerModule = require(ServerScriptService.ModuleScript:WaitForChild("SpawnerModule"))
 
 -- Remote Events
 local BossTimerEvent = ReplicatedStorage.RemoteEvents:WaitForChild("BossTimerEvent")
 local BossAlertEvent = ReplicatedStorage.RemoteEvents:WaitForChild("BossIncoming")
 local HardWipeVFXEvent = ReplicatedStorage.RemoteEvents:WaitForChild("HardWipeVFXEvent")
-
--- Fungsi LOKAL untuk membuat orb timer
-local function createTimerOrb(centerPosition, duration)
-	local orbModel = Instance.new("Model")
-	orbModel.Name = "SingularityCore"
-
-	local mainPart = Instance.new("Part")
-	mainPart.Name = "MainPart"
-	mainPart.Anchored = true
-	mainPart.CanCollide = false
-	mainPart.Transparency = 1
-	mainPart.Parent = orbModel
-	orbModel.PrimaryPart = mainPart
-
-	local innerCore = Instance.new("Part")
-	innerCore.Name = "InnerCore"
-	innerCore.Shape = Enum.PartType.Ball
-	innerCore.Material = Enum.Material.Basalt
-	innerCore.Color = Color3.fromRGB(0, 0, 0)
-	innerCore.Anchored = true
-	innerCore.CanCollide = false
-	innerCore.Size = Vector3.new(0.5, 0.5, 0.5)
-	innerCore.Parent = orbModel
-
-	local beamAttachment = Instance.new("Attachment", innerCore)
-	beamAttachment.Name = "BeamTarget"
-
-	local weld1 = Instance.new("WeldConstraint", mainPart)
-	weld1.Part0 = mainPart
-	weld1.Part1 = innerCore
-
-	local outerShell = Instance.new("Part")
-	outerShell.Name = "OuterShell"
-	outerShell.Shape = Enum.PartType.Ball
-	outerShell.Material = Enum.Material.ForceField
-	outerShell.Color = Color3.fromRGB(80, 0, 120)
-	outerShell.Anchored = true
-	outerShell.CanCollide = false
-	outerShell.Size = Vector3.new(1, 1, 1)
-	outerShell.Transparency = 0.8
-	outerShell.Parent = orbModel
-
-	local weld2 = Instance.new("WeldConstraint", mainPart)
-	weld2.Part0 = mainPart
-	weld2.Part1 = outerShell
-
-	local particleEmitterPart = Instance.new("Part")
-	particleEmitterPart.Name = "EmitterPart"
-	particleEmitterPart.Anchored = true
-	particleEmitterPart.CanCollide = false
-	particleEmitterPart.Transparency = 1
-	particleEmitterPart.Parent = orbModel
-
-	local weld3 = Instance.new("WeldConstraint", mainPart)
-	weld3.Part0 = mainPart
-	weld3.Part1 = particleEmitterPart
-
-	local particles = Instance.new("ParticleEmitter", particleEmitterPart)
-	particles.Color = ColorSequence.new(Color3.fromRGB(150, 50, 200))
-	particles.LightEmission = 0.5
-	particles.Transparency = NumberSequence.new(0.6, 1)
-	particles.Size = NumberSequence.new(1, 0)
-	particles.Lifetime = NumberRange.new(1, 1.5)
-	particles.Rate = 50
-	particles.Speed = NumberRange.new(0, 0)
-	particles.Acceleration = Vector3.new(0, 0, 15)
-
-	orbModel:PivotTo(CFrame.new(centerPosition))
-	orbModel.Parent = Workspace
-
-	local rotationConnection
-	rotationConnection = RunService.Heartbeat:Connect(function(dt)
-		if not particleEmitterPart or not particleEmitterPart.Parent then
-			rotationConnection:Disconnect()
-			return
-		end
-		particleEmitterPart.CFrame = particleEmitterPart.CFrame * CFrame.Angles(dt * 2, dt * 3, dt * 1.5)
-	end)
-
-	local finalSize = 50
-	local growthTweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear)
-	TweenService:Create(outerShell, growthTweenInfo, {Size = Vector3.new(finalSize, finalSize, finalSize)}):Play()
-	TweenService:Create(innerCore, growthTweenInfo, {Size = Vector3.new(finalSize * 0.4, finalSize * 0.4, finalSize * 0.4)}):Play()
-
-	return orbModel
-end
+local PlayBossSkillEvent = ReplicatedStorage.RemoteEvents:FindFirstChild("PlayBossSkillEvent") or Instance.new("RemoteEvent", ReplicatedStorage.RemoteEvents)
+PlayBossSkillEvent.Name = "PlayBossSkillEvent"
 
 function Boss2.Init(zombie, humanoid, config, executeHardWipe)
+	print("Boss2 (Hive Mother) Initialized")
 	local Lighting = game:GetService("Lighting")
-	local originalAmbient = Lighting.Ambient
-	local originalOutdoorAmbient = Lighting.OutdoorAmbient
-	local originalBrightness = Lighting.Brightness
-
-	local centerArenaPart = Workspace:FindFirstChild("CenterArena")
-	local arenaCenterPoint
-	if centerArenaPart then
-		arenaCenterPoint = centerArenaPart.Position
-	else
-		warn("Boss2 WARNING: 'CenterArena' part not found in Workspace. Using boss spawn position as fallback.")
-		arenaCenterPoint = zombie.PrimaryPart.Position
-	end
 
 	local bossTag = Instance.new("BoolValue", zombie)
 	bossTag.Name = "IsBoss"
-	BossAlertEvent:FireAllClients(config.Name or "Boss")
+	BossAlertEvent:FireAllClients(config.Name or "The Hive Mother")
 
+	-- State
 	local currentState = "Phase1"
 	local transitioning = false
 	local attackCooldowns = {
-		OrbOfAnnihilation = 0,
-		CurseOfBanishment = 0,
-		DualOrbSummon = 0,
-		VoidMeteorShower = 0,
+		AcidSpit = 0,
+		SpawnLarva = 0,
+		ToxicCloud = 0,
+		BroodFrenzy = 0
 	}
-	local arenaPlatforms = {}
-	local pillarOrbs = {}
 
-	local function cleanupPhase2Assets()
-		for _, orb in ipairs(pillarOrbs) do if orb and orb.Parent then orb:Destroy() end end
-		pillarOrbs = {}
-		for _, platform in ipairs(arenaPlatforms) do
-			Boss2VFXModule.DestroyPillar(platform)
-			task.wait(math.random() * 0.3)
+	-- Helper: Find valid player targets
+	local function getTargets()
+		local targets = {}
+		for _, p in ipairs(Players:GetPlayers()) do
+			if p.Character and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
+				table.insert(targets, p)
+			end
 		end
-		arenaPlatforms = {}
+		return targets
 	end
 
+	-- Timer Logic (Hard Wipe)
 	local bossStartTime = tick()
 	local specialTimeout = config.SpecialTimeout or 300
-	local bossName = config.Name or "Boss"
-	local function getPhaseName()
-		if currentState == "Phase1" then
-			return "PHASE 1"
-		elseif currentState == "Phase2" then
-			return "PHASE 2"
-		else
-			return "TRANSITION"
-		end
-	end
-	BossTimerEvent:FireAllClients(specialTimeout, specialTimeout, bossName, getPhaseName())
-
-	local timeoutOrb = createTimerOrb(arenaCenterPoint + Vector3.new(0, 90, 0), specialTimeout)
+	local bossName = config.Name or "The Hive Mother"
 
 	local timerCoroutine = task.spawn(function()
 		while zombie.Parent and humanoid.Health > 0 do
 			local elapsed = tick() - bossStartTime
 			local remaining = math.max(0, specialTimeout - elapsed)
-			BossTimerEvent:FireAllClients(remaining, specialTimeout, bossName, getPhaseName())
+			BossTimerEvent:FireAllClients(remaining, specialTimeout, bossName, currentState)
+
 			if remaining <= 0 then
-				local wipeOrigin = arenaCenterPoint
-				if timeoutOrb and timeoutOrb.PrimaryPart then
-					wipeOrigin = timeoutOrb.PrimaryPart.Position
-				end
-
-				HardWipeVFXEvent:FireAllClients(wipeOrigin)
-
+				HardWipeVFXEvent:FireAllClients(zombie.PrimaryPart.Position)
 				task.wait(3.0)
-
-				if currentState == "Phase2" then
-					cleanupPhase2Assets()
-				end
 				executeHardWipe(zombie, humanoid)
-
 				break
 			end
 			task.wait(1)
 		end
 	end)
 
-	local function findTarget()
-		local furthestTarget = nil
-		local maxDistance = 0
-		for _, player in ipairs(Players:GetPlayers()) do
-			if player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChildOfClass("Humanoid").Health > 0 then
-				local distance = (zombie.PrimaryPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
-				if distance > maxDistance then
-					maxDistance = distance
-					furthestTarget = player
-				end
-			end
-		end
-		return furthestTarget
-	end
-
-	local function onOrbExplode(explosionPosition)
-		local orbConfig = config.OrbOfAnnihilation
-		for _, player in ipairs(Players:GetPlayers()) do
-			local char = player.Character
-			if char and not ElementModule.IsPlayerInvincible(player) then
-				local hum = char:FindFirstChildOfClass("Humanoid")
-				local hrp = char:FindFirstChild("HumanoidRootPart")
-				if hum and hum.Health > 0 and hrp and (hrp.Position - explosionPosition).Magnitude <= orbConfig.ExplosionRadius then
-					local damage = ElementModule.ApplyDamageReduction(player, orbConfig.ExplosionDamage)
-					local leftoverDamage = ShieldModule.Damage(player, damage)
-					if leftoverDamage > 0 then hum:TakeDamage(leftoverDamage) end
-				end
-			end
-		end
-	end
-
-	local function spawnOrb(targetPlayer)
-		local orb = OrbOfAnnihilationVFX.create(config.OrbOfAnnihilation)
-		if zombie:FindFirstChild("Head") then
-			orb.CFrame = zombie.Head.CFrame * CFrame.new(0, 0, -8)
-		else
-			orb.CFrame = zombie.PrimaryPart.CFrame * CFrame.new(0, 5, -10)
-		end
-		OrbOfAnnihilationVFX.launch(orb, targetPlayer.Character, config.OrbOfAnnihilation, onOrbExplode)
-	end
-
+	-- Phase Transition Handler
 	humanoid.HealthChanged:Connect(function(health)
 		if transitioning or currentState ~= "Phase1" then return end
 
-		if health / humanoid.MaxHealth <= config.Upheaval.TriggerHPPercent then
+		if health / humanoid.MaxHealth <= 0.5 then
 			transitioning = true
 			currentState = "Transition"
 			humanoid.WalkSpeed = 0
 			zombie:SetAttribute("Immune", true)
 
-			local hrp = zombie:FindFirstChild("HumanoidRootPart")
-			if hrp then hrp.Anchored = true end
-			task.wait(3)
-			if hrp then hrp.Anchored = false end
+			-- Play Animation/VFX
+			PlayBossSkillEvent:FireAllClients("Metamorphosis", {BossModel = zombie})
 
-			local upheavalResult = Boss2PhaseTransitionVFX.CreateUpheaval(arenaCenterPoint, config.Upheaval, timeoutOrb)
-			arenaPlatforms = upheavalResult.platforms
-			pillarOrbs = upheavalResult.pillarOrbs
+			-- Heal slightly
+			humanoid.Health = math.min(humanoid.MaxHealth, humanoid.Health + (config.Metamorphosis.HealAmount or 5000))
 
-			task.wait(config.Upheaval.Duration)
+			task.wait(config.Metamorphosis.Duration or 5)
 
 			zombie:SetAttribute("Immune", false)
-
-			local tweenInfo = TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
-			local goals = { Ambient = Color3.fromRGB(80, 0, 120), OutdoorAmbient = Color3.fromRGB(40, 0, 60), Brightness = 0.5 }
-			TweenService:Create(Lighting, tweenInfo, goals):Play()
-
-			humanoid.WalkSpeed = config.WalkSpeed
+			humanoid.WalkSpeed = config.WalkSpeed or 6
 			currentState = "Phase2"
 			transitioning = false
+			print("Hive Mother entered Phase 2")
 		end
 	end)
 
-	local isAttacking = false
+	-- AI Loop
 	local attackCoroutine = task.spawn(function()
 		while zombie.Parent and humanoid.Health > 0 do
-			if transitioning or isAttacking then task.wait(0.5); continue end
+			if transitioning then task.wait(1); continue end
 
 			local now = tick()
-			local target = findTarget()
-			if not target then task.wait(1); continue end
+			local targets = getTargets()
+			local target = targets[math.random(#targets)]
 
-			isAttacking = true
+			if target then
+				-- Move towards target
+				humanoid:MoveTo(target.Character.HumanoidRootPart.Position)
 
-			local success, err = pcall(function()
-				if currentState == "Phase1" then
-					humanoid:MoveTo(target.Character.HumanoidRootPart.Position)
-					if now > attackCooldowns.OrbOfAnnihilation then
-						attackCooldowns.OrbOfAnnihilation = now + config.OrbOfAnnihilation.Cooldown
-						local orbTarget = findTarget()
-						if orbTarget then spawnOrb(orbTarget) end
-					end
-				elseif currentState == "Phase2" then
-					local attackOrder = {"CurseOfBanishment", "DualOrbSummon", "VoidMeteorShower"}
-					for i = #attackOrder, 1, -1 do
-						local j = math.random(i)
-						attackOrder[i], attackOrder[j] = attackOrder[j], attackOrder[i]
-					end
+				-- SKILL 1: Acid Spit (Ranged)
+				if now > attackCooldowns.AcidSpit then
+					attackCooldowns.AcidSpit = now + config.AcidSpit.Cooldown
 
-					local attackExecuted = false
-					for _, attackName in ipairs(attackOrder) do
-						if now > attackCooldowns[attackName] then
-							attackCooldowns[attackName] = now + config[attackName].Cooldown
+					-- Visuals
+					local origin = zombie.PrimaryPart.Position + Vector3.new(0,5,0)
+					local targetPos = target.Character.HumanoidRootPart.Position
+					PlayBossSkillEvent:FireAllClients("AcidSpit", {Origin = origin, TargetPos = targetPos})
 
-							if attackName == "CurseOfBanishment" then
-								local allPlayers = Players:GetPlayers()
-								local validTargets = {}
-								for _, p in ipairs(allPlayers) do
-									if p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChildOfClass("Humanoid").Health > 0 then
-										table.insert(validTargets, p)
-									end
-								end
-								if #validTargets > 0 then
-									local cursedPlayer = validTargets[math.random(#validTargets)]
-									CurseOfBanishmentVFX.apply(cursedPlayer.Character, config.CurseOfBanishment)
-									local curseConfig = config.CurseOfBanishment
-									local startTime = tick()
-									task.spawn(function()
-										while tick() - startTime < curseConfig.Duration do
-											if not cursedPlayer.Parent or not cursedPlayer.Character or cursedPlayer.Character:FindFirstChildOfClass("Humanoid").Health <= 0 then break end
-											local cursedPos = cursedPlayer.Character.HumanoidRootPart.Position
-											for _, player in ipairs(allPlayers) do
-												if player ~= cursedPlayer and player.Character and not ElementModule.IsPlayerInvincible(player) then
-													local hum = player.Character:FindFirstChildOfClass("Humanoid")
-													local hrp = player.Character:FindFirstChild("HumanoidRootPart")
-													if hum and hum.Health > 0 and hrp and (hrp.Position - cursedPos).Magnitude <= curseConfig.Radius then
-														local damage = ElementModule.ApplyDamageReduction(player, curseConfig.DamagePerTick)
-														local leftoverDamage = ShieldModule.Damage(player, damage)
-														if leftoverDamage > 0 then hum:TakeDamage(leftoverDamage) end
-													end
-												end
-											end
-											task.wait(curseConfig.TickInterval)
-										end
-									end)
-								end
-							elseif attackName == "DualOrbSummon" then
-								local targets = Players:GetPlayers()
-								if #targets > 0 then spawnOrb(targets[math.random(#targets)]) end
-								if #targets > 1 then spawnOrb(targets[math.random(#targets)]) end
-							elseif attackName == "VoidMeteorShower" then
-								humanoid:MoveTo(zombie.PrimaryPart.Position)
-								local meteorConfig = config.VoidMeteorShower
-								local targetPositions = {}
-								local validPlayers = {}
-								for _, p in ipairs(Players:GetPlayers()) do
-									if p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChildOfClass("Humanoid").Health > 0 then
-										table.insert(validPlayers, p)
-									end
-								end
+					task.wait(0.5) -- Travel time approx
 
-								if #validPlayers > 0 then
-									for _, player in ipairs(validPlayers) do
-										local targetPos = player.Character.HumanoidRootPart.Position
-										table.insert(targetPositions, targetPos)
-										VoidMeteorVFX.createTelegraph(targetPos, meteorConfig)
-									end
-
-									task.wait(meteorConfig.TelegraphDuration)
-
-									for _, pos in ipairs(targetPositions) do
-										VoidMeteorVFX.launchMeteor(pos, meteorConfig)
-										task.wait(1.3)
-										for _, player in ipairs(Players:GetPlayers()) do
-											local char = player.Character
-											if char and not ElementModule.IsPlayerInvincible(player) then
-												local hum = char:FindFirstChildOfClass("Humanoid")
-												local hrp = char:FindFirstChild("HumanoidRootPart")
-												if hum and hum.Health > 0 and hrp and (hrp.Position - pos).Magnitude <= meteorConfig.BlastRadius then
-													local damage = ElementModule.ApplyDamageReduction(player, meteorConfig.BlastDamage)
-													local leftoverDamage = ShieldModule.Damage(player, damage)
-													if leftoverDamage > 0 then hum:TakeDamage(leftoverDamage) end
-												end
-											end
-										end
-									end
-								end
-							end
-
-							attackExecuted = true
-							break
+					-- Damage Logic
+					for _, p in ipairs(getTargets()) do
+						local dist = (p.Character.HumanoidRootPart.Position - targetPos).Magnitude
+						if dist <= config.AcidSpit.AoE_Radius then
+							p.Character.Humanoid:TakeDamage(config.AcidSpit.Damage)
 						end
 					end
+				end
 
-					if not attackExecuted then
-						humanoid:MoveTo(target.Character.HumanoidRootPart.Position)
+				-- SKILL 2: Spawn Larva (Summon)
+				if now > attackCooldowns.SpawnLarva then
+					attackCooldowns.SpawnLarva = now + config.SpawnLarva.Cooldown
+
+					local count = math.random(config.SpawnLarva.Count[1], config.SpawnLarva.Count[2])
+					local spawnPoints = {}
+
+					for i=1, count do
+						local offset = Vector3.new(math.random(-10,10), 0, math.random(-10,10))
+						local pos = zombie.PrimaryPart.Position + offset
+						table.insert(spawnPoints, pos)
+
+						-- Actual Spawn (Using SpawnerModule logic simplified here or calling it)
+						-- For now, simplified runner spawn
+						task.delay(1, function()
+							SpawnerModule.SpawnMinion(config.SpawnLarva.MinionType, pos)
+						end)
+					end
+
+					PlayBossSkillEvent:FireAllClients("SpawnLarva", {SpawnPoints = spawnPoints})
+				end
+
+				-- PHASE 2 SKILLS
+				if currentState == "Phase2" then
+
+					-- SKILL 3: Toxic Cloud (Area Denial)
+					if now > attackCooldowns.ToxicCloud then
+						attackCooldowns.ToxicCloud = now + config.ToxicCloud.Cooldown
+
+						local cloudPos = zombie.PrimaryPart.Position
+						PlayBossSkillEvent:FireAllClients("ToxicCloud", {
+							Origin = cloudPos,
+							Radius = config.ToxicCloud.Radius,
+							Duration = config.ToxicCloud.Duration
+						})
+
+						-- DoT Logic
+						task.spawn(function()
+							local elapsed = 0
+							while elapsed < config.ToxicCloud.Duration do
+								for _, p in ipairs(getTargets()) do
+									if (p.Character.HumanoidRootPart.Position - cloudPos).Magnitude <= config.ToxicCloud.Radius then
+										p.Character.Humanoid:TakeDamage(config.ToxicCloud.DamagePerSecond)
+									end
+								end
+								task.wait(1)
+								elapsed += 1
+							end
+						end)
 					end
 				end
-			end)
-
-			if not success then
-				warn("Boss2 Attack Coroutine Error: ", err)
 			end
 
-			isAttacking = false
-			task.wait(0.5)
+			task.wait(1) -- AI Tick
 		end
 	end)
 
 	humanoid.Died:Connect(function()
-		local tweenInfo = TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
-		local goals = { Ambient = originalAmbient, OutdoorAmbient = originalOutdoorAmbient, Brightness = originalBrightness }
-		TweenService:Create(Lighting, tweenInfo, goals):Play()
 		BossTimerEvent:FireAllClients(0, 0, bossName, "DEFEATED")
-
-		if timeoutOrb and timeoutOrb.Parent then timeoutOrb:Destroy() end
-
-		if currentState == "Phase2" then
-			cleanupPhase2Assets()
-		end
 		task.cancel(timerCoroutine)
 		task.cancel(attackCoroutine)
 	end)
