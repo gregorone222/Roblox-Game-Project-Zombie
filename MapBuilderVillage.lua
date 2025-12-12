@@ -91,11 +91,8 @@ local function buildHouse(cframe, parent)
 	end
 
 	-- Spawn Point for Scavenge (Hint)
-	local spawnHint = Instance.new("Part")
-	spawnHint.Name = "ItemSpawn"
-	spawnHint.Transparency = 1
-	spawnHint.CanCollide = false
-	spawnHint.Anchored = true
+	local spawnHint = Instance.new("Attachment")
+	spawnHint.Name = "Spawn_Gas"
 	spawnHint.Position = cframe.Position + Vector3.new(0, 2, 0)
 	spawnHint.Parent = house
 end
@@ -104,6 +101,12 @@ local function buildRadioTower(cframe, parent)
 	local model = Instance.new("Model")
 	model.Name = "RadioTower"
 	model.Parent = parent
+
+	-- Objective Zone
+	local defZone = Instance.new("Attachment")
+	defZone.Name = "Zone_Defend"
+	defZone.Position = cframe.Position
+	defZone.Parent = model
 
 	-- Base
 	createPart("Base", Vector3.new(8, 1, 8), cframe, model, COLORS.Roof, Enum.Material.Concrete)
@@ -194,6 +197,14 @@ function MapBuilder.Build()
 		local x = math.cos(theta) * r
 		local z = math.sin(theta) * r
 		buildTree(CFrame.new(x, 0, z), mapFolder)
+
+		-- Random Retrieve Spawns near trees
+		if math.random() > 0.8 then
+			local att = Instance.new("Attachment")
+			att.Name = "Spawn_Sample"
+			att.Position = Vector3.new(x, 1, z) + Vector3.new(math.random(-2,2), 0, math.random(-2,2))
+			att.Parent = mapFolder
+		end
 	end
 
 	-- 5. LIGHTING (Atmosphere)

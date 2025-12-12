@@ -30,6 +30,13 @@ local function initializeGameSettings(player)
 		gameInitialized = true
 		print("No JoinData found for game settings. Defaulting to Story and Easy.")
 	end
+
+	-- DEBUG / PREVIEW MODE: Load Act 1 Map immediately if requested
+	-- For this task, we default to Village to satisfy "Make map without needing to start game"
+	task.spawn(function()
+		task.wait(1)
+		BuildingManager.LoadMap("Village")
+	end)
 end
 
 -- Connect to PlayerAdded to get the game mode from the first player
@@ -449,28 +456,61 @@ local function startGameLoop()
 			-- Check for Special Objective Waves
 			local objectiveActive = false
 
+			-- Helper to find map nodes
+			local function getObjectiveNodes(name)
+				local nodes = {}
+				local map = workspace:FindFirstChild("Map_Village")
+				if map then
+					for _, desc in ipairs(map:GetDescendants()) do
+						if desc.Name == name and desc:IsA("Attachment") then
+							table.insert(nodes, desc.WorldPosition)
+						end
+					end
+				end
+				return nodes
+			end
+
+			local function getObjectivePos(name)
+				local map = workspace:FindFirstChild("Map_Village")
+				if map then
+					for _, desc in ipairs(map:GetDescendants()) do
+						if desc.Name == name and desc:IsA("Attachment") then
+							return desc.WorldPosition
+						end
+					end
+				end
+				return Vector3.new(0,5,0)
+			end
+
 			if wave == 8 then
 				-- Wave 8: Power Restoration
 				objectiveActive = true
+				local gasSpawns = getObjectiveNodes("Spawn_Gas")
+				if #gasSpawns == 0 then gasSpawns = {Vector3.new(50,2,50)} end -- Fallback
+
 				ObjectiveManager:StartObjective("SCAVENGE", {
 					Count = 3,
-					Spawns = {Vector3.new(50, 2, 50), Vector3.new(-50, 2, 50), Vector3.new(0, 2, -60)},
-					GenPos = Vector3.new(0, 2, 0)
+					Spawns = gasSpawns,
+					GenPos = Vector3.new(0, 2, 30) -- Near spawn/center
 				})
 			elseif wave == 22 then
 				-- Wave 22: Data Uplink
 				objectiveActive = true
+				local zonePos = getObjectivePos("Zone_Defend")
 				ObjectiveManager:StartObjective("DEFEND", {
 					Duration = 60,
-					ZonePos = Vector3.new(0, 2, 0), -- Town Square
-					Radius = 15
+					ZonePos = zonePos,
+					Radius = 20
 				})
 			elseif wave == 38 then
 				-- Wave 38: Retrieval
 				objectiveActive = true
+				local sampleSpawns = getObjectiveNodes("Spawn_Sample")
+				if #sampleSpawns == 0 then sampleSpawns = {Vector3.new(40,2,40)} end
+
 				ObjectiveManager:StartObjective("RETRIEVE", {
 					Count = 4,
-					Spawns = {Vector3.new(40, 2, 40), Vector3.new(-40, 2, 40), Vector3.new(40, 2, -40), Vector3.new(-40, 2, -40)}
+					Spawns = sampleSpawns
 				})
 			end
 
