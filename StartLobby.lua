@@ -21,6 +21,7 @@ local THEME = {
 		TEXT_GHOST = Color3.fromRGB(200, 200, 200),
 		TEXT_BLOOD = Color3.fromRGB(160, 0, 0),
 		TEXT_DIM = Color3.fromRGB(80, 80, 80),
+		BAR_BLACK = Color3.new(0, 0, 0)
 	},
 	FONTS = {
 		TITLE = Enum.Font.Merriweather,
@@ -35,17 +36,38 @@ local GetDailyRewardInfo = RemoteFunctions:WaitForChild("GetDailyRewardInfo")
 -- --- UI ELEMENTS ---
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "LobbyEntryInterface"
-screenGui.IgnoreGuiInset = true
+screenGui.IgnoreGuiInset = true -- Covers top bar
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
--- 1. CINEMATIC TITLE SCREEN
+-- CINEMATIC BARS
+local topBar = Instance.new("Frame")
+topBar.Name = "TopBar"
+topBar.BackgroundColor3 = THEME.COLORS.BAR_BLACK
+topBar.BorderSizePixel = 0
+topBar.Size = UDim2.new(1, 0, 0, 0) -- Start hidden
+topBar.Position = UDim2.new(0, 0, 0, 0)
+topBar.ZIndex = 10
+topBar.Parent = screenGui
+
+local bottomBar = Instance.new("Frame")
+bottomBar.Name = "BottomBar"
+bottomBar.BackgroundColor3 = THEME.COLORS.BAR_BLACK
+bottomBar.BorderSizePixel = 0
+bottomBar.Size = UDim2.new(1, 0, 0, 0) -- Start hidden
+bottomBar.Position = UDim2.new(0, 0, 1, 0)
+bottomBar.AnchorPoint = Vector2.new(0, 1)
+bottomBar.ZIndex = 10
+bottomBar.Parent = screenGui
+
+-- 1. CINEMATIC TITLE CONTENT
 local cinematicFrame = Instance.new("Frame")
 cinematicFrame.Name = "CinematicFrame"
 cinematicFrame.Size = UDim2.fromScale(1, 1)
 cinematicFrame.BackgroundColor3 = Color3.new(0,0,0)
 cinematicFrame.BackgroundTransparency = 1
 cinematicFrame.Visible = false
+cinematicFrame.ZIndex = 11 -- Above bars
 cinematicFrame.Parent = screenGui
 
 local titleLabel = Instance.new("TextLabel")
@@ -94,6 +116,7 @@ notifFrame.AnchorPoint = Vector2.new(1, 0)
 notifFrame.BackgroundColor3 = Color3.fromRGB(0, 50, 0)
 notifFrame.BackgroundTransparency = 0.5
 notifFrame.Visible = false
+notifFrame.ZIndex = 12
 notifFrame.Parent = screenGui
 Instance.new("UICorner", notifFrame).CornerRadius = UDim.new(0, 4)
 
@@ -198,16 +221,14 @@ local function startCameraLoop()
 			-- Goal CFrame: Position of Next Waypoint, Looking at Next Target
 			local goalCFrame = CFrame.lookAt(nextWaypoint.Position, nextLookTarget.Position)
 
-			-- Tween from CURRENT CFrame (where previous tween ended) to GOAL
-			-- This prevents the "snap" because we don't reset the camera position manually.
-			local duration = 12 -- Slow cinematic travel
+			-- Tween from CURRENT CFrame to GOAL
+			local duration = 12
 			local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
 			cameraTween = TweenService:Create(camera, tweenInfo, {CFrame = goalCFrame})
 			cameraTween:Play()
 
 			cameraTween.Completed:Wait()
 
-			-- Move index forward
 			index = nextIndex
 		end
 	end)
@@ -233,6 +254,10 @@ local function enterTitleMode()
 	camera.CameraType = Enum.CameraType.Scriptable
 	startCameraLoop()
 
+	-- ANIMATION: BARS IN
+	TweenService:Create(topBar, TweenInfo.new(1.5, Enum.EasingStyle.Quad), {Size = UDim2.new(1, 0, 0.12, 0)}):Play()
+	TweenService:Create(bottomBar, TweenInfo.new(1.5, Enum.EasingStyle.Quad), {Size = UDim2.new(1, 0, 0.12, 0)}):Play()
+
 	-- UI Fade In
 	TweenService:Create(titleLabel, TweenInfo.new(2), {TextTransparency = 0}):Play()
 	task.delay(1, function()
@@ -254,6 +279,10 @@ local function exitTitleMode()
 	end
 
 	togglePlayerVisibility(true)
+
+	-- ANIMATION: BARS OUT
+	TweenService:Create(topBar, TweenInfo.new(1.0, Enum.EasingStyle.Quad), {Size = UDim2.new(1, 0, 0, 0)}):Play()
+	TweenService:Create(bottomBar, TweenInfo.new(1.0, Enum.EasingStyle.Quad), {Size = UDim2.new(1, 0, 0, 0)}):Play()
 
 	-- UI Fade Out
 	local tInfo = TweenInfo.new(1)
