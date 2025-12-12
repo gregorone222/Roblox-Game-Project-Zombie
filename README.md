@@ -77,5 +77,15 @@ Lobi dibuat secara dinamis melalui `LobbyBuilderSubway.lua`, menampilkan tema **
     *   *Vending Machine:* Sistem Gacha ("Mystery Cache").
     *   *Papan Misi:* NPC "Alexander" untuk manajemen ruang lobi.
 
+### 🏚️ Lingkungan ACT 1: The Cursed Village (Desa Terkutuk)
+Dibuat secara prosedural oleh `MapBuilderVillage.lua`, lingkungan ini dirancang untuk pertempuran gelombang terbuka dengan elemen horor yang kuat.
+*   **Tema:** Desa pedesaan yang hancur dan ditinggalkan, diselimuti kabut tebal yang membatasi jarak pandang.
+*   **Pencahayaan:** Gelap, suram, dengan lampu jalan yang berkedip-kedip memberikan sedikit penerangan.
+*   **Fitur Peta:**
+    *   *Town Square (Pusat):* Area terbuka luas di tengah desa, lokasi "Menara Radio" untuk objektif pertahanan.
+    *   *Residential Ruins (Pinggiran):* Rumah-rumah kayu yang hancur dan terbengkalai, tempat spawn item penting seperti Bahan Bakar.
+    *   *The Nest (Hutan):* Area pinggiran yang ditumbuhi pepohonan mati, tempat munculnya sampel virus.
+    *   *Barikade Tak Terlihat:* Dinding force-field membatasi area permainan agar pemain tetap fokus pada zona tempur.
+
 ---
 *Dokumentasi dibuat secara otomatis berdasarkan analisis proyek.*
