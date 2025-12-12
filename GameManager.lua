@@ -132,6 +132,7 @@ local WaveUpdateEvent = RemoteEvents:WaitForChild(Constants.Events.WAVE_UPDATE)
 local StartVoteCountdownEvent = RemoteEvents:WaitForChild(Constants.Events.START_VOTE_COUNTDOWN)
 local StartVoteCanceledEvent  = RemoteEvents:WaitForChild(Constants.Events.START_VOTE_CANCELED)
 local CancelStartVoteEvent = RemoteEvents:WaitForChild(Constants.Events.CANCEL_START_VOTE)
+local GameOverEvent = RemoteEvents:WaitForChild(Constants.Events.GAME_OVER) -- Defined here to ensure visibility
 
 local ZombieDiedEvent = BindableEvents:WaitForChild(Constants.Events.ZOMBIE_DIED)
 local ReportDamageEvent = BindableEvents:FindFirstChild(Constants.Events.REPORT_DAMAGE) or Instance.new("BindableEvent", BindableEvents)
