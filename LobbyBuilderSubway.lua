@@ -399,6 +399,13 @@ function LobbyBuilder.Build()
 		createParticle("Dust", dustPart)
 	end
 
+	-- 5. START PART FOR VOTING
+	-- This must exist for StartUI.lua to work (Mission Briefing logic)
+	-- We create a part named "StartPart" near Alexander
+	local startPart = createPart("StartPart", Vector3.new(5, 5, 5), alexPos, env, Color3.new(1,0,0), Enum.Material.Neon)
+	startPart.Transparency = 1
+	startPart.CanCollide = false
+
 	print("LobbyBuilder: Polished Station Built.")
 end
 
