@@ -182,11 +182,17 @@ local function getCameraWaypoints()
 end
 
 local function togglePlayerVisibility(visible)
-	for _, otherPlayer in ipairs(Players:GetPlayers()) do
-		if otherPlayer ~= player and otherPlayer.Character then
-			for _, part in ipairs(otherPlayer.Character:GetDescendants()) do
+	-- Target ALL players, including LocalPlayer
+	for _, targetPlayer in ipairs(Players:GetPlayers()) do
+		if targetPlayer.Character then
+			-- Hide Parts & Decals
+			for _, part in ipairs(targetPlayer.Character:GetDescendants()) do
 				if part:IsA("BasePart") or part:IsA("Decal") then
 					part.LocalTransparencyModifier = visible and 0 or 1
+				end
+				-- Hide NameTags or UI overhead
+				if part:IsA("BillboardGui") or part:IsA("SurfaceGui") then
+					part.Enabled = visible
 				end
 			end
 		end
@@ -245,7 +251,7 @@ local function enterTitleMode()
 		hrp.Anchored = true
 	end
 
-	-- Hide other players loop
+	-- FORCE Hide ALL characters loop (Aggressive)
 	hideCharactersConnection = RunService.RenderStepped:Connect(function()
 		togglePlayerVisibility(false)
 	end)
