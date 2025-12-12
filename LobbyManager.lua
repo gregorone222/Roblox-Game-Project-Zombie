@@ -72,8 +72,6 @@ claimRewardEvent.OnServerInvoke = function(player)
 	return DailyRewardManager:ClaimReward(player)
 end
 
-local showRewardUIEvent = ensureRemote(RemoteEvents, "ShowDailyRewardUI", "RemoteEvent")
-
 -- 2. Profile & Inventory
 local profileFunc = ensureRemote(RemoteFunctions, "GetProfileData", "RemoteFunction")
 profileFunc.OnServerInvoke = function(player) return ProfileModule.GetProfileData(player) end
@@ -82,7 +80,7 @@ local invFunc = ensureRemote(RemoteFunctions, "GetInventoryData", "RemoteFunctio
 invFunc.OnServerInvoke = function(player) return CoinsManager.GetData(player) end
 
 -- 3. Missions
-local missionDataFunc = ensureRemote(RemoteFunctions, "GetMissionData", "RemoteFunction") -- Changed to RemoteFunctions folder
+local missionDataFunc = ensureRemote(RemoteFunctions, "GetMissionData", "RemoteFunction")
 missionDataFunc.OnServerInvoke = function(player) return MissionManager:GetMissionDataForClient(player) end
 
 local claimMissionFunc = ensureRemote(RemoteFunctions, "ClaimMissionReward", "RemoteFunction")
@@ -104,7 +102,7 @@ end
 local function onPlayerAdded(player)
 	DataStoreManager:LoadPlayerData(player)
 	-- NOTE: Auto-open Daily Reward UI removed to support diegetic interaction.
-	-- Client will handle notification via 'GetDailyRewardInfo'.
+	-- Client will handle notification via 'GetDailyRewardInfo' and ProximityPrompt.
 end
 
 Players.PlayerAdded:Connect(onPlayerAdded)

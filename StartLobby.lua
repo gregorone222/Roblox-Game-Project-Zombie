@@ -311,13 +311,21 @@ local function exitTitleMode()
 				camTween:Play()
 				camTween.Completed:Wait()
 
-				-- FORCE FIRST PERSON
-				player.CameraMode = Enum.CameraMode.LockFirstPerson
+				-- FORCE FIRST PERSON but ALLOW UNLOCK
+				player.CameraMode = Enum.CameraMode.Classic
+				player.CameraMinZoomDistance = 0.5
+				player.CameraMaxZoomDistance = 0.5 -- Clamp tight first
+
 				camera.CameraType = Enum.CameraType.Custom
+
+				-- Yield slightly to ensure the clamp takes effect
+				task.wait()
+
+				-- RELEASE LOCK
+				player.CameraMaxZoomDistance = 50
 			end
 		end
 
-		camera.CameraType = Enum.CameraType.Custom
 		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, true)
 
 		-- Check Daily Reward
