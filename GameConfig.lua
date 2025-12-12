@@ -3,6 +3,9 @@
 -- Script Place: Lobby, ACT 1: Village
 
 local config = {
+	-- Debug / Preview Mode
+	DebugMode = false,
+
 	-- Pengaturan DataStore
 	DataStore = {
 		-- Lingkungan saat ini: "prod" untuk rilis, "dev" untuk pengujian

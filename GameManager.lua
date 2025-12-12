@@ -8,6 +8,32 @@ local Players = game:GetService("Players")
 local Constants = require(ServerScriptService.ModuleScript:WaitForChild("Constants"))
 local TeleportService = game:GetService("TeleportService")
 
+-- Module Requirements - Moved up to scope level to fix Type Error
+local ModuleScriptServerScriptService = ServerScriptService.ModuleScript
+local GameConfig = require(game.ServerScriptService.ModuleScript.GameConfig)
+local BuildingManager = require(ModuleScriptServerScriptService:WaitForChild("BuildingModule"))
+local GameStatus = require(ModuleScriptServerScriptService:WaitForChild("GameStatus"))
+local SessionDataManager = require(ModuleScriptServerScriptService:WaitForChild("SessionDataManager"))
+local PlaceData = require(ModuleScriptServerScriptService:WaitForChild("PlaceDataConfig"))
+local SpawnerModule = require(ModuleScriptServerScriptService:WaitForChild("SpawnerModule"))
+local PointsSystem = require(ModuleScriptServerScriptService:WaitForChild("PointsModule"))
+local CoinsModule = require(ModuleScriptServerScriptService:WaitForChild("CoinsModule"))
+local LevelModule = require(ModuleScriptServerScriptService:WaitForChild("LevelModule"))
+local BoosterManager = require(ModuleScriptServerScriptService:WaitForChild("BoosterManager"))
+local ElementModule = require(ModuleScriptServerScriptService:WaitForChild("ElementConfigModule"))
+local PerkHandler = require(ModuleScriptServerScriptService:WaitForChild("PerkModule"))
+local WalkSpeedManager = require(ModuleScriptServerScriptService:WaitForChild("WalkSpeedManager"))
+local StatsModule = require(ModuleScriptServerScriptService:WaitForChild("StatsModule"))
+local BoosterModule = require(ModuleScriptServerScriptService:WaitForChild("BoosterModule"))
+local ShieldModule = require(ModuleScriptServerScriptService:WaitForChild("ShieldModule"))
+local MissionManager = require(ModuleScriptServerScriptService:WaitForChild("MissionManager"))
+local GlobalMissionManager = require(ModuleScriptServerScriptService:WaitForChild("GlobeMissionManager"))
+local AchievementManager = require(ModuleScriptServerScriptService:WaitForChild("AchievementManager"))
+local DataStoreManager = require(ModuleScriptServerScriptService:WaitForChild("DataStoreManager"))
+local ObjectiveManager = require(ModuleScriptServerScriptService:WaitForChild("ObjectiveManager"))
+
+DataStoreManager:Init()
+
 -- Game Mode Initialization
 -- Game Initialization
 local gameMode = Constants.Strings.GAME_MODE_STORY -- Default to Story
@@ -94,31 +120,6 @@ if not RemoteEvents:FindFirstChild(Constants.Events.SPECIAL_WAVE_ALERT) then
 	event.Name = Constants.Events.SPECIAL_WAVE_ALERT
 	event.Parent = RemoteEvents
 end
-
-local ModuleScriptServerScriptService = ServerScriptService.ModuleScript
-
-local GameConfig = require(game.ServerScriptService.ModuleScript.GameConfig)
-local GameStatus = require(ModuleScriptServerScriptService:WaitForChild("GameStatus"))
-local SessionDataManager = require(ModuleScriptServerScriptService:WaitForChild("SessionDataManager"))
-local PlaceData = require(ModuleScriptServerScriptService:WaitForChild("PlaceDataConfig"))
-local SpawnerModule = require(ModuleScriptServerScriptService:WaitForChild("SpawnerModule"))
-local BuildingManager = require(ModuleScriptServerScriptService:WaitForChild("BuildingModule"))
-local PointsSystem = require(ModuleScriptServerScriptService:WaitForChild("PointsModule"))
-local CoinsModule = require(ModuleScriptServerScriptService:WaitForChild("CoinsModule"))
-local LevelModule = require(ModuleScriptServerScriptService:WaitForChild("LevelModule"))
-local BoosterManager = require(ModuleScriptServerScriptService:WaitForChild("BoosterManager"))
-local ElementModule = require(ModuleScriptServerScriptService:WaitForChild("ElementConfigModule"))
-local PerkHandler = require(ModuleScriptServerScriptService:WaitForChild("PerkModule"))
-local WalkSpeedManager = require(ModuleScriptServerScriptService:WaitForChild("WalkSpeedManager"))
-local StatsModule = require(ModuleScriptServerScriptService:WaitForChild("StatsModule"))
-local BoosterModule = require(ModuleScriptServerScriptService:WaitForChild("BoosterModule"))
-local ShieldModule = require(ModuleScriptServerScriptService:WaitForChild("ShieldModule"))
-local MissionManager = require(ModuleScriptServerScriptService:WaitForChild("MissionManager"))
-local GlobalMissionManager = require(ModuleScriptServerScriptService:WaitForChild("GlobeMissionManager"))
-local AchievementManager = require(ModuleScriptServerScriptService:WaitForChild("AchievementManager"))
-local DataStoreManager = require(ModuleScriptServerScriptService:WaitForChild("DataStoreManager"))
-local ObjectiveManager = require(ModuleScriptServerScriptService:WaitForChild("ObjectiveManager"))
-DataStoreManager:Init()
 
 local WaveCountdownEvent = RemoteEvents:WaitForChild(Constants.Events.WAVE_COUNTDOWN)
 local PlayerCountEvent   = RemoteEvents:WaitForChild(Constants.Events.PLAYER_COUNT)
@@ -235,8 +236,6 @@ local function ClearChams()
 		end
 	end
 end
-
-local GameOverEvent = RemoteEvents:WaitForChild(Constants.Events.GAME_OVER)
 
 local function HandleGameOver()
 	if not gameStarted then return end
@@ -605,7 +604,7 @@ local function startGameLoop()
 			-- <<< AKHIR KONDISI KEMENANGAN >>>
 
 			if isBossWave then
-				BuildingManager.restoreBuildings()
+				-- BuildingManager.restoreBuildings() -- Deprecated
 			end
 
 			if isBloodMoonWave or isDarkWave then

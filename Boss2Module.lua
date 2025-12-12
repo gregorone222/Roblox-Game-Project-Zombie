@@ -18,7 +18,8 @@ local RunService = game:GetService("RunService")
 local Boss2VFXModule = require(ReplicatedStorage.ZombieVFX:WaitForChild("Boss2VFXModule"))
 local ElementModule = require(ServerScriptService.ModuleScript:WaitForChild("ElementConfigModule"))
 local ShieldModule = require(ServerScriptService.ModuleScript:WaitForChild("ShieldModule"))
-local SpawnerModule = require(ServerScriptService.ModuleScript:WaitForChild("SpawnerModule"))
+-- Note: We avoid requiring SpawnerModule at the top level to prevent cyclic dependency (Spawner -> Boss2 -> Spawner)
+local ZombieModule = require(ServerScriptService.ModuleScript:WaitForChild("ZombieModule"))
 
 -- Remote Events
 local BossTimerEvent = ReplicatedStorage.RemoteEvents:WaitForChild("BossTimerEvent")
@@ -148,10 +149,17 @@ function Boss2.Init(zombie, humanoid, config, executeHardWipe)
 						local pos = zombie.PrimaryPart.Position + offset
 						table.insert(spawnPoints, pos)
 
-						-- Actual Spawn (Using SpawnerModule logic simplified here or calling it)
-						-- For now, simplified runner spawn
+						-- Actual Spawn (Using ZombieModule directly to avoid SpawnerModule cycle)
 						task.delay(1, function()
-							SpawnerModule.SpawnMinion(config.SpawnLarva.MinionType, pos)
+							local fakeSpawn = { Position = pos, CFrame = CFrame.new(pos) }
+							local zombie = ZombieModule.SpawnZombie(fakeSpawn, config.SpawnLarva.MinionType, 1, "Easy", {isMinion = true})
+							if zombie then
+								-- Tag minion so it can be handled if needed
+								local tag = Instance.new("StringValue")
+								tag.Name = "VolatileMinion" -- Reuse tag for consistency
+								tag.Value = "Boss2"
+								tag.Parent = zombie
+							end
 						end)
 					end
 

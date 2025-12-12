@@ -29,7 +29,7 @@
 *   **Tank:** Kumpulan HP yang sangat besar, membutuhkan tembakan terfokus.
 *   **Bos:** Pertemuan unik dengan mekanik multi-fase:
     *   *Plague Titan:* Aura radiasi dan hantaman korosif.
-    *   *Void Ascendant:* Serangan orbital dan fase platforming.
+    *   *The Hive Mother:* Inkubator berjalan yang memanggil pasukan larva dan awan racun.
     *   *The Blighted Alchemist:* Peperangan kimia.
 
 ### Progresi & Ekonomi
