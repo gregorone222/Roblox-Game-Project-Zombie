@@ -57,10 +57,10 @@ Alexander mendeteksi lonjakan energi aneh—kombinasi radiasi biologis dan energ
 *   **Dialog Alexander:**
     > *"Kalian merasakannya? Udara semakin berat. Realitas di sekitar kalian mulai menipis. Siapapun yang ada di balik ini, dia sedang bermain-main dengan pintu yang seharusnya tidak dibuka."*
 
-**7. Mid-Boss 2: Void Ascendant (Wave 30/35)**
-*   **Konteks:** Munculnya entitas melayang dengan kekuatan kosmik.
+**7. Mid-Boss 2: The Hive Mother (Wave 30/35)**
+*   **Konteks:** Munculnya mutasi biologis raksasa yang berfungsi sebagai inkubator berjalan.
 *   **Dialog Alexander:**
-    > *"Anomali terdeteksi! Makhluk itu... dia tidak sepenuhnya ada di dimensi ini. 'Void Ascendant'. Hati-hati dengan serangan dari langit! Jangan biarkan dia menarik kalian ke dalam kegelapan!"*
+    > *"Astaga, lihat itu! Pembacaan biologisnya di luar skala. Itu bukan sekadar zombie... itu adalah 'The Hive Mother'. Dia memproduksi pasukan baru di dalam tubuhnya sendiri. Hancurkan induk itu sebelum dia membanjiri kita dengan anak-anaknya! Bakar habis!"*
 
 **8. Objektif Taktis: Viral Sample Retrieval (Wave 38)**
 *   **Konteks:** Ditemukan sarang zombie yang membawa varian virus murni.

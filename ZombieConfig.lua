@@ -119,50 +119,48 @@ ZombieConfig.Types = {
 		ChanceToSpawn = 1
 	},
 	Boss2 = {
-		Name = "Void Ascendant",
+		Name = "The Hive Mother",
 		MaxHealth = 100000,
-		WalkSpeed = 8,
-		AttackDamage = 50,
-		AttackRange = 25,
+		WalkSpeed = 6, -- Slower due to size
+		AttackDamage = 40,
+		AttackRange = 30,
 		SpecialTimeout = 300,
 
 		-- FASE 1
-		OrbOfAnnihilation = {
-			Cooldown = 15,
-			OrbSpeed = 18, -- Sedikit lebih lambat untuk antisipasi
-			Lifetime = 15,
-			ExplosionRadius = 15,
-			ExplosionDamage = 40,
-			HomingStrength = 0.1, -- Kekuatan belokan ke arah target (0 nonaktif, 1 instan)
-			PuddleDuration = 8, -- Durasi area kerusakan di tanah setelah ledakan
-			ORB_HEIGHT = 10,
+		AcidSpit = {
+			Cooldown = 10,
+			Damage = 25,
+			Speed = 60,
+			AoE_Radius = 12,
+			DoT_Duration = 5,
+			DoT_Damage = 5
+		},
+		SpawnLarva = {
+			Cooldown = 20,
+			Count = {3, 5},
+			MinionType = "Runner", -- Fast "Larva" variant
+			HealthMultiplier = 0.5 -- Weaker than normal runners
 		},
 
 		-- TRANSISI
-		Upheaval = {
+		Metamorphosis = {
 			TriggerHPPercent = 0.5,
-			Duration = 5, -- Durasi animasi platform naik
-			PlatformCount = 5,
-			PlatformSize = Vector3.new(30, 100, 30),
-			ArenaRadius = 80,
+			Duration = 5, -- Scream / Burst Animation
+			HealAmount = 5000, -- Small regeneration
 		},
 
 		-- FASE 2
-		CurseOfBanishment = {
-			Cooldown = 22,
-			Duration = 10,
-			Radius = 15,
-			DamagePerTick = 8,
-			TickInterval = 0.5,
-		},
-		DualOrbSummon = {
+		ToxicCloud = {
 			Cooldown = 25,
+			Duration = 15,
+			Radius = 40, -- Massive area denial
+			DamagePerSecond = 15
 		},
-		VoidMeteorShower = {
+		BroodFrenzy = {
 			Cooldown = 35,
-			TelegraphDuration = 1.5,
-			BlastRadius = 12,
-			BlastDamage = 30,
+			Duration = 10,
+			SpeedBoost = 1.5, -- Minions get faster
+			SpawnRateMultiplier = 2
 		},
 
 		ChanceWaveMin = 30,
