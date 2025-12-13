@@ -1,30 +1,27 @@
 -- DataStoreManager.lua (ModuleScript)
 -- Path: ServerScriptService/ModuleScript/DataStoreManager.lua
 -- Script Place: Lobby & ACT 1: Village
--- Deskripsi: Mengelola semua interaksi dengan Roblox DataStore, termasuk data pemain dan data global.
+-- Deskripsi: Mengelola semua interaksi dengan Roblox DataStore menggunakan ProfileStore (by loleris).
 
 local DataStoreService = game:GetService("DataStoreService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
--- Memuat konfigurasi game untuk menentukan lingkungan (dev/prod)
+-- Memuat konfigurasi game
 local GameConfig = require(script.Parent:WaitForChild("GameConfig"))
+local ProfileStore = require(game.ServerScriptService.ModuleScript:WaitForChild("ProfileStore"))
 
 local DataStoreManager = {}
 
 -- Menentukan lingkungan datastore
 local ENVIRONMENT = GameConfig.DataStore and GameConfig.DataStore.Environment or "dev"
+local PROFILE_STORE_NAME = "PlayerProfileStore_" .. ENVIRONMENT
 
--- Mendapatkan objek DataStore dengan scope lingkungan
-local PlayerDS = DataStoreService:GetDataStore("PlayerDSv1", ENVIRONMENT)
-local GlobalDS = DataStoreService:GetDataStore("GlobalDSv1", ENVIRONMENT)
-
--- Cache untuk menyimpan data pemain yang sedang online
--- Struktur Cache: { [UserId] = { data = {}, isDirty = false, isLoading = true } }
-local playerDataCache = {}
+-- Cache untuk menyimpan data pemain yang sedang online (Profile Objects)
+local Profiles = {}
+local PendingLoads = {} -- [player] = BindableEvent
 
 -- Struktur data default untuk pemain baru.
--- Versi ditambahkan untuk memfasilitasi migrasi data di masa mendatang.
 local DEFAULT_PLAYER_DATA = {
 	version = 1,
 	lastSaveTimestamp = 0,
@@ -82,188 +79,211 @@ local DEFAULT_PLAYER_DATA = {
 	}
 }
 
--- Fungsi internal untuk membuat salinan mendalam dari tabel
-local function deepCopy(original)
-	local copy = {}
-	for k, v in pairs(original) do
-		if type(v) == "table" then
-			v = deepCopy(v)
-		end
-		copy[k] = v
-	end
-	return copy
-end
+-- Inisialisasi ProfileStore
+local PlayerProfileStore = ProfileStore.New(PROFILE_STORE_NAME, DEFAULT_PLAYER_DATA)
 
+-- Helper untuk kompatibilitas mundur dengan kode lama yang mengharapkan struktur wrapper
+local function createLegacyWrapper(profile)
+	if not profile then return nil end
+
+	local wrapper = {
+		isDirty = false,
+		isLoading = false,
+		_profile = profile
+	}
+
+	-- Gunakan metatable agar .data selalu menunjuk ke profile.Data terkini
+	setmetatable(wrapper, {
+		__index = function(t, k)
+			if k == "data" then
+				return t._profile.Data
+			end
+			return nil
+		end,
+		__newindex = function(t, k, v)
+			if k == "data" then
+				t._profile.Data = v
+			else
+				rawset(t, k, v)
+			end
+		end
+	})
+
+	return wrapper
+end
 
 function DataStoreManager:LoadPlayerData(player)
-	local userId = player.UserId
-	local key = "Player_" .. userId
+	-- 1. Cek apakah profile sudah ada
+	if Profiles[player] then
+		local signal = Instance.new("BindableEvent")
+		task.spawn(function()
+			signal:Fire(createLegacyWrapper(Profiles[player]))
+			signal:Destroy()
+		end)
+		return signal.Event
+	end
 
-	-- Tandai bahwa data sedang dimuat untuk mencegah penyimpanan simultan
-	playerDataCache[userId] = { data = nil, isDirty = false, isLoading = true }
+	-- 2. Cek apakah sedang loading (Pending)
+	if PendingLoads[player] then
+		return PendingLoads[player].Event
+	end
 
-	-- Sinyal untuk memberitahu thread lain bahwa data telah dimuat
-	local dataLoadedSignal = Instance.new("BindableEvent")
+	-- 3. Mulai proses loading baru
+	local signal = Instance.new("BindableEvent")
+	PendingLoads[player] = signal
 
 	task.spawn(function()
-		local attempts = 0
-		local success = false
-		local loadedData = nil
+		local userId = player.UserId
+		local profileKey = "Player_" .. userId
 
-		while not success and attempts < 5 do
-			attempts = attempts + 1
-			local ok, result = pcall(function()
-				return PlayerDS:UpdateAsync(key, function(oldData)
-					-- Jika tidak ada data lama, gunakan data default
-					if not oldData then
-						return deepCopy(DEFAULT_PLAYER_DATA)
-					end
-					-- Di sini kita bisa menambahkan logika migrasi data berdasarkan oldData.version
-					-- Untuk saat ini, kita hanya mengembalikan data lama jika ada.
-					return oldData
-				end)
+		local profile = PlayerProfileStore:StartSessionAsync(profileKey, {
+			Cancel = function()
+				return player.Parent ~= Players
+			end
+		})
+
+		if profile ~= nil then
+			profile:AddUserId(userId)
+			profile:Reconcile()
+
+			profile.OnSessionEnd:Connect(function()
+				Profiles[player] = nil
+				if player:IsDescendantOf(Players) then
+					player:Kick("Sesi profil Anda telah dimuat di server lain.")
+				end
 			end)
 
-			if ok then
-				success = true
-				loadedData = result
+			if player:IsDescendantOf(Players) then
+				Profiles[player] = profile
+				print("[DataStoreManager] Profile loaded for " .. player.Name)
+				signal:Fire(createLegacyWrapper(profile))
 			else
-				warn("[DataStoreManager] Gagal memuat data untuk " .. player.Name .. " (Percobaan " .. attempts .. "): " .. tostring(result))
-				task.wait(3) -- Tunggu sebelum mencoba lagi
+				profile:EndSession()
+				signal:Fire(nil)
 			end
-		end
-
-		if success then
-			playerDataCache[userId].data = loadedData
-			playerDataCache[userId].isLoading = false
-			print("[DataStoreManager] Data berhasil dimuat untuk " .. player.Name)
 		else
-			-- Jika semua percobaan gagal, gunakan data default dan kunci penyimpanan untuk sesi ini
-			warn("[DataStoreManager] Semua percobaan memuat data gagal untuk " .. player.Name .. ". Menggunakan data default sementara. PENYIMPANAN DINONAKTIFKAN.")
-			playerDataCache[userId].data = deepCopy(DEFAULT_PLAYER_DATA)
-			playerDataCache[userId].isLoading = false
-			playerDataCache[userId].saveLocked = true -- Kunci penyimpanan untuk mencegah overwrite
+			player:Kick("Gagal memuat profil data. Silakan coba lagi nanti.")
+			signal:Fire(nil)
 		end
 
-		-- Memberi sinyal bahwa data sudah siap (baik berhasil maupun gagal)
-		dataLoadedSignal:Fire(playerDataCache[userId].data)
-		dataLoadedSignal:Destroy()
+		PendingLoads[player] = nil
+		-- Jangan destroy signal di sini karena skrip lain mungkin baru saja connect?
+		-- BindableEvent:Fire() mentrigger callbacks segera.
+		-- Destroy() setelah yield sedikit aman.
+		task.wait()
+		signal:Destroy()
 	end)
 
-	-- Kembalikan event agar skrip lain bisa menunggu
-	return dataLoadedSignal.Event
+	return signal.Event
 end
 
--- Fungsi untuk skrip lain menunggu data siap
 function DataStoreManager:GetOrWaitForPlayerData(player)
-	local userId = player.UserId
-	if not playerDataCache[userId] or playerDataCache[userId].isLoading then
-		-- Jika data belum ada atau sedang dimuat, tunggu sinyal
-		local dataLoadedEvent = self:LoadPlayerData(player)
-		dataLoadedEvent:Wait()
-	end
-	return playerDataCache[userId]
-end
-
-
--- Fungsi internal untuk menyimpan data pemain tunggal
-local function savePlayerDataFunc(userId)
-	-- Catatan: Penyimpanan leaderboard sekarang ditangani oleh StatsModule secara independen.
-
-	local cacheEntry = playerDataCache[userId]
-	-- Jangan simpan jika data dikunci, tidak diubah, atau masih dimuat
-	if not cacheEntry or not cacheEntry.isDirty or cacheEntry.isLoading or cacheEntry.saveLocked then
-		return false -- Mengindikasikan penyimpanan tidak dilakukan
+	if Profiles[player] then
+		return createLegacyWrapper(Profiles[player])
 	end
 
-	local key = "Player_" .. userId
-	local dataToSave = cacheEntry.data
-	dataToSave.lastSaveTimestamp = os.time() -- Perbarui timestamp sebelum menyimpan
+	-- Jika loading sedang berlangsung, kita tunggu signalnya
+	if PendingLoads[player] then
+		local result = PendingLoads[player].Event:Wait()
+		if result then return result end
+	end
 
-	local attempts = 0
-	local success = false
-	while not success and attempts < 3 do
-		attempts = attempts + 1
-		local ok, err = pcall(function()
-			PlayerDS:SetAsync(key, dataToSave)
-		end)
-		if ok then
-			success = true
-			cacheEntry.isDirty = false -- Reset flag setelah berhasil disimpan
-			print("[DataStoreManager] Data berhasil disimpan untuk UserId: " .. userId)
-		else
-			warn("[DataStoreManager] Gagal menyimpan data untuk UserId: " .. userId .. " (Percobaan " .. attempts .. "): " .. tostring(err))
-			if attempts < 3 then task.wait(2) end
+	-- Fallback loop jika LoadPlayerData belum dipanggil (misal race condition saat init)
+	local startTime = os.time()
+	while not Profiles[player] do
+		if os.time() - startTime > 30 then
+			warn("[DataStoreManager] Timeout waiting for data: " .. player.Name)
+			return nil
 		end
-	end
-	return success
-end
+		if not player.Parent then return nil end
 
--- Fungsi penyimpanan sinkron (yielding) untuk kasus-kasus kritis seperti teleportasi
-function DataStoreManager:SavePlayerDataYielding(player)
-	return savePlayerDataFunc(player.UserId)
-end
-
-
-function DataStoreManager:SavePlayerData(player)
-	savePlayerDataFunc(player.UserId)
-end
-
--- Fungsi untuk menandai data pemain telah diubah dan perlu disimpan
-function DataStoreManager:UpdatePlayerData(player, newData)
-	local userId = player.UserId
-	if playerDataCache[userId] then
-		playerDataCache[userId].data = newData
-		playerDataCache[userId].isDirty = true
-	end
-end
-
--- Inisialisasi loop autosave dan event-event
-function DataStoreManager:Init()
-	print("DataStoreManager Diinisialisasi dalam mode: " .. ENVIRONMENT)
-
-	-- Loop Autosave
-	task.spawn(function()
-		while true do
-			task.wait(60)
-			for userId, _ in pairs(playerDataCache) do
-				savePlayerDataFunc(userId)
-			end
+		-- Trigger load jika belum ada pending
+		if not PendingLoads[player] and not Profiles[player] then
+			self:LoadPlayerData(player)
 		end
-	end)
 
-	-- Simpan saat pemain keluar
-	Players.PlayerRemoving:Connect(function(player)
-		savePlayerDataFunc(player.UserId)
-		playerDataCache[player.UserId] = nil -- Hapus dari cache
-	end)
+		task.wait(0.5)
+	end
 
-	-- Simpan semua data saat server ditutup
-	game:BindToClose(function()
-		if not RunService:IsStudio() then
-			local saveTasks = {}
-			for userId, _ in pairs(playerDataCache) do
-				table.insert(saveTasks, task.spawn(savePlayerDataFunc, userId))
-			end
-			-- Tunggu semua tugas penyimpanan selesai
-			for _, t in ipairs(saveTasks) do
-				task.wait()
-			end
-		end
-	end)
+	return createLegacyWrapper(Profiles[player])
 end
-
 
 function DataStoreManager:GetPlayerData(player)
-	if playerDataCache[player.UserId] then
-		return playerDataCache[player.UserId]
+	local profile = Profiles[player]
+	if profile then
+		return createLegacyWrapper(profile)
 	end
 	return nil
 end
 
+function DataStoreManager:SavePlayerData(player)
+	-- Handled by ProfileStore AutoSave
+end
+
+function DataStoreManager:UpdatePlayerData(player, newData)
+	local profile = Profiles[player]
+	if profile then
+		if profile.Data ~= newData then
+			profile.Data = newData
+		end
+	end
+end
+
+function DataStoreManager:SavePlayerDataYielding(player)
+	local profile = Profiles[player]
+	if profile then
+		local saved = false
+		local connection
+
+		-- Dengarkan sinyal OnAfterSave untuk mengetahui kapan penyimpanan selesai
+		connection = profile.OnAfterSave:Connect(function()
+			saved = true
+		end)
+
+		-- Picu penyimpanan manual (non-blocking di library, tapi kita tunggu hasilnya)
+		profile:Save()
+
+		-- Tunggu dengan timeout (misal 5 detik)
+		local start = os.clock()
+		while not saved and os.clock() - start < 5 do
+			if not Profiles[player] then break end -- Profile sudah dibersihkan/released
+			task.wait()
+		end
+
+		if connection then connection:Disconnect() end
+		return saved
+	end
+	return false
+end
+
+function DataStoreManager:Init()
+	print("DataStoreManager (ProfileStore) Initialized: " .. ENVIRONMENT)
+
+	local function onPlayerAdded(player)
+		task.spawn(function()
+			self:LoadPlayerData(player)
+		end)
+	end
+
+	Players.PlayerAdded:Connect(onPlayerAdded)
+	for _, player in ipairs(Players:GetPlayers()) do
+		onPlayerAdded(player)
+	end
+
+	Players.PlayerRemoving:Connect(function(player)
+		local profile = Profiles[player]
+		if profile then
+			profile:EndSession()
+			Profiles[player] = nil
+		end
+	end)
+end
+
 -- =============================================================================
--- API UNTUK DATA GLOBAL (LEADERBOARD, DLL.)
+-- API GLOBAL DATA (LEADERBOARD & GLOBAL VALUES)
 -- =============================================================================
+
+local GlobalDS = DataStoreService:GetDataStore("GlobalDSv1", ENVIRONMENT)
 
 function DataStoreManager:UpdateLeaderboard(leaderboardName, key, value)
 	local success, err = pcall(function()
@@ -271,7 +291,7 @@ function DataStoreManager:UpdateLeaderboard(leaderboardName, key, value)
 		orderedDataStore:SetAsync(tostring(key), tonumber(value))
 	end)
 	if not success then
-		warn("[DataStoreManager] Gagal memperbarui leaderboard '" .. leaderboardName .. "': " .. tostring(err))
+		warn("[DataStoreManager] Failed to update leaderboard '" .. leaderboardName .. "': " .. tostring(err))
 	end
 end
 
@@ -280,10 +300,9 @@ function DataStoreManager:GetPlayerRankInLeaderboard(leaderboardName, userId)
 		local orderedDataStore = DataStoreService:GetOrderedDataStore(leaderboardName, ENVIRONMENT)
 		local playerScore = orderedDataStore:GetAsync(tostring(userId))
 		if not playerScore then
-			return nil, nil -- Pemain tidak ada di papan peringkat
+			return nil, nil
 		end
 
-		-- Dapatkan peringkat pemain
 		local rankPages = orderedDataStore:GetSortedAsync(false, 100, playerScore)
 		local rankPage = rankPages:GetCurrentPage()
 
@@ -301,14 +320,14 @@ function DataStoreManager:GetPlayerRankInLeaderboard(leaderboardName, userId)
 	if success then
 		return result
 	else
-		warn("[DataStoreManager] Gagal mendapatkan peringkat pemain untuk '" .. leaderboardName .. "': " .. tostring(result))
+		warn("[DataStoreManager] Failed to get rank '" .. leaderboardName .. "': " .. tostring(result))
 		return nil, nil
 	end
 end
 
 function DataStoreManager:GetLeaderboardData(leaderboardName, isAscending, pageSize)
 	isAscending = isAscending or false
-	pageSize = pageSize or 50 -- Sesuaikan dengan kebutuhan LeaderboardManager
+	pageSize = pageSize or 50
 
 	local success, result = pcall(function()
 		local orderedDataStore = DataStoreService:GetOrderedDataStore(leaderboardName, ENVIRONMENT)
@@ -319,21 +338,17 @@ function DataStoreManager:GetLeaderboardData(leaderboardName, isAscending, pageS
 	if success then
 		return result
 	else
-		warn("[DataStoreManager] Gagal mengambil data leaderboard '" .. leaderboardName .. "': " .. tostring(result))
+		warn("[DataStoreManager] Failed to get leaderboard data '" .. leaderboardName .. "': " .. tostring(result))
 		return {}
 	end
 end
-
--- =============================================================================
--- API UNTUK DATA GLOBAL GENERIC (NON-LEADERBOARD)
--- =============================================================================
 
 function DataStoreManager:SetGlobalData(key, value)
 	local success, err = pcall(function()
 		GlobalDS:SetAsync(key, value)
 	end)
 	if not success then
-		warn("[DataStoreManager] Gagal menyimpan data global untuk kunci '" .. key .. "': " .. tostring(err))
+		warn("[DataStoreManager] Failed to set global data '" .. key .. "': " .. tostring(err))
 	end
 	return success
 end
@@ -345,92 +360,47 @@ function DataStoreManager:GetGlobalData(key)
 	if success then
 		return result
 	else
-		warn("[DataStoreManager] Gagal mengambil data global untuk kunci '" .. key .. "': " .. tostring(result))
+		warn("[DataStoreManager] Failed to get global data '" .. key .. "': " .. tostring(result))
 		return nil
 	end
 end
 
 -- =============================================================================
--- API UNTUK ADMIN
+-- API ADMIN & UTILS
 -- =============================================================================
 
 function DataStoreManager:LoadOfflinePlayerData(userId)
-	local key = "Player_" .. userId
-	local success, result = pcall(function()
-		return PlayerDS:GetAsync(key)
-	end)
-	if success then
-		return { data = result } -- Kembalikan dalam format yang mirip dengan cache
+	local profileKey = "Player_" .. userId
+	local profile = PlayerProfileStore:GetAsync(profileKey)
+
+	if profile then
+		return { data = profile.Data }
 	else
-		warn("[DataStoreManager] Gagal memuat data offline untuk UserId '" .. userId .. "': " .. tostring(result))
 		return nil
 	end
 end
 
 function DataStoreManager:SaveOfflinePlayerData(userId, data)
-	local key = "Player_" .. userId
-	local success, err = pcall(function()
-		PlayerDS:SetAsync(key, data)
-	end)
-	if not success then
-		warn("[DataStoreManager] Gagal menyimpan data offline untuk UserId '" .. userId .. "': " .. tostring(err))
-	end
-	return success
-end
-
--- Fungsi bantuan internal untuk menghapus pemain dari satu papan peringkat
-local function _removePlayerFromLeaderboard(leaderboardName, userId)
-	local dsSuccess, dsErr = pcall(function()
-		local orderedDataStore = DataStoreService:GetOrderedDataStore(leaderboardName, ENVIRONMENT)
-		orderedDataStore:RemoveAsync(tostring(userId))
-	end)
-	if not dsSuccess then
-		print(string.format("[DataStoreManager] Info saat menghapus data dari papan peringkat '%s' untuk UserId %d: %s", leaderboardName, userId, tostring(dsErr)))
-	end
+	warn("[DataStoreManager] SaveOfflinePlayerData not fully supported by ProfileStore for safety. Use with caution.")
+	return false
 end
 
 function DataStoreManager:DeletePlayerData(userId)
-	-- Hapus data utama pemain
-	local key = "Player_" .. userId
-	local mainDataSuccess, mainDataErr = pcall(function()
-		PlayerDS:RemoveAsync(key)
-	end)
+	local profileKey = "Player_" .. userId
+	local success = PlayerProfileStore:RemoveAsync(profileKey)
 
-	if not mainDataSuccess then
-		warn("[DataStoreManager] Gagal menghapus data utama untuk UserId '" .. userId .. "': " .. tostring(mainDataErr))
-	end
-
-	-- Hapus data dari semua papan peringkat statis
 	local LeaderboardConfig = require(game.ReplicatedStorage:WaitForChild("LeaderboardConfig"))
 	for _, config in pairs(LeaderboardConfig) do
-		_removePlayerFromLeaderboard(config.DataStoreName, userId)
+		pcall(function()
+			DataStoreService:GetOrderedDataStore(config.DataStoreName, ENVIRONMENT):RemoveAsync(tostring(userId))
+		end)
 	end
 
-	-- Hapus data dari papan peringkat Misi Global (aktif dan sebelumnya)
-	local success, GlobalMissionConfig = pcall(require, game.ReplicatedStorage.ModuleScript:WaitForChild("GlobalMissionConfig"))
-	if success then
-		local globalMissionState = self:GetGlobalData(GlobalMissionConfig.GLOBAL_DATA_KEY)
-		if globalMissionState then
-			if globalMissionState.ActiveMissionID then
-				local activeLeaderboardName = "GlobalMissionLeaderboard_V2_" .. globalMissionState.ActiveMissionID
-				_removePlayerFromLeaderboard(activeLeaderboardName, userId)
-			end
-			if globalMissionState.PreviousMission and globalMissionState.PreviousMission.ID then
-				local previousLeaderboardName = "GlobalMissionLeaderboard_V2_" .. globalMissionState.PreviousMission.ID
-				_removePlayerFromLeaderboard(previousLeaderboardName, userId)
-			end
-		end
-	else
-		warn("[DataStoreManager] Tidak dapat memuat GlobalMissionConfig untuk menghapus data papan peringkat misi global.")
-	end
-
-	-- Kembalikan status keberhasilan penghapusan data utama
-	return mainDataSuccess
+	return success
 end
 
 function DataStoreManager:LogAdminAction(adminPlayer, action, targetUserId)
-	-- Implementasi logging yang sebenarnya bisa lebih kompleks (misalnya, menyimpan ke DataStore terpisah)
-	print(string.format("ADMIN ACTION: %s (%d) melakukan '%s' pada UserId %d", adminPlayer.Name, adminPlayer.UserId, action, targetUserId))
+	print(string.format("ADMIN ACTION: %s (%d) -> '%s' on Target %d", adminPlayer.Name, adminPlayer.UserId, action, targetUserId))
 end
 
 DataStoreManager.DEFAULT_PLAYER_DATA = DEFAULT_PLAYER_DATA
