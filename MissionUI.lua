@@ -618,6 +618,8 @@ end
 -- ======================================================
 
 local function openUI()
+	if screenGui.Enabled then return end -- Prevent double open
+
 	local s, r = pcall(function() return getMissionData:InvokeServer() end)
 	if not s then return end
 	currentMissionData = r

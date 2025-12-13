@@ -158,8 +158,8 @@ local uiEnforcerLoop = nil -- Used for RenderStepped connection now
 -- List of Lobby UIs to hide during cinematic
 local LOBBY_UIS = {
 	"CoinsUI", "MissionPointsUI", "AchievementPointsUI",
-	"ProfileUI", "DailyRewardUI", "InventoryUI", "MissionUI",
-	"MissionButton", "DailyRewardHUD"
+	"ProfileUI", "DailyRewardUI", "InventoryUI",
+	"MissionButton", "DailyRewardHUD" -- Removed "MissionUI" to prevent auto-enabling
 }
 
 local function setLobbyUIVisibility(visible)

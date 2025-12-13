@@ -375,10 +375,23 @@ function LobbyBuilder.Build()
 	createPart("Pole", Vector3.new(1, 10, 1), tentPos * CFrame.new(-8,0,8), env, COLORS.DarkMetal, Enum.Material.Metal)
 	createInteraction("BoosterShop", tentPos, Vector3.new(10, 10, 10), "Medical Supplies", env)
 
-	-- Daily Reward (Supply Drop)
+	-- Daily Reward (Physical Supply Crate)
 	local stashPos = CFrame.new(-100, PLATFORM_HEIGHT + 3, 30)
-	local crate = createPart("SupplyCrate", Vector3.new(8, 8, 8), stashPos, env, COLORS.RustyMetal, Enum.Material.CorrodedMetal)
-	createInteraction("DailyReward", stashPos, Vector3.new(9, 9, 9), "Open Supply Drop", env)
+
+	-- Crate Model (Constructed from Parts)
+	local crate = createPart("SupplyCrate", Vector3.new(6, 4, 4), stashPos, env, Color3.fromRGB(50, 70, 50), Enum.Material.DiamondPlate)
+	-- Lid (Separate part for animation)
+	local lid = createPart("Lid", Vector3.new(6.2, 0.5, 4.2), stashPos * CFrame.new(0, 2.25, 0), crate, Color3.fromRGB(40, 60, 40), Enum.Material.DiamondPlate)
+	-- Use WeldConstraint for physical attachment but Animation will break it if not Motor6D.
+	-- Since we use Anchored parts for lobby, we can just tween the CFrame of the Lid locally.
+	lid.Anchored = true
+
+	-- Glow Effect (Hidden initially)
+	local glow = createParticle("Glow", crate, "rbxassetid://292289455", ColorSequence.new(Color3.fromRGB(50, 255, 100)), NumberSequence.new(2))
+	glow.Enabled = false
+
+	-- We remove the generic interaction sphere here because DailyRewardInteraction.lua handles the specific ProximityPrompt
+	-- createInteraction("DailyReward", stashPos, Vector3.new(9, 9, 9), "Open Supply Drop", env)
 
 	-- Gacha (Vending Machine)
 	local gachaPos = stashPos * CFrame.new(0, 2, -20)

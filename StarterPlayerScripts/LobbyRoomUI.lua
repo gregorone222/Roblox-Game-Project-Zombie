@@ -36,7 +36,7 @@ local THEME = {
 		Stamp  = Enum.Font.GothamBlack     -- Stamped status (Fallback to generic if needed)
 	},
 	Sizes = {
-		MainFrame = UDim2.new(0.9, 0, 0.9, 0), -- User Request
+		MainFrame = UDim2.new(0.85, 0, 0.8, 0), -- Reduced size for mobile safety
 	}
 }
 
@@ -79,6 +79,12 @@ local function create(className, properties, children)
 	return inst
 end
 
+local function addAspectRatio(parent, ratio)
+	create("UIAspectRatioConstraint", {
+		Parent = parent, AspectRatio = ratio, AspectType = Enum.AspectType.FitWithinMaxSize, DominantAxis = Enum.DominantAxis.Width
+	})
+end
+
 local function playSound(id)
 	local sound = Instance.new("Sound")
 	sound.SoundId = "rbxassetid://" .. id
@@ -99,17 +105,20 @@ local function createButton(parent, text, size, pos, color, callback)
 
 	-- Shadow
 	create("Frame", {
-		Parent = btn, ZIndex = btn.ZIndex - 1, Size = UDim2.new(1, 2, 1, 2), Position = UDim2.new(0, 1, 0, 1),
+		Parent = btn, ZIndex = btn.ZIndex - 1, Size = UDim2.new(1, 0, 1, 0), Position = UDim2.new(0.02, 0, 0.05, 0),
 		BackgroundColor3 = Color3.new(0,0,0), BackgroundTransparency = 0.8, BorderSizePixel = 0
 	})
 
 	-- Text
 	create("TextLabel", {
 		Parent = btn, Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1,
-		Text = text, Font = getFont("Label"), TextSize = 16, TextColor3 = THEME.Colors.TextMain
+		Text = text, Font = getFont("Label"), TextScaled = true, TextColor3 = THEME.Colors.TextMain
 	})
 
-	create("UICorner", {Parent = btn, CornerRadius = UDim.new(0, 4)})
+	-- Constraint text size
+	create("UITextSizeConstraint", {Parent = btn.TextLabel, MaxTextSize = 24})
+
+	create("UICorner", {Parent = btn, CornerRadius = UDim.new(0.1, 0)})
 
 	btn.MouseButton1Click:Connect(function()
 		-- playSound(SOUNDS.Click)
@@ -122,14 +131,15 @@ end
 -- Tab Button
 local function createTab(parent, id, text, layoutOrder)
 	local isActive = (state.activeTab == id)
+	-- Use Scale for size
 	local btn = create("TextButton", {
-		Name = "Tab_"..id, Parent = parent, Size = UDim2.new(0, 120, 1, 4),
+		Name = "Tab_"..id, Parent = parent, Size = UDim2.new(0.3, 0, 1, 0),
 		BackgroundColor3 = isActive and THEME.Colors.FolderMain or THEME.Colors.FolderDark,
 		BorderSizePixel = 0, LayoutOrder = layoutOrder, AutoButtonColor = false,
 		ZIndex = isActive and 2 or 1
 	})
 
-	create("UICorner", {Parent = btn, CornerRadius = UDim.new(0, 8)})
+	create("UICorner", {Parent = btn, CornerRadius = UDim.new(0.2, 0)})
 	-- Hide bottom corners to blend with folder
 	create("Frame", {
 		Parent = btn, Size = UDim2.new(1, 0, 0.5, 0), Position = UDim2.new(0, 0, 0.5, 0),
@@ -138,10 +148,11 @@ local function createTab(parent, id, text, layoutOrder)
 	})
 
 	create("TextLabel", {
-		Parent = btn, Size = UDim2.new(1, 0, 1, -4), Position = UDim2.new(0,0,0,0),
-		BackgroundTransparency = 1, Text = text, Font = getFont("Header"), TextSize = 18,
+		Parent = btn, Size = UDim2.new(1, 0, 1, 0), Position = UDim2.new(0,0,0,0),
+		BackgroundTransparency = 1, Text = text, Font = getFont("Header"), TextScaled = true,
 		TextColor3 = THEME.Colors.TextMain, ZIndex = isActive and 3 or 2
 	})
+	create("UITextSizeConstraint", {Parent = btn.TextLabel, MaxTextSize = 18})
 
 	btn.MouseButton1Click:Connect(function()
 		if state.activeTab == id then return end
@@ -178,63 +189,68 @@ local function createOpsPanel(parent)
 
 	-- LEFT COLUMN: Mission Config
 	local leftCol = create("Frame", {
-		Parent = panel, Size = UDim2.new(0.4, -10, 0.95, 0), Position = UDim2.new(0.02, 0, 0.025, 0),
+		Parent = panel, Size = UDim2.new(0.4, 0, 0.95, 0), Position = UDim2.new(0.02, 0, 0.025, 0),
 		BackgroundColor3 = THEME.Colors.Paper, BorderSizePixel = 0
 	})
-	create("UICorner", {Parent = leftCol, CornerRadius = UDim.new(0, 4)})
+	create("UICorner", {Parent = leftCol, CornerRadius = UDim.new(0.05, 0)})
 
 	-- Header
-	create("TextLabel", {
-		Parent = leftCol, Size = UDim2.new(1, 0, 0, 50), BackgroundTransparency = 1,
-		Text = "MISSION PARAMETERS", Font = getFont("Header"), TextSize = 22, TextColor3 = THEME.Colors.TextMain
+	local header = create("TextLabel", {
+		Parent = leftCol, Size = UDim2.new(1, 0, 0.1, 0), BackgroundTransparency = 1,
+		Text = "MISSION PARAMETERS", Font = getFont("Header"), TextScaled = true, TextColor3 = THEME.Colors.TextMain
 	})
+	create("UITextSizeConstraint", {Parent = header, MaxTextSize = 22})
+
 	create("Frame", { -- Divider
-		Parent = leftCol, Size = UDim2.new(0.9, 0, 0, 2), Position = UDim2.new(0.05, 0, 0, 45),
+		Parent = leftCol, Size = UDim2.new(0.9, 0, 0.005, 0), Position = UDim2.new(0.05, 0, 0.1, 0),
 		BackgroundColor3 = THEME.Colors.TextDim, BackgroundTransparency = 0.8, BorderSizePixel = 0
 	})
 
 	local formList = create("UIListLayout", {
-		Parent = leftCol, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 15),
+		Parent = leftCol, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0.03, 0),
 		HorizontalAlignment = Enum.HorizontalAlignment.Center
 	})
 
 	-- Padding Frame
-	create("Frame", {Parent = leftCol, Size = UDim2.new(1,0,0,50), LayoutOrder = 0, BackgroundTransparency = 1})
+	create("Frame", {Parent = leftCol, Size = UDim2.new(1,0,0.1,0), LayoutOrder = 0, BackgroundTransparency = 1})
 
 	-- Helper for Options
 	local function createOption(label, options, key, layout)
 		local container = create("Frame", {
-			Parent = leftCol, Size = UDim2.new(0.9, 0, 0, 60), BackgroundTransparency = 1, LayoutOrder = layout
+			Parent = leftCol, Size = UDim2.new(0.9, 0, 0.15, 0), BackgroundTransparency = 1, LayoutOrder = layout
 		})
-		create("TextLabel", {
-			Parent = container, Size = UDim2.new(1, 0, 0, 20), Text = label,
-			Font = getFont("Label"), TextSize = 14, TextColor3 = THEME.Colors.TextDim,
+		local lbl = create("TextLabel", {
+			Parent = container, Size = UDim2.new(1, 0, 0.3, 0), Text = label,
+			Font = getFont("Label"), TextScaled = true, TextColor3 = THEME.Colors.TextDim,
 			TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
 		})
+		create("UITextSizeConstraint", {Parent = lbl, MaxTextSize = 14})
 
 		local btnContainer = create("Frame", {
-			Parent = container, Size = UDim2.new(1, 0, 0, 35), Position = UDim2.new(0, 0, 0, 25), BackgroundTransparency = 1
+			Parent = container, Size = UDim2.new(1, 0, 0.6, 0), Position = UDim2.new(0, 0, 0.4, 0), BackgroundTransparency = 1
 		})
 		create("UIListLayout", {
-			Parent = btnContainer, FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 10)
+			Parent = btnContainer, FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0.05, 0)
 		})
 
 		local optionBtns = {}
 
 		for _, opt in ipairs(options) do
 			local btn = create("TextButton", {
-				Parent = btnContainer, Size = UDim2.new(0, 0, 1, 0), AutomaticSize = Enum.AutomaticSize.X,
+				Parent = btnContainer, Size = UDim2.new(1/#options - 0.05, 0, 1, 0),
 				BackgroundColor3 = (state.settings[key] == opt) and THEME.Colors.TextMain or THEME.Colors.PaperDark,
-				BorderSizePixel = 0, Text = "  "..opt.."  ", Font = getFont("Body"), TextSize = 14,
+				BorderSizePixel = 0, Text = opt, Font = getFont("Body"), TextScaled = true,
 				TextColor3 = (state.settings[key] == opt) and THEME.Colors.Paper or THEME.Colors.TextMain
 			})
-			create("UICorner", {Parent = btn, CornerRadius = UDim.new(0, 4)})
+			create("UICorner", {Parent = btn, CornerRadius = UDim.new(0.2, 0)})
+			-- TextButton native text logic fix
+			create("UITextSizeConstraint", {Parent = btn, MaxTextSize = 14})
 
 			btn.MouseButton1Click:Connect(function()
 				state.settings[key] = opt
 				-- Refresh visuals
 				for _, b in ipairs(optionBtns) do
-					local isSel = (b.Text == "  "..opt.."  ")
+					local isSel = (b.Text == opt)
 					b.BackgroundColor3 = isSel and THEME.Colors.TextMain or THEME.Colors.PaperDark
 					b.TextColor3 = isSel and THEME.Colors.Paper or THEME.Colors.TextMain
 				end
@@ -247,32 +263,40 @@ local function createOpsPanel(parent)
 	createOption("THREAT LEVEL", {"Easy", "Normal", "Hard"}, "difficulty", 2)
 
 	-- Solo Start Button (Bottom)
-	createButton(leftCol, "DEPLOY SOLO", UDim2.new(0.9, 0, 0, 50), UDim2.new(0.05, 0, 0.85, 0), THEME.Colors.TextMain, function()
+	-- Using LayoutOrder to push it down
+	local spacer = create("Frame", {Parent = leftCol, Size = UDim2.new(1,0,0.1,0), LayoutOrder = 3, BackgroundTransparency = 1})
+
+	local soloBtn = createButton(leftCol, "DEPLOY SOLO", UDim2.new(0.9, 0, 0.12, 0), UDim2.new(0,0,0,0), THEME.Colors.TextMain, function()
 		local btn = leftCol:FindFirstChild("Btn_DEPLOY SOLO")
 		if btn then
 			btn.TextLabel.Text = "INITIALIZING..."
 			btn.BackgroundColor3 = THEME.Colors.TextDim
 		end
 		lobbyRemote:FireServer("startSoloGame", {gameMode = state.settings.gameMode, difficulty = state.settings.difficulty})
-	end).TextLabel.TextColor3 = THEME.Colors.Paper
+	end)
+	soloBtn.LayoutOrder = 4
+	soloBtn.TextLabel.TextColor3 = THEME.Colors.Paper
 
 	-- RIGHT COLUMN: Public Rooms
 	local rightCol = create("Frame", {
+		Name = "RightCol",
 		Parent = panel, Size = UDim2.new(0.55, 0, 0.95, 0), Position = UDim2.new(0.44, 0, 0.025, 0),
 		BackgroundTransparency = 1
 	})
 
-	create("TextLabel", {
-		Parent = rightCol, Size = UDim2.new(1, 0, 0, 40), Text = "DISTRESS SIGNALS (PUBLIC LOBBIES)",
-		Font = getFont("Header"), TextSize = 18, TextColor3 = THEME.Colors.TextMain, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
+	local listHeader = create("TextLabel", {
+		Parent = rightCol, Size = UDim2.new(1, 0, 0.08, 0), Text = "DISTRESS SIGNALS (PUBLIC LOBBIES)",
+		Font = getFont("Header"), TextScaled = true, TextColor3 = THEME.Colors.TextMain, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
 	})
+	create("UITextSizeConstraint", {Parent = listHeader, MaxTextSize = 18})
 
 	local scroll = create("ScrollingFrame", {
 		Name = "RoomList", Parent = rightCol, Size = UDim2.new(1, 0, 0.9, 0), Position = UDim2.new(0, 0, 0.1, 0),
-		BackgroundTransparency = 1, ScrollBarThickness = 4, ScrollBarImageColor3 = THEME.Colors.TextMain
+		BackgroundTransparency = 1, ScrollBarThickness = 4, ScrollBarImageColor3 = THEME.Colors.TextMain,
+		CanvasSize = UDim2.new(0,0,0,0), AutomaticCanvasSize = Enum.AutomaticSize.Y
 	})
 	create("UIGridLayout", {
-		Parent = scroll, CellSize = UDim2.new(1, 0, 0, 70), CellPadding = UDim2.new(0, 5)
+		Parent = scroll, CellSize = UDim2.new(1, 0, 0.15, 0), CellPadding = UDim2.new(0, 0, 0.02, 0)
 	})
 end
 
@@ -288,20 +312,23 @@ local function createLobbyPanel(parent)
 		Parent = panel, Size = UDim2.new(0.3, 0, 0.9, 0), Position = UDim2.new(0.02, 0, 0.05, 0),
 		BackgroundColor3 = THEME.Colors.Paper, BorderSizePixel = 0
 	})
-	create("UICorner", {Parent = infoCard, CornerRadius = UDim.new(0, 4)})
+	create("UICorner", {Parent = infoCard, CornerRadius = UDim.new(0.05, 0)})
 
-	create("TextLabel", {
-		Name = "RoomTitle", Parent = infoCard, Size = UDim2.new(0.9, 0, 0, 40), Position = UDim2.new(0.05, 0, 0, 10),
-		Text = "ROOM NAME", Font = getFont("Header"), TextSize = 20, TextColor3 = THEME.Colors.TextMain, BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left
+	-- Adjusted positions for Title and Details to prevent overlap
+	local roomTitle = create("TextLabel", {
+		Name = "RoomTitle", Parent = infoCard, Size = UDim2.new(0.9, 0, 0.12, 0), Position = UDim2.new(0.05, 0, 0.05, 0),
+		Text = "ROOM NAME", Font = getFont("Header"), TextScaled = true, TextColor3 = THEME.Colors.TextMain, BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left
 	})
+	create("UITextSizeConstraint", {Parent = roomTitle, MaxTextSize = 20})
 
-	create("TextLabel", {
-		Name = "RoomDetails", Parent = infoCard, Size = UDim2.new(0.9, 0, 0.3, 0), Position = UDim2.new(0.05, 0, 0.1, 0),
-		Text = "Mode: Story\nDiff: Easy", Font = getFont("Body"), TextSize = 16, TextColor3 = THEME.Colors.TextDim, BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top
+	local roomDetails = create("TextLabel", {
+		Name = "RoomDetails", Parent = infoCard, Size = UDim2.new(0.9, 0, 0.3, 0), Position = UDim2.new(0.05, 0, 0.20, 0), -- Moved down
+		Text = "Mode: Story\nDiff: Easy", Font = getFont("Body"), TextScaled = true, TextColor3 = THEME.Colors.TextDim, BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top
 	})
+	create("UITextSizeConstraint", {Parent = roomDetails, MaxTextSize = 16})
 
 	-- Leave Button
-	createButton(infoCard, "LEAVE SQUAD", UDim2.new(0.9, 0, 0, 40), UDim2.new(0.05, 0, 0.9, -10), THEME.Colors.AccentRed, function()
+	createButton(infoCard, "LEAVE SQUAD", UDim2.new(0.9, 0, 0.1, 0), UDim2.new(0.05, 0, 0.88, 0), THEME.Colors.AccentRed, function()
 		lobbyRemote:FireServer("leaveRoom")
 	end).TextLabel.TextColor3 = THEME.Colors.Paper
 
@@ -311,21 +338,22 @@ local function createLobbyPanel(parent)
 		BackgroundTransparency = 1
 	})
 
-	create("TextLabel", {
-		Parent = rosterArea, Size = UDim2.new(1, 0, 0, 30), Text = "PERSONNEL ROSTER",
-		Font = getFont("Label"), TextSize = 14, TextColor3 = THEME.Colors.TextDim, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
+	local rosterHeader = create("TextLabel", {
+		Parent = rosterArea, Size = UDim2.new(1, 0, 0.08, 0), Text = "PERSONNEL ROSTER",
+		Font = getFont("Label"), TextScaled = true, TextColor3 = THEME.Colors.TextDim, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
 	})
+	create("UITextSizeConstraint", {Parent = rosterHeader, MaxTextSize = 14})
 
 	local rosterGrid = create("ScrollingFrame", {
-		Name = "RosterGrid", Parent = rosterArea, Size = UDim2.new(1, 0, 0.7, 0), Position = UDim2.new(0, 0, 0.08, 0),
+		Name = "RosterGrid", Parent = rosterArea, Size = UDim2.new(1, 0, 0.65, 0), Position = UDim2.new(0, 0, 0.1, 0), -- Shrunk height
 		BackgroundTransparency = 1, ScrollBarThickness = 0
 	})
 	create("UIGridLayout", {
-		Parent = rosterGrid, CellSize = UDim2.new(0.3, 0, 0, 150), CellPadding = UDim2.new(0.03, 0, 0.03, 0)
+		Parent = rosterGrid, CellSize = UDim2.new(0.3, 0, 0.4, 0), CellPadding = UDim2.new(0.03, 0, 0.03, 0)
 	})
 
-	-- Action Button (Host)
-	local actionBtn = createButton(rosterArea, "START MISSION", UDim2.new(0.4, 0, 0, 60), UDim2.new(0.6, 0, 0.85, 0), THEME.Colors.AccentGreen, function()
+	-- Action Button (Host) - Moved UP significantly
+	local actionBtn = createButton(rosterArea, "START MISSION", UDim2.new(0.4, 0, 0.15, 0), UDim2.new(0.6, 0, 0.8, 0), THEME.Colors.AccentGreen, function()
 		if state.currentRoom and state.currentRoom.hostName == player.Name then
 			lobbyRemote:FireServer("forceStartGame")
 		end
@@ -333,7 +361,6 @@ local function createLobbyPanel(parent)
 	actionBtn.Name = "ActionBtn"
 	actionBtn.TextLabel.TextColor3 = THEME.Colors.Paper
 	actionBtn.TextLabel.Font = getFont("Stamp")
-	actionBtn.TextLabel.TextSize = 24
 end
 
 local function createIntelPanel(parent)
@@ -348,7 +375,7 @@ local function createIntelPanel(parent)
 		Parent = panel, Size = UDim2.new(0.45, 0, 0.9, 0), Position = UDim2.new(0.02, 0, 0.05, 0),
 		BackgroundColor3 = THEME.Colors.Paper, BorderSizePixel = 0
 	})
-	create("UICorner", {Parent = mapContainer, CornerRadius = UDim.new(0, 4)})
+	create("UICorner", {Parent = mapContainer, CornerRadius = UDim.new(0.05, 0)})
 
 	-- Map Photo
 	local photoFrame = create("Frame", {
@@ -356,21 +383,24 @@ local function createIntelPanel(parent)
 		BackgroundColor3 = Color3.new(0,0,0)
 	})
 	create("ImageLabel", {
-		Parent = photoFrame, Size = UDim2.new(1, -4, 1, -4), Position = UDim2.new(0, 2, 0, 2),
+		Parent = photoFrame, Size = UDim2.new(1, 0, 1, 0),
 		Image = "rbxasset://textures/ui/GuiImagePlaceholder.png", ScaleType = Enum.ScaleType.Crop
 	})
 
 	-- Map Stats
-	create("TextLabel", {
-		Parent = mapContainer, Size = UDim2.new(0.9, 0, 0, 30), Position = UDim2.new(0.05, 0, 0.6, 0),
-		Text = "SECTOR: VILLAGE [GROUND ZERO]", Font = getFont("Header"), TextSize = 18,
+	local sectorLbl = create("TextLabel", {
+		Parent = mapContainer, Size = UDim2.new(0.9, 0, 0.08, 0), Position = UDim2.new(0.05, 0, 0.6, 0),
+		Text = "SECTOR: VILLAGE [GROUND ZERO]", Font = getFont("Header"), TextScaled = true,
 		TextColor3 = THEME.Colors.TextMain, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
 	})
-	create("TextLabel", {
-		Parent = mapContainer, Size = UDim2.new(0.9, 0, 0, 60), Position = UDim2.new(0.05, 0, 0.68, 0),
-		Text = "HAZARD: EXTREME RADIATION\nSTATUS: ACTIVE HOSTILES\nENTRY: PERMITTED", Font = getFont("Body"), TextSize = 14,
+	create("UITextSizeConstraint", {Parent = sectorLbl, MaxTextSize = 18})
+
+	local hazardLbl = create("TextLabel", {
+		Parent = mapContainer, Size = UDim2.new(0.9, 0, 0.15, 0), Position = UDim2.new(0.05, 0, 0.7, 0),
+		Text = "HAZARD: EXTREME RADIATION\nSTATUS: ACTIVE HOSTILES\nENTRY: PERMITTED", Font = getFont("Body"), TextScaled = true,
 		TextColor3 = THEME.Colors.AccentRed, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
 	})
+	create("UITextSizeConstraint", {Parent = hazardLbl, MaxTextSize = 14})
 
 	-- Right Side: Dossier / Objectives
 	local dossier = create("Frame", {
@@ -378,34 +408,37 @@ local function createIntelPanel(parent)
 		BackgroundTransparency = 1
 	})
 
-	create("TextLabel", {
-		Parent = dossier, Size = UDim2.new(1, 0, 0, 40), Text = "ACT 1: THE CURSED VILLAGE",
-		Font = getFont("Header"), TextSize = 24, TextColor3 = THEME.Colors.TextMain, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
+	local actTitle = create("TextLabel", {
+		Parent = dossier, Size = UDim2.new(1, 0, 0.1, 0), Text = "ACT 1: THE CURSED VILLAGE",
+		Font = getFont("Header"), TextScaled = true, TextColor3 = THEME.Colors.TextMain, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
 	})
+	create("UITextSizeConstraint", {Parent = actTitle, MaxTextSize = 24})
 
 	create("Frame", { -- Divider
-		Parent = dossier, Size = UDim2.new(1, 0, 0, 2), Position = UDim2.new(0, 0, 0, 45),
+		Parent = dossier, Size = UDim2.new(1, 0, 0.005, 0), Position = UDim2.new(0, 0, 0.11, 0),
 		BackgroundColor3 = THEME.Colors.TextDim, BackgroundTransparency = 0.5, BorderSizePixel = 0
 	})
 
-	create("TextLabel", {
-		Parent = dossier, Size = UDim2.new(1, 0, 0, 60), Position = UDim2.new(0, 0, 0, 55),
+	local descLbl = create("TextLabel", {
+		Parent = dossier, Size = UDim2.new(1, 0, 0.2, 0), Position = UDim2.new(0, 0, 0.14, 0),
 		Text = "High energy readings detected. Source is located beneath the village square. Investigate the anomaly and neutralize any biological threats.",
-		Font = getFont("Body"), TextSize = 14, TextColor3 = THEME.Colors.TextMain, TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, BackgroundTransparency = 1
+		Font = getFont("Body"), TextScaled = true, TextColor3 = THEME.Colors.TextMain, TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, BackgroundTransparency = 1
 	})
+	create("UITextSizeConstraint", {Parent = descLbl, MaxTextSize = 14})
 
 	-- Objectives List
 	local objList = create("Frame", {
 		Parent = dossier, Size = UDim2.new(1, 0, 0.6, 0), Position = UDim2.new(0, 0, 0.35, 0), BackgroundTransparency = 1
 	})
 
-	create("TextLabel", {
+	local objLbl = create("TextLabel", {
 		Parent = objList, Size = UDim2.new(1, 0, 1, 0),
 		Text = "MISSION OBJECTIVES ARE CLASSIFIED.\n\nPROCEED TO DEPLOYMENT ZONE FOR BRIEFING.",
-		Font = getFont("Body"), TextSize = 14, TextColor3 = THEME.Colors.AccentRed,
+		Font = getFont("Body"), TextScaled = true, TextColor3 = THEME.Colors.AccentRed,
 		TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top,
 		BackgroundTransparency = 1
 	})
+	create("UITextSizeConstraint", {Parent = objLbl, MaxTextSize = 14})
 end
 
 -- ================== MAIN UI STRUCTURE ==================
@@ -422,27 +455,29 @@ local function createGUI()
 	-- Main Container (The Folder)
 	mainFrame = create("Frame", {
 		Name = "MainFrame", Parent = gui,
-		Size = THEME.Sizes.MainFrame, -- User Request: 0.9 Scale
-		Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5),
+		Size = THEME.Sizes.MainFrame, -- 0.85/0.8
+		Position = UDim2.new(0.5, 0, 0.55, 0), -- Moved slightly down (0.55) to clear top bar for Tabs
+		AnchorPoint = Vector2.new(0.5, 0.5),
 		BackgroundColor3 = THEME.Colors.FolderMain, BorderSizePixel = 0
 	})
-	create("UICorner", {Parent = mainFrame, CornerRadius = UDim.new(0, 8)})
+	create("UICorner", {Parent = mainFrame, CornerRadius = UDim.new(0.02, 0)})
+	create("UIAspectRatioConstraint", {Parent = mainFrame, AspectRatio = 1.6, AspectType = Enum.AspectType.FitWithinMaxSize}) -- Widen aspect ratio
 
 	-- Shadow behind main frame
 	create("Frame", {
 		Name = "Shadow", Parent = mainFrame, ZIndex = -1,
-		Size = UDim2.new(1, 15, 1, 15), Position = UDim2.new(0.5, 0, 0.5, 5), AnchorPoint = Vector2.new(0.5, 0.5),
+		Size = UDim2.new(1, 0, 1, 0), Position = UDim2.new(0.5, 0, 0.5, 10), AnchorPoint = Vector2.new(0.5, 0.5),
 		BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.6
 	})
-	create("UICorner", {Parent = mainFrame.Shadow, CornerRadius = UDim.new(0, 12)})
+	create("UICorner", {Parent = mainFrame.Shadow, CornerRadius = UDim.new(0.02, 0)})
 
 	-- Tab Container (Top)
 	local tabContainer = create("Frame", {
-		Parent = mainFrame, Size = UDim2.new(1, -40, 0, 40), Position = UDim2.new(0, 20, 0, -35),
+		Parent = mainFrame, Size = UDim2.new(0.95, 0, 0.1, 0), Position = UDim2.new(0.025, 0, -0.09, 0),
 		BackgroundTransparency = 1
 	})
 	local tabLayout = create("UIListLayout", {
-		Parent = tabContainer, FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 5)
+		Parent = tabContainer, FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0.01, 0)
 	})
 
 	createTab(tabContainer, "OPS", "OPS", 1)
@@ -452,16 +487,18 @@ local function createGUI()
 	-- Content Container (Paper Sheet inside Folder)
 	contentContainer = create("Frame", {
 		Name = "Content", Parent = mainFrame,
-		Size = UDim2.new(0.96, 0, 0.92, 0), Position = UDim2.new(0.02, 0, 0.06, 0),
+		Size = UDim2.new(0.96, 0, 0.92, 0), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5,0.5),
 		BackgroundColor3 = THEME.Colors.PaperDark, BorderSizePixel = 0
 	})
-	create("UICorner", {Parent = contentContainer, CornerRadius = UDim.new(0, 4)})
+	create("UICorner", {Parent = contentContainer, CornerRadius = UDim.new(0.02, 0)})
 
 	-- Close Button (Top Right of MainFrame)
 	local closeBtn = create("TextButton", {
-		Parent = mainFrame, Size = UDim2.new(0, 30, 0, 30), Position = UDim2.new(1, -35, 0, 5),
-		BackgroundTransparency = 1, Text = "X", Font = getFont("Label"), TextSize = 20, TextColor3 = THEME.Colors.TextMain
+		Parent = mainFrame, Size = UDim2.new(0.05, 0, 0.08, 0), Position = UDim2.new(0.98, 0, 0.01, 0), AnchorPoint = Vector2.new(1, 0),
+		BackgroundTransparency = 1, Text = "X", Font = getFont("Label"), TextScaled = true, TextColor3 = THEME.Colors.TextMain
 	})
+	create("UITextSizeConstraint", {Parent = closeBtn, MaxTextSize = 24})
+
 	closeBtn.MouseButton1Click:Connect(function()
 		state.isUIOpen = false
 		gui.Enabled = false
@@ -481,42 +518,46 @@ end
 function updateRoomList(roomsData)
 	local panel = panels["OPS"]
 	if not panel then return end
-	local scroll = panel:FindFirstChild("RightCol") and panel.RightCol:FindFirstChild("RoomList")
+	local rightCol = panel:FindFirstChild("RightCol")
+	local scroll = rightCol and rightCol:FindFirstChild("RoomList")
 	if not scroll then return end
 
 	for _, c in ipairs(scroll:GetChildren()) do if c:IsA("Frame") or c:IsA("TextButton") then c:Destroy() end end
 
 	for _, room in pairs(roomsData) do
 		local card = create("TextButton", {
-			Parent = scroll, Size = UDim2.new(1, 0, 0, 70), BackgroundColor3 = THEME.Colors.Paper,
+			Parent = scroll, Size = UDim2.new(1, 0, 0.15, 0), BackgroundColor3 = THEME.Colors.Paper,
 			AutoButtonColor = true, BorderSizePixel = 0
 		})
-		create("UICorner", {Parent = card, CornerRadius = UDim.new(0, 4)})
+		create("UICorner", {Parent = card, CornerRadius = UDim.new(0.1, 0)})
 		-- Border via Frame
 		create("Frame", {
-			Parent = card, Size = UDim2.new(1, -2, 1, -2), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5),
+			Parent = card, Size = UDim2.new(0.98, 0, 0.9, 0), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5),
 			BackgroundColor3 = THEME.Colors.Paper, BorderSizePixel = 1, BorderColor3 = THEME.Colors.TextDim, ZIndex = 0
 		})
 
-		create("TextLabel", {
-			Parent = card, Size = UDim2.new(0.9, 0, 0, 25), Position = UDim2.new(0.05, 0, 0.1, 0),
-			Text = room.roomName, Font = getFont("Label"), TextSize = 16, TextColor3 = THEME.Colors.TextMain,
+		local title = create("TextLabel", {
+			Parent = card, Size = UDim2.new(0.9, 0, 0.35, 0), Position = UDim2.new(0.05, 0, 0.1, 0),
+			Text = room.roomName, Font = getFont("Label"), TextScaled = true, TextColor3 = THEME.Colors.TextMain,
 			TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
 		})
+		create("UITextSizeConstraint", {Parent = title, MaxTextSize = 16})
 
-		create("TextLabel", {
-			Parent = card, Size = UDim2.new(0.9, 0, 0, 20), Position = UDim2.new(0.05, 0, 0.5, 0),
+		local details = create("TextLabel", {
+			Parent = card, Size = UDim2.new(0.9, 0, 0.3, 0), Position = UDim2.new(0.05, 0, 0.5, 0),
 			Text = string.format("Host: %s | Mode: %s", room.hostName, room.gameMode),
-			Font = getFont("Body"), TextSize = 14, TextColor3 = THEME.Colors.TextDim,
+			Font = getFont("Body"), TextScaled = true, TextColor3 = THEME.Colors.TextDim,
 			TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
 		})
+		create("UITextSizeConstraint", {Parent = details, MaxTextSize = 14})
 
-		create("TextLabel", {
-			Parent = card, Size = UDim2.new(0.3, 0, 0, 20), Position = UDim2.new(0.65, 0, 0.4, 0),
+		local count = create("TextLabel", {
+			Parent = card, Size = UDim2.new(0.3, 0, 0.3, 0), Position = UDim2.new(0.65, 0, 0.4, 0),
 			Text = room.playerCount.."/"..room.maxPlayers,
-			Font = getFont("Header"), TextSize = 20, TextColor3 = THEME.Colors.TextMain,
+			Font = getFont("Header"), TextScaled = true, TextColor3 = THEME.Colors.TextMain,
 			TextXAlignment = Enum.TextXAlignment.Right, BackgroundTransparency = 1
 		})
+		create("UITextSizeConstraint", {Parent = count, MaxTextSize = 20})
 
 		card.MouseButton1Click:Connect(function()
 			lobbyRemote:FireServer("joinRoom", {roomId = room.roomId})
@@ -591,7 +632,7 @@ function updateLobbyView(roomData)
 
 				create("TextLabel", {
 					Parent = polaroid, Size = UDim2.new(1, 0, 0.2, 0), Position = UDim2.new(0, 0, 0.8, 0),
-					Text = pData.Name, Font = getFont("Hand"), TextSize = 14, TextColor3 = Color3.new(0,0,0),
+					Text = pData.Name, Font = getFont("Hand"), TextScaled = true, TextColor3 = Color3.new(0,0,0),
 					BackgroundTransparency = 1
 				})
 			end
