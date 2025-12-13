@@ -9,6 +9,7 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
+local Debris = game:GetService("Debris")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -83,7 +84,7 @@ local function playSound(id)
 	sound.SoundId = "rbxassetid://" .. id
 	sound.Parent = playerGui
 	sound:Play()
-	game.Debris:AddItem(sound, 2)
+	Debris:AddItem(sound, 2)
 end
 
 -- ================== COMPONENT FACTORY ==================
@@ -342,15 +343,68 @@ local function createIntelPanel(parent)
 	})
 	panels["INTEL"] = panel
 
-	local card = create("Frame", {
-		Parent = panel, Size = UDim2.new(0.96, 0, 0.9, 0), Position = UDim2.new(0.02, 0, 0.05, 0),
-		BackgroundColor3 = Color3.fromRGB(20, 20, 20), BorderSizePixel = 0
+	-- Split View: Map/Photo (Left) and Dossier (Right)
+	local mapContainer = create("Frame", {
+		Parent = panel, Size = UDim2.new(0.45, 0, 0.9, 0), Position = UDim2.new(0.02, 0, 0.05, 0),
+		BackgroundColor3 = THEME.Colors.Paper, BorderSizePixel = 0
 	})
-	create("UICorner", {Parent = card, CornerRadius = UDim.new(0, 4)})
+	create("UICorner", {Parent = mapContainer, CornerRadius = UDim.new(0, 4)})
+
+	-- Map Photo
+	local photoFrame = create("Frame", {
+		Parent = mapContainer, Size = UDim2.new(0.9, 0, 0.5, 0), Position = UDim2.new(0.05, 0, 0.05, 0),
+		BackgroundColor3 = Color3.new(0,0,0)
+	})
+	create("ImageLabel", {
+		Parent = photoFrame, Size = UDim2.new(1, -4, 1, -4), Position = UDim2.new(0, 2, 0, 2),
+		Image = "rbxasset://textures/ui/GuiImagePlaceholder.png", ScaleType = Enum.ScaleType.Crop
+	})
+
+	-- Map Stats
+	create("TextLabel", {
+		Parent = mapContainer, Size = UDim2.new(0.9, 0, 0, 30), Position = UDim2.new(0.05, 0, 0.6, 0),
+		Text = "SECTOR: VILLAGE [GROUND ZERO]", Font = getFont("Header"), TextSize = 18,
+		TextColor3 = THEME.Colors.TextMain, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
+	})
+	create("TextLabel", {
+		Parent = mapContainer, Size = UDim2.new(0.9, 0, 0, 60), Position = UDim2.new(0.05, 0, 0.68, 0),
+		Text = "HAZARD: EXTREME RADIATION\nSTATUS: ACTIVE HOSTILES\nENTRY: PERMITTED", Font = getFont("Body"), TextSize = 14,
+		TextColor3 = THEME.Colors.AccentRed, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
+	})
+
+	-- Right Side: Dossier / Objectives
+	local dossier = create("Frame", {
+		Parent = panel, Size = UDim2.new(0.5, 0, 0.9, 0), Position = UDim2.new(0.48, 0, 0.05, 0),
+		BackgroundTransparency = 1
+	})
 
 	create("TextLabel", {
-		Parent = card, Size = UDim2.new(1, 0, 1, 0), Text = "INTEL OFFLINE\n\nAccess Restricted.",
-		Font = getFont("Body"), TextSize = 24, TextColor3 = Color3.fromRGB(100, 100, 100), BackgroundTransparency = 1
+		Parent = dossier, Size = UDim2.new(1, 0, 0, 40), Text = "ACT 1: THE CURSED VILLAGE",
+		Font = getFont("Header"), TextSize = 24, TextColor3 = THEME.Colors.TextMain, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
+	})
+
+	create("Frame", { -- Divider
+		Parent = dossier, Size = UDim2.new(1, 0, 0, 2), Position = UDim2.new(0, 0, 0, 45),
+		BackgroundColor3 = THEME.Colors.TextDim, BackgroundTransparency = 0.5, BorderSizePixel = 0
+	})
+
+	create("TextLabel", {
+		Parent = dossier, Size = UDim2.new(1, 0, 0, 60), Position = UDim2.new(0, 0, 0, 55),
+		Text = "High energy readings detected. Source is located beneath the village square. Investigate the anomaly and neutralize any biological threats.",
+		Font = getFont("Body"), TextSize = 14, TextColor3 = THEME.Colors.TextMain, TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, BackgroundTransparency = 1
+	})
+
+	-- Objectives List
+	local objList = create("Frame", {
+		Parent = dossier, Size = UDim2.new(1, 0, 0.6, 0), Position = UDim2.new(0, 0, 0.35, 0), BackgroundTransparency = 1
+	})
+
+	create("TextLabel", {
+		Parent = objList, Size = UDim2.new(1, 0, 1, 0),
+		Text = "MISSION OBJECTIVES ARE CLASSIFIED.\n\nPROCEED TO DEPLOYMENT ZONE FOR BRIEFING.",
+		Font = getFont("Body"), TextSize = 14, TextColor3 = THEME.Colors.AccentRed,
+		TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top,
+		BackgroundTransparency = 1
 	})
 end
 
@@ -594,7 +648,6 @@ task.spawn(function()
 
 				if state.isUIOpen then
 					-- Pop-in animation
-					mainFrame.Scale = 0.9
 					local tween = TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = THEME.Sizes.MainFrame})
 					-- Start slightly smaller? No, scale 0 to 1 is better
 					mainFrame.Size = UDim2.new(0,0,0,0)

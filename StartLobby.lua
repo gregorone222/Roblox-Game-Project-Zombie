@@ -108,6 +108,24 @@ playBtn.BackgroundTransparency = 1
 playBtn.TextTransparency = 1
 playBtn.Parent = cinematicFrame
 
+local promptIndicator = Instance.new("TextLabel")
+promptIndicator.Name = "PromptIndicator"
+promptIndicator.Text = "- PRESS ENTER TO START -"
+promptIndicator.Font = THEME.FONTS.MONO
+promptIndicator.TextSize = 14
+promptIndicator.TextColor3 = THEME.COLORS.TEXT_GHOST
+promptIndicator.Size = UDim2.new(1, 0, 0, 20)
+promptIndicator.Position = UDim2.new(0.5, 0, 0.8, 35) -- Below Enter button
+promptIndicator.AnchorPoint = Vector2.new(0.5, 0.5)
+promptIndicator.BackgroundTransparency = 1
+promptIndicator.TextTransparency = 1
+promptIndicator.Parent = cinematicFrame
+
+-- Blink Animation
+local tweenInfo = TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+local tween = TweenService:Create(promptIndicator, tweenInfo, {TextTransparency = 0.3})
+tween:Play()
+
 -- 2. NOTIFICATION HUD (Daily Reward)
 local notifFrame = Instance.new("Frame")
 notifFrame.Size = UDim2.new(0, 250, 0, 40)
@@ -133,6 +151,73 @@ notifText.Parent = notifFrame
 local isTitleMode = false
 local cameraTween = nil
 local hideCharactersConnection = nil
+local inputConnection = nil
+local uiEnforcerConnection = nil
+local uiEnforcerLoop = nil
+
+-- List of Lobby UIs to hide during cinematic
+local LOBBY_UIS = {
+	"CoinsUI", "MissionPointsUI", "AchievementPointsUI",
+	"ProfileUI", "DailyRewardUI", "InventoryUI", "MissionUI",
+	"MissionButton", "DailyRewardHUD"
+}
+
+local function setLobbyUIVisibility(visible)
+	for _, name in ipairs(LOBBY_UIS) do
+		local ui = playerGui:FindFirstChild(name)
+		if ui and ui:IsA("ScreenGui") then
+			ui.Enabled = visible
+		end
+	end
+end
+
+local function startUIEnforcer()
+	-- 1. Catch new UIs loading in
+	if uiEnforcerConnection then uiEnforcerConnection:Disconnect() end
+	uiEnforcerConnection = playerGui.ChildAdded:Connect(function(child)
+		if table.find(LOBBY_UIS, child.Name) and child:IsA("ScreenGui") then
+			child.Enabled = false
+			-- Hook into property change to enforce it stays disabled
+			child:GetPropertyChangedSignal("Enabled"):Connect(function()
+				if isTitleMode and child.Enabled then
+					child.Enabled = false
+				end
+			end)
+		end
+	end)
+
+	-- 2. Hook existing UIs immediately
+	for _, name in ipairs(LOBBY_UIS) do
+		local ui = playerGui:FindFirstChild(name)
+		if ui and ui:IsA("ScreenGui") then
+			ui:GetPropertyChangedSignal("Enabled"):Connect(function()
+				if isTitleMode and ui.Enabled then
+					ui.Enabled = false
+				end
+			end)
+		end
+	end
+
+	-- 3. Periodic check fallback (every 0.5s)
+	if uiEnforcerLoop then task.cancel(uiEnforcerLoop) end
+	uiEnforcerLoop = task.spawn(function()
+		while isTitleMode do
+			setLobbyUIVisibility(false)
+			task.wait(0.5)
+		end
+	end)
+end
+
+local function stopUIEnforcer()
+	if uiEnforcerConnection then
+		uiEnforcerConnection:Disconnect()
+		uiEnforcerConnection = nil
+	end
+	if uiEnforcerLoop then
+		task.cancel(uiEnforcerLoop)
+		uiEnforcerLoop = nil
+	end
+end
 
 -- Helper to find interesting things to look at
 local function getInterestingTargets()
@@ -271,13 +356,34 @@ local function enterTitleMode()
 	end)
 	task.delay(2, function()
 		TweenService:Create(playBtn, TweenInfo.new(1), {TextTransparency = 0}):Play()
+		TweenService:Create(promptIndicator, TweenInfo.new(1), {TextTransparency = 0.5}):Play()
 	end)
 
 	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
+	setLobbyUIVisibility(false)
+	startUIEnforcer()
+
+	-- Enable Input Listener
+	if inputConnection then inputConnection:Disconnect() end
+	inputConnection = UIS.InputBegan:Connect(function(input, gameProcessed)
+		if isTitleMode and not gameProcessed then
+			if input.KeyCode == Enum.KeyCode.Return or input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				exitTitleMode()
+			end
+		end
+	end)
 end
 
 local function exitTitleMode()
+	if not isTitleMode then return end
 	isTitleMode = false
+	stopUIEnforcer()
+
+	if inputConnection then
+		inputConnection:Disconnect()
+		inputConnection = nil
+	end
+
 	if cameraTween then cameraTween:Cancel() end
 	if hideCharactersConnection then
 		hideCharactersConnection:Disconnect()
@@ -295,6 +401,7 @@ local function exitTitleMode()
 	TweenService:Create(titleLabel, tInfo, {TextTransparency = 1}):Play()
 	TweenService:Create(subTitle, tInfo, {TextTransparency = 1}):Play()
 	TweenService:Create(playBtn, tInfo, {TextTransparency = 1}):Play()
+	TweenService:Create(promptIndicator, tInfo, {TextTransparency = 1}):Play()
 	TweenService:Create(cinematicFrame, tInfo, {BackgroundTransparency = 1}):Play()
 
 	task.delay(1, function()
@@ -327,6 +434,7 @@ local function exitTitleMode()
 		end
 
 		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, true)
+		setLobbyUIVisibility(true)
 
 		-- Check Daily Reward
 		task.spawn(function()
