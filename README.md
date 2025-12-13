@@ -6,7 +6,7 @@
 Sebelum memulai pengembangan atau kontribusi, Anda **WAJIB** membaca dan memahami dokumen berikut:
 1.  **[Error.md](Error.md):** Daftar error umum, batasan teknis, dan catatan debugging.
 2.  **[Rule.md](Rule.md):** Aturan baku pengembangan, termasuk standar UI/UX (Scale) dan tata tertib struktur proyek.
-3.  **[STORY.md](STORY.md):**
+3.  **[STORY.md](STORY.md)**
 
 Kelalaian dalam mengikuti panduan ini dapat menyebabkan konflik kode atau UI yang tidak responsif.
 
