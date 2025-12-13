@@ -153,7 +153,7 @@ local cameraTween = nil
 local hideCharactersConnection = nil
 local inputConnection = nil
 local uiEnforcerConnection = nil
-local uiEnforcerLoop = nil
+local uiEnforcerLoop = nil -- Used for RenderStepped connection now
 
 -- List of Lobby UIs to hide during cinematic
 local LOBBY_UIS = {
@@ -198,12 +198,22 @@ local function startUIEnforcer()
 		end
 	end
 
-	-- 3. Periodic check fallback (every 0.5s)
-	if uiEnforcerLoop then task.cancel(uiEnforcerLoop) end
-	uiEnforcerLoop = task.spawn(function()
-		while isTitleMode do
-			setLobbyUIVisibility(false)
-			task.wait(0.5)
+	-- 3. Aggressive enforcement (RenderStepped)
+	if uiEnforcerLoop then uiEnforcerLoop:Disconnect() end
+	uiEnforcerLoop = RunService.RenderStepped:Connect(function()
+		if isTitleMode then
+			-- Aggressively scan and hide UIs (More robust than FindFirstChild)
+			local children = playerGui:GetChildren()
+			for _, child in ipairs(children) do
+				if child:IsA("ScreenGui") and table.find(LOBBY_UIS, child.Name) then
+					if child.Enabled then
+						child.Enabled = false
+						-- print("StartLobby: Force hiding " .. child.Name) -- Debug
+					end
+				end
+			end
+		else
+			if uiEnforcerLoop then uiEnforcerLoop:Disconnect() end
 		end
 	end)
 end
@@ -214,7 +224,7 @@ local function stopUIEnforcer()
 		uiEnforcerConnection = nil
 	end
 	if uiEnforcerLoop then
-		task.cancel(uiEnforcerLoop)
+		uiEnforcerLoop:Disconnect()
 		uiEnforcerLoop = nil
 	end
 end
