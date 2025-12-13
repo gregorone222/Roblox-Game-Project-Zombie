@@ -93,7 +93,14 @@ local holdConnection = nil
 local function create(className, props, children)
 	local inst = Instance.new(className)
 	for k, v in pairs(props) do
-		inst[k] = v
+		-- Safety check to ensure property exists and type matches if possible
+		-- Explicitly handle BackgroundColor3 to avoid BrickColor confusion
+		if k == "BackgroundColor" then
+			warn("MPShopUI: Attempted to set BackgroundColor with " .. tostring(v) .. ". Changing to BackgroundColor3.")
+			inst.BackgroundColor3 = v
+		else
+			inst[k] = v
+		end
 	end
 	if children then
 		for _, child in ipairs(children) do
@@ -225,21 +232,21 @@ function mpShopUI:CreateTabs(sidebar)
 			for _, child in ipairs(sidebar:GetChildren()) do
 				if child:IsA("TextButton") then child:Destroy() end
 			end
-			self:CreateTabs(sidebar) 
+			self:CreateTabs(sidebar)
 			self:RefreshGrid()
 		end)
 
 		btn.Parent = sidebar
 	end
 
-	createTabBtn("Skins", "Weapon Skins", "rbxassetid://11422142913") 
-	createTabBtn("Items", "Special Items", "rbxassetid://11422155687") 
+	createTabBtn("Skins", "Weapon Skins", "rbxassetid://11422142913")
+	createTabBtn("Items", "Special Items", "rbxassetid://11422155687")
 end
 
 function mpShopUI:CreateGridItem(data)
 	local btn = create("TextButton", {
 		Name = data.Id,
-		Size = UDim2.new(0, 0, 0, 0), 
+		Size = UDim2.new(0, 0, 0, 0),
 		BackgroundColor3 = COLORS.BG_PANEL,
 		AutoButtonColor = false,
 		Text = "",
@@ -250,7 +257,7 @@ function mpShopUI:CreateGridItem(data)
 
 	local bgPattern = create("ImageLabel", {
 		Size = UDim2.new(1, 0, 1, 0),
-		Image = "rbxassetid://13065783540", 
+		Image = "rbxassetid://13065783540",
 		ImageTransparency = 0.95,
 		ImageColor3 = COLORS.ACCENT,
 		BackgroundTransparency = 1,
@@ -338,7 +345,7 @@ function mpShopUI:RefreshGrid()
 						Weapon = weaponName,
 						SkinName = skinName,
 						Data = skinData,
-						Owned = false 
+						Owned = false
 					})
 				end
 			end
@@ -500,7 +507,7 @@ function mpShopUI:PerformPurchase(item)
 		btn.Label.Text = "SUCCESS!"
 		btn.BackgroundColor3 = COLORS.SUCCESS
 		task.wait(1)
-		if item.Type == "Skin" then item.Owned = true end 
+		if item.Type == "Skin" then item.Owned = true end
 		self:RefreshGrid()
 		self:SelectItem(item)
 	else
@@ -577,7 +584,7 @@ function mpShopUI:CreateUI()
 	})
 
 	create("ImageLabel", {
-		Image = "rbxassetid://11419717444", 
+		Image = "rbxassetid://11419717444",
 		Size = UDim2.new(0, 20, 0, 20),
 		Position = UDim2.new(0, 10, 0.5, 0),
 		AnchorPoint = Vector2.new(0, 0.5),
@@ -638,7 +645,7 @@ function mpShopUI:CreateUI()
 		addPadding(nil, 0, 20)
 	})
 
-	create("Frame", { 
+	create("Frame", {
 		Size = UDim2.new(0, 1, 1, 0),
 		Position = UDim2.new(1, 0, 0, 0),
 		BackgroundColor3 = COLORS.BORDER,
@@ -649,7 +656,7 @@ function mpShopUI:CreateUI()
 
 	local middle = create("Frame", {
 		Name = "GridArea",
-		Size = UDim2.new(1, -500, 1, 0), 
+		Size = UDim2.new(1, -500, 1, 0),
 		Position = UDim2.new(0, 200, 0, 0),
 		BackgroundTransparency = 1,
 		ClipsDescendants = true,
@@ -682,7 +689,7 @@ function mpShopUI:CreateUI()
 		Parent = body
 	})
 
-	create("Frame", { 
+	create("Frame", {
 		Size = UDim2.new(0, 1, 1, 0),
 		BackgroundColor3 = COLORS.BORDER,
 		Parent = detailContainer
@@ -765,7 +772,7 @@ function mpShopUI:CreateUI()
 
 	local descCont = create("ScrollingFrame", {
 		Name = "DescContainer",
-		Size = UDim2.new(1, 0, 1, -350), 
+		Size = UDim2.new(1, 0, 1, -350),
 		Position = UDim2.new(0, 0, 0, 290),
 		BackgroundTransparency = 1,
 		ScrollBarThickness = 2,
@@ -801,7 +808,7 @@ function mpShopUI:CreateUI()
 		addCorner(nil, 8)
 	})
 
-	create("Frame", { 
+	create("Frame", {
 		Name = "ProgressBar",
 		Size = UDim2.new(0, 0, 1, 0),
 		BackgroundColor3 = Color3.new(1,1,1),

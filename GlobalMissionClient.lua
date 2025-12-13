@@ -566,7 +566,7 @@ local function updateActiveMissionUI(state)
 			Size = UDim2.new(0.5, 0, 1, 0),
 			Position = UDim2.new(0, 35, 0, 0),
 			TextXAlignment = Enum.TextXAlignment.Left,
-			TextColor3 = achieved and THEME.Success or THEME.TextDim,
+			TextColor3 = (achieved and THEME.Success) or (THEME.TextDim or Color3.new(1,1,1)), -- Safe TextColor3 assignment
 			Parent = row
 		})
 
@@ -575,7 +575,7 @@ local function updateActiveMissionUI(state)
 			Size = UDim2.new(0.4, 0, 1, 0),
 			Position = UDim2.new(0.6, -10, 0, 0),
 			TextXAlignment = Enum.TextXAlignment.Right,
-			TextColor3 = achieved and THEME.Warning or THEME.TextDim,
+			TextColor3 = (achieved and THEME.Warning) or (THEME.TextDim or Color3.new(1,1,1)), -- Safe TextColor3 assignment
 			Font = Enum.Font.GothamBold,
 			Parent = row
 		})
