@@ -1,8 +1,7 @@
 -- LobbyRoomUI.lua (LocalScript)
 -- Path: StarterPlayerScripts/LobbyRoomUI.lua
 -- Script Place: Lobby
--- Theme: Investigation Board (Corkboard/Tabletop)
--- Style: Analog, Paper, Photos, Tape, Handwritten notes
+-- Theme: Modern Tactical Investigation (Clean Folder/Clipboard Style)
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
@@ -10,38 +9,37 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
-local StarterGui = game:GetService("StarterGui") -- Needed for CoreGui toggling
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 local lobbyRemote = ReplicatedStorage:WaitForChild("LobbyRemote")
 
--- Forward Declarations
-local updateRoomList
-local updateLobbyView
-local hideUI
-
 -- ================== THEME CONSTANTS ==================
 local THEME = {
 	Colors = {
-		Board = Color3.fromRGB(60, 45, 35),         -- Cork/Wood
-		Paper = Color3.fromRGB(245, 240, 225),      -- Off-white paper
-		PaperDark = Color3.fromRGB(220, 215, 200),  -- Aged paper
-		Ink = Color3.fromRGB(25, 25, 30),           -- Black ink
-		RedMarker = Color3.fromRGB(200, 40, 40),    -- Red circle/text
-		Highlight = Color3.fromRGB(255, 230, 100),  -- Sticky note yellow
-		Tape = Color3.fromRGB(220, 220, 220),       -- Masking tape
-		Stamp = Color3.fromRGB(180, 40, 40),        -- Red Stamp ink
+		Background   = Color3.fromRGB(40, 40, 45),       -- Dark surrounding
+		FolderMain   = Color3.fromRGB(210, 180, 140),    -- Manila Folder
+		FolderDark   = Color3.fromRGB(180, 150, 110),    -- Tab darker shade
+		Paper        = Color3.fromRGB(245, 245, 240),    -- Clean Paper
+		PaperDark    = Color3.fromRGB(230, 230, 225),    -- Alt Paper
+		TextMain     = Color3.fromRGB(30, 30, 35),       -- Ink
+		TextDim      = Color3.fromRGB(100, 100, 100),    -- Pencil/Faded
+		AccentRed    = Color3.fromRGB(200, 60, 60),      -- Alert/Cancel
+		AccentGreen  = Color3.fromRGB(60, 160, 80),      -- Success/Go
+		Highlight    = Color3.fromRGB(255, 230, 100),    -- Sticky Note
 	},
 	Fonts = {
-		Header = Enum.Font.SpecialElite, -- Typewriter Bold
-		Body = Enum.Font.SpecialElite,   -- Typewriter
-		Hand = Enum.Font.IndieFlower,    -- Handwriting (Marker)
-		Stamp = Enum.Font.Bangers        -- Big Bold Stamp
+		Header = Enum.Font.SpecialElite,   -- Typewriter (Narrative feel)
+		Body   = Enum.Font.GothamMedium,   -- Clean Sans-Serif (Readability)
+		Label  = Enum.Font.GothamBold,     -- UI Labels
+		Stamp  = Enum.Font.GothamBlack     -- Stamped status (Fallback to generic if needed)
+	},
+	Sizes = {
+		MainFrame = UDim2.new(0.9, 0, 0.9, 0), -- User Request
 	}
 }
 
--- Fallback font safe getter
+-- Fallback for specific fonts if not available
 local function getFont(type)
 	return THEME.Fonts[type] or Enum.Font.SourceSans
 end
@@ -49,31 +47,28 @@ end
 -- ================== STATE MANAGEMENT ==================
 local state = {
 	isUIOpen = false,
-	activeTab = "OPS", -- Represents which "document" is on top
+	activeTab = "OPS",
 	currentRoom = nil,
-	publicRooms = {},
 	settings = {
 		gameMode = "Story",
-		difficulty = "Easy",
-		playerCount = 4
+		difficulty = "Easy"
 	},
-	promptConnection = nil,
 	blurEffect = nil
 }
 
 -- UI References
 local gui
-local mainBoard
-local contentArea
+local mainFrame
+local contentContainer
 local tabs = {}
 local panels = {}
 
 -- ================== HELPER FUNCTIONS ==================
 
-local function create(instanceType, properties, children)
-	local inst = Instance.new(instanceType)
-	for prop, value in pairs(properties) do
-		inst[prop] = value
+local function create(className, properties, children)
+	local inst = Instance.new(className)
+	for k, v in pairs(properties) do
+		inst[k] = v
 	end
 	if children then
 		for _, child in ipairs(children) do
@@ -83,258 +78,279 @@ local function create(instanceType, properties, children)
 	return inst
 end
 
--- Adds a "Paper" feel with shadow and slightly rough border
-local function styleAsPaper(frame)
-	frame.BackgroundColor3 = THEME.Colors.Paper
-	create("UICorner", {Parent=frame, CornerRadius=UDim.new(0, 2)})
-	-- Shadow
-	local shadow = create("Frame", {
-		Name = "Shadow", Parent=frame, ZIndex=frame.ZIndex-1,
-		Size=UDim2.new(1, 4, 1, 4), Position=UDim2.new(0, 2, 0, 2),
-		BackgroundColor3 = Color3.new(0,0,0), BackgroundTransparency=0.7
-	})
-	create("UICorner", {Parent=shadow, CornerRadius=UDim.new(0, 4)})
-	return frame
-end
-
--- Adds a "Tape" strip visual
-local function addTape(parent, position, angle)
-	local tape = create("Frame", {
-		Name="Tape", Parent=parent,
-		Size=UDim2.new(0, 40, 0, 12), Position=position, Rotation=angle or math.random(-20,20),
-		BackgroundColor3 = THEME.Colors.Tape, BackgroundTransparency=0.4, BorderSizePixel=0,
-		ZIndex = (parent.ZIndex or 1) + 1
-	})
-	return tape
-end
-
--- Adds a "Polaroid" frame style
-local function createPolaroid(parent, size, pos)
-	local frame = create("Frame", {
-		Name="Polaroid", Parent=parent, Size=size, Position=pos,
-		BackgroundColor3 = Color3.new(1,1,1), BorderSizePixel=0
-	})
-	-- Photo area
-	local photo = create("ImageLabel", {
-		Name="Photo", Parent=frame, Size=UDim2.new(0.9,0,0.75,0), Position=UDim2.new(0.05,0,0.05,0),
-		BackgroundColor3=Color3.fromRGB(20,20,20), Image="rbxasset://textures/ui/GuiImagePlaceholder.png"
-	})
-	-- Shadow
-	local shadow = create("Frame", {
-		Parent=frame, ZIndex=frame.ZIndex-1, Size=UDim2.new(1,4,1,4), Position=UDim2.new(0,2,0,2),
-		BackgroundColor3=Color3.new(0,0,0), BackgroundTransparency=0.7
-	})
-	return frame, photo
+local function playSound(id)
+	local sound = Instance.new("Sound")
+	sound.SoundId = "rbxassetid://" .. id
+	sound.Parent = playerGui
+	sound:Play()
+	game.Debris:AddItem(sound, 2)
 end
 
 -- ================== COMPONENT FACTORY ==================
 
-local function createPaperButton(parent, text, size, pos, callback, isHandwritten)
+-- Standard "Paper" Button
+local function createButton(parent, text, size, pos, color, callback)
 	local btn = create("TextButton", {
 		Name = "Btn_"..text, Parent = parent, Size = size, Position = pos,
-		BackgroundColor3 = THEME.Colors.Paper, AutoButtonColor = true
-	})
-	styleAsPaper(btn)
-
-	local font = isHandwritten and getFont("Hand") or getFont("Header")
-	local col = isHandwritten and THEME.Colors.RedMarker or THEME.Colors.Ink
-
-	local label = create("TextLabel", {
-		Parent = btn, Size = UDim2.new(1,0,1,0), BackgroundTransparency=1,
-		Text = text, Font = font, TextSize = 18, TextColor3 = col
+		BackgroundColor3 = color or THEME.Colors.Paper, AutoButtonColor = true,
+		BorderSizePixel = 0
 	})
 
-	btn.MouseButton1Click:Connect(callback)
-	-- Simple tilt animation on hover
-	btn.MouseEnter:Connect(function()
-		TweenService:Create(btn, TweenInfo.new(0.1), {Rotation = math.random(-2,2)}):Play()
-	end)
-	btn.MouseLeave:Connect(function()
-		TweenService:Create(btn, TweenInfo.new(0.1), {Rotation = 0}):Play()
+	-- Shadow
+	create("Frame", {
+		Parent = btn, ZIndex = btn.ZIndex - 1, Size = UDim2.new(1, 2, 1, 2), Position = UDim2.new(0, 1, 0, 1),
+		BackgroundColor3 = Color3.new(0,0,0), BackgroundTransparency = 0.8, BorderSizePixel = 0
+	})
+
+	-- Text
+	create("TextLabel", {
+		Parent = btn, Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1,
+		Text = text, Font = getFont("Label"), TextSize = 16, TextColor3 = THEME.Colors.TextMain
+	})
+
+	create("UICorner", {Parent = btn, CornerRadius = UDim.new(0, 4)})
+
+	btn.MouseButton1Click:Connect(function()
+		-- playSound(SOUNDS.Click)
+		if callback then callback() end
 	end)
 
+	return btn
+end
+
+-- Tab Button
+local function createTab(parent, id, text, layoutOrder)
+	local isActive = (state.activeTab == id)
+	local btn = create("TextButton", {
+		Name = "Tab_"..id, Parent = parent, Size = UDim2.new(0, 120, 1, 4),
+		BackgroundColor3 = isActive and THEME.Colors.FolderMain or THEME.Colors.FolderDark,
+		BorderSizePixel = 0, LayoutOrder = layoutOrder, AutoButtonColor = false,
+		ZIndex = isActive and 2 or 1
+	})
+
+	create("UICorner", {Parent = btn, CornerRadius = UDim.new(0, 8)})
+	-- Hide bottom corners to blend with folder
+	create("Frame", {
+		Parent = btn, Size = UDim2.new(1, 0, 0.5, 0), Position = UDim2.new(0, 0, 0.5, 0),
+		BackgroundColor3 = isActive and THEME.Colors.FolderMain or THEME.Colors.FolderDark,
+		BorderSizePixel = 0, ZIndex = isActive and 2 or 1
+	})
+
+	create("TextLabel", {
+		Parent = btn, Size = UDim2.new(1, 0, 1, -4), Position = UDim2.new(0,0,0,0),
+		BackgroundTransparency = 1, Text = text, Font = getFont("Header"), TextSize = 18,
+		TextColor3 = THEME.Colors.TextMain, ZIndex = isActive and 3 or 2
+	})
+
+	btn.MouseButton1Click:Connect(function()
+		if state.activeTab == id then return end
+		state.activeTab = id
+
+		-- Update Visuals
+		for tid, tabBtn in pairs(tabs) do
+			local active = (tid == id)
+			tabBtn.BackgroundColor3 = active and THEME.Colors.FolderMain or THEME.Colors.FolderDark
+			tabBtn.ZIndex = active and 2 or 1
+			tabBtn.Frame.BackgroundColor3 = active and THEME.Colors.FolderMain or THEME.Colors.FolderDark
+			tabBtn.Frame.ZIndex = active and 2 or 1
+			tabBtn.TextLabel.ZIndex = active and 3 or 2
+		end
+
+		-- Switch Panels
+		for pid, panel in pairs(panels) do
+			panel.Visible = (pid == id)
+		end
+	end)
+
+	tabs[id] = btn
 	return btn
 end
 
 -- ================== PANELS ==================
 
 local function createOpsPanel(parent)
-	-- A "Mission File" folder look
 	local panel = create("Frame", {
-		Name = "OpsPanel", Parent = parent, Size = UDim2.new(1,0,1,0), BackgroundTransparency = 1, Visible = false
+		Name = "OpsPanel", Parent = parent, Size = UDim2.new(1, 0, 1, 0),
+		BackgroundTransparency = 1, Visible = false
 	})
 	panels["OPS"] = panel
 
-	-- Left Page: Configuration (Typed document)
-	local docLeft = create("Frame", {
-		Parent = panel, Size=UDim2.new(0.45, -10, 0.9, 0), Position=UDim2.new(0.02, 0, 0.05, 0),
-		BackgroundColor3 = THEME.Colors.Paper
+	-- LEFT COLUMN: Mission Config
+	local leftCol = create("Frame", {
+		Parent = panel, Size = UDim2.new(0.4, -10, 0.95, 0), Position = UDim2.new(0.02, 0, 0.025, 0),
+		BackgroundColor3 = THEME.Colors.Paper, BorderSizePixel = 0
 	})
-	styleAsPaper(docLeft)
-	addTape(docLeft, UDim2.new(0.5, -20, 0, -5), 0)
+	create("UICorner", {Parent = leftCol, CornerRadius = UDim.new(0, 4)})
 
+	-- Header
 	create("TextLabel", {
-		Parent=docLeft, Size=UDim2.new(1,0,0,40), Text="MISSION PARAMETERS",
-		Font=getFont("Header"), TextSize=24, TextColor3=THEME.Colors.Ink, BackgroundTransparency=1
+		Parent = leftCol, Size = UDim2.new(1, 0, 0, 50), BackgroundTransparency = 1,
+		Text = "MISSION PARAMETERS", Font = getFont("Header"), TextSize = 22, TextColor3 = THEME.Colors.TextMain
+	})
+	create("Frame", { -- Divider
+		Parent = leftCol, Size = UDim2.new(0.9, 0, 0, 2), Position = UDim2.new(0.05, 0, 0, 45),
+		BackgroundColor3 = THEME.Colors.TextDim, BackgroundTransparency = 0.8, BorderSizePixel = 0
 	})
 
-	-- Config List
-	local listLayout = create("UIListLayout", {
-		Parent = docLeft, Padding = UDim.new(0, 10), HorizontalAlignment = Enum.HorizontalAlignment.Center
+	local formList = create("UIListLayout", {
+		Parent = leftCol, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 15),
+		HorizontalAlignment = Enum.HorizontalAlignment.Center
 	})
-	-- (Padding)
-	create("Frame", {Parent=docLeft, Size=UDim2.new(1,0,0,30), BackgroundTransparency=1})
 
-	-- Selectors visualized as circled options
-	local function createOptionRow(label, options, current, onSet)
-		local row = create("Frame", {
-			Parent=docLeft, Size=UDim2.new(0.9,0,0,40), BackgroundTransparency=1
+	-- Padding Frame
+	create("Frame", {Parent = leftCol, Size = UDim2.new(1,0,0,50), LayoutOrder = 0, BackgroundTransparency = 1})
+
+	-- Helper for Options
+	local function createOption(label, options, key, layout)
+		local container = create("Frame", {
+			Parent = leftCol, Size = UDim2.new(0.9, 0, 0, 60), BackgroundTransparency = 1, LayoutOrder = layout
 		})
 		create("TextLabel", {
-			Parent=row, Size=UDim2.new(0.3,0,1,0), Text=label..":",
-			Font=getFont("Body"), TextSize=16, TextColor3=THEME.Colors.Ink, BackgroundTransparency=1, TextXAlignment=Enum.TextXAlignment.Left
+			Parent = container, Size = UDim2.new(1, 0, 0, 20), Text = label,
+			Font = getFont("Label"), TextSize = 14, TextColor3 = THEME.Colors.TextDim,
+			TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
 		})
 
-		local optsFrame = create("Frame", {
-			Parent=row, Size=UDim2.new(0.7,0,1,0), Position=UDim2.new(0.3,0,0,0), BackgroundTransparency=1
+		local btnContainer = create("Frame", {
+			Parent = container, Size = UDim2.new(1, 0, 0, 35), Position = UDim2.new(0, 0, 0, 25), BackgroundTransparency = 1
 		})
-		local optList = create("UIListLayout", {Parent=optsFrame, FillDirection=Enum.FillDirection.Horizontal, Padding=UDim.new(0,5)})
+		create("UIListLayout", {
+			Parent = btnContainer, FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 10)
+		})
+
+		local optionBtns = {}
 
 		for _, opt in ipairs(options) do
-			local isSel = (opt.value == current)
 			local btn = create("TextButton", {
-				Parent=optsFrame, Size=UDim2.new(0,0,1,0), AutomaticSize=Enum.AutomaticSize.X,
-				BackgroundTransparency=1, Text=opt.label, Font=getFont("Hand"), TextSize=18,
-				TextColor3 = isSel and THEME.Colors.RedMarker or Color3.new(0.5,0.5,0.5)
+				Parent = btnContainer, Size = UDim2.new(0, 0, 1, 0), AutomaticSize = Enum.AutomaticSize.X,
+				BackgroundColor3 = (state.settings[key] == opt) and THEME.Colors.TextMain or THEME.Colors.PaperDark,
+				BorderSizePixel = 0, Text = "  "..opt.."  ", Font = getFont("Body"), TextSize = 14,
+				TextColor3 = (state.settings[key] == opt) and THEME.Colors.Paper or THEME.Colors.TextMain
 			})
-			-- Circle drawing if selected
-			if isSel then
-				local circle = create("ImageLabel", {
-					Parent=btn, Size=UDim2.new(1,10,1,10), Position=UDim2.new(0,-5,0,-5),
-					BackgroundTransparency=1, Image="rbxassetid://130424513", ImageColor3=THEME.Colors.RedMarker, ImageTransparency=0.5
-				}) -- Generic circle asset (replace if specific one available)
-			end
-			btn.MouseButton1Click:Connect(function() onSet(opt.value) end)
+			create("UICorner", {Parent = btn, CornerRadius = UDim.new(0, 4)})
+
+			btn.MouseButton1Click:Connect(function()
+				state.settings[key] = opt
+				-- Refresh visuals
+				for _, b in ipairs(optionBtns) do
+					local isSel = (b.Text == "  "..opt.."  ")
+					b.BackgroundColor3 = isSel and THEME.Colors.TextMain or THEME.Colors.PaperDark
+					b.TextColor3 = isSel and THEME.Colors.Paper or THEME.Colors.TextMain
+				end
+			end)
+			table.insert(optionBtns, btn)
 		end
 	end
 
-	createOptionRow("MODE", {{label="Story",value="Story"}, {label="Crazy",value="Crazy"}}, state.settings.gameMode, function(v) state.settings.gameMode=v end)
-	createOptionRow("RISK", {{label="Easy",value="Easy"}, {label="Normal",value="Normal"}, {label="Hard",value="Hard"}}, state.settings.difficulty, function(v) state.settings.difficulty=v end)
+	createOption("OPERATION MODE", {"Story", "Crazy"}, "gameMode", 1)
+	createOption("THREAT LEVEL", {"Easy", "Normal", "Hard"}, "difficulty", 2)
 
-	create("Frame", {Parent=docLeft, Size=UDim2.new(1,0,0,20), BackgroundTransparency=1}) -- Spacer
-
-	-- Actions
-	createPaperButton(docLeft, "SOLO DEPLOY", UDim2.new(0.8,0,0,50), UDim2.new(0,0,0,0), function()
+	-- Solo Start Button (Bottom)
+	createButton(leftCol, "DEPLOY SOLO", UDim2.new(0.9, 0, 0, 50), UDim2.new(0.05, 0, 0.85, 0), THEME.Colors.TextMain, function()
+		local btn = leftCol:FindFirstChild("Btn_DEPLOY SOLO")
+		if btn then
+			btn.TextLabel.Text = "INITIALIZING..."
+			btn.BackgroundColor3 = THEME.Colors.TextDim
+		end
 		lobbyRemote:FireServer("startSoloGame", {gameMode = state.settings.gameMode, difficulty = state.settings.difficulty})
-	end)
+	end).TextLabel.TextColor3 = THEME.Colors.Paper
 
-	-- Right Page: Distress Signals (Post-it notes on board)
-	local rightArea = create("Frame", {
-		Name="RightCol", Parent = panel, Size = UDim2.new(0.5, -10, 0.9, 0), Position = UDim2.new(0.5, 0, 0.05, 0),
+	-- RIGHT COLUMN: Public Rooms
+	local rightCol = create("Frame", {
+		Parent = panel, Size = UDim2.new(0.55, 0, 0.95, 0), Position = UDim2.new(0.44, 0, 0.025, 0),
 		BackgroundTransparency = 1
 	})
+
 	create("TextLabel", {
-		Parent=rightArea, Size=UDim2.new(1,0,0,40), Text="DISTRESS SIGNALS (Public)",
-		Font=getFont("Hand"), TextSize=28, TextColor3=THEME.Colors.Paper, BackgroundTransparency=1 -- Chalk on board
+		Parent = rightCol, Size = UDim2.new(1, 0, 0, 40), Text = "DISTRESS SIGNALS (PUBLIC LOBBIES)",
+		Font = getFont("Header"), TextSize = 18, TextColor3 = THEME.Colors.TextMain, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
 	})
 
 	local scroll = create("ScrollingFrame", {
-		Name="RoomList", Parent=rightArea, Size=UDim2.new(1,0,0.9,0), Position=UDim2.new(0,0,0.1,0),
-		BackgroundTransparency=1, ScrollBarThickness=6, ScrollBarImageColor3=THEME.Colors.Paper
+		Name = "RoomList", Parent = rightCol, Size = UDim2.new(1, 0, 0.9, 0), Position = UDim2.new(0, 0, 0.1, 0),
+		BackgroundTransparency = 1, ScrollBarThickness = 4, ScrollBarImageColor3 = THEME.Colors.TextMain
 	})
 	create("UIGridLayout", {
-		Parent=scroll, CellSize=UDim2.new(0.45,0,0,80), CellPadding=UDim2.new(0.05,0,0.02,0)
+		Parent = scroll, CellSize = UDim2.new(1, 0, 0, 70), CellPadding = UDim2.new(0, 5)
 	})
 end
 
 local function createLobbyPanel(parent)
-	-- A "Case File" folder open on the table
 	local panel = create("Frame", {
-		Name = "LobbyPanel", Parent = parent, Size = UDim2.new(1,0,1,0), BackgroundTransparency = 1, Visible = false
+		Name = "LobbyPanel", Parent = parent, Size = UDim2.new(1, 0, 1, 0),
+		BackgroundTransparency = 1, Visible = false
 	})
 	panels["LOBBY"] = panel
 
-	-- Folder Background
-	local folder = create("Frame", {
-		Name="HeaderFrame", Parent=panel, Size=UDim2.new(0.9,0,0.9,0), Position=UDim2.new(0.05,0,0.05,0),
-		BackgroundColor3 = Color3.fromRGB(200, 180, 140) -- Manila folder color
+	-- Info Card (Left)
+	local infoCard = create("Frame", {
+		Parent = panel, Size = UDim2.new(0.3, 0, 0.9, 0), Position = UDim2.new(0.02, 0, 0.05, 0),
+		BackgroundColor3 = THEME.Colors.Paper, BorderSizePixel = 0
 	})
-	create("UICorner", {Parent=folder, CornerRadius=UDim.new(0,4)})
+	create("UICorner", {Parent = infoCard, CornerRadius = UDim.new(0, 4)})
 
-	-- Folder Tab
-	local tab = create("Frame", {
-		Parent=folder, Size=UDim2.new(0.3,0,0.1,0), Position=UDim2.new(0,0,-0.1,0),
-		BackgroundColor3 = Color3.fromRGB(200, 180, 140)
-	})
-	create("UICorner", {Parent=tab, CornerRadius=UDim.new(0,4)})
 	create("TextLabel", {
-		Name="RoomTitle", Parent=tab, Size=UDim2.new(1,0,0.8,0), Position=UDim2.new(0,0,0.2,0),
-		Text="OPERATION ALPHA", Font=getFont("Header"), TextSize=18, TextColor3=THEME.Colors.Ink, BackgroundTransparency=1
+		Name = "RoomTitle", Parent = infoCard, Size = UDim2.new(0.9, 0, 0, 40), Position = UDim2.new(0.05, 0, 0, 10),
+		Text = "ROOM NAME", Font = getFont("Header"), TextSize = 20, TextColor3 = THEME.Colors.TextMain, BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left
 	})
 
-	-- Info Sheet inside folder
-	local infoSheet = create("Frame", {
-		Parent=folder, Size=UDim2.new(0.95,0,0.95,0), Position=UDim2.new(0.025,0,0.025,0),
-		BackgroundColor3 = THEME.Colors.Paper
-	})
-
-	-- Close/Leave (Red Stamp)
-	local leaveBtn = create("TextButton", {
-		Parent=infoSheet, Size=UDim2.new(0,100,0,50), Position=UDim2.new(1,-110,0,10),
-		BackgroundTransparency=1, Text="ABORT", Font=getFont("Stamp"), TextSize=32, TextColor3=THEME.Colors.Stamp, Rotation=-15
-	})
-	leaveBtn.MouseButton1Click:Connect(function() lobbyRemote:FireServer("leaveRoom") end)
-
-	-- Info Text
 	create("TextLabel", {
-		Name="RoomInfo", Parent=infoSheet, Size=UDim2.new(0.6,0,0.2,0), Position=UDim2.new(0.05,0,0.05,0),
-		Text="Objective: Survival\nDiff: Hard", Font=getFont("Body"), TextSize=18, TextColor3=THEME.Colors.Ink, BackgroundTransparency=1, TextXAlignment=Enum.TextXAlignment.Left
+		Name = "RoomDetails", Parent = infoCard, Size = UDim2.new(0.9, 0, 0.3, 0), Position = UDim2.new(0.05, 0, 0.1, 0),
+		Text = "Mode: Story\nDiff: Easy", Font = getFont("Body"), TextSize = 16, TextColor3 = THEME.Colors.TextDim, BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top
 	})
 
-	-- Roster (Polaroids clipped to the paper)
-	local rosterFrame = create("Frame", {
-		Name="RosterFrame", Parent=infoSheet, Size=UDim2.new(0.9,0,0.5,0), Position=UDim2.new(0.05,0,0.3,0), BackgroundTransparency=1
-	})
-	create("UIGridLayout", {Parent=rosterFrame, CellSize=UDim2.new(0.22,0,0.8,0)})
+	-- Leave Button
+	createButton(infoCard, "LEAVE SQUAD", UDim2.new(0.9, 0, 0, 40), UDim2.new(0.05, 0, 0.9, -10), THEME.Colors.AccentRed, function()
+		lobbyRemote:FireServer("leaveRoom")
+	end).TextLabel.TextColor3 = THEME.Colors.Paper
 
-	-- Action Stamp (Ready/Deploy)
-	local actionFrame = create("Frame", {
-		Name="ActionFrame", Parent=infoSheet, Size=UDim2.new(0.4,0,0.15,0), Position=UDim2.new(0.3,0,0.8,0), BackgroundTransparency=1
-	})
-	local statusText = create("TextLabel", {
-		Name="StatusText", Parent=actionFrame, Size=UDim2.new(1,0,0.5,0), Text="Waiting...", Font=getFont("Hand"), TextSize=18, BackgroundTransparency=1, TextColor3=THEME.Colors.Ink
+	-- Roster Area (Right)
+	local rosterArea = create("Frame", {
+		Parent = panel, Size = UDim2.new(0.65, 0, 0.9, 0), Position = UDim2.new(0.34, 0, 0.05, 0),
+		BackgroundTransparency = 1
 	})
 
-	createPaperButton(actionFrame, "DEPLOY", UDim2.new(1,0,1,0), UDim2.new(0,0,0.5,0), function()
+	create("TextLabel", {
+		Parent = rosterArea, Size = UDim2.new(1, 0, 0, 30), Text = "PERSONNEL ROSTER",
+		Font = getFont("Label"), TextSize = 14, TextColor3 = THEME.Colors.TextDim, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
+	})
+
+	local rosterGrid = create("ScrollingFrame", {
+		Name = "RosterGrid", Parent = rosterArea, Size = UDim2.new(1, 0, 0.7, 0), Position = UDim2.new(0, 0, 0.08, 0),
+		BackgroundTransparency = 1, ScrollBarThickness = 0
+	})
+	create("UIGridLayout", {
+		Parent = rosterGrid, CellSize = UDim2.new(0.3, 0, 0, 150), CellPadding = UDim2.new(0.03, 0, 0.03, 0)
+	})
+
+	-- Action Button (Host)
+	local actionBtn = createButton(rosterArea, "START MISSION", UDim2.new(0.4, 0, 0, 60), UDim2.new(0.6, 0, 0.85, 0), THEME.Colors.AccentGreen, function()
 		if state.currentRoom and state.currentRoom.hostName == player.Name then
 			lobbyRemote:FireServer("forceStartGame")
-		else
-			-- Toggle Ready logic if implemented server side
 		end
 	end)
+	actionBtn.Name = "ActionBtn"
+	actionBtn.TextLabel.TextColor3 = THEME.Colors.Paper
+	actionBtn.TextLabel.Font = getFont("Stamp")
+	actionBtn.TextLabel.TextSize = 24
 end
 
 local function createIntelPanel(parent)
 	local panel = create("Frame", {
-		Name = "IntelPanel", Parent = parent, Size = UDim2.new(1,0,1,0), BackgroundTransparency = 1, Visible = false
+		Name = "IntelPanel", Parent = parent, Size = UDim2.new(1, 0, 1, 0),
+		BackgroundTransparency = 1, Visible = false
 	})
 	panels["INTEL"] = panel
 
-	-- A big map or photo on the board
-	local mapPhoto = create("Frame", {
-		Parent=panel, Size=UDim2.new(0.8,0,0.8,0), Position=UDim2.new(0.1,0,0.1,0),
-		BackgroundColor3 = Color3.new(1,1,1)
+	local card = create("Frame", {
+		Parent = panel, Size = UDim2.new(0.96, 0, 0.9, 0), Position = UDim2.new(0.02, 0, 0.05, 0),
+		BackgroundColor3 = Color3.fromRGB(20, 20, 20), BorderSizePixel = 0
 	})
-	create("ImageLabel", {
-		Parent=mapPhoto, Size=UDim2.new(0.96,0,0.96,0), Position=UDim2.new(0.02,0,0.02,0),
-		BackgroundColor3=Color3.new(0,0,0), Image="rbxasset://textures/ui/GuiImagePlaceholder.png" -- Placeholder for map
-	})
-	addTape(mapPhoto, UDim2.new(0.5,-20,0,-10), 0)
+	create("UICorner", {Parent = card, CornerRadius = UDim.new(0, 4)})
 
 	create("TextLabel", {
-		Parent=mapPhoto, Size=UDim2.new(1,0,0.2,0), Position=UDim2.new(0,0,1,0),
-		Text="TARGET: THE VILLAGE\nBeware of high radiation levels.",
-		Font=getFont("Hand"), TextSize=24, TextColor3=THEME.Colors.Paper, BackgroundTransparency=1
+		Parent = card, Size = UDim2.new(1, 0, 1, 0), Text = "INTEL OFFLINE\n\nAccess Restricted.",
+		Font = getFont("Body"), TextSize = 24, TextColor3 = Color3.fromRGB(100, 100, 100), BackgroundTransparency = 1
 	})
 end
 
@@ -343,83 +359,72 @@ end
 local function createGUI()
 	gui = create("ScreenGui", {
 		Name = "LobbyRoomUI", Parent = playerGui, ResetOnSpawn = false, Enabled = false,
-		IgnoreGuiInset = false -- CHANGED: Respect top bar area
+		IgnoreGuiInset = false -- User Request: false
 	})
 
 	local camera = workspace.CurrentCamera
-	state.blurEffect = create("BlurEffect", {Parent = camera, Size = 20, Enabled = false})
+	state.blurEffect = create("BlurEffect", {Parent = camera, Size = 15, Enabled = false})
 
-	-- Main Background (Corkboard Texture)
-	mainBoard = create("Frame", {
-		Name = "Board", Parent = gui,
-		Size = UDim2.new(1, 0, 1, 0), Position = UDim2.new(0, 0, 0, 0),
-		BackgroundColor3 = THEME.Colors.Board, BorderSizePixel = 0
+	-- Main Container (The Folder)
+	mainFrame = create("Frame", {
+		Name = "MainFrame", Parent = gui,
+		Size = THEME.Sizes.MainFrame, -- User Request: 0.9 Scale
+		Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5),
+		BackgroundColor3 = THEME.Colors.FolderMain, BorderSizePixel = 0
 	})
-	-- Texture overlay
-	create("ImageLabel", {
-		Parent=mainBoard, Size=UDim2.new(1,0,1,0), BackgroundTransparency=1,
-		Image="rbxassetid://6372755229", ImageTransparency=0.5, ScaleType=Enum.ScaleType.Tile, TileSize=UDim2.new(0,256,0,256)
-	}) -- Cork texture
+	create("UICorner", {Parent = mainFrame, CornerRadius = UDim.new(0, 8)})
 
-	-- Content Container (Padding)
-	contentArea = create("Frame", {
-		Parent=mainBoard, Size=UDim2.new(0.9,0,0.85,0), Position=UDim2.new(0.05,0,0.1,0), BackgroundTransparency=1
+	-- Shadow behind main frame
+	create("Frame", {
+		Name = "Shadow", Parent = mainFrame, ZIndex = -1,
+		Size = UDim2.new(1, 15, 1, 15), Position = UDim2.new(0.5, 0, 0.5, 5), AnchorPoint = Vector2.new(0.5, 0.5),
+		BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.6
+	})
+	create("UICorner", {Parent = mainFrame.Shadow, CornerRadius = UDim.new(0, 12)})
+
+	-- Tab Container (Top)
+	local tabContainer = create("Frame", {
+		Parent = mainFrame, Size = UDim2.new(1, -40, 0, 40), Position = UDim2.new(0, 20, 0, -35),
+		BackgroundTransparency = 1
+	})
+	local tabLayout = create("UIListLayout", {
+		Parent = tabContainer, FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 5)
 	})
 
-	-- Nav Tabs (Sticky Notes on top)
-	local nav = create("Frame", {
-		Parent=mainBoard, Size=UDim2.new(0.5,0,0.1,0), Position=UDim2.new(0.05,0,0,0), BackgroundTransparency=1
+	createTab(tabContainer, "OPS", "OPS", 1)
+	createTab(tabContainer, "LOBBY", "SQUAD", 2)
+	createTab(tabContainer, "INTEL", "INTEL", 3)
+
+	-- Content Container (Paper Sheet inside Folder)
+	contentContainer = create("Frame", {
+		Name = "Content", Parent = mainFrame,
+		Size = UDim2.new(0.96, 0, 0.92, 0), Position = UDim2.new(0.02, 0, 0.06, 0),
+		BackgroundColor3 = THEME.Colors.PaperDark, BorderSizePixel = 0
 	})
-	local navLayout = create("UIListLayout", {Parent=nav, FillDirection=Enum.FillDirection.Horizontal, Padding=UDim.new(0,20)})
+	create("UICorner", {Parent = contentContainer, CornerRadius = UDim.new(0, 4)})
 
-	local function addStickyTab(id, text, color)
-		local btn = create("TextButton", {
-			Parent=nav, Size=UDim2.new(0, 120, 1, 10), BackgroundColor3=color,
-			Text=text, Font=getFont("Hand"), TextSize=24, TextColor3=THEME.Colors.Ink
-		})
-		-- Shadow
-		create("Frame", {Parent=btn, ZIndex=btn.ZIndex-1, Size=UDim2.new(1,0,1,0), Position=UDim2.new(0,2,0,2), BackgroundColor3=Color3.new(0,0,0), BackgroundTransparency=0.8})
-
-		btn.MouseButton1Click:Connect(function()
-			state.activeTab = id
-			for pid, p in pairs(panels) do p.Visible = (pid == id) end
-			-- Simple "Pull down" animation
-			for _, b in ipairs(nav:GetChildren()) do
-				if b:IsA("TextButton") then
-					b:TweenPosition(UDim2.new(0,0,0,(b==btn and 0 or -20)), "Out", "Quad", 0.2, true)
-				end
-			end
-		end)
-		tabs[id] = btn
-	end
-
-	addStickyTab("OPS", "MISSIONS", THEME.Colors.Highlight)
-	addStickyTab("INTEL", "INTEL", Color3.fromRGB(100, 200, 255))
-	addStickyTab("LOBBY", "SQUAD", Color3.fromRGB(100, 255, 100))
-
-	-- Initialize Panels
-	createOpsPanel(contentArea)
-	createLobbyPanel(contentArea)
-	createIntelPanel(contentArea)
-
-	-- Default State
-	panels["OPS"].Visible = true
-
-	-- Close Button (X drawn on corner)
+	-- Close Button (Top Right of MainFrame)
 	local closeBtn = create("TextButton", {
-		Parent=mainBoard, Size=UDim2.new(0,50,0,50), Position=UDim2.new(1,-60,0,10),
-		BackgroundTransparency=1, Text="X", Font=getFont("Hand"), TextSize=48, TextColor3=THEME.Colors.RedMarker
+		Parent = mainFrame, Size = UDim2.new(0, 30, 0, 30), Position = UDim2.new(1, -35, 0, 5),
+		BackgroundTransparency = 1, Text = "X", Font = getFont("Label"), TextSize = 20, TextColor3 = THEME.Colors.TextMain
 	})
 	closeBtn.MouseButton1Click:Connect(function()
 		state.isUIOpen = false
-		if hideUI then hideUI() end
+		gui.Enabled = false
+		if state.blurEffect then state.blurEffect.Enabled = false end
 	end)
+
+	-- Initialize Panels
+	createOpsPanel(contentContainer)
+	createLobbyPanel(contentContainer)
+	createIntelPanel(contentContainer)
+
+	panels["OPS"].Visible = true
 end
 
 -- ================== VISUAL LOGIC ==================
 
 function updateRoomList(roomsData)
-	-- Update the sticky notes on the "OPS" board
 	local panel = panels["OPS"]
 	if not panel then return end
 	local scroll = panel:FindFirstChild("RightCol") and panel.RightCol:FindFirstChild("RoomList")
@@ -427,25 +432,39 @@ function updateRoomList(roomsData)
 
 	for _, c in ipairs(scroll:GetChildren()) do if c:IsA("Frame") or c:IsA("TextButton") then c:Destroy() end end
 
-	for id, room in pairs(roomsData) do
-		local note = create("TextButton", {
-			Parent=scroll, BackgroundColor3=THEME.Colors.Highlight
+	for _, room in pairs(roomsData) do
+		local card = create("TextButton", {
+			Parent = scroll, Size = UDim2.new(1, 0, 0, 70), BackgroundColor3 = THEME.Colors.Paper,
+			AutoButtonColor = true, BorderSizePixel = 0
 		})
-		-- Sticky note look
-		create("UICorner", {Parent=note, CornerRadius=UDim.new(0,0)}) -- Sharp corners usually, maybe slight curl
-		addTape(note, UDim2.new(0.5,-20,0,-5), 0)
-
-		create("TextLabel", {
-			Parent=note, Size=UDim2.new(0.9,0,0.3,0), Position=UDim2.new(0.05,0,0.1,0),
-			Text=room.roomName, Font=getFont("Hand"), TextSize=18, BackgroundTransparency=1, TextXAlignment=Enum.TextXAlignment.Left
-		})
-		create("TextLabel", {
-			Parent=note, Size=UDim2.new(0.9,0,0.5,0), Position=UDim2.new(0.05,0,0.4,0),
-			Text=string.format("Host: %s\nPlayers: %d/%d", room.hostName, room.playerCount, room.maxPlayers),
-			Font=getFont("Body"), TextSize=14, BackgroundTransparency=1, TextXAlignment=Enum.TextXAlignment.Left
+		create("UICorner", {Parent = card, CornerRadius = UDim.new(0, 4)})
+		-- Border via Frame
+		create("Frame", {
+			Parent = card, Size = UDim2.new(1, -2, 1, -2), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5),
+			BackgroundColor3 = THEME.Colors.Paper, BorderSizePixel = 1, BorderColor3 = THEME.Colors.TextDim, ZIndex = 0
 		})
 
-		note.MouseButton1Click:Connect(function()
+		create("TextLabel", {
+			Parent = card, Size = UDim2.new(0.9, 0, 0, 25), Position = UDim2.new(0.05, 0, 0.1, 0),
+			Text = room.roomName, Font = getFont("Label"), TextSize = 16, TextColor3 = THEME.Colors.TextMain,
+			TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
+		})
+
+		create("TextLabel", {
+			Parent = card, Size = UDim2.new(0.9, 0, 0, 20), Position = UDim2.new(0.05, 0, 0.5, 0),
+			Text = string.format("Host: %s | Mode: %s", room.hostName, room.gameMode),
+			Font = getFont("Body"), TextSize = 14, TextColor3 = THEME.Colors.TextDim,
+			TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
+		})
+
+		create("TextLabel", {
+			Parent = card, Size = UDim2.new(0.3, 0, 0, 20), Position = UDim2.new(0.65, 0, 0.4, 0),
+			Text = room.playerCount.."/"..room.maxPlayers,
+			Font = getFont("Header"), TextSize = 20, TextColor3 = THEME.Colors.TextMain,
+			TextXAlignment = Enum.TextXAlignment.Right, BackgroundTransparency = 1
+		})
+
+		card.MouseButton1Click:Connect(function()
 			lobbyRemote:FireServer("joinRoom", {roomId = room.roomId})
 		end)
 	end
@@ -455,107 +474,104 @@ function updateLobbyView(roomData)
 	local panel = panels["LOBBY"]
 	if not panel then return end
 
-	-- We need to auto-switch tab if we joined a room
 	state.activeTab = "LOBBY"
 	for pid, p in pairs(panels) do p.Visible = (pid == "LOBBY") end
+	-- Update Tabs Visuals
+	for tid, tabBtn in pairs(tabs) do
+		local active = (tid == "LOBBY")
+		tabBtn.BackgroundColor3 = active and THEME.Colors.FolderMain or THEME.Colors.FolderDark
+		tabBtn.ZIndex = active and 2 or 1
+		tabBtn.Frame.BackgroundColor3 = active and THEME.Colors.FolderMain or THEME.Colors.FolderDark
+		tabBtn.Frame.ZIndex = active and 2 or 1
+	end
 
 	state.currentRoom = roomData
 	local isHost = (roomData.hostName == player.Name)
-	local folder = panel:FindFirstChild("HeaderFrame")
+	local infoCard = panel:FindFirstChild("Frame") -- Info Card
+	local rosterArea = panel:FindFirstChild("Frame", true) -- Assuming second frame, better lookup needed
+	-- Safer lookup:
+	for _, c in ipairs(panel:GetChildren()) do
+		if c:FindFirstChild("RoomTitle") then infoCard = c end
+		if c:FindFirstChild("RosterGrid") then rosterArea = c end
+	end
 
-	-- Update Title Tab
-	if folder then
-		local tab = folder:FindFirstChild("Frame")
-		if tab and tab:FindFirstChild("RoomTitle") then
-			tab.RoomTitle.Text = string.upper(roomData.roomName)
+	if infoCard then
+		infoCard.RoomTitle.Text = string.upper(roomData.roomName)
+		infoCard.RoomDetails.Text = string.format("HOST: %s\nMODE: %s\nDIFF: %s", roomData.hostName, roomData.gameMode, roomData.difficulty)
+	end
+
+	if rosterArea then
+		local actionBtn = rosterArea:FindFirstChild("ActionBtn")
+		if actionBtn then
+			local lbl = actionBtn:FindFirstChild("TextLabel")
+			if isHost then
+				lbl.Text = "START MISSION"
+				actionBtn.BackgroundColor3 = THEME.Colors.AccentGreen
+				actionBtn.AutoButtonColor = true
+			else
+				lbl.Text = "WAITING FOR HOST..."
+				actionBtn.BackgroundColor3 = THEME.Colors.PaperDark
+				actionBtn.AutoButtonColor = false
+			end
 		end
-		-- Update Info Sheet
-		local sheet = folder:FindFirstChild("Frame") -- Info sheet
-		if sheet then
-			local info = sheet:FindFirstChild("RoomInfo")
-			if info then
-				info.Text = string.format("MISSION: %s\nTHREAT: %s", roomData.gameMode, roomData.difficulty)
-			end
 
-			-- Roster
-			local roster = sheet:FindFirstChild("RosterFrame")
-			if roster then
-				for _, c in ipairs(roster:GetChildren()) do if c:IsA("Frame") then c:Destroy() end end
-				for _, pData in ipairs(roomData.players) do
-					local polaroid, photo = createPolaroid(roster, UDim2.new(0,0,0,0), UDim2.new(0,0,0,0))
-					addTape(polaroid, UDim2.new(0.5,-20,0,-5), math.random(-5,5))
-					-- Name on bottom of polaroid
-					create("TextLabel", {
-						Parent=polaroid, Size=UDim2.new(1,0,0.2,0), Position=UDim2.new(0,0,0.8,0),
-						Text=pData.Name, Font=getFont("Hand"), TextSize=14, BackgroundTransparency=1
-					})
-				end
-			end
+		local grid = rosterArea:FindFirstChild("RosterGrid")
+		if grid then
+			for _, c in ipairs(grid:GetChildren()) do if c:IsA("Frame") then c:Destroy() end end
 
-			-- Button
-			local action = sheet:FindFirstChild("ActionFrame")
-			if action then
-				local btn = action:FindFirstChild("Btn_DEPLOY")
-				if btn then
-					local lbl = btn:FindFirstChild("TextLabel")
-					if isHost then
-						lbl.Text = "STAMP: DEPLOY"
-						lbl.TextColor3 = THEME.Colors.Stamp
-					else
-						lbl.Text = "WAITING..."
-						lbl.TextColor3 = THEME.Colors.Ink
-					end
-				end
+			for _, pData in ipairs(roomData.players) do
+				local polaroid = create("Frame", {
+					Parent = grid, BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0
+				})
+				-- Shadow
+				create("Frame", {
+					Parent = polaroid, Size = UDim2.new(1, 4, 1, 4), Position = UDim2.new(0, 2, 0, 2), ZIndex = -1,
+					BackgroundColor3 = Color3.new(0,0,0), BackgroundTransparency = 0.8
+				})
+
+				-- Photo (Placeholder)
+				create("ImageLabel", {
+					Parent = polaroid, Size = UDim2.new(0.9, 0, 0.75, 0), Position = UDim2.new(0.05, 0, 0.05, 0),
+					BackgroundColor3 = Color3.fromRGB(50, 50, 50), Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
+				})
+
+				create("TextLabel", {
+					Parent = polaroid, Size = UDim2.new(1, 0, 0.2, 0), Position = UDim2.new(0, 0, 0.8, 0),
+					Text = pData.Name, Font = getFont("Hand"), TextSize = 14, TextColor3 = Color3.new(0,0,0),
+					BackgroundTransparency = 1
+				})
 			end
 		end
 	end
-end
-
-function showUI()
-	if gui.Parent ~= playerGui then gui.Parent = playerGui end
-	gui.Enabled = true
-	if state.blurEffect then state.blurEffect.Enabled = true end
-
-	-- Removed CoreGui hiding
-
-	-- Animation: Slide up from bottom
-	mainBoard.Position = UDim2.new(0,0,1,0)
-	mainBoard:TweenPosition(UDim2.new(0,0,0,0), "Out", "Back", 0.5, true)
-end
-
-function hideUI()
-	if state.blurEffect then state.blurEffect.Enabled = false end
-
-	-- Removed CoreGui restoring
-
-	-- Slide down
-	local t = TweenService:Create(mainBoard, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Position=UDim2.new(0,0,1,0)})
-	t:Play()
-	t.Completed:Connect(function()
-		gui.Enabled = false
-	end)
 end
 
 -- ================== INIT & LISTENERS ==================
 
 lobbyRemote.OnClientEvent:Connect(function(action, data)
 	if action == "roomCreated" or action == "joinSuccess" then
-		updateLobbyView(data) -- Will switch tab automatically
+		updateLobbyView(data)
 	elseif action == "roomUpdate" then
 		updateLobbyView(data)
 	elseif action == "publicRoomsUpdate" then
 		updateRoomList(data)
 	elseif action == "leftRoomSuccess" then
-		-- Switch back to OPS
 		state.activeTab = "OPS"
 		for pid, p in pairs(panels) do p.Visible = (pid == "OPS") end
+		-- Reset Tab Visuals
+		for tid, tabBtn in pairs(tabs) do
+			local active = (tid == "OPS")
+			tabBtn.BackgroundColor3 = active and THEME.Colors.FolderMain or THEME.Colors.FolderDark
+			tabBtn.ZIndex = active and 2 or 1
+			tabBtn.Frame.BackgroundColor3 = active and THEME.Colors.FolderMain or THEME.Colors.FolderDark
+			tabBtn.Frame.ZIndex = active and 2 or 1
+		end
 	end
 end)
 
 createGUI()
 lobbyRemote:FireServer("getPublicRooms")
 
--- Robust Part Search (Retained from previous fix)
+-- Part Interaction Logic
 task.spawn(function()
 	local part = nil
 	while not part do
@@ -573,10 +589,20 @@ task.spawn(function()
 		prompt.Triggered:Connect(function(triggeredBy)
 			if triggeredBy == player then
 				state.isUIOpen = not state.isUIOpen
-				if state.isUIOpen then showUI() else hideUI() end
+				gui.Enabled = state.isUIOpen
+				if state.blurEffect then state.blurEffect.Enabled = state.isUIOpen end
+
+				if state.isUIOpen then
+					-- Pop-in animation
+					mainFrame.Scale = 0.9
+					local tween = TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = THEME.Sizes.MainFrame})
+					-- Start slightly smaller? No, scale 0 to 1 is better
+					mainFrame.Size = UDim2.new(0,0,0,0)
+					tween:Play()
+				end
 			end
 		end)
 	end
 end)
 
-print("LobbyRoomUI (Investigation Board) Initialized.")
+print("LobbyRoomUI (Modern Folder) Initialized.")
