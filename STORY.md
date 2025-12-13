@@ -13,6 +13,19 @@ Dokumen ini berisi panduan narasi, profil karakter, dan plot cerita untuk game.
 
 ---
 
+## 🏗️ Lingkungan Lobi (Abandoned Subway Station)
+Lobi dibuat secara dinamis menampilkan tema **Stasiun Kereta Bawah Tanah Terbengkalai**. Estetika industri yang gelap dan berpasir mendominasi, dengan pencahayaan dinamis dari lampu tabung berkedip dan api unggun hangat.
+
+*   **Platform Pusat:** Area spawn dengan api unggun untuk berkumpul.
+*   **Rel Kereta:** Berisi gerbong kereta yang tergelincir yang berfungsi sebagai bagian depan toko.
+*   **Quartermaster:** "Penukaran Achievement" & "Penukaran Misi".
+*   **Tenda Medis:** Toko Booster.
+*   **Supply Drop:** Titik klaim Hadiah Harian.
+*   **Vending Machine:** Sistem Gacha ("Mystery Cache").
+*   **Papan Misi:** NPC "Alexander" untuk manajemen ruang lobi.
+
+---
+
 ## 📖 Struktur Cerita (Episodik)
 
 Game ini dibagi menjadi beberapa **ACT** (Babak). Pemain harus menyelesaikan Act sebelumnya (mencapai Wave 50 dan mengalahkan Final Boss) untuk membuka Act berikutnya.
@@ -22,65 +35,51 @@ Game ini dibagi menjadi beberapa **ACT** (Babak). Pemain harus menyelesaikan Act
 *   **Status:** "Ground Zero" (Titik Awal Infeksi).
 *   **Tujuan Misi:** Investigasi & Netralisir.
 
+#### **Deskripsi Lingkungan**
+Lingkungan ini dirancang untuk pertempuran gelombang terbuka dengan elemen horor yang kuat. Tema utamanya adalah desa pedesaan yang hancur dan ditinggalkan, diselimuti kabut tebal yang membatasi jarak pandang. Pencahayaan diatur gelap dan suram, dengan lampu jalan yang berkedip-kedip memberikan sedikit penerangan.
+
+*   **Town Square (Pusat):** Area terbuka luas di tengah desa, lokasi "Menara Radio" untuk objektif pertahanan.
+*   **Residential Ruins (Pinggiran):** Rumah-rumah kayu yang hancur dan terbengkalai, tempat spawn item penting seperti Bahan Bakar.
+*   **The Nest (Hutan):** Area pinggiran yang ditumbuhi pepohonan mati, tempat munculnya sampel virus.
+*   **Barikade Tak Terlihat:** Dinding force-field membatasi area permainan agar pemain tetap fokus pada zona tempur.
+
 #### **Sinopsis (The Why)**
 Alexander mendeteksi lonjakan energi aneh—kombinasi radiasi biologis dan energi "Void" yang tidak stabil—yang memancar dari desa ini. Dia mengirim tim (Pemain) untuk menyelidiki sumber anomali tersebut. Sesampainya di sana, tim menemukan bahwa desa itu bukan sekadar korban wabah, melainkan tempat eksperimen mengerikan sedang berlangsung.
 
-#### **Alur Cerita & Dialog (Alexander)**
+#### **Alur Cerita (Alexander)**
 
 **1. Awal Misi (Wave 1)**
-*   **Konteks:** Pemain baru saja mendarat/tiba di desa.
-*   **Dialog Alexander:**
-    > *"Dengar baik-baik, Tim. Sensor saya menangkap sinyal energi yang sangat tidak wajar dari sektor ini. Desa ini seharusnya sudah mati, tapi... ada sesuatu yang hidup di bawah sana. Bersihkan area, cari sumber sinyal itu, dan jangan biarkan apapun yang bergerak mendekati kalian. Masuk dan laksanakan."*
+Pemain baru saja mendarat. Alexander memperingatkan tentang sinyal energi yang tidak wajar dan memerintahkan tim untuk membersihkan area serta mencari sumber sinyal tersebut.
 
 **2. Peringatan Dini (Wave 5-7)**
-*   **Konteks:** Zombie mulai bermunculan lebih banyak.
-*   **Dialog Alexander:**
-    > *"Mereka semakin agresif. Ini bukan perilaku infeksi biasa. Seseorang mengendalikan mereka... atau memanggil mereka. Tetap waspada."*
+Seiring bertambahnya zombie, Alexander mencatat bahwa agresi mereka tidak normal, menyiratkan adanya kendali eksternal.
 
 **3. Objektif Taktis: Power Restoration (Wave 8)**
-*   **Konteks:** Pintu gerbang utama macet karena generator kehabisan bahan bakar.
-*   **Dialog Alexander:**
-    > *"Sial, gerbang keamanan terkunci! Generator utama mati total. Kalian harus mencari bahan bakar di sekitar area ini. Cari jerigen bensin dan isi ulang generator itu sekarang! Kita tidak bisa maju tanpa listrik!"*
+Gerbang keamanan terkunci karena generator mati. Tim diperintahkan mencari bahan bakar di sekitar area untuk menyalakan kembali listrik agar bisa maju.
 
 **4. Mid-Boss 1: Plague Titan (Wave 10/15)**
-*   **Konteks:** Munculnya zombie raksasa beracun.
-*   **Dialog Alexander:**
-    > *"Sial! Pembacaan radiasi melonjak drastis! Itu bukan zombie biasa... itu reaktor berjalan! Hancurkan 'Plague Titan' itu sebelum dia melelehkan tulang kalian dengan radiasinya!"*
+Pembacaan radiasi melonjak drastis dengan kemunculan Plague Titan, zombie raksasa yang bertindak sebagai reaktor berjalan. Tim harus menghancurkannya segera.
 
 **5. Objektif Taktis: Data Uplink (Wave 22)**
-*   **Konteks:** Alexander mencoba meretas satelit komunikasi desa untuk mengunduh data intel.
-*   **Dialog Alexander:**
-    > *"Saya menemukan terminal komunikasi di alun-alun. Saya akan mencoba mengunduh data eksperimen mereka. Lindungi transmiter itu! Jangan biarkan mereka memutus koneksi sampai unduhan selesai. Tahan posisi!"*
+Alexander menemukan terminal komunikasi dan mencoba mengunduh data eksperimen. Tim harus melindungi transmiter dari serangan musuh hingga proses unduhan selesai.
 
 **6. Eskalasi Konflik (Wave 25-30)**
-*   **Konteks:** Munculnya zombie dengan kekuatan Void/Gelap.
-*   **Dialog Alexander:**
-    > *"Kalian merasakannya? Udara semakin berat. Realitas di sekitar kalian mulai menipis. Siapapun yang ada di balik ini, dia sedang bermain-main dengan pintu yang seharusnya tidak dibuka."*
+Munculnya zombie dengan kekuatan Void menandakan bahwa realitas mulai menipis, dan ada seseorang yang bermain dengan kekuatan terlarang.
 
 **7. Mid-Boss 2: The Hive Mother (Wave 30/35)**
-*   **Konteks:** Munculnya mutasi biologis raksasa yang berfungsi sebagai inkubator berjalan.
-*   **Dialog Alexander:**
-    > *"Astaga, lihat itu! Pembacaan biologisnya di luar skala. Itu bukan sekadar zombie... itu adalah 'The Hive Mother'. Dia memproduksi pasukan baru di dalam tubuhnya sendiri. Hancurkan induk itu sebelum dia membanjiri kita dengan anak-anaknya! Bakar habis!"*
+Munculnya The Hive Mother, mutasi biologis yang memproduksi pasukan baru. Tim diperintahkan untuk membakarnya sebelum populasi musuh meledak.
 
 **8. Objektif Taktis: Viral Sample Retrieval (Wave 38)**
-*   **Konteks:** Ditemukan sarang zombie yang membawa varian virus murni.
-*   **Dialog Alexander:**
-    > *"Tunggu, saya melihat tanda biologis unik. Varian virus ini... masih murni. Kita butuh sampel fisik untuk membuat penawarnya. Cari sarang mereka, ambil sampelnya, dan amankan. Hati-hati, mereka tidak akan menyerahkannya dengan mudah."*
+Terdeteksi varian virus murni yang penting untuk pembuatan penawar. Tim harus mengambil sampel fisik dari sarang zombie dan mengamankannya.
 
 **9. Menuju Puncak (Wave 45-49)**
-*   **Konteks:** Mendekati Wave 50.
-*   **Dialog Alexander:**
-    > *"Kita sudah dekat. Sinyal itu berasal dari pusat desa. Pola energinya... aku mengenalinya. Itu tanda tangan 'Dia'. Persiapkan amunisi kalian. Ini akan berakhir malam ini."*
+Mendekati sumber sinyal di pusat desa. Alexander mengenali pola energi tersebut sebagai tanda tangan dari dalang utama.
 
-**7. Final Boss: The Blighted Alchemist (Wave 50)**
-*   **Konteks:** Munculnya dalang di balik Act 1.
-*   **Dialog Alexander:**
-    > *"Itu dia... Sang Alchemist. Dia yang memulai semua kegilaan ini. Dia pikir dia bisa menggabungkan wabah dengan kekuatan Void untuk menjadi dewa. Buktikan dia salah. Habisi dia! Untuk selamanya!"*
+**10. Final Boss: The Blighted Alchemist (Wave 50)**
+Sang Alchemist, dalang di balik semua kekacauan ini, muncul untuk menantang pemain. Dia telah menggabungkan wabah dengan kekuatan Void. Tim harus mengalahkannya untuk mengakhiri babak ini.
 
-**8. Victory (Pasca-Boss)**
-*   **Konteks:** Alchemist kalah, portal tertutup/desa aman.
-*   **Dialog Alexander:**
-    > *"Target dinetralisir. Sinyal energi mulai stabil. Kerja bagus, Tim. Tapi jangan rayakan dulu... data yang kita dapat dari mayatnya menunjukkan koordinat baru. Ini baru permulaan. Kembali ke Lobi, kita perlu bicara."*
+**11. Victory (Pasca-Boss)**
+Setelah Alchemist kalah, sinyal energi stabil. Namun, data dari mayatnya menunjukkan koordinat baru, menandakan bahwa ini hanyalah permulaan.
 
 ---
 

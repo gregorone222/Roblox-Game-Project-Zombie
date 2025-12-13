@@ -2,6 +2,13 @@
 
 **Zombie?** adalah game Co-op Zombie Survival (Wave Shooter) yang intens di Roblox. Pemain harus bekerja sama untuk bertahan hidup dari gelombang mayat hidup yang tak ada habisnya, menyelesaikan misi yang menantang, dan meningkatkan persenjataan mereka untuk menghadapi bos yang kuat.
 
+## ⚠️ PENTING UNTUK PENGEMBANG
+Sebelum memulai pengembangan atau kontribusi, Anda **WAJIB** membaca dan memahami dokumen berikut:
+1.  **[Error.md](Error.md):** Daftar error umum, batasan teknis, dan catatan debugging.
+2.  **[Rule.md](Rule.md):** Aturan baku pengembangan, termasuk standar UI/UX (Scale) dan tata tertib struktur proyek.
+
+Kelalaian dalam mengikuti panduan ini dapat menyebabkan konflik kode atau UI yang tidak responsif.
+
 ## 🎮 Gambaran Game
 
 *   **Genre:** Co-op Survival / Wave Shooter
