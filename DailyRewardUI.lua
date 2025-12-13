@@ -95,6 +95,16 @@ resolveRemotes()
 -- TABLET VISUALS
 -- ------------------------------------------------------
 
+local function closeUI()
+	if not gui then return end
+
+	-- Animation: Screen Off
+	TweenService:Create(screenGroup, TweenInfo.new(0.2), {Size = UDim2.new(0.92, 0, 0, 2), Position = UDim2.new(0.04, 0, 0.5, 0)}):Play()
+	task.wait(0.2)
+	gui.Enabled = false
+	isOpening = false
+end
+
 local function createTabletUI()
 	if gui then gui:Destroy() end
 
@@ -228,6 +238,35 @@ end
 -- LOGIC & UPDATES
 -- ------------------------------------------------------
 
+
+
+-- --- MODIFIED: GUIDE LOGIC ---
+local function guideToCrate()
+	closeUI()
+
+	-- Find the crate
+	local lobby = workspace:FindFirstChild("LobbyEnvironment")
+	local crate = lobby and lobby:FindFirstChild("SupplyCrate", true)
+
+	if crate then
+		-- Add Beam/Guide
+		local beam = Instance.new("SelectionBox")
+		beam.Adornee = crate
+		beam.Color3 = THEME.Colors.Phosphor
+		beam.LineThickness = 0.1
+		beam.Parent = crate
+
+		game.Debris:AddItem(beam, 5)
+
+		-- Notify
+		game:GetService("StarterGui"):SetCore("SendNotification", {
+			Title = "DROP ZONE";
+			Text = "Coordinates received. Proceed to the Supply Crate.";
+			Duration = 5;
+		})
+	end
+end
+
 local function updateInfoPanel(day, stateInfo)
 	if not gui then return end
 	local panel = screenGroup:FindFirstChild("InfoPanel")
@@ -266,22 +305,21 @@ local function updateInfoPanel(day, stateInfo)
 		btn.AutoButtonColor = false
 	elseif day == stateInfo.CurrentDay then
 		if stateInfo.CanClaim then
-			btn.Text = "CLAIM"
+			-- --- MODIFIED: REDIRECT TO CRATE ---
+			btn.Text = "LOCATE DROP"
 			btn.BackgroundColor3 = THEME.Colors.Phosphor
 			btn.TextColor3 = THEME.Colors.ScreenBg
 			btn.AutoButtonColor = true
 
 			-- Pulse Effect
 			task.spawn(function()
-				while btn.Parent and btn.Text == "CLAIM" do
+				while btn.Parent and btn.Text == "LOCATE DROP" do
 					TweenService:Create(btn, TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {BackgroundColor3 = THEME.Colors.Amber}):Play()
 					task.wait(1.6)
 				end
 			end)
 
-			btn.MouseButton1Click:Connect(function()
-				attemptClaim(day)
-			end)
+			btn.MouseButton1Click:Connect(guideToCrate)
 		else
 			btn.Text = "WAIT..."
 			btn.BackgroundColor3 = THEME.Colors.Alert
@@ -293,34 +331,6 @@ local function updateInfoPanel(day, stateInfo)
 		btn.BackgroundColor3 = Color3.fromRGB(30,30,30)
 		btn.TextColor3 = Color3.fromRGB(100,100,100)
 		btn.AutoButtonColor = false
-	end
-end
-
-function attemptClaim(day)
-	if not claimRewardEvent then return end
-	local panel = screenGroup:FindFirstChild("InfoPanel")
-	local btn = panel:FindFirstChild("ActionBtn")
-
-	btn.Text = "PROCESSING..."
-	btn.BackgroundColor3 = THEME.Colors.Amber
-
-	local success, result = pcall(function() return claimRewardEvent:InvokeServer() end)
-
-	if success and result and result.Success then
-		btn.Text = "APPROVED"
-		btn.BackgroundColor3 = THEME.Colors.Phosphor
-		playSound("rbxassetid://4612375233") -- Success beep
-
-		-- Visual Update of Grid
-		local grid = screenGroup:FindFirstChild("GridArea"):FindFirstChild("UIGridLayout")
-		-- Re-populate to show updated status
-		populateGrid(result.NextDay, false) -- NextDay is technically correct for the loop logic
-		updateInfoPanel(day, {CurrentDay = result.NextDay, CanClaim = false})
-	else
-		btn.Text = "ERROR"
-		btn.BackgroundColor3 = THEME.Colors.Alert
-		task.wait(1)
-		btn.Text = "CLAIM"
 	end
 end
 
@@ -387,16 +397,6 @@ function populateGrid(currentDay, canClaim)
 			updateInfoPanel(i, {CurrentDay = currentDay, CanClaim = canClaim})
 		end)
 	end
-end
-
-function closeUI()
-	if not gui then return end
-
-	-- Animation: Screen Off
-	TweenService:Create(screenGroup, TweenInfo.new(0.2), {Size = UDim2.new(0.92, 0, 0, 2), Position = UDim2.new(0.04, 0, 0.5, 0)}):Play()
-	task.wait(0.2)
-	gui.Enabled = false
-	isOpening = false
 end
 
 local function loadData()
