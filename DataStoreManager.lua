@@ -156,7 +156,7 @@ function DataStoreManager:LoadPlayerData(player)
 			if player:IsDescendantOf(Players) then
 				Profiles[player] = profile
 				print("[DataStoreManager] Profile loaded for " .. player.Name)
-				signal:Fire(createLegacyWrapper(profile))
+				signal:Fire(true) -- Pass true to signal completion, avoid cyclic table serialization
 			else
 				profile:EndSession()
 				signal:Fire(nil)
@@ -185,7 +185,18 @@ function DataStoreManager:GetOrWaitForPlayerData(player)
 	-- Jika loading sedang berlangsung, kita tunggu signalnya
 	if PendingLoads[player] then
 		local result = PendingLoads[player].Event:Wait()
-		if result then return result end
+		if result then
+			-- If result is true (new behavior), fetch from cache.
+			-- If result is table (legacy behavior), return it.
+			if result == true then
+				if Profiles[player] then
+					return createLegacyWrapper(Profiles[player])
+				else
+					return nil
+				end
+			end
+			return result
+		end
 	end
 
 	-- Fallback loop jika LoadPlayerData belum dipanggil (misal race condition saat init)

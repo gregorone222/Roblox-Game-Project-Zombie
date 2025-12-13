@@ -335,7 +335,7 @@ local function showUI()
 	bgFrame.BackgroundTransparency = 1 -- Start transparent
 	titleLabel.TextTransparency = 1
 	subTitle.TextTransparency = 1
-	menuContainer.GroupTransparency = 1 
+	menuContainer.GroupTransparency = 1
 
 	-- Fade BG to Black
 	TweenService:Create(bgFrame, TweenInfo.new(1), {BackgroundTransparency = 0}):Play()
@@ -417,7 +417,7 @@ StartVoteCountdownEvent.OnClientEvent:Connect(function(time)
 end)
 
 GameSettingsUpdateEvent.OnClientEvent:Connect(function(settings)
-	if settings.gameMode then 
+	if settings.gameMode then
 		local diff = settings.difficulty and tostring(settings.difficulty) or "UNKNOWN"
 		local mode = settings.gameMode and tostring(settings.gameMode) or "UNKNOWN"
 		dataBL.Text = "DIFFICULTY: " .. string.upper(diff) .. "\nMODE: " .. string.upper(mode)

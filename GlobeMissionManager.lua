@@ -56,6 +56,26 @@ function GlobalMissionManager:_loadGlobalData()
 	missionCache.IsLoaded = true
 end
 
+local function SanitizeData(data)
+	local function copy(t, stack)
+		if type(t) ~= "table" then return t end
+		if stack[t] then return nil end -- Cycle detected
+		stack[t] = true
+
+		local newT = {}
+		for k, v in pairs(t) do
+			local newK = copy(k, stack)
+			if newK ~= nil then
+				newT[newK] = copy(v, stack)
+			end
+		end
+
+		stack[t] = nil
+		return newT
+	end
+	return copy(data, {})
+end
+
 function GlobalMissionManager:_saveGlobalData()
 	if not missionCache.IsLoaded then return end
 	local dataToSave = {
@@ -67,7 +87,7 @@ function GlobalMissionManager:_saveGlobalData()
 		Notified75 = missionCache.Notified75,
 		Notified100 = missionCache.Notified100
 	}
-	DataStoreManager:SetGlobalData(GLOBAL_KEY, dataToSave)
+	DataStoreManager:SetGlobalData(GLOBAL_KEY, SanitizeData(dataToSave))
 end
 
 function GlobalMissionManager:_selectNewMission()
