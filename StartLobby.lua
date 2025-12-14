@@ -45,8 +45,8 @@ local topBar = Instance.new("Frame")
 topBar.Name = "TopBar"
 topBar.BackgroundColor3 = THEME.COLORS.BAR_BLACK
 topBar.BorderSizePixel = 0
-topBar.Size = UDim2.new(1, 0, 0, 0) -- Start hidden
-topBar.Position = UDim2.new(0, 0, 0, 0)
+topBar.Size = UDim2.fromScale(1, 0) -- Start hidden
+topBar.Position = UDim2.fromScale(0, 0)
 topBar.ZIndex = 10
 topBar.Parent = screenGui
 
@@ -54,8 +54,8 @@ local bottomBar = Instance.new("Frame")
 bottomBar.Name = "BottomBar"
 bottomBar.BackgroundColor3 = THEME.COLORS.BAR_BLACK
 bottomBar.BorderSizePixel = 0
-bottomBar.Size = UDim2.new(1, 0, 0, 0) -- Start hidden
-bottomBar.Position = UDim2.new(0, 0, 1, 0)
+bottomBar.Size = UDim2.fromScale(1, 0) -- Start hidden
+bottomBar.Position = UDim2.fromScale(0, 1)
 bottomBar.AnchorPoint = Vector2.new(0, 1)
 bottomBar.ZIndex = 10
 bottomBar.Parent = screenGui
@@ -74,77 +74,93 @@ local titleLabel = Instance.new("TextLabel")
 titleLabel.Name = "GameTitle"
 titleLabel.Text = "ZOMBIE?"
 titleLabel.Font = THEME.FONTS.TITLE
-titleLabel.TextSize = 80
+titleLabel.TextScaled = true -- RESPONSIVE UPDATE
 titleLabel.TextColor3 = THEME.COLORS.TEXT_GHOST
-titleLabel.Size = UDim2.new(1, 0, 0, 100)
+titleLabel.Size = UDim2.fromScale(0.6, 0.15) -- RESPONSIVE UPDATE: Scale
 titleLabel.Position = UDim2.fromScale(0.5, 0.4)
 titleLabel.AnchorPoint = Vector2.new(0.5, 0.5)
 titleLabel.BackgroundTransparency = 1
 titleLabel.TextTransparency = 1
 titleLabel.Parent = cinematicFrame
 
+-- Constraint for Title to not get too huge
+local titleConstraint = Instance.new("UITextSizeConstraint")
+titleConstraint.MaxTextSize = 100
+titleConstraint.Parent = titleLabel
+
 local subTitle = Instance.new("TextLabel")
 subTitle.Text = "LOBBY: THE SHELTER"
 subTitle.Font = THEME.FONTS.MONO
-subTitle.TextSize = 16
+subTitle.TextScaled = true -- RESPONSIVE UPDATE
 subTitle.TextColor3 = THEME.COLORS.TEXT_BLOOD
-subTitle.Size = UDim2.new(1, 0, 0, 20)
+subTitle.Size = UDim2.fromScale(0.4, 0.03) -- RESPONSIVE UPDATE: Scale
 subTitle.Position = UDim2.fromScale(0.5, 0.5)
 subTitle.AnchorPoint = Vector2.new(0.5, 0.5)
 subTitle.BackgroundTransparency = 1
 subTitle.TextTransparency = 1
 subTitle.Parent = cinematicFrame
 
+local subTitleConstraint = Instance.new("UITextSizeConstraint")
+subTitleConstraint.MaxTextSize = 20
+subTitleConstraint.Parent = subTitle
+
 local playBtn = Instance.new("TextButton")
 playBtn.Name = "PlayButton"
 playBtn.Text = "ENTER"
 playBtn.Font = THEME.FONTS.BODY
-playBtn.TextSize = 24
+playBtn.TextScaled = true -- RESPONSIVE UPDATE
 playBtn.TextColor3 = THEME.COLORS.TEXT_DIM
-playBtn.Size = UDim2.new(0, 200, 0, 50)
+playBtn.Size = UDim2.fromScale(0.2, 0.08) -- RESPONSIVE UPDATE: Scale
 playBtn.Position = UDim2.fromScale(0.5, 0.8)
 playBtn.AnchorPoint = Vector2.new(0.5, 0.5)
 playBtn.BackgroundTransparency = 1
 playBtn.TextTransparency = 1
 playBtn.Parent = cinematicFrame
 
+-- Aspect Ratio for Button
+local btnAspect = Instance.new("UIAspectRatioConstraint")
+btnAspect.AspectRatio = 4 -- Keep 4:1 ratio like 200:50
+btnAspect.Parent = playBtn
+
 local promptIndicator = Instance.new("TextLabel")
 promptIndicator.Name = "PromptIndicator"
 promptIndicator.Text = "- PRESS ENTER TO START -"
 promptIndicator.Font = THEME.FONTS.MONO
-promptIndicator.TextSize = 14
+promptIndicator.TextScaled = true -- RESPONSIVE UPDATE
 promptIndicator.TextColor3 = THEME.COLORS.TEXT_GHOST
-promptIndicator.Size = UDim2.new(1, 0, 0, 20)
-promptIndicator.Position = UDim2.new(0.5, 0, 0.8, 35) -- Below Enter button
+promptIndicator.Size = UDim2.fromScale(0.3, 0.025) -- RESPONSIVE UPDATE: Scale
+promptIndicator.Position = UDim2.fromScale(0.5, 0.86) -- RESPONSIVE UPDATE: Relative Scale
 promptIndicator.AnchorPoint = Vector2.new(0.5, 0.5)
 promptIndicator.BackgroundTransparency = 1
 promptIndicator.TextTransparency = 1
 promptIndicator.Parent = cinematicFrame
 
--- Blink Animation
-local tweenInfo = TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
-local tween = TweenService:Create(promptIndicator, tweenInfo, {TextTransparency = 0.3})
-tween:Play()
-
 -- 2. NOTIFICATION HUD (Daily Reward)
 local notifFrame = Instance.new("Frame")
-notifFrame.Size = UDim2.new(0, 250, 0, 40)
-notifFrame.Position = UDim2.new(1, -20, 0, 20)
+notifFrame.Size = UDim2.fromScale(0.25, 0.06) -- RESPONSIVE UPDATE: Scale
+notifFrame.Position = UDim2.fromScale(0.98, 0.05) -- RESPONSIVE UPDATE: Scale Position
 notifFrame.AnchorPoint = Vector2.new(1, 0)
 notifFrame.BackgroundColor3 = Color3.fromRGB(0, 50, 0)
 notifFrame.BackgroundTransparency = 0.5
 notifFrame.Visible = false
 notifFrame.ZIndex = 12
 notifFrame.Parent = screenGui
-Instance.new("UICorner", notifFrame).CornerRadius = UDim.new(0, 4)
+Instance.new("UICorner", notifFrame).CornerRadius = UDim.new(0.2, 0) -- Relative Corner
+
+-- Aspect Ratio for Notif to prevent squishing
+local notifAspect = Instance.new("UIAspectRatioConstraint")
+notifAspect.AspectRatio = 6 -- Approx 250:40
+notifAspect.Parent = notifFrame
 
 local notifText = Instance.new("TextLabel")
 notifText.Text = "SUPPLY DROP AVAILABLE"
-notifText.Size = UDim2.fromScale(1, 1)
+notifText.Size = UDim2.fromScale(0.9, 0.8)
+notifText.Position = UDim2.fromScale(0.5, 0.5)
+notifText.AnchorPoint = Vector2.new(0.5, 0.5)
 notifText.BackgroundTransparency = 1
 notifText.TextColor3 = Color3.new(1,1,1)
 notifText.Font = THEME.FONTS.MONO
-notifText.TextSize = 14
+notifText.TextScaled = true -- RESPONSIVE UPDATE
 notifText.Parent = notifFrame
 
 -- --- LOGIC ---
@@ -154,6 +170,7 @@ local hideCharactersConnection = nil
 local inputConnection = nil
 local uiEnforcerConnection = nil
 local uiEnforcerLoop = nil -- Used for RenderStepped connection now
+local blinkTweens = {} -- Store blink tweens to cancel them properly
 
 -- List of Lobby UIs to hide during cinematic
 local LOBBY_UIS = {
@@ -335,55 +352,6 @@ local function startCameraLoop()
 	end)
 end
 
-local function enterTitleMode()
-	isTitleMode = true
-	cinematicFrame.Visible = true
-
-	-- Freeze Character
-	local char = player.Character or player.CharacterAdded:Wait()
-	if char then
-		local hrp = char:WaitForChild("HumanoidRootPart")
-		hrp.Anchored = true
-	end
-
-	-- FORCE Hide ALL characters loop (Aggressive)
-	hideCharactersConnection = RunService.RenderStepped:Connect(function()
-		togglePlayerVisibility(false)
-	end)
-
-	-- Camera Setup
-	camera.CameraType = Enum.CameraType.Scriptable
-	startCameraLoop()
-
-	-- ANIMATION: BARS IN
-	TweenService:Create(topBar, TweenInfo.new(1.5, Enum.EasingStyle.Quad), {Size = UDim2.new(1, 0, 0.12, 0)}):Play()
-	TweenService:Create(bottomBar, TweenInfo.new(1.5, Enum.EasingStyle.Quad), {Size = UDim2.new(1, 0, 0.12, 0)}):Play()
-
-	-- UI Fade In
-	TweenService:Create(titleLabel, TweenInfo.new(2), {TextTransparency = 0}):Play()
-	task.delay(1, function()
-		TweenService:Create(subTitle, TweenInfo.new(2), {TextTransparency = 0}):Play()
-	end)
-	task.delay(2, function()
-		TweenService:Create(playBtn, TweenInfo.new(1), {TextTransparency = 0}):Play()
-		TweenService:Create(promptIndicator, TweenInfo.new(1), {TextTransparency = 0.5}):Play()
-	end)
-
-	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
-	setLobbyUIVisibility(false)
-	startUIEnforcer()
-
-	-- Enable Input Listener
-	if inputConnection then inputConnection:Disconnect() end
-	inputConnection = UIS.InputBegan:Connect(function(input, gameProcessed)
-		if isTitleMode and not gameProcessed then
-			if input.KeyCode == Enum.KeyCode.Return or input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-				exitTitleMode()
-			end
-		end
-	end)
-end
-
 local function exitTitleMode()
 	if not isTitleMode then return end
 	isTitleMode = false
@@ -394,6 +362,12 @@ local function exitTitleMode()
 		inputConnection = nil
 	end
 
+	-- Stop Blink Tweens
+	for _, t in ipairs(blinkTweens) do
+		if t then t:Cancel() end
+	end
+	blinkTweens = {}
+
 	if cameraTween then cameraTween:Cancel() end
 	if hideCharactersConnection then
 		hideCharactersConnection:Disconnect()
@@ -403,8 +377,8 @@ local function exitTitleMode()
 	togglePlayerVisibility(true)
 
 	-- ANIMATION: BARS OUT
-	TweenService:Create(topBar, TweenInfo.new(1.0, Enum.EasingStyle.Quad), {Size = UDim2.new(1, 0, 0, 0)}):Play()
-	TweenService:Create(bottomBar, TweenInfo.new(1.0, Enum.EasingStyle.Quad), {Size = UDim2.new(1, 0, 0, 0)}):Play()
+	TweenService:Create(topBar, TweenInfo.new(1.0, Enum.EasingStyle.Quad), {Size = UDim2.fromScale(1, 0)}):Play()
+	TweenService:Create(bottomBar, TweenInfo.new(1.0, Enum.EasingStyle.Quad), {Size = UDim2.fromScale(1, 0)}):Play()
 
 	-- UI Fade Out
 	local tInfo = TweenInfo.new(1)
@@ -465,6 +439,78 @@ local function exitTitleMode()
 				notifFrame.Visible = false
 			end
 		end)
+	end)
+end
+
+local function enterTitleMode()
+	-- RESET / CLEANUP FIRST
+	exitTitleMode()
+
+	isTitleMode = true
+	cinematicFrame.Visible = true
+
+	-- Freeze Character
+	local char = player.Character or player.CharacterAdded:Wait()
+	if char then
+		local hrp = char:WaitForChild("HumanoidRootPart")
+		hrp.Anchored = true
+	end
+
+	-- FORCE Hide ALL characters loop (Aggressive)
+	hideCharactersConnection = RunService.RenderStepped:Connect(function()
+		togglePlayerVisibility(false)
+	end)
+
+	-- Camera Setup
+	camera.CameraType = Enum.CameraType.Scriptable
+	startCameraLoop()
+
+	-- ANIMATION: BARS IN
+	TweenService:Create(topBar, TweenInfo.new(1.5, Enum.EasingStyle.Quad), {Size = UDim2.fromScale(1, 0.12)}):Play()
+	TweenService:Create(bottomBar, TweenInfo.new(1.5, Enum.EasingStyle.Quad), {Size = UDim2.fromScale(1, 0.12)}):Play()
+
+	-- UI Fade In
+	TweenService:Create(titleLabel, TweenInfo.new(2), {TextTransparency = 0}):Play()
+	task.delay(1, function()
+		TweenService:Create(subTitle, TweenInfo.new(2), {TextTransparency = 0}):Play()
+	end)
+	task.delay(2, function()
+		-- Initial Fade In for Button
+		local btnFade = TweenService:Create(playBtn, TweenInfo.new(1), {TextTransparency = 0})
+		btnFade:Play()
+
+		-- Initial Fade In for Prompt
+		local promptFade = TweenService:Create(promptIndicator, TweenInfo.new(1), {TextTransparency = 0.5})
+		promptFade:Play()
+
+		-- Once fade is complete, START BLINK LOOP
+		btnFade.Completed:Connect(function()
+			if not isTitleMode then return end
+			local btnBlink = TweenService:Create(playBtn, TweenInfo.new(0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut, -1, true), {TextTransparency = 0.4})
+			btnBlink:Play()
+			table.insert(blinkTweens, btnBlink)
+		end)
+
+		promptFade.Completed:Connect(function()
+			if not isTitleMode then return end
+			local promptBlink = TweenService:Create(promptIndicator, TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {TextTransparency = 0.3})
+			promptBlink:Play()
+			table.insert(blinkTweens, promptBlink)
+		end)
+	end)
+
+	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
+	setLobbyUIVisibility(false)
+	startUIEnforcer()
+
+	-- Enable Input Listener
+	if inputConnection then inputConnection:Disconnect() end
+	inputConnection = UIS.InputBegan:Connect(function(input, gameProcessed)
+		if isTitleMode and not gameProcessed then
+			if input.KeyCode == Enum.KeyCode.Return or input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				exitTitleMode()
+			end
+		end
 	end)
 end
 

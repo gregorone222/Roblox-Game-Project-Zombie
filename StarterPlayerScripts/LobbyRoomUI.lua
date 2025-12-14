@@ -620,7 +620,7 @@ function updateLobbyView(roomData)
 				})
 				-- Shadow
 				create("Frame", {
-					Parent = polaroid, Size = UDim2.new(1, 4, 1, 4), Position = UDim2.new(0, 2, 0, 2), ZIndex = -1,
+					Parent = polaroid, Size = UDim2.new(1.04, 0, 1.04, 0), Position = UDim2.new(-0.02, 0, -0.02, 0), ZIndex = -1, -- Converted offsets to relative scale
 					BackgroundColor3 = Color3.new(0,0,0), BackgroundTransparency = 0.8
 				})
 
