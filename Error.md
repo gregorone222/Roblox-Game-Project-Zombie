@@ -27,3 +27,4 @@ Berikut adalah daftar error, bug, dan batasan teknis yang ditemukan selama penge
 *   **TextLabel LetterSpacing:** Instance `TextLabel` tidak mendukung properti `LetterSpacing`.
 *   **Akses Anggota UI:** Selalu gunakan `FindFirstChild` atau simpan referensi saat mengakses elemen UI yang dibuat secara prosedural untuk menghindari error "is not a valid member of" jika hierarki belum direplikasi atau berubah.
 *   **ProximityUIHandler Removed:** Modul `ProximityUIHandler` telah dihapus dan diganti dengan koneksi `ProximityPrompt` langsung dalam LocalScripts untuk mengurangi kompleksitas dan error callback.
+*   **Invalid Member Assignment:** Jangan mencoba menetapkan properti kustom (seperti `Title`, `ItemName`, `Rarity`) langsung ke instance Roblox (seperti `Frame`). Gunakan tabel terpisah untuk referensi UI atau cari elemen dengan `FindFirstChild`.

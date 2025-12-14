@@ -22,6 +22,7 @@ local RemoteFunctions = ReplicatedStorage:WaitForChild("RemoteFunctions")
 local ToggleBoosterShopEvent = RemoteEvents:WaitForChild("ToggleBoosterShopEvent")
 local PurchaseBoosterFunction = RemoteFunctions:WaitForChild("PurchaseBoosterFunction")
 local GetBoosterConfig = RemoteFunctions:WaitForChild("GetBoosterConfig")
+local GetGachaStatus = RemoteFunctions:WaitForChild("GetGachaStatus") -- Reused for fetching coin balance
 
 -- ==================================
 -- ======== THEME CONSTANTS =========
@@ -474,8 +475,13 @@ local function setupPrompt()
 				-- BUT, typically Server scripts handle prompts. If the handler was Client-Side only (as indicated by the error logs),
 				-- then we must handle prompt locally and fetch data.
 
-				-- Let's assume we fetch data via a remote function or simple toggle for now.
-				toggle({coins = 9999, inventory = {}}) -- Placeholder data call, ideally invoke server function for real data
+				-- Fetch real data
+				local s, status = pcall(function() return GetGachaStatus:InvokeServer() end)
+				local playerCoins = (s and status and status.Coins) or 0
+
+				-- Inventory data might need a specific remote, but for now we default to empty or rely on updates.
+				-- Since we don't have a specific "GetBoosterInventory", we just pass coins.
+				toggle({coins = playerCoins, inventory = {}})
 			end)
 		end
 	end

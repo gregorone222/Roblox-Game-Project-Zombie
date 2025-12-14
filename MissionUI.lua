@@ -8,6 +8,7 @@ local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local StarterGui = game:GetService("StarterGui")
 local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -165,7 +166,7 @@ t.TextSize = 18
 t.TextColor3 = THEME.InkBlack
 t.Parent = p
 
-hud.MouseButton1Click:Connect(function()
+local function toggleUI()
 	if screenGui.Enabled and mainBoard.Visible then
 		mainBoard.Visible = false
 	else
@@ -175,7 +176,9 @@ hud.MouseButton1Click:Connect(function()
 		local s, r = pcall(function() return getMissionData:InvokeServer() end)
 		if s then currentMissionData = r; populateBoard() end
 	end
-end)
+end
+
+hud.MouseButton1Click:Connect(toggleUI)
 
 -- Main Board (Corkboard)
 mainBoard = Instance.new("Frame")
@@ -400,5 +403,23 @@ missionProgressUpdated.OnClientEvent:Connect(function()
 		populateBoard()
 	end
 end)
+
+local function setupPrompt()
+	local lobbyEnv = Workspace:WaitForChild("LobbyEnvironment", 10)
+	if not lobbyEnv then return end
+
+	-- Matches LobbyBuilder name ("LobbyRoom" interaction near Alexander)
+	local shopPart = lobbyEnv:WaitForChild("LobbyRoom", 10)
+	if shopPart then
+		local prompt = shopPart:FindFirstChildOfClass("ProximityPrompt")
+		if prompt then
+			prompt.Triggered:Connect(function()
+				toggleUI()
+			end)
+		end
+	end
+end
+
+task.spawn(setupPrompt)
 
 return {}

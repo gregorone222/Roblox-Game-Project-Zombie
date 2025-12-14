@@ -347,15 +347,25 @@ function apShopUI:UpdateDetails()
 	if detailsPanel:FindFirstChild("Description") then
 		detailsPanel.Description.Text = item.Desc
 	end
-	if detailsPanel:FindFirstChild("BuySection") and detailsPanel.BuySection:FindFirstChild("PriceFrame") and detailsPanel.BuySection.PriceFrame:FindFirstChild("Amount") then
-		detailsPanel.BuySection.PriceFrame.Amount.Text = formatNumber(item.Cost) .. " AP"
+	local buySection = detailsPanel:FindFirstChild("BuySection")
+	if buySection then
+		local priceFrame = buySection:FindFirstChild("PriceFrame")
+		if priceFrame then
+			local amount = priceFrame:FindFirstChild("Amount")
+			if amount then
+				amount.Text = formatNumber(item.Cost) .. " AP"
+			end
+		end
 	end
 
 	-- Rarity
-	local rarityLabel = detailsPanel.MetaFrame:FindFirstChild("RarityLabel")
-	if rarityLabel then
-		rarityLabel.Text = "GRADE: " .. item.Rarity:upper()
-		rarityLabel.TextColor3 = getRarityColor(item.Rarity)
+	local metaFrame = detailsPanel:FindFirstChild("MetaFrame")
+	if metaFrame then
+		local rarityLabel = metaFrame:FindFirstChild("RarityLabel")
+		if rarityLabel then
+			rarityLabel.Text = "GRADE: " .. item.Rarity:upper()
+			rarityLabel.TextColor3 = getRarityColor(item.Rarity)
+		end
 	end
 
 	-- Preview
