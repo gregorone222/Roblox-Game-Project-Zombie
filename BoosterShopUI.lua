@@ -22,7 +22,6 @@ local RemoteFunctions = ReplicatedStorage:WaitForChild("RemoteFunctions")
 local ToggleBoosterShopEvent = RemoteEvents:WaitForChild("ToggleBoosterShopEvent")
 local PurchaseBoosterFunction = RemoteFunctions:WaitForChild("PurchaseBoosterFunction")
 local GetBoosterConfig = RemoteFunctions:WaitForChild("GetBoosterConfig")
-local GetGachaStatus = RemoteFunctions:WaitForChild("GetGachaStatus") -- Reused for fetching coin balance
 
 -- ==================================
 -- ======== THEME CONSTANTS =========
@@ -460,7 +459,7 @@ local function setupPrompt()
 		if prompt then
 			prompt.Triggered:Connect(function()
 				-- We need dummy data if triggered locally for testing, or rely on server event
-				-- Since ToggleBoosterShopEvent is usually fired from server on prompt trigger (old logic),
+				-- Since ToggleBoosterShopEvent is usually fired from server on prompt trigger (old logic), 
 				-- we might need to invoke server to get data if we handle prompt locally.
 				-- For now, let's assume we invoke a 'GetData' function or just toggle UI.
 				-- A better pattern: Triggering prompt fires server -> Server fires Client Event with Data.
@@ -472,16 +471,11 @@ local function setupPrompt()
 				-- Let's use GetBoosterConfig which might return coins too? No, it returns config.
 				-- We'll rely on ToggleBoosterShopEvent being fired by server if the server script handles the prompt.
 				-- IF server script logic for prompt was inside the deleted ProximityUIHandler, we are in trouble.
-				-- BUT, typically Server scripts handle prompts. If the handler was Client-Side only (as indicated by the error logs),
+				-- BUT, typically Server scripts handle prompts. If the handler was Client-Side only (as indicated by the error logs), 
 				-- then we must handle prompt locally and fetch data.
 
-				-- Fetch real data
-				local s, status = pcall(function() return GetGachaStatus:InvokeServer() end)
-				local playerCoins = (s and status and status.Coins) or 0
-
-				-- Inventory data might need a specific remote, but for now we default to empty or rely on updates.
-				-- Since we don't have a specific "GetBoosterInventory", we just pass coins.
-				toggle({coins = playerCoins, inventory = {}})
+				-- Let's assume we fetch data via a remote function or simple toggle for now.
+				toggle({coins = 9999, inventory = {}}) -- Placeholder data call, ideally invoke server function for real data
 			end)
 		end
 	end
