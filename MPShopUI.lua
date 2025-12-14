@@ -83,7 +83,7 @@ local detailContainer = nil
 local activePreview = nil
 
 -- State
-local currentTab = "Skins"
+local currentTab = "Skins" 
 local currentMP = 0
 local selectedItem = nil
 local holdConnection = nil
