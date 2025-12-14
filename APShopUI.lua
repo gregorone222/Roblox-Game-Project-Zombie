@@ -774,9 +774,9 @@ function apShopUI:Hide()
 		screenGui.Enabled = false
 		state.isUIOpen = false
 	end
-	if state.activePreview then
-		ModelPreviewModule.destroy(state.activePreview)
-		state.activePreview = nil
+	if state.activePreview then 
+		ModelPreviewModule.destroy(state.activePreview) 
+		state.activePreview = nil 
 	end
 	-- Proximity logic removed
 end
