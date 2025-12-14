@@ -50,7 +50,7 @@ local state = {
 	freeRollAvailable = false,
 	isRolling = false,
 	pityCount = 0,
-	pityThreshold = 50,
+	pityThreshold = 50, 
 	gachaConfig = {
 		costs = { roll1 = 1500, roll10 = 15000 },
 		rarities = { legendary = 5, booster = 10, common = 85 },
@@ -173,9 +173,9 @@ updateMainUI = function()
 	-- Update Text
 	ui.headerText.Text = "> TARGET: " .. string.upper(weaponData.Name or "Unknown")
 
-	ui.statsLabel.Text = string.format("DMG:%s\nAMMO:%s/%s\nRPM:%s",
-		weaponData.Damage or "ERR",
-		weaponData.MaxAmmo or "ERR",
+	ui.statsLabel.Text = string.format("DMG:%s\nAMMO:%s/%s\nRPM:%s", 
+		weaponData.Damage or "ERR", 
+		weaponData.MaxAmmo or "ERR", 
 		weaponData.ReserveAmmo or "ERR",
 		weaponData.FireRate or "ERR"
 	)
@@ -235,16 +235,16 @@ populateWeaponSelector = function()
 	end
 
 	for _, weapon in ipairs(gachaWeapons) do
-		local btn = create("TextButton", {
-			Name = weapon.name,
-			Parent = ui.weaponList,
-			Size = UDim2.new(1, 0, 0, 40),
-			Text = " > " .. string.upper(weapon.name),
-			Font = THEME.Fonts.Main,
+		local btn = create("TextButton", { 
+			Name = weapon.name, 
+			Parent = ui.weaponList, 
+			Size = UDim2.new(1, 0, 0, 40), 
+			Text = " > " .. string.upper(weapon.name), 
+			Font = THEME.Fonts.Main, 
 			TextColor3 = (state.currentWeaponId == weapon.name) and THEME.Colors.CRT_GLOW or THEME.Colors.CRT_DIM,
 			BackgroundColor = (state.currentWeaponId == weapon.name) and THEME.Colors.CRT_DIM or THEME.Colors.CRT_BG,
 			BackgroundTransparency = 0.5,
-			TextXAlignment = Enum.TextXAlignment.Left,
+			TextXAlignment = Enum.TextXAlignment.Left, 
 			TextSize = 14
 		})
 
@@ -276,10 +276,10 @@ local function showRollAnimation(onComplete)
 end
 
 local function showResultModal(prize)
-	if not prize then
+	if not prize then 
 		state.isRolling = false
 		updateMainUI()
-		return
+		return 
 	end
 
 	local name = prize.SkinName or prize.Name or "Unknown"
