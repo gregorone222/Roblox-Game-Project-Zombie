@@ -177,7 +177,7 @@ local blinkTweens = {} -- Store blink tweens to cancel them properly
 local LOBBY_UIS = {
 	"CoinsUI", "MissionPointsUI", "AchievementPointsUI",
 	"ProfileUI", "DailyRewardUI", "InventoryUI",
-	"MissionButton", "DailyRewardHUD", "MobileControlsGui" -- Added MobileControlsGui
+	"MissionButton", "DailyRewardHUD" -- Removed "MissionUI" to prevent auto-enabling
 }
 
 local function setLobbyUIVisibility(visible)
