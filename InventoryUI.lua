@@ -385,15 +385,15 @@ closeBtn.MouseButton1Click:Connect(function()
 	openButton.Visible = true
 end)
 
-tWeapons.MouseButton1Click:Connect(function()
-	currentTab="Weapons"
-	itemGrid.Visible=true
-	inspector.Visible=true
-	updateWeaponList()
+tWeapons.MouseButton1Click:Connect(function() 
+	currentTab="Weapons" 
+	itemGrid.Visible=true 
+	inspector.Visible=true 
+	updateWeaponList() 
 end)
 
-tBoosters.MouseButton1Click:Connect(function()
-	currentTab="Boosters"
+tBoosters.MouseButton1Click:Connect(function() 
+	currentTab="Boosters" 
 	-- Booster logic would go here, simplified for this overhaul scope
 end)
 
