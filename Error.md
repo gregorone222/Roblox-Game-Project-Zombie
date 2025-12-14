@@ -17,6 +17,7 @@ Berikut adalah daftar error, bug, dan batasan teknis yang ditemukan selama penge
 *   **Tweening UIGradient:** Roblox `TweenService` tidak dapat men-tween properti `Transparency` dari `UIGradient`. Gunakan loop kustom (misalnya, `RunService`) atau penumpukan frame.
 *   **Enum Font:** `Enum.Font.BlackOpsOne` dan `Enum.Font.RussoOne` bukan anggota yang valid dari `Enum.Font` di Roblox.
 *   **Enum Material:** Smoke bukan anggota yang valid dari "Enum.Material".
+*   **Enum Material (Paper):** Paper bukan anggota yang valid dari "Enum.Material". Gunakan `Enum.Material.SmoothPlastic` atau material valid lainnya.
 *   **Defensive FindFirstChild:** Selalu gunakan pemeriksaan defensif (misalnya, `if not element then return end`) sebelum mengakses field elemen UI yang dihasilkan secara terprogram.
 *   **Instance.new Attachment:** Saat membuat instance `Attachment`, secara eksplisit instansiasi objek dan atur propertinya secara terpisah. Hindari sintaks `Instance.new("Attachment", parent, cframe)`.
 *   **ImageTransparency pada Frame:** Mencoba mengatur `ImageTransparency` pada instance `Frame` menyebabkan error; gunakan `BackgroundTransparency` sebagai gantinya.
@@ -24,3 +25,5 @@ Berikut adalah daftar error, bug, dan batasan teknis yang ditemukan selama penge
 *   **Argumen Anak pada Helper UI:** Fungsi pembantu UI `create` mengharuskan anak-anak diteruskan sebagai **argumen ketiga** (tabel).
 *   **Type Checking Luau:** Argumen untuk fungsi manipulasi string (misalnya, `string.upper`) harus secara eksplisit dilemparkan ke string atau diperiksa untuk `nil`.
 *   **TextLabel LetterSpacing:** Instance `TextLabel` tidak mendukung properti `LetterSpacing`.
+*   **Akses Anggota UI:** Selalu gunakan `FindFirstChild` atau simpan referensi saat mengakses elemen UI yang dibuat secara prosedural untuk menghindari error "is not a valid member of" jika hierarki belum direplikasi atau berubah.
+*   **ProximityUIHandler Removed:** Modul `ProximityUIHandler` telah dihapus dan diganti dengan koneksi `ProximityPrompt` langsung dalam LocalScripts untuk mengurangi kompleksitas dan error callback.

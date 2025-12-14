@@ -30,6 +30,7 @@ local COLORS = {
 	TrainStripe = Color3.fromRGB(140, 40, 40), -- Faded red
 	MedicalWhite = Color3.fromRGB(220, 220, 215), -- Dirty white
 	Wood = Color3.fromRGB(80, 60, 50),
+	GreenPhosphor = Color3.fromRGB(50, 255, 50),
 }
 
 -- Asset IDs (Standard Roblox Assets)
@@ -37,10 +38,6 @@ local SOUNDS = {
 	AmbientHum = "rbxassetid://130972023", -- Low industrial hum
 	DrippingWater = "rbxassetid://130972023", -- Placeholder (Generic Hum used if specific drip not found, recommend replacing)
 	Wind = "rbxassetid://9043813636", -- Hollow wind
-}
-
-local TEXTURES = {
-	-- Can add texture IDs here if needed
 }
 
 -- Helper Functions
@@ -101,6 +98,18 @@ local function createParticle(name, parent, texture, colorSeq, sizeSeq)
 	pe.Speed = NumberRange.new(1, 3)
 	pe.Parent = att
 	return pe
+end
+
+local function createWedge(name, size, cframe, parent, color, material)
+	local w = Instance.new("WedgePart")
+	w.Name = name
+	w.Size = size
+	w.CFrame = cframe
+	w.Parent = parent
+	w.Color = color or COLORS.Concrete
+	w.Material = material or Enum.Material.Concrete
+	w.Anchored = true
+	return w
 end
 
 -- Detail Functions
@@ -317,17 +326,27 @@ function LobbyBuilder.Build()
 		local car = createPart("TrainCar_"..i, Vector3.new(70, 13, 12), trainPos, env, COLORS.TrainBody, Enum.Material.Metal)
 		createPart("Stripe_"..i, Vector3.new(70, 1, 12.2), trainPos, env, COLORS.TrainStripe, Enum.Material.CorrodedMetal)
 
-		-- Shop Car (Center)
+		-- Shop Car (Center) - Quartermaster Area
 		if i == 0 then
 			local qmPos = trainPos * CFrame.new(0, -4.5, 0)
 			spawnNPC("Quartermaster", qmPos * CFrame.Angles(0, math.rad(180), 0), env, COLORS.Wood)
 
-			-- Shop Decor
-			createPart("Counter", Vector3.new(10, 3, 3), qmPos * CFrame.new(0, 0, 3), env, COLORS.Wood, Enum.Material.WoodPlanks)
+			-- Quartermaster Decor: Workbench
+			local benchPos = qmPos * CFrame.new(0, 0, 3)
+			local bench = createPart("Workbench", Vector3.new(12, 3, 4), benchPos, env, COLORS.Wood, Enum.Material.WoodPlanks)
+			-- Tools on bench (simple blocks)
+			createPart("ToolBox", Vector3.new(2, 1, 1), benchPos * CFrame.new(-4, 2, 0), env, COLORS.RustyMetal, Enum.Material.Metal)
+			createPart("Blueprint", Vector3.new(3, 0.1, 2), benchPos * CFrame.new(2, 1.55, 0), env, Color3.new(1,1,1), Enum.Material.SmoothPlastic)
+
+			-- Weapon Rack (Empty slots)
+			local rackPos = qmPos * CFrame.new(-10, 0, 4)
+			local rack = createPart("WeaponRack", Vector3.new(1, 6, 8), rackPos, env, COLORS.DarkMetal, Enum.Material.Metal)
+
 			createLight(car, Vector3.new(0, 0, 0), Color3.fromRGB(255, 200, 100), 20, 1) -- Warm shop light
 
-			createInteraction("APShop", qmPos * CFrame.new(-6, 0, 5), Vector3.new(5, 5, 5), "Achievement Exchange", env)
-			createInteraction("MPShop", qmPos * CFrame.new(6, 0, 5), Vector3.new(5, 5, 5), "Mission Exchange", env)
+			-- Interaction Points for Shops (Now integrated with the workbench area)
+			createInteraction("APShop", benchPos * CFrame.new(-3, 0, 2), Vector3.new(5, 5, 5), "Achievement Exchange", env)
+			createInteraction("MPShop", benchPos * CFrame.new(3, 0, 2), Vector3.new(5, 5, 5), "Mission Exchange", env)
 		end
 	end
 
@@ -398,37 +417,58 @@ function LobbyBuilder.Build()
 	createInteraction("LobbyRoom", alexPos, Vector3.new(8, 8, 8), "Mission Briefing", env)
 
 	-- C. SHOPS & UTILITIES
-	-- Booster Shop (Medical Tent)
-	local tentPos = CFrame.new(100, PLATFORM_HEIGHT + 5, 30)
-	local tent = createPart("MedTent", Vector3.new(18, 10, 18), tentPos, env, COLORS.MedicalWhite, Enum.Material.Fabric)
-	-- Tent poles
-	createPart("Pole", Vector3.new(1, 10, 1), tentPos * CFrame.new(8,0,8), env, COLORS.DarkMetal, Enum.Material.Metal)
-	createPart("Pole", Vector3.new(1, 10, 1), tentPos * CFrame.new(-8,0,8), env, COLORS.DarkMetal, Enum.Material.Metal)
-	createInteraction("BoosterShop", tentPos, Vector3.new(10, 10, 10), "Medical Supplies", env)
+	-- Booster Shop (Medical Tent Area)
+	local tentPos = CFrame.new(100, PLATFORM_HEIGHT, 30) -- On Platform floor
+
+	-- Medical Tent Structure (Wedges for roof)
+	local tentSize = Vector3.new(20, 10, 20)
+	local tentCenter = tentPos + Vector3.new(0, 5, 0)
+
+	-- Tent Roof
+	local roofL = createWedge("RoofLeft", Vector3.new(2, 12, 22), tentPos * CFrame.new(5, 10, 0) * CFrame.Angles(0, 0, math.rad(45)), env, COLORS.MedicalWhite, Enum.Material.Fabric)
+	local roofR = createWedge("RoofRight", Vector3.new(2, 12, 22), tentPos * CFrame.new(-5, 10, 0) * CFrame.Angles(0, math.rad(180), math.rad(45)), env, COLORS.MedicalWhite, Enum.Material.Fabric)
+
+	-- Tent Walls (Partial)
+	createPart("TentWallBack", Vector3.new(20, 10, 1), tentPos * CFrame.new(0, 5, 10), env, COLORS.MedicalWhite, Enum.Material.Fabric)
+
+	-- Medical Furniture: Stretcher
+	local bedPos = tentPos * CFrame.new(5, 1, -5)
+	createPart("StretcherMat", Vector3.new(4, 0.5, 8), bedPos, env, Color3.fromRGB(50, 100, 50), Enum.Material.Fabric)
+	createPart("StretcherFrame", Vector3.new(4.2, 0.2, 8.2), bedPos * CFrame.new(0, -0.3, 0), env, COLORS.DarkMetal, Enum.Material.Metal)
+
+	-- Medical Crates
+	createPart("MedCrate1", Vector3.new(2, 2, 2), tentPos * CFrame.new(-6, 1, -5), env, COLORS.MedicalWhite, Enum.Material.Plastic)
+	local decalPart = createPart("CrossIcon", Vector3.new(0.5, 0.5, 0.1), tentPos * CFrame.new(-6, 1, -3.9), env, Color3.fromRGB(200, 0, 0), Enum.Material.Neon)
+
+	-- Booster Interaction (Near the crate)
+	createInteraction("BoosterShop", tentPos * CFrame.new(-6, 2, -5), Vector3.new(8, 8, 8), "Medical Supplies", env)
 
 	-- Daily Reward (Physical Supply Crate)
-	local stashPos = CFrame.new(-100, PLATFORM_HEIGHT + 3, 30)
+	local stashPos = CFrame.new(-100, PLATFORM_HEIGHT + 1.5, 30)
 
 	-- Crate Model (Constructed from Parts)
 	local crate = createPart("SupplyCrate", Vector3.new(6, 4, 4), stashPos, env, Color3.fromRGB(50, 70, 50), Enum.Material.DiamondPlate)
 	-- Lid (Separate part for animation)
 	local lid = createPart("Lid", Vector3.new(6.2, 0.5, 4.2), stashPos * CFrame.new(0, 2.25, 0), crate, Color3.fromRGB(40, 60, 40), Enum.Material.DiamondPlate)
-	-- Use WeldConstraint for physical attachment but Animation will break it if not Motor6D.
-	-- Since we use Anchored parts for lobby, we can just tween the CFrame of the Lid locally.
 	lid.Anchored = true
 
 	-- Glow Effect (Hidden initially)
 	local glow = createParticle("Glow", crate, "rbxassetid://292289455", ColorSequence.new(Color3.fromRGB(50, 255, 100)), NumberSequence.new(2))
 	glow.Enabled = false
 
-	-- We remove the generic interaction sphere here because DailyRewardInteraction.lua handles the specific ProximityPrompt
-	-- createInteraction("DailyReward", stashPos, Vector3.new(9, 9, 9), "Open Supply Drop", env)
-
-	-- Gacha (Vending Machine)
-	local gachaPos = stashPos * CFrame.new(0, 2, -20)
+	-- Gacha (Vending Machine) - DETAILED
+	local gachaPos = stashPos * CFrame.new(0, 3, -20)
 	local vm = createPart("VendingMachine", Vector3.new(6, 12, 6), gachaPos, env, Color3.fromRGB(50, 50, 150), Enum.Material.Metal)
+	-- Screen Area
 	local screen = createPart("VMScreen", Vector3.new(4, 4, 0.1), gachaPos * CFrame.new(0, 2, -3), env, Color3.fromRGB(100, 255, 255), Enum.Material.Neon)
 	createLight(screen, Vector3.new(0,0,-1), Color3.fromRGB(100, 255, 255), 10, 0.8)
+	-- Buttons
+	for b = -1, 1 do
+		createPart("Button"..b, Vector3.new(0.5, 0.5, 0.2), gachaPos * CFrame.new(b*1.5, -1, -3), env, Color3.new(1,0,0), Enum.Material.Plastic)
+	end
+	-- Dispense Slot
+	createPart("Slot", Vector3.new(4, 1, 0.5), gachaPos * CFrame.new(0, -4, -3), env, Color3.new(0.1,0.1,0.1), Enum.Material.Metal)
+
 	createInteraction("Gacha", gachaPos, Vector3.new(8, 12, 8), "Mystery Cache", env)
 
 	-- 4. PARTICLES
