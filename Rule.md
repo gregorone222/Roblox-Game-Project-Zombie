@@ -9,6 +9,9 @@ Dokumen ini berisi aturan baku dan panduan yang harus dipatuhi selama pengembang
 *   **Anchor Point:** Gunakan `AnchorPoint` (misal `0.5, 0.5`) untuk memudahkan pemosisian elemen di tengah layar atau container.
 *   **Aspek Rasio:** Gunakan `UIAspectRatioConstraint` untuk elemen yang harus mempertahankan bentuknya (seperti ikon bulat atau gambar senjata).
 *   **Text Scaling:** Gunakan `TextScaled = true` atau `UITextSizeConstraint` untuk memastikan teks terbaca di semua resolusi.
+*   **ScrollingFrame:** Setiap `ScrollingFrame` **WAJIB** menggunakan:
+    *   `CanvasSize = UDim2.new(0, 0, 0, 0)`
+    *   `AutomaticCanvasSize = Enum.AutomaticSize.Y` (atau X/XY sesuai kebutuhan, tapi hindari manual pixel size).
 
 ## 2. Environment & Building
 *   **Hierarchy:** Jaga kebersihan `Workspace`. Kelompokkan objek peta dalam Folder atau Model (misal `Map_Village`, `LobbyEnvironment`).
