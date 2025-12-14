@@ -177,7 +177,7 @@ local blinkTweens = {} -- Store blink tweens to cancel them properly
 local LOBBY_UIS = {
 	"CoinsUI", "MissionPointsUI", "AchievementPointsUI",
 	"ProfileUI", "DailyRewardUI", "InventoryUI",
-	"MissionButton", "DailyRewardHUD" -- Removed "MissionUI" to prevent auto-enabling
+	"MissionButton", "DailyRewardHUD", "MobileControlsGui" -- Added MobileControlsGui
 }
 
 local function setLobbyUIVisibility(visible)
@@ -449,6 +449,9 @@ local function enterTitleMode()
 
 	isTitleMode = true
 	cinematicFrame.Visible = true
+
+	-- Hide Mobile Controls (Analog/Jump)
+	UIS.ModalEnabled = true
 
 	-- Freeze Character
 	local char = player.Character or player.CharacterAdded:Wait()

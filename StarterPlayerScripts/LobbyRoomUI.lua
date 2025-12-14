@@ -284,6 +284,13 @@ local function createOpsPanel(parent)
 	createSquadBtn.LayoutOrder = 5
 	createSquadBtn.TextLabel.TextColor3 = THEME.Colors.TextMain
 
+	-- Quick Match Button (New)
+	local quickMatchBtn = createButton(leftCol, "QUICK MATCH", UDim2.new(0.9, 0, 0.12, 0), UDim2.new(0,0,0,0), THEME.Colors.TextMain, function()
+		lobbyRemote:FireServer("quickMatch")
+	end)
+	quickMatchBtn.LayoutOrder = 6
+	quickMatchBtn.TextLabel.TextColor3 = THEME.Colors.Paper
+
 	-- RIGHT COLUMN: Public Rooms
 	local rightCol = create("Frame", {
 		Name = "RightCol",
@@ -353,7 +360,8 @@ local function createLobbyPanel(parent)
 
 	local rosterGrid = create("ScrollingFrame", {
 		Name = "RosterGrid", Parent = rosterArea, Size = UDim2.new(1, 0, 0.65, 0), Position = UDim2.new(0, 0, 0.1, 0), -- Shrunk height
-		BackgroundTransparency = 1, ScrollBarThickness = 0
+		BackgroundTransparency = 1, ScrollBarThickness = 0,
+		CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y
 	})
 	create("UIGridLayout", {
 		Parent = rosterGrid, CellSize = UDim2.new(0.3, 0, 0.4, 0), CellPadding = UDim2.new(0.03, 0, 0.03, 0)

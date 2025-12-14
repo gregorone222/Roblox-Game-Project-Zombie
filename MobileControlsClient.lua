@@ -62,8 +62,8 @@ end
 
 -- UI maker sederhana (match style yang lama)
 local function createRoundButton(name, text, pos, size)
-	local screenGui = playerGui:FindFirstChild("ScreenGui") or Instance.new("ScreenGui")
-	screenGui.Name = "ScreenGui"
+	local screenGui = playerGui:FindFirstChild("MobileControlsGui") or Instance.new("ScreenGui")
+	screenGui.Name = "MobileControlsGui"
 	screenGui.ResetOnSpawn = false
 	screenGui.IgnoreGuiInset = true
 	screenGui.Parent = playerGui
