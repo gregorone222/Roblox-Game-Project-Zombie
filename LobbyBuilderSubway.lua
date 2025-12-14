@@ -141,34 +141,58 @@ end
 
 -- NPC Spawner Helper
 local function spawnNPC(name, cframe, parent, appearanceColor)
-	local model = Instance.new("Model")
-	model.Name = name
-	model.Parent = parent
+	local model
+	local head
 
-	local hrp = createPart("HumanoidRootPart", Vector3.new(2, 2, 1), cframe, model, appearanceColor, Enum.Material.Fabric)
-	hrp.Transparency = 1
-	local head = createPart("Head", Vector3.new(1, 1, 1), cframe * CFrame.new(0, 1.5, 0), model, Color3.fromRGB(255, 200, 180), Enum.Material.SmoothPlastic)
-	local torso = createPart("Torso", Vector3.new(2, 2, 1), cframe, model, appearanceColor, Enum.Material.Fabric)
+	-- [UPDATED] Check for Prefab Model in ServerStorage
+	local npcFolder = ServerStorage:FindFirstChild("NPC")
+	local prefab = npcFolder and npcFolder:FindFirstChild(name)
 
-	local hum = Instance.new("Humanoid")
-	hum.Parent = model
-	model.PrimaryPart = hrp
+	if prefab then
+		-- Clone from ServerStorage
+		model = prefab:Clone()
+		model.Parent = parent
+		-- Position logic
+		if model.PrimaryPart then
+			model:PivotTo(cframe)
+		else
+			model:PivotTo(cframe) -- Hope for the best with default pivot
+		end
+		head = model:FindFirstChild("Head")
+	else
+		-- Fallback: Blocky Construction
+		model = Instance.new("Model")
+		model.Name = name
+		model.Parent = parent
 
-	local bg = Instance.new("BillboardGui")
-	bg.Size = UDim2.new(0, 100, 0, 50)
-	bg.StudsOffset = Vector3.new(0, 2.5, 0)
-	bg.AlwaysOnTop = true
-	bg.Parent = head
+		local hrp = createPart("HumanoidRootPart", Vector3.new(2, 2, 1), cframe, model, appearanceColor, Enum.Material.Fabric)
+		hrp.Transparency = 1
+		head = createPart("Head", Vector3.new(1, 1, 1), cframe * CFrame.new(0, 1.5, 0), model, Color3.fromRGB(255, 200, 180), Enum.Material.SmoothPlastic)
+		local torso = createPart("Torso", Vector3.new(2, 2, 1), cframe, model, appearanceColor, Enum.Material.Fabric)
 
-	local txt = Instance.new("TextLabel")
-	txt.Size = UDim2.new(1,0,1,0)
-	txt.BackgroundTransparency = 1
-	txt.Text = name
-	txt.TextColor3 = Color3.new(1,1,1)
-	txt.TextStrokeTransparency = 0
-	txt.Font = Enum.Font.SpecialElite
-	txt.TextSize = 20
-	txt.Parent = bg
+		local hum = Instance.new("Humanoid")
+		hum.Parent = model
+		model.PrimaryPart = hrp
+	end
+
+	-- Add Name Tag if Head exists and doesn't have one
+	if head and not head:FindFirstChild("BillboardGui") then
+		local bg = Instance.new("BillboardGui")
+		bg.Size = UDim2.new(0, 100, 0, 50)
+		bg.StudsOffset = Vector3.new(0, 2.5, 0)
+		bg.AlwaysOnTop = true
+		bg.Parent = head
+
+		local txt = Instance.new("TextLabel")
+		txt.Size = UDim2.new(1,0,1,0)
+		txt.BackgroundTransparency = 1
+		txt.Text = name
+		txt.TextColor3 = Color3.new(1,1,1)
+		txt.TextStrokeTransparency = 0
+		txt.Font = Enum.Font.SpecialElite
+		txt.TextSize = 20
+		txt.Parent = bg
+	end
 
 	return model
 end
