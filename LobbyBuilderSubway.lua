@@ -171,8 +171,15 @@ local function spawnNPC(name, cframe, parent, appearanceColor)
 		local torso = createPart("Torso", Vector3.new(2, 2, 1), cframe, model, appearanceColor, Enum.Material.Fabric)
 
 		local hum = Instance.new("Humanoid")
+		hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None -- [UPDATED] Hide default name tag
 		hum.Parent = model
 		model.PrimaryPart = hrp
+	end
+
+	-- Disable default name tag on prefab if it has a humanoid
+	local prefabHum = model:FindFirstChild("Humanoid")
+	if prefabHum then
+		prefabHum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
 	end
 
 	-- Add Name Tag if Head exists and doesn't have one

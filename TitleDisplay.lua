@@ -37,7 +37,7 @@ local function createOrUpdateTitleDisplay(player)
 		nameLabel.Parent = playerInfoGui
 		nameLabel.Size = UDim2.new(0.75, 0, 0.375, 0) -- Use scale for size
 		nameLabel.BackgroundTransparency = 1
-		nameLabel.Font = Enum.Font.SourceSans
+		nameLabel.Font = Enum.Font.SpecialElite -- [UPDATED] Font to match NPC
 		nameLabel.TextScaled = true -- Scale text to fit
 		nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255) -- White
 		nameLabel.Text = player.DisplayName
@@ -48,7 +48,7 @@ local function createOrUpdateTitleDisplay(player)
 		rankLabel.Parent = playerInfoGui
 		rankLabel.Size = UDim2.new(0.75, 0, 0.375, 0) -- Use scale for size
 		rankLabel.BackgroundTransparency = 1
-		rankLabel.Font = Enum.Font.SourceSans
+		rankLabel.Font = Enum.Font.SpecialElite -- [UPDATED] Font to match NPC
 		rankLabel.TextScaled = true -- Scale text to fit
 		rankLabel.TextColor3 = Color3.fromRGB(255, 255, 0) -- Yellow
 		rankLabel.Text = ""
