@@ -259,8 +259,8 @@ local function createOpsPanel(parent)
 		end
 	end
 
-	createOption("OPERATION MODE", {"Story", "Crazy"}, "gameMode", 1)
-	createOption("THREAT LEVEL", {"Easy", "Normal", "Hard"}, "difficulty", 2)
+	createOption("OPERATION MODE", {"Story", "Endless", "Crazy"}, "gameMode", 1)
+	createOption("THREAT LEVEL", {"Easy", "Normal", "Hard", "Expert", "Crazy", "Hell"}, "difficulty", 2)
 
 	-- Solo Start Button (Bottom)
 	-- Using LayoutOrder to push it down
@@ -276,6 +276,13 @@ local function createOpsPanel(parent)
 	end)
 	soloBtn.LayoutOrder = 4
 	soloBtn.TextLabel.TextColor3 = THEME.Colors.Paper
+
+	-- Create Squad Button (New)
+	local createSquadBtn = createButton(leftCol, "CREATE SQUAD", UDim2.new(0.9, 0, 0.12, 0), UDim2.new(0,0,0,0), THEME.Colors.FolderDark, function()
+		lobbyRemote:FireServer("createRoom", {gameMode = state.settings.gameMode, difficulty = state.settings.difficulty})
+	end)
+	createSquadBtn.LayoutOrder = 5
+	createSquadBtn.TextLabel.TextColor3 = THEME.Colors.TextMain
 
 	-- RIGHT COLUMN: Public Rooms
 	local rightCol = create("Frame", {

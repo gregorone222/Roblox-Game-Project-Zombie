@@ -37,6 +37,7 @@ local GetDailyRewardInfo = RemoteFunctions:WaitForChild("GetDailyRewardInfo")
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "LobbyEntryInterface"
 screenGui.IgnoreGuiInset = true -- Covers top bar
+screenGui.ScreenInsets = Enum.ScreenInsets.None -- Force full screen ignoring safe areas
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
@@ -507,13 +508,15 @@ local function enterTitleMode()
 	if inputConnection then inputConnection:Disconnect() end
 	inputConnection = UIS.InputBegan:Connect(function(input, gameProcessed)
 		if isTitleMode and not gameProcessed then
-			if input.KeyCode == Enum.KeyCode.Return or input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			-- ONLY Allow Enter Key globally. Mobile/Mouse must click the button.
+			if input.KeyCode == Enum.KeyCode.Return then
 				exitTitleMode()
 			end
 		end
 	end)
 end
 
+-- Button handles MouseClick and TouchTap automatically
 playBtn.MouseButton1Click:Connect(exitTitleMode)
 
 -- INITIALIZE
