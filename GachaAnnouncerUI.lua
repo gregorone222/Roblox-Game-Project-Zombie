@@ -14,6 +14,7 @@ local GachaSkinWonEvent = ReplicatedStorage.RemoteEvents:WaitForChild("GachaSkin
 local announcerGui = Instance.new("ScreenGui")
 announcerGui.Name = "GachaAnnouncerGUI"
 announcerGui.ResetOnSpawn = false
+announcerGui.Enabled = false -- Sembunyikan secara default
 announcerGui.Parent = player:WaitForChild("PlayerGui")
 
 local messageLabel = Instance.new("TextLabel")
@@ -34,6 +35,7 @@ messageLabel.Parent = announcerGui
 -- ================== LOGIKA SCRIPT ==================
 
 local function showAnnouncement(winner, skinName)
+	announcerGui.Enabled = true -- Munculkan UI saat ada event
 	messageLabel.Text = string.format("[Gacha] %s baru saja mendapatkan skin legendaris: %s!", winner.DisplayName, skinName)
 
 	-- Animasi masuk
@@ -56,6 +58,9 @@ local function showAnnouncement(winner, skinName)
 		0.5, -- Durasi
 		true
 	)
+
+	task.wait(0.5) -- Tunggu animasi keluar selesai
+	announcerGui.Enabled = false -- Sembunyikan lagi
 end
 
 -- Event listener untuk menerima pengumuman
