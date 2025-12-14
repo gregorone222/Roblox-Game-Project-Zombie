@@ -31,6 +31,7 @@ local COLORS = {
 	MedicalWhite = Color3.fromRGB(220, 220, 215), -- Dirty white
 	Wood = Color3.fromRGB(80, 60, 50),
 	GreenPhosphor = Color3.fromRGB(50, 255, 50),
+	ScreenBlack = Color3.fromRGB(10, 15, 10),
 }
 
 -- Asset IDs (Standard Roblox Assets)
@@ -228,6 +229,77 @@ local function createInteraction(name, cframe, size, promptText, parent)
 	return part
 end
 
+local function createLeaderboardScreen(name, cframe, parent)
+	-- Industrial Frame
+	local frameHeight = 16
+	local frameWidth = 10
+	local frameDepth = 1.5
+
+	-- Main Support Frame
+	local model = Instance.new("Model")
+	model.Name = name .. "_Mount"
+	model.Parent = parent
+
+	local frame = createPart("Frame", Vector3.new(frameWidth, frameHeight, frameDepth), cframe, model, COLORS.DarkMetal, Enum.Material.CorrodedMetal)
+
+	-- The Screen Surface (Part that holds the UI)
+	local screen = createPart(name, Vector3.new(frameWidth - 1, frameHeight - 1, 0.2), cframe * CFrame.new(0, 0, frameDepth/2 + 0.1), parent, COLORS.ScreenBlack, Enum.Material.Glass)
+	screen.Color = Color3.fromRGB(20, 25, 20)
+
+	-- Cables Hanging down
+	createCables(model, frame.Position + Vector3.new(0, frameHeight/2, 0), frame.Position + Vector3.new(0, 20, 0), 5)
+
+	-- Base Support (Floor Mount)
+	createPart("BaseL", Vector3.new(1, 4, 2), cframe * CFrame.new(-frameWidth/2 + 0.5, -frameHeight/2 - 2, 0), model, COLORS.DarkMetal, Enum.Material.DiamondPlate)
+	createPart("BaseR", Vector3.new(1, 4, 2), cframe * CFrame.new(frameWidth/2 - 0.5, -frameHeight/2 - 2, 0), model, COLORS.DarkMetal, Enum.Material.DiamondPlate)
+
+	return screen
+end
+
+local function BuildLeaderboardArea(env, originCFrame)
+	-- Create dedicated folder in Workspace for Leaderboard Client to find parts
+	local lbFolder = Workspace:FindFirstChild("Leaderboard")
+	if lbFolder then lbFolder:Destroy() end
+	lbFolder = Instance.new("Folder")
+	lbFolder.Name = "Leaderboard"
+	lbFolder.Parent = Workspace
+
+	-- Configuration matches LeaderboardConfig.lua
+	local boards = {
+		"KillLeaderboard",
+		"TDLeaderboard",
+		"APLeaderboard",
+		"LVLeaderboard",
+		"MPLeaderboard",
+		"GlobalMission" -- Added missing GlobalMission board
+	}
+
+	-- Arrange in a semi-circle
+	local radius = 25
+	local angleStep = 25 -- degrees
+	local startAngle = -((#boards - 1) * angleStep) / 2
+
+	for i, boardName in ipairs(boards) do
+		local angle = math.rad(startAngle + (i-1) * angleStep)
+		local offset = Vector3.new(math.sin(angle) * radius, 0, math.cos(angle) * radius)
+
+		-- Position relative to origin, facing INWARDS to origin
+		local pos = originCFrame:PointToWorldSpace(offset)
+		local lookAt = originCFrame.Position
+		local boardCFrame = CFrame.lookAt(pos, lookAt)
+
+		-- Adjust height
+		boardCFrame = boardCFrame + Vector3.new(0, 8, 0)
+
+		createLeaderboardScreen(boardName, boardCFrame, lbFolder)
+	end
+
+	-- Add some ambient light for the screens area
+	local lightPart = createPart("LeaderboardAmbient", Vector3.new(1,1,1), originCFrame * CFrame.new(0, 15, 10), env, Color3.new(1,1,1), Enum.Material.Neon)
+	lightPart.Transparency = 1
+	createLight(lightPart, Vector3.new(0,-1,0), Color3.fromRGB(50, 255, 100), 40, 0.5)
+end
+
 function LobbyBuilder.Build()
 	print("LobbyBuilder: Constructing POLISHED Subway Shelter...")
 
@@ -359,6 +431,11 @@ function LobbyBuilder.Build()
 	spawn.CanCollide = false
 	spawn.Anchored = true
 	spawn.Parent = env
+
+	-- BUILD LEADERBOARDS (New Area)
+	-- Position: Behind the spawn area, creating a "Hall of Fame" wall feel
+	local lbOrigin = CFrame.new(0, PLATFORM_HEIGHT + 1, 70) * CFrame.Angles(0, math.rad(180), 0)
+	BuildLeaderboardArea(env, lbOrigin)
 
 	-- Mission Command Center (Alexander) - REVISED FOR STORY
 	local boardPos = CFrame.new(0, PLATFORM_HEIGHT + 6, STATION_WIDTH/2 - 2)

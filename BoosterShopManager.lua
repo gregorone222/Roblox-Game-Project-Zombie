@@ -38,7 +38,8 @@ getOrCreate(RemoteEvents, "RemoteEvent", "BoosterUpdateEvent")
 getOrCreate(RemoteEvents, "RemoteEvent", "ActivateBoosterEvent")
 
 -- Cari part toko dan proximity prompt
-local boosterShopPart = Workspace.Shop:WaitForChild(BOOSTER_SHOP_PART_NAME)
+local lobbyEnv = Workspace:WaitForChild("LobbyEnvironment")
+local boosterShopPart = lobbyEnv:WaitForChild(BOOSTER_SHOP_PART_NAME)
 local proximityPrompt = boosterShopPart:FindFirstChildOfClass("ProximityPrompt")
 
 if not proximityPrompt then
