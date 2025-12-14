@@ -325,7 +325,14 @@ function LobbyBuilder.Build()
 	createPart("SafetyLine", Vector3.new(STATION_LENGTH, 0.1, 2), CFrame.new(0, PLATFORM_HEIGHT + 0.1, safetyZ), env, COLORS.SafetyYellow, Enum.Material.DiamondPlate)
 
 	-- Walls & Ceiling (Tiled but dirty)
-	createPart("WallBack", Vector3.new(STATION_LENGTH, STATION_HEIGHT, 2), CFrame.new(0, STATION_HEIGHT/2, STATION_WIDTH/2), env, COLORS.Tiles, Enum.Material.Brick)
+	-- [UPDATED] WallBack split into two to create entrance for Leaderboard Room
+	local wallGap = 60
+	local wallLen = (STATION_LENGTH - wallGap) / 2
+	local wallOffset = wallGap/2 + wallLen/2
+
+	createPart("WallBackLeft", Vector3.new(wallLen, STATION_HEIGHT, 2), CFrame.new(-wallOffset, STATION_HEIGHT/2, STATION_WIDTH/2), env, COLORS.Tiles, Enum.Material.Brick)
+	createPart("WallBackRight", Vector3.new(wallLen, STATION_HEIGHT, 2), CFrame.new(wallOffset, STATION_HEIGHT/2, STATION_WIDTH/2), env, COLORS.Tiles, Enum.Material.Brick)
+
 	createPart("WallFront", Vector3.new(STATION_LENGTH, STATION_HEIGHT, 2), CFrame.new(0, STATION_HEIGHT/2, -STATION_WIDTH/2), env, COLORS.TilesDark, Enum.Material.Brick)
 	createPart("Ceiling", Vector3.new(STATION_LENGTH, 1, STATION_WIDTH), CFrame.new(0, STATION_HEIGHT, 0), env, COLORS.ConcreteDark, Enum.Material.Slate)
 
@@ -432,9 +439,36 @@ function LobbyBuilder.Build()
 	spawn.Anchored = true
 	spawn.Parent = env
 
-	-- BUILD LEADERBOARDS (New Area)
-	-- Position: Behind the spawn area, creating a "Hall of Fame" wall feel
-	local lbOrigin = CFrame.new(0, PLATFORM_HEIGHT + 1, 70) * CFrame.Angles(0, math.rad(180), 0)
+	-- BUILD LEADERBOARDS (Dedicated Room)
+	-- Constructing the "Hall of Fame" Room behind the spawn
+	local roomZStart = STATION_WIDTH/2 -- 60
+	local roomDepth = 50
+	local roomWidth = 60
+	local roomCenterZ = roomZStart + roomDepth/2
+	local roomFloorY = PLATFORM_HEIGHT
+
+	-- Room Floor
+	createPart("LBRoomFloor", Vector3.new(roomWidth, 1, roomDepth), CFrame.new(0, roomFloorY - 0.5, roomCenterZ), env, COLORS.Concrete, Enum.Material.Concrete)
+
+	-- Room Walls
+	createPart("LBRoomWallL", Vector3.new(2, STATION_HEIGHT, roomDepth), CFrame.new(-roomWidth/2, STATION_HEIGHT/2, roomCenterZ), env, COLORS.Tiles, Enum.Material.Brick)
+	createPart("LBRoomWallR", Vector3.new(2, STATION_HEIGHT, roomDepth), CFrame.new(roomWidth/2, STATION_HEIGHT/2, roomCenterZ), env, COLORS.Tiles, Enum.Material.Brick)
+	createPart("LBRoomWallBack", Vector3.new(roomWidth, STATION_HEIGHT, 2), CFrame.new(0, STATION_HEIGHT/2, roomZStart + roomDepth), env, COLORS.Tiles, Enum.Material.Brick)
+
+	-- Room Ceiling
+	createPart("LBRoomCeiling", Vector3.new(roomWidth, 1, roomDepth), CFrame.new(0, STATION_HEIGHT, roomCenterZ), env, COLORS.ConcreteDark, Enum.Material.Slate)
+
+	-- Room Lighting (Dramatic)
+	local roomLightPart = createPart("LBRoomLight", Vector3.new(roomWidth-2, 1, 2), CFrame.new(0, 20, roomCenterZ), env, Color3.new(0,0,0), Enum.Material.Neon)
+	roomLightPart.Transparency = 1
+	createLight(roomLightPart, Vector3.new(0,-1,0), Color3.fromRGB(50, 255, 100), 60, 0.8)
+
+	-- Steps connecting Platform to Room (gap filler)
+	createPart("LBRoomSteps", Vector3.new(roomWidth, 1, 10), CFrame.new(0, roomFloorY - 0.5, roomZStart - 2), env, COLORS.Concrete, Enum.Material.DiamondPlate)
+
+	-- Position Leaderboards inside the room
+	-- [UPDATED] Fixed orientation: Origin moved closer to entrance, rotation removed so boards face entrance
+	local lbOrigin = CFrame.new(0, roomFloorY + 1, roomCenterZ - 10)
 	BuildLeaderboardArea(env, lbOrigin)
 
 	-- Mission Command Center (Alexander) - REVISED FOR STORY
