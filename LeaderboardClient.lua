@@ -230,23 +230,26 @@ end
 -- ============================================================================
 -- INITIALIZATION
 -- ============================================================================
-local lbFolder = Workspace:WaitForChild("Leaderboard", 10)
+-- Use a longer timeout (20s) to allow for Map Loading and Replication
+local lbFolder = Workspace:WaitForChild("Leaderboard", 20)
 
 if not lbFolder then
-	warn("LeaderboardClient: Workspace.Leaderboard folder not found within 10s.")
+	-- Gracefully exit if not found (e.g. in game map)
+	print("LeaderboardClient: Workspace.Leaderboard not found within 20s. Script disabled (Game Mode?).")
 else
 	for key, config in pairs(LeaderboardConfig) do
-		local leaderboardPart = lbFolder:WaitForChild(config.PartName, 5)
+		-- Safe check for part with WaitForChild to allow for replication latency
+		local leaderboardPart = lbFolder:WaitForChild(config.PartName, 10)
+
 		if not leaderboardPart then
-			warn("LeaderboardClient: Could not find part named " .. config.PartName)
+			-- Warn but don't error, just skip this specific board
+			warn("LeaderboardClient: Part '" .. config.PartName .. "' not found in Leaderboard folder after 10s.")
 			continue
 		end
 
-		-- Also look for the actual "Screen" surface if the part is a model or framed
-		-- Since our builder returns the specific part named PartName, we use it directly.
-
 		local functionName = "GetLeaderboard_" .. key
 		local getLeaderboardFunction = remoteFolder:WaitForChild(functionName, 10)
+
 		if not getLeaderboardFunction then
 			warn("LeaderboardClient: RemoteFunction " .. functionName .. " not found.")
 			continue

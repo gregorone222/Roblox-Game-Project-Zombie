@@ -440,7 +440,13 @@ function apShopUI:Create()
 	})
 
 	local camera = workspace.CurrentCamera
-	state.blurEffect = create("BlurEffect", {Parent = camera, Size = 15, Enabled = false})
+	-- Check for existing blur first to avoid duplicates
+	local existingBlur = camera:FindFirstChild("APShopBlur")
+	if existingBlur then
+		state.blurEffect = existingBlur
+	else
+		state.blurEffect = create("BlurEffect", {Name = "APShopBlur", Parent = camera, Size = 15, Enabled = false})
+	end
 
 	-- Background Dim
 	local dim = create("Frame", {
@@ -804,7 +810,9 @@ function apShopUI:Hide()
 		state.isUIOpen = false
 
 		-- Disable Blur
-		if state.blurEffect then state.blurEffect.Enabled = false end
+		if state.blurEffect then
+			state.blurEffect.Enabled = false
+		end
 	end
 	if state.activePreview then 
 		ModelPreviewModule.destroy(state.activePreview) 

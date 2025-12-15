@@ -90,8 +90,18 @@ end
 -- KONSTRUKSI UI (SURFACE GUI)
 -- =============================================================================
 
--- Mencari part target
-local boardPart = Workspace:WaitForChild("Leaderboard"):WaitForChild("GlobalMission")
+-- Mencari part target with extended timeout for Map Loading/Replication
+local leaderboardFolder = Workspace:WaitForChild("Leaderboard", 20)
+if not leaderboardFolder then
+	warn("GlobalMissionClient: Workspace.Leaderboard not found within 20s. Script disabled.")
+	return
+end
+
+local boardPart = leaderboardFolder:WaitForChild("GlobalMission", 10)
+if not boardPart then
+	warn("GlobalMissionClient: GlobalMission part not found in Leaderboard folder after 10s. Script disabled.")
+	return
+end
 
 local surfaceGui = Instance.new("SurfaceGui")
 surfaceGui.Name = "GlobalMissionDisplay"
