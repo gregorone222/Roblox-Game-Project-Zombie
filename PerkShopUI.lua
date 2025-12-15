@@ -9,6 +9,7 @@ local UserInputService = game:GetService("UserInputService")
 local ProximityPromptService = game:GetService("ProximityPromptService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
+local Lighting = game:GetService("Lighting")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -40,6 +41,7 @@ local selectedPerkIndex = 0
 local perkList = {}
 local ownedPerksCache = {}
 local currentPlayerPoints = 0
+local blurEffect = nil
 
 -- THEME: WASTELAND WORKSHOP
 local THEME = {
@@ -165,6 +167,10 @@ local function createUI()
 		Enabled = false,
 		ResetOnSpawn = false
 	})
+
+	-- Initialize Blur Effect
+	local camera = workspace.CurrentCamera
+	blurEffect = create("BlurEffect", {Parent = camera, Size = 0, Enabled = false})
 
 	-- Background Mesh (Chainlink Fence)
 	local fence = create("ImageLabel", {
@@ -542,6 +548,13 @@ openEv.OnClientEvent:Connect(function(config, hasDiscount)
 	hasActiveDiscount = hasDiscount
 	createUI()
 	screenGui.Enabled = true
+
+	-- Enable Blur
+	if blurEffect then
+		blurEffect.Enabled = true
+		TweenService:Create(blurEffect, TweenInfo.new(0.5), {Size = 15}):Play()
+	end
+
 	hideCoreGuiOnMobile()
 
 	if player:FindFirstChild("leaderstats") and player.leaderstats:FindFirstChild("BP") then
@@ -583,7 +596,15 @@ RunService.RenderStepped:Connect(function()
 end)
 
 function closeShop()
-	if screenGui then screenGui.Enabled = false end
+	if screenGui then
+		screenGui.Enabled = false
+
+		-- Disable Blur
+		if blurEffect then
+			TweenService:Create(blurEffect, TweenInfo.new(0.5), {Size = 0}):Play()
+			task.delay(0.5, function() blurEffect.Enabled = false end)
+		end
+	end
 	restoreCoreGuiOnMobile()
 	closeShopEvent:FireServer()
 end
@@ -599,3 +620,5 @@ if perksPart then
 		end
 	})
 end
+
+return {}

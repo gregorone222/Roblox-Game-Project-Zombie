@@ -9,6 +9,7 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
 
 local player = Players.LocalPlayer
 
@@ -54,7 +55,8 @@ local state = {
 	gachaConfig = {
 		costs = { roll1 = 1500, roll10 = 15000 },
 		rarities = { legendary = 5, booster = 10, common = 85 },
-	}
+	},
+	blurEffect = nil -- Blur Effect Reference
 }
 
 -- ================== UI ELEMENT REFERENCES ==================
@@ -341,6 +343,10 @@ createUI = function()
 
 	ui.screen = create("ScreenGui", { Name = "GachaUI", Parent = player.PlayerGui, ResetOnSpawn = false, IgnoreGuiInset = true, Enabled = false })
 
+	-- Initialize Blur Effect
+	local camera = workspace.CurrentCamera
+	state.blurEffect = create("BlurEffect", {Parent = camera, Size = 0, Enabled = false})
+
 	-- Dark Background
 	create("Frame", { Parent=ui.screen, Size=UDim2.new(1,0,1,0), BackgroundColor=Color3.new(0,0,0), BackgroundTransparency=0.2 })
 
@@ -514,12 +520,25 @@ toggleGachaUI = function(visible)
 		populateWeaponSelector()
 		updateMainUI()
 
+		-- Enable Blur
+		if state.blurEffect then
+			state.blurEffect.Enabled = true
+			TweenService:Create(state.blurEffect, TweenInfo.new(0.5), {Size=20}):Play()
+		end
+
 		-- Animation: CRT Turn On
 		local frame = ui.screen.Monitor.Screen
 		frame.Size = UDim2.new(0.95, 0, 0.01, 0)
 		frame:TweenSize(UDim2.new(0.95, 0, 0.95, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Elastic, 0.5, true)
 	else
-		if ui.screen then ui.screen.Enabled = false end
+		if ui.screen then
+			ui.screen.Enabled = false
+			-- Disable Blur
+			if state.blurEffect then
+				TweenService:Create(state.blurEffect, TweenInfo.new(0.5), {Size=0}):Play()
+				task.delay(0.5, function() state.blurEffect.Enabled = false end)
+			end
+		end
 	end
 end
 

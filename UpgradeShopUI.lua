@@ -8,6 +8,7 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local StarterGui = game:GetService("StarterGui")
+local Lighting = game:GetService("Lighting")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -33,6 +34,14 @@ screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 screenGui.IgnoreGuiInset = true
 screenGui.Enabled = false -- Hidden by default
+
+-- Blur Effect
+local camera = workspace.CurrentCamera
+local blurEffect = Instance.new("BlurEffect")
+blurEffect.Name = "UpgradeBlur"
+blurEffect.Size = 0
+blurEffect.Enabled = false
+blurEffect.Parent = camera
 
 -- Constants for Colors
 local COLORS = {
@@ -657,6 +666,12 @@ local function closeUpgradeUI()
 	local overlayTween = TweenService:Create(overlay, TweenInfo.new(0.3), {BackgroundTransparency = 1})
 	overlayTween:Play()
 
+	-- Disable Blur
+	if blurEffect then
+		TweenService:Create(blurEffect, TweenInfo.new(0.3), {Size = 0}):Play()
+		task.delay(0.3, function() blurEffect.Enabled = false end)
+	end
+
 	task.wait(0.3)
 	screenGui.Enabled = false
 	isUIOpen = false
@@ -801,6 +816,12 @@ local function showUpgradeUI(tool, data)
 
 	screenGui.Enabled = true
 	setBackpackVisible(false)
+
+	-- Enable Blur
+	if blurEffect then
+		blurEffect.Enabled = true
+		TweenService:Create(blurEffect, TweenInfo.new(0.4), {Size = 15}):Play()
+	end
 
 	currentTool = tool
 	upgradeData = data
@@ -953,4 +974,6 @@ local function updateLayout()
 end
 
 screenGui:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateLayout)
-updateLayout() -- Initial call
+updateLayout() -- Default call
+
+return {}

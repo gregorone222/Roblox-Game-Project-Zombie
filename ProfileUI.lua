@@ -10,6 +10,7 @@ local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local Lighting = game:GetService("Lighting")
 
 --[[ LOCAL PLAYER ]]--
 local player = Players.LocalPlayer
@@ -49,9 +50,9 @@ local THEME = {
 --[[ REMOTES ]]--
 local function getRemote(name, type)
 	local folder = ReplicatedStorage:FindFirstChild(type == "Function" and "RemoteFunctions" or "RemoteEvents")
-	if not folder then 
+	if not folder then
 		-- Fallback search
-		return ReplicatedStorage:FindFirstChild(name, true) 
+		return ReplicatedStorage:FindFirstChild(name, true)
 	end
 	return folder:FindFirstChild(name)
 end
@@ -169,6 +170,10 @@ end
 
 local gui = create("ScreenGui", {Name = "ProfileUI", Parent = playerGui, ResetOnSpawn = false, IgnoreGuiInset = true, Enabled = false})
 
+-- Blur Effect
+local camera = workspace.CurrentCamera
+local blurEffect = create("BlurEffect", {Parent = camera, Size = 15, Enabled = false})
+
 local overlay = create("Frame", {
 	Name = "DarkOverlay", Parent = gui, Size = UDim2.new(1,0,1,0),
 	BackgroundColor3 = Color3.new(0,0,0), BackgroundTransparency = 1, ZIndex = 0
@@ -186,7 +191,7 @@ local folderTab = create("Frame", {
 })
 create("UICorner", {Parent = folderTab, CornerRadius = UDim.new(0, 6)})
 create("Frame", { -- Cover bottom rounded corners
-	Parent = folderTab, Size = UDim2.new(1,0,0.5,0), Position = UDim2.new(0,0,0.5,0), 
+	Parent = folderTab, Size = UDim2.new(1,0,0.5,0), Position = UDim2.new(0,0,0.5,0),
 	BackgroundColor3 = THEME.Colors.FolderLight, BorderSizePixel = 0
 })
 create("TextLabel", {
@@ -492,6 +497,8 @@ local function toggle()
 	if isOpen then
 		gui.Enabled = true
 		overlay.Visible = true
+		if blurEffect then blurEffect.Enabled = true end
+
 		TweenService:Create(overlay, TweenInfo.new(0.5), {BackgroundTransparency = 0.3}):Play()
 
 		updateViewport()
@@ -514,6 +521,7 @@ local function toggle()
 
 		task.wait(0.4)
 		overlay.Visible = false
+		if blurEffect then blurEffect.Enabled = false end
 		-- Do NOT disable GUI, otherwise the HUD button disappears
 	end
 end

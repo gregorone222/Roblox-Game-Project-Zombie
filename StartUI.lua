@@ -340,8 +340,11 @@ local function showUI()
 	-- Fade BG to Black
 	TweenService:Create(bgFrame, TweenInfo.new(1), {BackgroundTransparency = 0}):Play()
 
-	-- Blur In
-	TweenService:Create(blurEffect, TweenInfo.new(2), {Size = 20}):Play()
+	-- Blur In (Enhanced)
+	if blurEffect then
+		blurEffect.Enabled = true
+		TweenService:Create(blurEffect, TweenInfo.new(2), {Size = 25}):Play()
+	end
 
 	-- Slow Title Reveal
 	task.delay(0.5, function()
@@ -378,7 +381,11 @@ local function hideUI()
 	TweenService:Create(bgFrame, TweenInfo.new(1), {BackgroundTransparency = 1}):Play()
 	TweenService:Create(titleLabel, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
 	TweenService:Create(subTitle, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
-	TweenService:Create(blurEffect, TweenInfo.new(1), {Size = 0}):Play()
+
+	-- Blur Out
+	if blurEffect then
+		TweenService:Create(blurEffect, TweenInfo.new(1), {Size = 0}):Play()
+	end
 
 	-- Disable Effects after fade
 	task.delay(1, function()

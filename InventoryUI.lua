@@ -9,6 +9,7 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local GuiService = game:GetService("GuiService")
+local Lighting = game:GetService("Lighting")
 
 local player = Players.LocalPlayer
 
@@ -59,6 +60,7 @@ local selectedSkin = nil
 local selectedCategory = "All"
 local currentTab = "Weapons"
 local currentPreview = nil
+local blurEffect = nil -- For Blur Effect
 
 -- --- UI CREATION ---
 local screenGui = Instance.new("ScreenGui")
@@ -67,6 +69,14 @@ screenGui.IgnoreGuiInset = true
 screenGui.ResetOnSpawn = false
 screenGui.DisplayOrder = 10 -- Ensure it's on top of other lobby UIs
 screenGui.Parent = player:WaitForChild("PlayerGui")
+
+-- Initialize Blur Effect
+local camera = workspace.CurrentCamera
+blurEffect = Instance.new("BlurEffect")
+blurEffect.Name = "InventoryBlur"
+blurEffect.Size = 0
+blurEffect.Enabled = false
+blurEffect.Parent = camera
 
 -- Helper: Create Stitching Effect
 local function addStitching(parent)
@@ -400,6 +410,13 @@ openButton.MouseButton1Click:Connect(function()
 	mainPanel.Size = UDim2.new(0.5,0,0.5,0)
 	mainPanel:TweenSize(UDim2.new(0.85,0,0.85,0), "Out", "Back", 0.3, true)
 	openButton.Visible = false
+
+	-- Enable Blur
+	if blurEffect then
+		blurEffect.Enabled = true
+		TweenService:Create(blurEffect, TweenInfo.new(0.3), {Size = 15}):Play()
+	end
+
 	updateFilters()
 	updateWeaponList()
 end)
@@ -407,6 +424,12 @@ end)
 closeBtn.MouseButton1Click:Connect(function()
 	mainPanel.Visible = false
 	openButton.Visible = true
+
+	-- Disable Blur
+	if blurEffect then
+		TweenService:Create(blurEffect, TweenInfo.new(0.3), {Size = 0}):Play()
+		task.delay(0.3, function() blurEffect.Enabled = false end)
+	end
 end)
 
 tWeapons.MouseButton1Click:Connect(function() 

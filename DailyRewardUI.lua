@@ -9,6 +9,7 @@ local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local Lighting = game:GetService("Lighting")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -69,10 +70,11 @@ local mainContainer
 local screenGroup
 local isOpening = false
 local currentSelection = 1 -- Currently selected day in the grid
+local blurEffect = nil
 
 -- Remotes
 local getRewardInfo
-local claimRewardEvent 
+local claimRewardEvent
 local rewardConfig = require(ReplicatedStorage.ModuleScript:WaitForChild("DailyRewardConfig"))
 
 local function resolveRemotes()
@@ -100,6 +102,12 @@ local function closeUI()
 
 	-- Animation: Screen Off
 	TweenService:Create(screenGroup, TweenInfo.new(0.2), {Size = UDim2.new(0.92, 0, 0, 2), Position = UDim2.new(0.04, 0, 0.5, 0)}):Play()
+
+	if blurEffect then
+		TweenService:Create(blurEffect, TweenInfo.new(0.3), {Size = 0}):Play()
+		task.delay(0.3, function() blurEffect.Enabled = false end)
+	end
+
 	task.wait(0.2)
 	gui.Enabled = false
 	isOpening = false
@@ -111,6 +119,9 @@ local function createTabletUI()
 	gui = create("ScreenGui", {
 		Name = "DailyRewardUI", Parent = playerGui, ResetOnSpawn = false, Enabled = false, IgnoreGuiInset = true
 	})
+
+	local camera = workspace.CurrentCamera
+	blurEffect = create("BlurEffect", {Parent = camera, Size = 0, Enabled = false})
 
 	local backdrop = create("Frame", {
 		Name = "Backdrop", Parent = gui, Size = UDim2.new(1,0,1,0),
@@ -404,10 +415,10 @@ local function loadData()
 	isOpening = true
 
 	resolveRemotes()
-	if not getRewardInfo then 
+	if not getRewardInfo then
 		warn("DailyReward Remotes not found!")
-		isOpening = false 
-		return 
+		isOpening = false
+		return
 	end
 
 	local success, result = pcall(function() return getRewardInfo:InvokeServer() end)
@@ -415,6 +426,12 @@ local function loadData()
 	if success and result then
 		createTabletUI()
 		gui.Enabled = true
+
+		-- Enable Blur
+		if blurEffect then
+			blurEffect.Enabled = true
+			TweenService:Create(blurEffect, TweenInfo.new(0.5), {Size = 15}):Play()
+		end
 
 		populateGrid(result.CurrentDay, result.CanClaim)
 		updateInfoPanel(result.CurrentDay, result) -- Select current day by default

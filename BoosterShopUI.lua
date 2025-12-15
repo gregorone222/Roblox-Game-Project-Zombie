@@ -8,7 +8,7 @@ local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
-local Workspace = game:GetService("Workspace") -- Added Workspace service
+local Workspace = game:GetService("Workspace")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -100,7 +100,8 @@ local state = {
 	selectedId = nil,
 	config = {},
 	playerData = { coins = 0, inventory = {} },
-	elements = {}
+	elements = {},
+	blurEffect = nil -- Store reference
 }
 
 -- ==================================
@@ -115,9 +116,12 @@ local screenGui = create("ScreenGui", {
 	Enabled = false
 })
 
-local blurEffect = create("BlurEffect", {
+-- Initialize Blur Effect
+local camera = workspace.CurrentCamera
+state.blurEffect = create("BlurEffect", {
 	Size = 0,
-	Parent = Lighting
+	Parent = camera, -- Use Camera for local effect consistency
+	Enabled = false
 })
 
 -- 1. Main Bag Panel
@@ -406,7 +410,13 @@ local function toggle(data)
 		-- Close logic
 		local t = TweenService:Create(mainBag, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Position = UDim2.new(0.5, 0, 1.5, 0)})
 		t:Play()
-		TweenService:Create(blurEffect, TweenInfo.new(0.5), {Size=0}):Play()
+
+		-- Disable Blur
+		if state.blurEffect then
+			TweenService:Create(state.blurEffect, TweenInfo.new(0.5), {Size=0}):Play()
+			task.delay(0.5, function() state.blurEffect.Enabled = false end)
+		end
+
 		t.Completed:Wait()
 		screenGui.Enabled = false
 		state.isOpen = false
@@ -417,7 +427,11 @@ local function toggle(data)
 		state.playerData = data or {coins=0, inventory={}}
 		state.elements.wallet.Text = "COINS: " .. state.playerData.coins
 
-		TweenService:Create(blurEffect, TweenInfo.new(0.5), {Size=20}):Play()
+		-- Enable Blur
+		if state.blurEffect then
+			state.blurEffect.Enabled = true
+			TweenService:Create(state.blurEffect, TweenInfo.new(0.5), {Size=20}):Play()
+		end
 
 		mainBag.Position = UDim2.new(0.5, 0, 1.5, 0)
 		TweenService:Create(mainBag, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.new(0.5, 0, 0.5, 0)}):Play()
@@ -458,23 +472,6 @@ local function setupPrompt()
 		local prompt = shopPart:FindFirstChildOfClass("ProximityPrompt")
 		if prompt then
 			prompt.Triggered:Connect(function()
-				-- We need dummy data if triggered locally for testing, or rely on server event
-				-- Since ToggleBoosterShopEvent is usually fired from server on prompt trigger (old logic), 
-				-- we might need to invoke server to get data if we handle prompt locally.
-				-- For now, let's assume we invoke a 'GetData' function or just toggle UI.
-				-- A better pattern: Triggering prompt fires server -> Server fires Client Event with Data.
-				-- BUT, if ProximityUIHandler was doing that, we replaced it.
-				-- Let's fire a remote to request open.
-
-				-- If no specific remote exists for "Open Shop Request", we can just toggle and fetch config.
-				-- However, we need player coin data.
-				-- Let's use GetBoosterConfig which might return coins too? No, it returns config.
-				-- We'll rely on ToggleBoosterShopEvent being fired by server if the server script handles the prompt.
-				-- IF server script logic for prompt was inside the deleted ProximityUIHandler, we are in trouble.
-				-- BUT, typically Server scripts handle prompts. If the handler was Client-Side only (as indicated by the error logs), 
-				-- then we must handle prompt locally and fetch data.
-
-				-- Let's assume we fetch data via a remote function or simple toggle for now.
 				toggle({coins = 9999, inventory = {}}) -- Placeholder data call, ideally invoke server function for real data
 			end)
 		end

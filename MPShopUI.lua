@@ -8,6 +8,7 @@ local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
+local Lighting = game:GetService("Lighting")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -100,8 +101,9 @@ local mpShopUI = {}
 
 -- UI References
 local screenGui = nil
-local listContainer = nil
-local detailsPanel = nil
+local mainFrame = nil
+local gridContainer = nil
+local detailContainer = nil
 local searchInput = nil
 local mpValueLabel = nil
 local previewViewport = nil
@@ -114,7 +116,8 @@ local state = {
 	selectedItem = nil,
 	activePreview = nil,
 	allItemsList = {},
-	isUIOpen = false
+	isUIOpen = false,
+	blurEffect = nil -- Blur Effect Reference
 }
 
 -- ============================================================================
@@ -420,6 +423,9 @@ function mpShopUI:Create()
 		IgnoreGuiInset = false,
 		Enabled = false
 	})
+
+	local camera = workspace.CurrentCamera
+	state.blurEffect = create("BlurEffect", {Parent = camera, Size = 15, Enabled = false})
 
 	-- Background Dim
 	local dim = create("Frame", {
@@ -745,6 +751,9 @@ function mpShopUI:Show()
 		screenGui.Enabled = true
 		state.isUIOpen = true
 
+		-- Enable Blur
+		if state.blurEffect then state.blurEffect.Enabled = true end
+
 		self:LoadData()
 		self:RefreshList()
 		self:UpdateMP()
@@ -769,6 +778,9 @@ function mpShopUI:Hide()
 	if screenGui then
 		screenGui.Enabled = false
 		state.isUIOpen = false
+
+		-- Disable Blur
+		if state.blurEffect then state.blurEffect.Enabled = false end
 	end
 	if state.activePreview then
 		ModelPreviewModule.destroy(state.activePreview)
