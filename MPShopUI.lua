@@ -340,13 +340,16 @@ function mpShopUI:UpdateDetails()
 	if not state.selectedItem then return end
 	local item = state.selectedItem
 
-	-- Update Info
-	if detailsPanel:FindFirstChild("Title") then
-		detailsPanel.Title.Text = item.Name:upper()
-	end
-	if detailsPanel:FindFirstChild("Description") then
-		detailsPanel.Description.Text = item.Desc
-	end
+	-- Safely get elements using FindFirstChild to prevent "is not a valid member" errors
+	-- if the UI hierarchy is not fully ready or modified
+	if not detailsPanel then return end
+
+	local title = detailsPanel:FindFirstChild("Title")
+	if title then title.Text = item.Name:upper() end
+
+	local description = detailsPanel:FindFirstChild("Description")
+	if description then description.Text = item.Desc end
+
 	local buySection = detailsPanel:FindFirstChild("BuySection")
 	if buySection then
 		local priceFrame = buySection:FindFirstChild("PriceFrame")
@@ -375,34 +378,45 @@ function mpShopUI:UpdateDetails()
 	end
 
 	if item.Type == "Skins" and item.Data then
-		previewViewport.Visible = true
-		previewIconLabel.Visible = false
-		local weaponDef = WeaponModule.Weapons[item.Weapon]
-		state.activePreview = ModelPreviewModule.create(previewViewport, weaponDef, item.Data)
-		ModelPreviewModule.startRotation(state.activePreview, 2.0)
+		if previewViewport then previewViewport.Visible = true end
+		if previewIconLabel then previewIconLabel.Visible = false end
+
+		if previewViewport then
+			local weaponDef = WeaponModule.Weapons[item.Weapon]
+			state.activePreview = ModelPreviewModule.create(previewViewport, weaponDef, item.Data)
+			ModelPreviewModule.startRotation(state.activePreview, 2.0)
+		end
 	else
-		previewViewport.Visible = false
-		previewIconLabel.Visible = true
-		previewIconLabel.Text = item.Unicode
-		previewIconLabel.TextColor3 = getRarityColor(item.Rarity)
+		if previewViewport then previewViewport.Visible = false end
+		if previewIconLabel then
+			previewIconLabel.Visible = true
+			previewIconLabel.Text = item.Unicode
+			previewIconLabel.TextColor3 = getRarityColor(item.Rarity)
+		end
 	end
 
 	-- Button
-	local btn = detailsPanel.BuySection.BuyButton
-	local btnText = btn.Label
-
-	if item.Owned then
-		btnText.Text = "ALREADY ACQUIRED"
-		btn.BackgroundColor3 = COLORS.BG_PANEL
-		btn.AutoButtonColor = false
-	elseif state.currentMP < item.Cost then
-		btnText.Text = "INSUFFICIENT FUNDS"
-		btn.BackgroundColor3 = COLORS.ACCENT_FAIL
-		btn.AutoButtonColor = false
-	else
-		btnText.Text = "PURCHASE"
-		btn.BackgroundColor3 = COLORS.ACCENT_GOLD
-		btn.AutoButtonColor = true
+	if buySection then
+		local btn = buySection:FindFirstChild("BuyButton")
+		if btn then
+			-- Accessing children of button safely
+			local btnText = btn:FindFirstChild("Label")
+			if btnText then
+				if item.Owned then
+					btnText.Text = "ALREADY ACQUIRED"
+					btn.BackgroundColor3 = COLORS.BG_PANEL
+					btn.AutoButtonColor = false
+				elseif state.currentMP < item.Cost then
+					btnText.Text = "INSUFFICIENT FUNDS"
+					btn.BackgroundColor3 = COLORS.ACCENT_FAIL
+					btn.AutoButtonColor = false
+				else
+					btnText.Text = "PURCHASE"
+					btn.BackgroundColor3 = COLORS.ACCENT_GOLD
+					btn.AutoButtonColor = true
+				end
+			end
+		end
 	end
 end
 
@@ -424,6 +438,7 @@ function mpShopUI:Create()
 		Enabled = false
 	})
 
+	-- Initialize Blur
 	local camera = workspace.CurrentCamera
 	state.blurEffect = create("BlurEffect", {Parent = camera, Size = 15, Enabled = false})
 
@@ -702,8 +717,16 @@ function mpShopUI:PurchaseItem()
 	if state.selectedItem.Owned then return end
 	if state.currentMP < state.selectedItem.Cost then return end
 
-	local btn = detailsPanel.BuySection.BuyButton
-	local lbl = btn.Label
+	-- Safer access
+	if not detailsPanel then return end
+	local buySection = detailsPanel:FindFirstChild("BuySection")
+	if not buySection then return end
+	local btn = buySection:FindFirstChild("BuyButton")
+	if not btn then return end
+
+	local lbl = btn:FindFirstChild("Label")
+	if not lbl then return end
+
 	lbl.Text = "PROCESSING..."
 
 	local result

@@ -342,13 +342,15 @@ function apShopUI:UpdateDetails()
 	if not state.selectedItem then return end
 	local item = state.selectedItem
 
-	-- Update Info
-	if detailsPanel:FindFirstChild("Title") then
-		detailsPanel.Title.Text = item.Name:upper()
-	end
-	if detailsPanel:FindFirstChild("Description") then
-		detailsPanel.Description.Text = item.Desc
-	end
+	-- Safe element access using FindFirstChild
+	if not detailsPanel then return end
+
+	local title = detailsPanel:FindFirstChild("Title")
+	if title then title.Text = item.Name:upper() end
+
+	local description = detailsPanel:FindFirstChild("Description")
+	if description then description.Text = item.Desc end
+
 	local buySection = detailsPanel:FindFirstChild("BuySection")
 	if buySection then
 		local priceFrame = buySection:FindFirstChild("PriceFrame")
@@ -377,34 +379,45 @@ function apShopUI:UpdateDetails()
 	end
 
 	if item.Type == "Skins" and item.Data then
-		previewViewport.Visible = true
-		previewIconLabel.Visible = false
-		local weaponDef = WeaponModule.Weapons[item.Weapon]
-		state.activePreview = ModelPreviewModule.create(previewViewport, weaponDef, item.Data)
-		ModelPreviewModule.startRotation(state.activePreview, 2.0)
+		if previewViewport then previewViewport.Visible = true end
+		if previewIconLabel then previewIconLabel.Visible = false end
+
+		if previewViewport then
+			local weaponDef = WeaponModule.Weapons[item.Weapon]
+			state.activePreview = ModelPreviewModule.create(previewViewport, weaponDef, item.Data)
+			ModelPreviewModule.startRotation(state.activePreview, 2.0)
+		end
 	else
-		previewViewport.Visible = false
-		previewIconLabel.Visible = true
-		previewIconLabel.Text = item.Unicode
-		previewIconLabel.TextColor3 = getRarityColor(item.Rarity)
+		if previewViewport then previewViewport.Visible = false end
+		if previewIconLabel then
+			previewIconLabel.Visible = true
+			previewIconLabel.Text = item.Unicode
+			previewIconLabel.TextColor3 = getRarityColor(item.Rarity)
+		end
 	end
 
 	-- Button
-	local btn = detailsPanel.BuySection.BuyButton
-	local btnText = btn.Label
-
-	if item.Owned then
-		btnText.Text = "ALREADY AWARDED"
-		btn.BackgroundColor3 = COLORS.BG_PANEL
-		btn.AutoButtonColor = false
-	elseif state.currentAP < item.Cost then
-		btnText.Text = "INSUFFICIENT MERIT"
-		btn.BackgroundColor3 = COLORS.ACCENT_FAIL
-		btn.AutoButtonColor = false
-	else
-		btnText.Text = "EXCHANGE POINTS"
-		btn.BackgroundColor3 = COLORS.ACCENT_GOLD
-		btn.AutoButtonColor = true
+	if buySection then
+		local btn = buySection:FindFirstChild("BuyButton")
+		if btn then
+			-- Assuming Label is a child of the Button based on creation logic
+			local btnText = btn:FindFirstChild("Label")
+			if btnText then
+				if item.Owned then
+					btnText.Text = "ALREADY AWARDED"
+					btn.BackgroundColor3 = COLORS.BG_PANEL
+					btn.AutoButtonColor = false
+				elseif state.currentAP < item.Cost then
+					btnText.Text = "INSUFFICIENT MERIT"
+					btn.BackgroundColor3 = COLORS.ACCENT_FAIL
+					btn.AutoButtonColor = false
+				else
+					btnText.Text = "EXCHANGE POINTS"
+					btn.BackgroundColor3 = COLORS.ACCENT_GOLD
+					btn.AutoButtonColor = true
+				end
+			end
+		end
 	end
 end
 
@@ -705,8 +718,16 @@ function apShopUI:PurchaseItem()
 	if state.selectedItem.Owned then return end
 	if state.currentAP < state.selectedItem.Cost then return end
 
-	local btn = detailsPanel.BuySection.BuyButton
-	local lbl = btn.Label
+	-- Safe access
+	if not detailsPanel then return end
+	local buySection = detailsPanel:FindFirstChild("BuySection")
+	if not buySection then return end
+	local btn = buySection:FindFirstChild("BuyButton")
+	if not btn then return end
+
+	local lbl = btn:FindFirstChild("Label")
+	if not lbl then return end
+
 	lbl.Text = "PROCESSING..."
 
 	local result

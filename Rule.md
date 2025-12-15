@@ -13,6 +13,7 @@ Dokumen ini berisi aturan baku dan panduan yang harus dipatuhi selama pengembang
     *   `CanvasSize = UDim2.new(0, 0, 0, 0)`
     *   `AutomaticCanvasSize = Enum.AutomaticSize.Y` (atau X/XY sesuai kebutuhan, tapi hindari manual pixel size).
 *   **ScreenInsets:** Jika UI dirancang untuk menggunakan seluruh lebar layar (seperti intro sinematik), atur `ScreenGui.ScreenInsets = Enum.ScreenInsets.None` untuk menutupi *Safe Area* (notch/poni layar).
+*   **Blur UI:** Semua UI berbasis Menu (Shop, Inventory, Profile, dll) **WAJIB** menerapkan efek `BlurEffect` pada `CurrentCamera` saat dibuka untuk meningkatkan fokus visual dan imersi.
 
 ## 2. Environment & Building
 *   **Hierarchy:** Jaga kebersihan `Workspace`. Kelompokkan objek peta dalam Folder atau Model (misal `Map_Village`, `LobbyEnvironment`).

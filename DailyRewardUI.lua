@@ -72,6 +72,10 @@ local isOpening = false
 local currentSelection = 1 -- Currently selected day in the grid
 local blurEffect = nil
 
+-- Initialize Blur Effect Once
+local camera = workspace.CurrentCamera
+blurEffect = create("BlurEffect", {Parent = camera, Size = 0, Enabled = false})
+
 -- Remotes
 local getRewardInfo
 local claimRewardEvent
@@ -119,9 +123,6 @@ local function createTabletUI()
 	gui = create("ScreenGui", {
 		Name = "DailyRewardUI", Parent = playerGui, ResetOnSpawn = false, Enabled = false, IgnoreGuiInset = true
 	})
-
-	local camera = workspace.CurrentCamera
-	blurEffect = create("BlurEffect", {Parent = camera, Size = 0, Enabled = false})
 
 	local backdrop = create("Frame", {
 		Name = "Backdrop", Parent = gui, Size = UDim2.new(1,0,1,0),
