@@ -16,13 +16,17 @@ local player = Players.LocalPlayer
 local ModuleScriptReplicated = ReplicatedStorage:WaitForChild("ModuleScript")
 local WeaponModule = require(ModuleScriptReplicated:WaitForChild("WeaponModule"))
 local ModelPreviewModule = require(ModuleScriptReplicated:WaitForChild("ModelPreviewModule"))
-local inventoryRemote = ReplicatedStorage:WaitForChild("RemoteFunctions"):WaitForChild("GetInventoryData")
-local skinEvent = ReplicatedStorage.RemoteEvents:WaitForChild("SkinManagementEvent")
 
--- Booster-related events
-local BoosterUpdateEvent = ReplicatedStorage.RemoteEvents:WaitForChild("BoosterUpdateEvent")
-local ActivateBoosterEvent = ReplicatedStorage.RemoteEvents:WaitForChild("ActivateBoosterEvent")
-local GetBoosterConfig = ReplicatedStorage.RemoteFunctions:WaitForChild("GetBoosterConfig")
+-- Safe Remote Retrieval
+local RemoteFunctions = ReplicatedStorage:WaitForChild("RemoteFunctions", 10)
+local inventoryRemote
+if RemoteFunctions then
+	inventoryRemote = RemoteFunctions:WaitForChild("GetInventoryData", 5)
+else
+	warn("InventoryUI: RemoteFunctions folder not found!")
+end
+
+local skinEvent = ReplicatedStorage.RemoteEvents:WaitForChild("SkinManagementEvent", 5)
 
 -- --- THEME CONFIGURATION ---
 local THEME = {
@@ -55,29 +59,13 @@ local selectedSkin = nil
 local selectedCategory = "All"
 local currentTab = "Weapons"
 local currentPreview = nil
-local boosterConfig = nil
-local boosterData = nil
-
--- --- RESPONSIVE VARIABLES ---
-local isMobile = UserInputService.TouchEnabled
-local screenSize = Vector2.new(1920, 1080)
-
-local function getScreenSize()
-	local camera = workspace.CurrentCamera
-	if camera then return camera.ViewportSize end
-	return player:WaitForChild("PlayerGui").AbsoluteSize
-end
-
-local function updateDeviceType()
-	screenSize = getScreenSize()
-	isMobile = (screenSize.X < 800) or UserInputService.TouchEnabled
-end
 
 -- --- UI CREATION ---
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "InventoryUI"
 screenGui.IgnoreGuiInset = true
 screenGui.ResetOnSpawn = false
+screenGui.DisplayOrder = 10 -- Ensure it's on top of other lobby UIs
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
 -- Helper: Create Stitching Effect
@@ -88,8 +76,6 @@ local function addStitching(parent)
 	stitch.Transparency = 0.5
 	stitch.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 	stitch.Parent = parent
-
-	-- Dashed effect is hard without textures, assuming solid stitch line for now
 	return stitch
 end
 
@@ -126,6 +112,7 @@ openButton.AnchorPoint = Vector2.new(0, 0.5)
 openButton.BackgroundColor3 = THEME.COLORS.CANVAS_MAIN
 openButton.Text = ""
 openButton.AutoButtonColor = false
+openButton.ZIndex = 100 -- High ZIndex to ensure clickable
 openButton.Parent = screenGui
 addCorner(openButton, 20)
 addStitching(openButton)
@@ -146,6 +133,7 @@ mainPanel.Position = UDim2.new(0.5, 0, 0.5, 0)
 mainPanel.AnchorPoint = Vector2.new(0.5, 0.5)
 mainPanel.BackgroundColor3 = THEME.COLORS.CANVAS_MAIN
 mainPanel.Visible = false
+mainPanel.ZIndex = 101
 mainPanel.Parent = screenGui
 addCorner(mainPanel, 16)
 addStitching(mainPanel)
@@ -157,25 +145,19 @@ zipper.Size = UDim2.new(1, 0, 0, 10)
 zipper.Position = UDim2.new(0, 0, 0.12, -5)
 zipper.BackgroundColor3 = Color3.new(0.1,0.1,0.1)
 zipper.BorderSizePixel = 0
-zipper.ZIndex = 5
+zipper.ZIndex = 105
 zipper.Parent = mainPanel
--- Zipper Teeth
-local teeth = Instance.new("ImageLabel")
-teeth.Size = UDim2.new(1,0,1,0)
-teeth.BackgroundTransparency = 1
-teeth.Image = "rbxassetid://130424513" -- Placeholder pattern
-teeth.ImageColor3 = THEME.COLORS.ACCENT_ZIP
-teeth.ScaleType = Enum.ScaleType.Tile
-teeth.TileSize = UDim2.new(0, 10, 0, 10)
-teeth.Parent = zipper
 
 -- Close Button (Zipper Pull)
 local closeBtn = Instance.new("TextButton")
 closeBtn.Size = UDim2.new(0, 30, 0, 60)
 closeBtn.Position = UDim2.new(0.95, 0, 0, -20)
 closeBtn.BackgroundColor3 = THEME.COLORS.ACCENT_ZIP
-closeBtn.Text = ""
-closeBtn.ZIndex = 6
+closeBtn.Text = "X"
+closeBtn.TextColor3 = Color3.new(0,0,0)
+closeBtn.TextSize = 18
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.ZIndex = 110
 closeBtn.Parent = zipper
 addCorner(closeBtn, 15)
 
@@ -184,6 +166,7 @@ local content = Instance.new("Frame")
 content.Size = UDim2.new(1, -40, 1, -100)
 content.Position = UDim2.new(0, 20, 0, 80)
 content.BackgroundTransparency = 1
+content.ZIndex = 102
 content.Parent = mainPanel
 
 -- 1. Sidebar (Straps)
@@ -212,7 +195,7 @@ local function createTab(name)
 end
 
 local tWeapons = createTab("Weapons")
-local tBoosters = createTab("Boosters")
+-- local tBoosters = createTab("Boosters") -- Disabled for now until logic verified
 
 -- 2. Grid Area (Pockets)
 local gridArea = Instance.new("Frame")
@@ -299,7 +282,97 @@ addCorner(equipBtn, 8)
 
 -- --- LOGIC ---
 
-local CATEGORIES = {"All", "Rifle", "SMG", "Shotgun", "Sniper", "Pistol"}
+local CATEGORIES = {"All", "Rifle", "SMG", "Shotgun", "Sniper", "Pistol", "LMG"}
+
+function updateDetails(id)
+	if not WeaponModule or not WeaponModule.Weapons then return end
+	local data = WeaponModule.Weapons[id]
+	if not data then return end
+	iName.Text = data.DisplayName or id
+
+	if currentPreview then ModelPreviewModule.destroy(currentPreview) end
+
+	-- Default skin preview
+	local sData = nil
+	if data.Skins then
+		-- Cari skin default atau skin yang sedang dipakai (logika sederhana ambil first)
+		for k, v in pairs(data.Skins) do
+			if k == "Default Skin" then sData = v break end
+		end
+		if not sData then -- Fallback
+			local k, v = next(data.Skins)
+			sData = v
+		end
+	end
+
+	if sData then
+		currentPreview = ModelPreviewModule.create(vp, data, sData)
+		ModelPreviewModule.startRotation(currentPreview, 1)
+	end
+end
+
+function updateWeaponList()
+	-- Clean grid
+	for _, c in ipairs(itemGrid:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
+
+	if not WeaponModule or not WeaponModule.Weapons then
+		warn("InventoryUI: WeaponModule not loaded correctly.")
+		return
+	end
+
+	local list = {}
+	for id, data in pairs(WeaponModule.Weapons) do
+		local match = false
+		if selectedCategory == "All" then
+			match = true
+		elseif data.Category then
+			-- Flexible matching (e.g. Assault Rifle contains Rifle)
+			if string.find(string.lower(data.Category), string.lower(selectedCategory)) then
+				match = true
+			end
+		end
+
+		if match then
+			table.insert(list, {id=id, name=data.DisplayName or id})
+		end
+	end
+	table.sort(list, function(a,b) return a.name < b.name end)
+
+	for _, w in ipairs(list) do
+		local btn = Instance.new("TextButton")
+		btn.BackgroundColor3 = (w.id == selectedWeapon) and THEME.COLORS.HIGHLIGHT or THEME.COLORS.POCKET_BG
+		btn.Text = ""
+		btn.Parent = itemGrid
+		addCorner(btn, 6)
+		addStitching(btn)
+
+		local lb = Instance.new("TextLabel")
+		lb.Size = UDim2.new(1,0,1,0)
+		lb.BackgroundTransparency = 1
+		lb.Text = string.sub(w.name, 1, 2)
+		lb.TextSize = 30
+		lb.Font = THEME.FONTS.HEADER
+		lb.TextColor3 = (w.id == selectedWeapon) and THEME.COLORS.TEXT_DARK or THEME.COLORS.TEXT_MAIN
+		lb.Parent = btn
+
+		-- Full name label small at bottom
+		local nameLb = Instance.new("TextLabel")
+		nameLb.Size = UDim2.new(1,0,0,20)
+		nameLb.Position = UDim2.new(0,0,1,-20)
+		nameLb.BackgroundTransparency = 1
+		nameLb.Text = w.name
+		nameLb.TextSize = 10
+		nameLb.Font = THEME.FONTS.BODY
+		nameLb.TextColor3 = (w.id == selectedWeapon) and THEME.COLORS.TEXT_DARK or THEME.COLORS.TEXT_MAIN
+		nameLb.Parent = btn
+
+		btn.MouseButton1Click:Connect(function()
+			selectedWeapon = w.id
+			updateWeaponList()
+			updateDetails(w.id)
+		end)
+	end
+end
 
 local function updateFilters()
 	for _, c in ipairs(filterRow:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
@@ -309,6 +382,7 @@ local function updateFilters()
 		b.Size = UDim2.new(0, 80, 1, 0)
 		b.BackgroundColor3 = (selectedCategory == cat) and THEME.COLORS.HIGHLIGHT or THEME.COLORS.STRAP
 		b.TextColor3 = (selectedCategory == cat) and THEME.COLORS.TEXT_DARK or THEME.COLORS.TEXT_MAIN
+		b.Font = THEME.FONTS.BODY
 		b.Parent = filterRow
 		addCorner(b, 4)
 		b.MouseButton1Click:Connect(function()
@@ -319,59 +393,9 @@ local function updateFilters()
 	end
 end
 
-function updateWeaponList()
-	for _, c in ipairs(itemGrid:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
-
-	local list = {}
-	for id, data in pairs(WeaponModule.Weapons) do
-		if selectedCategory == "All" or data.Category == selectedCategory then
-			table.insert(list, {id=id, name=data.DisplayName or id})
-		end
-	end
-	table.sort(list, function(a,b) return a.name < b.name end)
-
-	for _, w in ipairs(list) do
-		local btn = Instance.new("TextButton")
-		btn.BackgroundColor3 = (w.id == selectedWeapon) and THEME.COLORS.HIGHLIGHT or THEME.COLORS.POCKET_BG
-		btn.Text = "" -- Icon here ideally
-		btn.Parent = itemGrid
-		addCorner(btn, 6)
-		addStitching(btn)
-
-		local lb = Instance.new("TextLabel")
-		lb.Size = UDim2.new(1,0,1,0)
-		lb.BackgroundTransparency = 1
-		lb.Text = string.sub(w.name, 1, 2)
-		lb.TextSize = 30
-		lb.TextColor3 = (w.id == selectedWeapon) and THEME.COLORS.TEXT_DARK or THEME.COLORS.TEXT_MAIN
-		lb.Parent = btn
-
-		btn.MouseButton1Click:Connect(function()
-			selectedWeapon = w.id
-			updateWeaponList()
-			updateDetails(w.id)
-		end)
-	end
-end
-
-function updateDetails(id)
-	local data = WeaponModule.Weapons[id]
-	if not data then return end
-	iName.Text = data.DisplayName or id
-
-	if currentPreview then ModelPreviewModule.destroy(currentPreview) end
-	-- Default skin preview
-	local sData = nil
-	if data.Skins then
-		local k,v = next(data.Skins)
-		sData = v
-	end
-	currentPreview = ModelPreviewModule.create(vp, data, sData)
-	ModelPreviewModule.startRotation(currentPreview, 1)
-end
-
 -- --- MAIN EVENTS ---
 openButton.MouseButton1Click:Connect(function()
+	print("InventoryUI: Open Button Clicked")
 	mainPanel.Visible = true
 	mainPanel.Size = UDim2.new(0.5,0,0.5,0)
 	mainPanel:TweenSize(UDim2.new(0.85,0,0.85,0), "Out", "Back", 0.3, true)
@@ -392,15 +416,16 @@ tWeapons.MouseButton1Click:Connect(function()
 	updateWeaponList() 
 end)
 
-tBoosters.MouseButton1Click:Connect(function() 
-	currentTab="Boosters" 
-	-- Booster logic would go here, simplified for this overhaul scope
-end)
-
--- Initial Load
+-- Initial Data Load
 task.spawn(function()
-	local s, d = pcall(function() return inventoryRemote:InvokeServer() end)
-	if s then inventoryData = d end
+	if inventoryRemote then
+		local s, d = pcall(function() return inventoryRemote:InvokeServer() end)
+		if s then
+			inventoryData = d
+		else
+			warn("InventoryUI: Failed to fetch data from server.")
+		end
+	end
 end)
 
 return {}

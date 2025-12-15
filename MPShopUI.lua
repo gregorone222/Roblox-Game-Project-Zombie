@@ -1,12 +1,12 @@
 -- MPShopUI.lua (LocalScript)
 -- Path: StarterGui/MPShopUI.lua
 -- Script Place: Lobby
--- Theme: Tactical Dossier / Blueprint (Night Vision Green, Grid Lines, Secret Documents)
+-- Theme: Military Record / Medal Case (Tactical, Dark Metal, Stencils) - Matched to APShopUI
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 
 local player = Players.LocalPlayer
@@ -26,21 +26,27 @@ local SpecialItemsConfig = {
 		Name = "XP Booster (30m)",
 		Description = "Authorized stim-pack to enhance learning capability for 30 minutes.",
 		MPCost = 2000,
-		Icon = "rbxassetid://11419722678"
+		Rarity = "Rare",
+		Type = "Utility",
+		Unicode = "💉"
 	},
 	COIN_BOOSTER_1GAME = {
 		ID = "COIN_BOOSTER_1GAME",
 		Name = "Coin Booster (1 Game)",
 		Description = "Priority requisition status for the next operation.",
 		MPCost = 3000,
-		Icon = "rbxassetid://11419708237"
+		Rarity = "Rare",
+		Type = "Utility",
+		Unicode = "💰"
 	},
 	DAILY_MISSION_REROLL = {
 		ID = "DAILY_MISSION_REROLL",
 		Name = "Daily Mission Reroll",
 		Description = "Request new operational directives from command.",
 		MPCost = 500,
-		Icon = "rbxassetid://11419715729"
+		Rarity = "Common",
+		Type = "Utility",
+		Unicode = "🎲"
 	}
 }
 
@@ -51,62 +57,76 @@ local getMPFunc = ReplicatedStorage:WaitForChild("GetInitialMissionPoints")
 local mpChangedEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("MissionPointsChanged")
 
 -- ============================================================================
--- CONSTANTS & THEME
+-- CONSTANTS & THEME (MATCHING AP SHOP UI)
 -- ============================================================================
 
 local COLORS = {
-	BG_ROOT = Color3.fromRGB(10, 20, 15),       -- Dark NVG Background
-	BG_PANEL = Color3.fromRGB(15, 30, 20),      -- Slightly lighter
+	BG_ROOT = Color3.fromRGB(20, 20, 20),      -- Deep Dark Grey
+	BG_PANEL = Color3.fromRGB(35, 35, 40),     -- Steel Blue-Grey
+	BG_HEADER = Color3.fromRGB(45, 45, 50),    -- Lighter Steel
 
-	TEXT_MAIN = Color3.fromRGB(50, 255, 50),    -- Phosphor Green
-	TEXT_DIM = Color3.fromRGB(20, 100, 20),     -- Dim Green
+	TEXT_MAIN = Color3.fromRGB(240, 240, 230), -- Off-White
+	TEXT_DIM = Color3.fromRGB(160, 160, 165),  -- Grey Text
+	TEXT_STENCIL = Color3.fromRGB(200, 180, 100), -- Faded Gold (Medal text)
 
-	BORDER = Color3.fromRGB(50, 255, 50),       -- Bright Green Lines
-	GRID = Color3.fromRGB(20, 60, 20),          -- Faint Grid
+	ACCENT_GOLD = Color3.fromRGB(218, 165, 32), -- Gold Medal
+	ACCENT_SILVER = Color3.fromRGB(192, 192, 192), -- Silver
+	ACCENT_BRONZE = Color3.fromRGB(205, 127, 50), -- Bronze
 
-	ACCENT_ALERT = Color3.fromRGB(255, 50, 50), -- Red Alert
-	ACCENT_SCAN = Color3.fromRGB(100, 255, 100) -- Scanline
+	ACCENT_SUCCESS = Color3.fromRGB(100, 200, 100),
+	ACCENT_FAIL = Color3.fromRGB(200, 80, 80),
+
+	RARITY_COMMON = Color3.fromRGB(180, 180, 180),
+	RARITY_RARE = Color3.fromRGB(100, 150, 255),
+	RARITY_EPIC = Color3.fromRGB(200, 80, 255),
+	RARITY_LEGENDARY = Color3.fromRGB(255, 215, 0)
 }
 
 local FONTS = {
-	Main = Enum.Font.Code,     -- Monospace
-	Header = Enum.Font.RobotoMono -- Clean Monospace
+	Header = Enum.Font.SpecialElite, -- Stencil style
+	Body = Enum.Font.GothamMedium,
+	Mono = Enum.Font.Code
+}
+
+local UNICODE_ICONS = {
+	Close = "X",
+	MP = "🎯", -- Target for Mission Points
+	Shop = "🛒",
+	Lock = "🔒",
+	Gun = "🔫"
 }
 
 local mpShopUI = {}
 
 -- UI References
 local screenGui = nil
-local mainFrame = nil
-local gridContainer = nil
-local detailContainer = nil
-local activePreview = nil
+local listContainer = nil
+local detailsPanel = nil
+local searchInput = nil
+local mpValueLabel = nil
+local previewViewport = nil
+local previewIconLabel = nil
 
 -- State
-local currentTab = "Skins" 
-local currentMP = 0
-local selectedItem = nil
-local holdConnection = nil
+local state = {
+	currentTab = "All",
+	currentMP = 0,
+	selectedItem = nil,
+	activePreview = nil,
+	allItemsList = {},
+	isUIOpen = false
+}
 
 -- ============================================================================
--- UTILITY FUNCTIONS
+-- HELPER FUNCTIONS
 -- ============================================================================
 
-local function create(className, props, children)
-	local inst = Instance.new(className)
-	for k, v in pairs(props) do
-		if k == "BackgroundColor" then
-			inst.BackgroundColor3 = v
-		else
-			inst[k] = v
-		end
+local function create(className, properties)
+	local instance = Instance.new(className)
+	for k, v in pairs(properties) do
+		instance[k] = v
 	end
-	if children then
-		for _, child in ipairs(children) do
-			child.Parent = inst
-		end
-	end
-	return inst
+	return instance
 end
 
 local function addCorner(parent, radius)
@@ -118,558 +138,666 @@ end
 
 local function addStroke(parent, color, thickness)
 	local stroke = Instance.new("UIStroke")
-	stroke.Color = color or COLORS.BORDER
+	stroke.Color = color or COLORS.TEXT_DIM
 	stroke.Thickness = thickness or 1
 	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 	stroke.Parent = parent
 	return stroke
 end
 
-local function addScanline(parent)
-	local scan = create("ImageLabel", {
-		Size = UDim2.new(1, 0, 1, 0),
-		Image = "rbxassetid://7357494639", -- Scanline texture
-		ImageTransparency = 0.9,
-		ImageColor3 = COLORS.TEXT_MAIN,
-		BackgroundTransparency = 1,
-		ScaleType = Enum.ScaleType.Tile,
-		TileSize = UDim2.new(0, 0, 0, 4),
-		Parent = parent,
-		ZIndex = 10
-	})
-	return scan
-end
-
 local function formatNumber(n)
-	return tostring(n):reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^,", "")
+	return tostring(math.floor(n or 0)):reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^,", "")
+end
+
+local function getRarityColor(rarity)
+	if rarity == "Legendary" then return COLORS.RARITY_LEGENDARY end
+	if rarity == "Epic" then return COLORS.RARITY_EPIC end
+	if rarity == "Rare" then return COLORS.RARITY_RARE end
+	return COLORS.RARITY_COMMON
 end
 
 -- ============================================================================
--- UI LOGIC
+-- DATA HANDLING
 -- ============================================================================
 
-function mpShopUI:UpdateMP()
-	task.spawn(function()
-		local s, points = pcall(function() return getMPFunc:InvokeServer() end)
-		if s then
-			currentMP = points
-			if mainFrame then
-				local header = mainFrame:FindFirstChild("Header")
-				if header and header:FindFirstChild("PointsDisplay") then
-					header.PointsDisplay.Text = "MP_BALANCE: " .. formatNumber(currentMP)
-				end
-				if selectedItem then
-					self:UpdatePurchaseButton(selectedItem)
+function mpShopUI:LoadData()
+	state.allItemsList = {}
+
+	-- Load Skins
+	if WeaponModule and WeaponModule.Weapons then
+		for weaponName, weaponData in pairs(WeaponModule.Weapons) do
+			if weaponData.Skins then
+				for skinName, skinData in pairs(weaponData.Skins) do
+					if skinData.MPCost and skinData.MPCost > 0 then
+						local rarity = "Rare"
+						if skinData.MPCost >= 5000 then rarity = "Legendary"
+						elseif skinData.MPCost >= 2500 then rarity = "Epic"
+						end
+
+						table.insert(state.allItemsList, {
+							Id = weaponName .. "_" .. skinName,
+							Name = skinName,
+							Type = "Skins",
+							Rarity = rarity,
+							Cost = skinData.MPCost,
+							Desc = string.format("Standard Issue Camo: %s. Approved for %s.", tostring(skinName), tostring(weaponName)),
+							Unicode = UNICODE_ICONS.Gun,
+							Weapon = weaponName,
+							SkinName = skinName,
+							Data = skinData,
+							Owned = false
+						})
+					end
 				end
 			end
 		end
-	end)
-end
-
-function mpShopUI:CreateTabs(sidebar)
-	local function createTabBtn(name, text)
-		local btn = create("TextButton", {
-			Name = name,
-			Size = UDim2.new(1, 0, 0, 40),
-			BackgroundColor3 = COLORS.BG_ROOT,
-			BackgroundTransparency = 1,
-			Text = "",
-			AutoButtonColor = false,
-		})
-
-		-- Tab Visual: Folder Tab shape
-		local tabShape = create("Frame", {
-			Size = UDim2.new(1, -10, 1, -4),
-			Position = UDim2.new(0, 5, 0, 2),
-			BackgroundColor3 = (currentTab == name) and COLORS.TEXT_MAIN or COLORS.BG_PANEL,
-			BackgroundTransparency = (currentTab == name) and 0.8 or 1,
-			Parent = btn
-		})
-		addStroke(tabShape, COLORS.TEXT_MAIN, 1)
-
-		local lbl = create("TextLabel", {
-			Text = "> " .. text,
-			Size = UDim2.new(1, -20, 1, 0),
-			Position = UDim2.new(0, 10, 0, 0),
-			BackgroundTransparency = 1,
-			Font = FONTS.Main,
-			TextSize = 14,
-			TextColor3 = (currentTab == name) and COLORS.TEXT_MAIN or COLORS.TEXT_DIM,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			Parent = btn
-		})
-
-		btn.MouseButton1Click:Connect(function()
-			if currentTab == name then return end
-			currentTab = name
-			for _, child in ipairs(sidebar:GetChildren()) do
-				if child:IsA("TextButton") then child:Destroy() end
-			end
-			self:CreateTabs(sidebar)
-			self:RefreshGrid()
-		end)
-
-		btn.Parent = sidebar
 	end
 
-	createTabBtn("Skins", "WEAPON_SKINS")
-	createTabBtn("Items", "SPECIAL_REQUISITION")
+	-- Load Special Items
+	for id, itemData in pairs(SpecialItemsConfig) do
+		table.insert(state.allItemsList, {
+			Id = id,
+			Name = itemData.Name,
+			Type = itemData.Type or "Utility",
+			Rarity = itemData.Rarity or "Common",
+			Cost = itemData.MPCost,
+			Desc = itemData.Description,
+			Unicode = itemData.Unicode or "📦",
+			Owned = false
+		})
+	end
+
+	table.sort(state.allItemsList, function(a, b) return a.Cost < b.Cost end)
 end
 
-function mpShopUI:CreateGridItem(data)
-	local btn = create("TextButton", {
-		Name = data.Id,
-		Size = UDim2.new(0, 0, 0, 0),
-		BackgroundColor3 = COLORS.BG_PANEL,
-		BackgroundTransparency = 0.5,
+function mpShopUI:RefreshList()
+	if not listContainer then return end
+
+	for _, c in ipairs(listContainer:GetChildren()) do
+		if c:IsA("GuiObject") then c:Destroy() end
+	end
+
+	for _, item in ipairs(state.allItemsList) do
+		local matchesTab = (state.currentTab == "All") or (item.Type == state.currentTab)
+
+		if matchesTab then
+			self:CreateItemCard(item)
+		end
+	end
+end
+
+-- ============================================================================
+-- UI COMPONENTS (THEME APPLIED)
+-- ============================================================================
+
+function mpShopUI:CreateItemCard(item)
+	local isSelected = (state.selectedItem and state.selectedItem.Id == item.Id)
+
+	local card = create("TextButton", {
+		Name = item.Id,
+		Size = UDim2.new(1, 0, 0, 80), -- Taller cards for "Medal Case" look
+		BackgroundColor3 = isSelected and COLORS.BG_HEADER or COLORS.BG_PANEL,
+		BackgroundTransparency = 0,
 		AutoButtonColor = false,
 		Text = "",
-		ClipsDescendants = true
-	})
-	local stroke = addStroke(btn, COLORS.TEXT_DIM, 1)
-
-	-- Grid Line decor
-	create("Frame", {Size = UDim2.new(0, 10, 0, 1), Position = UDim2.new(0,0,0,0), BackgroundColor3 = COLORS.TEXT_MAIN, Parent = btn})
-	create("Frame", {Size = UDim2.new(0, 1, 0, 10), Position = UDim2.new(0,0,0,0), BackgroundColor3 = COLORS.TEXT_MAIN, Parent = btn})
-	create("Frame", {Size = UDim2.new(0, 10, 0, 1), Position = UDim2.new(1,-10,1,-1), BackgroundColor3 = COLORS.TEXT_MAIN, Parent = btn})
-	create("Frame", {Size = UDim2.new(0, 1, 0, 10), Position = UDim2.new(1,-1,1,-10), BackgroundColor3 = COLORS.TEXT_MAIN, Parent = btn})
-
-	local icon = create("ImageLabel", {
-		Size = UDim2.new(0.6, 0, 0.6, 0),
-		Position = UDim2.new(0.5, 0, 0.4, 0),
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		BackgroundTransparency = 1,
-		Image = data.Icon,
-		ImageColor3 = COLORS.TEXT_MAIN,
-		ScaleType = Enum.ScaleType.Fit,
-		Parent = btn
+		BorderSizePixel = 0,
+		Parent = listContainer
 	})
 
-	local name = create("TextLabel", {
-		Text = data.Name:upper(),
-		Size = UDim2.new(1, -10, 0, 15),
-		Position = UDim2.new(0, 5, 0.75, 0),
+	addCorner(card, 4)
+	if isSelected then
+		addStroke(card, COLORS.ACCENT_GOLD, 2)
+	else
+		addStroke(card, COLORS.TEXT_DIM, 1)
+	end
+
+	-- Icon / Medal Display
+	local iconBox = create("Frame", {
+		Size = UDim2.new(0, 60, 0, 60),
+		Position = UDim2.new(0, 10, 0.5, 0),
+		AnchorPoint = Vector2.new(0, 0.5),
+		BackgroundColor3 = COLORS.BG_ROOT,
+		BorderSizePixel = 0,
+		Parent = card
+	})
+	addCorner(iconBox, 30) -- Circular
+	addStroke(iconBox, getRarityColor(item.Rarity), 2)
+
+	create("TextLabel", {
+		Text = item.Unicode,
+		Size = UDim2.new(1, 0, 1, 0),
 		BackgroundTransparency = 1,
-		Font = FONTS.Main,
-		TextSize = 11,
+		TextSize = 30,
+		Parent = iconBox
+	})
+
+	-- Info
+	local nameLabel = create("TextLabel", {
+		Text = item.Name:upper(),
+		Size = UDim2.new(0.6, 0, 0.4, 0),
+		Position = UDim2.new(0, 80, 0.1, 0),
+		Font = FONTS.Header,
+		TextSize = 18,
 		TextColor3 = COLORS.TEXT_MAIN,
-		TextTruncate = Enum.TextTruncate.AtEnd,
-		Parent = btn
-	})
-
-	local cost = create("TextLabel", {
-		Text = formatNumber(data.Cost) .. " MP",
-		Size = UDim2.new(1, -10, 0, 15),
-		Position = UDim2.new(0, 5, 0.88, 0),
+		TextXAlignment = Enum.TextXAlignment.Left,
 		BackgroundTransparency = 1,
-		Font = FONTS.Main,
-		TextSize = 10,
-		TextColor3 = COLORS.TEXT_DIM,
-		Parent = btn
+		Parent = card
 	})
 
-	if data.Owned then
-		cost.Text = "[ OWNED ]"
-	end
+	local typeLabel = create("TextLabel", {
+		Text = "CLASS: " .. item.Type:upper(),
+		Size = UDim2.new(0.6, 0, 0.3, 0),
+		Position = UDim2.new(0, 80, 0.5, 0),
+		Font = FONTS.Mono,
+		TextSize = 12,
+		TextColor3 = COLORS.TEXT_DIM,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		BackgroundTransparency = 1,
+		Parent = card
+	})
 
-	btn.MouseEnter:Connect(function()
-		TweenService:Create(stroke, TweenInfo.new(0.2), {Color = COLORS.TEXT_MAIN}):Play()
-		TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundTransparency = 0.2}):Play()
+	-- Price Tag (Medal Ribbon Style)
+	local ribbon = create("Frame", {
+		Size = UDim2.new(0.3, 0, 0.4, 0),
+		Position = UDim2.new(1, 0, 1, 0),
+		AnchorPoint = Vector2.new(1, 1),
+		BackgroundColor3 = COLORS.BG_ROOT,
+		BorderSizePixel = 0,
+		Parent = card
+	})
+	addCorner(ribbon, 4)
+
+	local priceColor = (state.currentMP >= item.Cost) and COLORS.ACCENT_GOLD or COLORS.ACCENT_FAIL
+	if item.Owned then priceColor = COLORS.ACCENT_SUCCESS end
+
+	create("TextLabel", {
+		Text = item.Owned and "AWARDED" or (formatNumber(item.Cost) .. " MP"),
+		Size = UDim2.new(1, -10, 1, 0),
+		Position = UDim2.new(0, 0, 0, 0),
+		Font = FONTS.Header,
+		TextSize = 16,
+		TextColor3 = priceColor,
+		TextXAlignment = Enum.TextXAlignment.Right,
+		BackgroundTransparency = 1,
+		Parent = ribbon
+	})
+
+	card.MouseButton1Click:Connect(function()
+		self:SelectItem(item)
 	end)
-
-	btn.MouseLeave:Connect(function()
-		if selectedItem and selectedItem.Id == data.Id then return end
-		TweenService:Create(stroke, TweenInfo.new(0.2), {Color = COLORS.TEXT_DIM}):Play()
-		TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundTransparency = 0.5}):Play()
-	end)
-
-	btn.MouseButton1Click:Connect(function()
-		self:SelectItem(data)
-	end)
-
-	return btn
 end
 
-function mpShopUI:RefreshGrid()
-	for _, c in ipairs(gridContainer:GetChildren()) do
-		if c:IsA("TextButton") then c:Destroy() end
-	end
-
-	local items = {}
-
-	if currentTab == "Skins" then
-		for weaponName, weaponData in pairs(WeaponModule.Weapons) do
-			for skinName, skinData in pairs(weaponData.Skins) do
-				if skinData.MPCost and skinData.MPCost > 0 then
-					table.insert(items, {
-						Id = weaponName .. "_" .. skinName,
-						Type = "Skin",
-						Name = skinName,
-						SubText = weaponName,
-						Cost = skinData.MPCost,
-						Icon = skinData.TextureId or "rbxassetid://0",
-						Weapon = weaponName,
-						SkinName = skinName,
-						Data = skinData,
-						Owned = false
-					})
-				end
-			end
-		end
-	else
-		for id, itemData in pairs(SpecialItemsConfig) do
-			table.insert(items, {
-				Id = id,
-				Type = "Item",
-				Name = itemData.Name,
-				SubText = "Special",
-				Cost = itemData.MPCost,
-				Icon = itemData.Icon,
-				Description = itemData.Description,
-				Owned = false
-			})
-		end
-	end
-
-	table.sort(items, function(a, b) return a.Cost < b.Cost end)
-
-	for _, item in ipairs(items) do
-		local card = self:CreateGridItem(item)
-		card.Parent = gridContainer
-	end
-
-	self:SelectItem(nil)
+function mpShopUI:SelectItem(item)
+	state.selectedItem = item
+	self:RefreshList()
+	self:UpdateDetails()
 end
 
-function mpShopUI:SelectItem(data)
-	selectedItem = data
+function mpShopUI:UpdateDetails()
+	if not state.selectedItem then return end
+	local item = state.selectedItem
 
-	for _, btn in ipairs(gridContainer:GetChildren()) do
-		if btn:IsA("TextButton") then
-			local isSel = data and (btn.Name == data.Id)
-			local stroke = btn:FindFirstChild("UIStroke")
-
-			if isSel then
-				stroke.Color = COLORS.TEXT_MAIN
-				stroke.Thickness = 2
-				btn.BackgroundTransparency = 0.2
-			else
-				stroke.Color = COLORS.TEXT_DIM
-				stroke.Thickness = 1
-				btn.BackgroundTransparency = 0.5
+	-- Update Info
+	if detailsPanel:FindFirstChild("Title") then
+		detailsPanel.Title.Text = item.Name:upper()
+	end
+	if detailsPanel:FindFirstChild("Description") then
+		detailsPanel.Description.Text = item.Desc
+	end
+	local buySection = detailsPanel:FindFirstChild("BuySection")
+	if buySection then
+		local priceFrame = buySection:FindFirstChild("PriceFrame")
+		if priceFrame then
+			local amount = priceFrame:FindFirstChild("Amount")
+			if amount then
+				amount.Text = formatNumber(item.Cost) .. " MP"
 			end
 		end
 	end
 
-	if not data then
-		detailContainer.Visible = false
-		return
+	-- Rarity
+	local metaFrame = detailsPanel:FindFirstChild("MetaFrame")
+	if metaFrame then
+		local rarityLabel = metaFrame:FindFirstChild("RarityLabel")
+		if rarityLabel then
+			rarityLabel.Text = "GRADE: " .. item.Rarity:upper()
+			rarityLabel.TextColor3 = getRarityColor(item.Rarity)
+		end
 	end
-	detailContainer.Visible = true
 
-	local content = detailContainer.Content
-	content.Header.Title.Text = data.Name:upper()
-	content.Header.Subtitle.Text = "REF: " .. data.SubText:upper()
+	-- Preview
+	if state.activePreview then
+		ModelPreviewModule.destroy(state.activePreview)
+		state.activePreview = nil
+	end
 
-	local desc = ""
-	if data.Type == "Skin" then
-		desc = string.format("DESIGNATION: %s Skin\nWEAPON: %s\n\nPRICE: %s MP\nSTATUS: AVAILABLE", data.Name, data.Weapon, formatNumber(data.Cost))
+	if item.Type == "Skins" and item.Data then
+		previewViewport.Visible = true
+		previewIconLabel.Visible = false
+		local weaponDef = WeaponModule.Weapons[item.Weapon]
+		state.activePreview = ModelPreviewModule.create(previewViewport, weaponDef, item.Data)
+		ModelPreviewModule.startRotation(state.activePreview, 2.0)
 	else
-		desc = data.Description .. "\n\nPRICE: " .. formatNumber(data.Cost) .. " MP"
-	end
-	content.DescContainer.DescLabel.Text = desc
-
-	-- Typewriter effect for desc
-	content.DescContainer.DescLabel.MaxVisibleGraphemes = 0
-	TweenService:Create(content.DescContainer.DescLabel, TweenInfo.new(0.5, Enum.EasingStyle.Linear), {MaxVisibleGraphemes = #desc}):Play()
-
-	local previewFrame = content.PreviewFrame
-	if activePreview then ModelPreviewModule.destroy(activePreview) activePreview = nil end
-
-	if data.Type == "Skin" and data.Data then
-		previewFrame.Viewport.Visible = true
-		previewFrame.Image.Visible = false
-
-		local weaponDef = WeaponModule.Weapons[data.Weapon]
-		activePreview = ModelPreviewModule.create(previewFrame.Viewport, weaponDef, data.Data)
-		ModelPreviewModule.startRotation(activePreview, 2)
-	else
-		previewFrame.Viewport.Visible = false
-		previewFrame.Image.Visible = true
-		previewFrame.Image.Image = data.Icon
+		previewViewport.Visible = false
+		previewIconLabel.Visible = true
+		previewIconLabel.Text = item.Unicode
+		previewIconLabel.TextColor3 = getRarityColor(item.Rarity)
 	end
 
-	self:UpdatePurchaseButton(data)
-end
+	-- Button
+	local btn = detailsPanel.BuySection.BuyButton
+	local btnText = btn.Label
 
-function mpShopUI:UpdatePurchaseButton(data)
-	local btn = detailContainer.Content.BuyButton
-	local bar = btn.ProgressBar
-	local label = btn.Label
-
-	if holdConnection then holdConnection:Disconnect() holdConnection = nil end
-	bar.Size = UDim2.new(0, 0, 1, 0)
-
-	if data.Type == "Skin" and data.Owned then
-		label.Text = "ACQUIRED"
+	if item.Owned then
+		btnText.Text = "ALREADY ACQUIRED"
 		btn.BackgroundColor3 = COLORS.BG_PANEL
 		btn.AutoButtonColor = false
-		return
-	end
-
-	if currentMP < data.Cost then
-		label.Text = "INSUFFICIENT_MP"
-		btn.BackgroundColor3 = COLORS.ACCENT_ALERT
+	elseif state.currentMP < item.Cost then
+		btnText.Text = "INSUFFICIENT FUNDS"
+		btn.BackgroundColor3 = COLORS.ACCENT_FAIL
 		btn.AutoButtonColor = false
-		return
-	end
-
-	label.Text = "AUTHORIZE_PURCHASE"
-	btn.BackgroundColor3 = COLORS.TEXT_MAIN
-	btn.AutoButtonColor = true
-end
-
-function mpShopUI:PerformPurchase(item)
-	-- No hold, instant buy for tactical feel
-	local btn = detailContainer.Content.BuyButton
-	btn.Label.Text = "AUTHORIZING..."
-	btn.BackgroundColor3 = COLORS.TEXT_DIM
-
-	local result
-	if item.Type == "Skin" then
-		result = purchaseSkinFunc:InvokeServer(item.Weapon, item.SkinName)
 	else
-		result = purchaseItemFunc:InvokeServer(item.Id)
+		btnText.Text = "PURCHASE"
+		btn.BackgroundColor3 = COLORS.ACCENT_GOLD
+		btn.AutoButtonColor = true
 	end
-
-	if result.Success then
-		btn.Label.Text = "APPROVED"
-		btn.BackgroundColor3 = COLORS.TEXT_MAIN
-		task.wait(1)
-		if item.Type == "Skin" then item.Owned = true end
-		self:RefreshGrid()
-		self:SelectItem(item)
-	else
-		btn.Label.Text = "DENIED"
-		btn.BackgroundColor3 = COLORS.ACCENT_ALERT
-		task.wait(1.5)
-		self:UpdatePurchaseButton(item)
-	end
-	self:UpdateMP()
 end
 
 -- ============================================================================
--- UI CONSTRUCTION
+-- MAIN CREATION (MILITARY RECORD STYLE)
 -- ============================================================================
 
-function mpShopUI:CreateUI()
-	if playerGui:FindFirstChild("MPShopUI") then playerGui.MPShopUI:Destroy() end
+function mpShopUI:Create()
+	if playerGui:FindFirstChild("MPShopUI") then
+		screenGui = playerGui.MPShopUI
+		screenGui:Destroy()
+	end
 
 	screenGui = create("ScreenGui", {
 		Name = "MPShopUI",
 		Parent = playerGui,
 		ResetOnSpawn = false,
-		IgnoreGuiInset = true,
+		IgnoreGuiInset = false,
 		Enabled = false
 	})
 
-	-- Background with Grid
-	local bg = create("Frame", {
+	-- Background Dim
+	local dim = create("Frame", {
 		Size = UDim2.new(1, 0, 1, 0),
-		BackgroundColor3 = COLORS.BG_ROOT,
-		BackgroundTransparency = 0.1,
+		BackgroundColor3 = Color3.new(0,0,0),
+		BackgroundTransparency = 0.5,
 		Parent = screenGui
 	})
-	-- Grid lines
-	local grid = create("ImageLabel", {
-		Size = UDim2.new(1,0,1,0),
-		Image = "rbxassetid://4801088331",
-		ImageColor3 = COLORS.TEXT_MAIN,
-		ImageTransparency = 0.9,
-		ScaleType = Enum.ScaleType.Tile,
-		TileSize = UDim2.new(0, 32, 0, 32),
-		BackgroundTransparency = 1,
-		Parent = bg
-	})
-	addScanline(bg)
 
-	mainFrame = create("Frame", {
-		Name = "MainFrame",
+	-- Main Case
+	local mainCase = create("Frame", {
+		Name = "MainCase",
 		Size = UDim2.new(0, 900, 0, 600),
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.new(0.5, 0, 0.5, 0),
-		BackgroundTransparency = 1,
+		BackgroundColor3 = COLORS.BG_ROOT,
+		BorderSizePixel = 0,
 		Parent = screenGui
 	})
+	addStroke(mainCase, COLORS.BG_HEADER, 4)
+	addCorner(mainCase, 8)
 
+	-- Header
 	local header = create("Frame", {
-		Name = "Header",
-		Size = UDim2.new(1, 0, 0, 50),
-		BackgroundColor3 = COLORS.BG_PANEL,
-		BackgroundTransparency = 0.2,
-		Parent = mainFrame
+		Size = UDim2.new(1, 0, 0, 60),
+		BackgroundColor3 = COLORS.BG_HEADER,
+		Parent = mainCase
 	})
-	addStroke(header, COLORS.TEXT_MAIN, 1)
+	addCorner(header, 8)
+	-- Flatten bottom corners
+	local filler = create("Frame", {
+		Size = UDim2.new(1, 0, 0, 10),
+		Position = UDim2.new(0, 0, 1, -10),
+		BackgroundColor3 = COLORS.BG_HEADER,
+		BorderSizePixel = 0,
+		Parent = header
+	})
 
 	create("TextLabel", {
-		Text = "MISSION_CONTROL // PROCUREMENT",
-		Size = UDim2.new(0.5, 0, 1, 0),
+		Text = "MISSION PROCUREMENT // EXCHANGE",
+		Size = UDim2.new(1, -40, 1, 0),
 		Position = UDim2.new(0, 20, 0, 0),
+		Font = FONTS.Header,
+		TextSize = 24,
+		TextColor3 = COLORS.ACCENT_GOLD,
+		TextXAlignment = Enum.TextXAlignment.Left,
 		BackgroundTransparency = 1,
+		Parent = header
+	})
+
+	-- Points Badge
+	local pointsBadge = create("Frame", {
+		Size = UDim2.new(0, 200, 0, 40),
+		Position = UDim2.new(1, -220, 0.5, 0),
+		AnchorPoint = Vector2.new(0, 0.5),
+		BackgroundColor3 = COLORS.BG_ROOT,
+		Parent = header
+	})
+	addCorner(pointsBadge, 20)
+	addStroke(pointsBadge, COLORS.ACCENT_GOLD, 1)
+
+	mpValueLabel = create("TextLabel", {
+		Text = "0",
+		Size = UDim2.new(1, -40, 1, 0),
+		Position = UDim2.new(0, 10, 0, 0),
+		Font = FONTS.Mono,
+		TextSize = 20,
+		TextColor3 = COLORS.TEXT_MAIN,
+		TextXAlignment = Enum.TextXAlignment.Right,
+		BackgroundTransparency = 1,
+		Parent = pointsBadge
+	})
+
+	create("TextLabel", {
+		Text = UNICODE_ICONS.MP,
+		Size = UDim2.new(0, 30, 1, 0),
+		Position = UDim2.new(1, -30, 0, 0),
+		TextColor3 = COLORS.ACCENT_GOLD,
+		TextSize = 20,
+		BackgroundTransparency = 1,
+		Parent = pointsBadge
+	})
+
+	-- Close Button
+	local closeBtn = create("TextButton", {
+		Text = "X",
+		Size = UDim2.new(0, 30, 0, 30),
+		Position = UDim2.new(1, -15, 0, -15),
+		BackgroundColor3 = COLORS.ACCENT_FAIL,
+		TextColor3 = COLORS.TEXT_MAIN,
+		Font = FONTS.Body,
+		Parent = mainCase
+	})
+	addCorner(closeBtn, 15)
+	addStroke(closeBtn, COLORS.TEXT_MAIN, 2)
+	closeBtn.MouseButton1Click:Connect(function() mpShopUI:Hide() end)
+
+	-- Content Area
+	local content = create("Frame", {
+		Size = UDim2.new(1, -20, 1, -80),
+		Position = UDim2.new(0, 10, 0, 70),
+		BackgroundTransparency = 1,
+		Parent = mainCase
+	})
+
+	-- LEFT: Filter Tabs & List
+	local leftPanel = create("Frame", {
+		Size = UDim2.new(0.4, 0, 1, 0),
+		BackgroundTransparency = 1,
+		Parent = content
+	})
+
+	local tabContainer = create("Frame", {
+		Size = UDim2.new(1, 0, 0, 40),
+		BackgroundTransparency = 1,
+		Parent = leftPanel
+	})
+	create("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 5), Parent = tabContainer })
+
+	local function createTab(name)
+		local btn = create("TextButton", {
+			Name = name,
+			Text = name:upper(),
+			Size = UDim2.new(0.3, -5, 1, 0),
+			BackgroundColor3 = (state.currentTab == name) and COLORS.ACCENT_GOLD or COLORS.BG_PANEL,
+			TextColor3 = (state.currentTab == name) and COLORS.BG_ROOT or COLORS.TEXT_DIM,
+			Font = FONTS.Header,
+			Parent = tabContainer
+		})
+		addCorner(btn, 4)
+		btn.MouseButton1Click:Connect(function()
+			state.currentTab = name
+			self:RefreshList()
+			-- Update visual
+			for _, c in ipairs(tabContainer:GetChildren()) do
+				if c:IsA("TextButton") then
+					local active = (c.Name == state.currentTab)
+					c.BackgroundColor3 = active and COLORS.ACCENT_GOLD or COLORS.BG_PANEL
+					c.TextColor3 = active and COLORS.BG_ROOT or COLORS.TEXT_DIM
+				end
+			end
+		end)
+	end
+
+	createTab("All")
+	createTab("Skins")
+	createTab("Utility")
+
+	listContainer = create("ScrollingFrame", {
+		Size = UDim2.new(1, 0, 1, -50),
+		Position = UDim2.new(0, 0, 0, 50),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ScrollBarThickness = 4,
+		ScrollBarImageColor3 = COLORS.ACCENT_GOLD,
+		CanvasSize = UDim2.new(0,0,0,0),
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		Parent = leftPanel
+	})
+	create("UIListLayout", { Padding = UDim.new(0, 8), Parent = listContainer })
+
+	-- RIGHT: Showcase & Details
+	local rightPanel = create("Frame", {
+		Size = UDim2.new(0.58, 0, 1, 0),
+		Position = UDim2.new(0.42, 0, 0, 0),
+		BackgroundColor3 = COLORS.BG_PANEL,
+		Parent = content
+	})
+	addCorner(rightPanel, 8)
+	addStroke(rightPanel, COLORS.TEXT_DIM, 1)
+
+	-- Showcase Viewport
+	local showcase = create("Frame", {
+		Size = UDim2.new(1, -20, 0.5, 0),
+		Position = UDim2.new(0, 10, 0, 10),
+		BackgroundColor3 = COLORS.BG_ROOT,
+		Parent = rightPanel
+	})
+	addCorner(showcase, 8)
+	addStroke(showcase, COLORS.ACCENT_GOLD, 1)
+
+	previewViewport = create("ViewportFrame", {
+		Size = UDim2.new(1, 0, 1, 0),
+		BackgroundTransparency = 1,
+		Visible = false,
+		Parent = showcase
+	})
+
+	previewIconLabel = create("TextLabel", {
+		Text = "🎯",
+		Size = UDim2.new(1, 0, 1, 0),
+		BackgroundTransparency = 1,
+		TextSize = 100,
+		TextColor3 = COLORS.TEXT_DIM,
+		Parent = showcase
+	})
+
+	-- Details Below
+	detailsPanel = create("Frame", {
+		Name = "Details",
+		Size = UDim2.new(1, -20, 0.45, -20),
+		Position = UDim2.new(0, 10, 0.55, 0),
+		BackgroundTransparency = 1,
+		Parent = rightPanel
+	})
+
+	create("TextLabel", {
+		Name = "Title",
+		Text = "SELECT ITEM",
+		Size = UDim2.new(1, 0, 0, 30),
 		Font = FONTS.Header,
 		TextSize = 24,
 		TextColor3 = COLORS.TEXT_MAIN,
 		TextXAlignment = Enum.TextXAlignment.Left,
-		Parent = header
+		BackgroundTransparency = 1,
+		Parent = detailsPanel
 	})
+
+	local metaFrame = create("Frame", {
+		Name = "MetaFrame",
+		Size = UDim2.new(1, 0, 0, 20),
+		Position = UDim2.new(0, 0, 0, 35),
+		BackgroundTransparency = 1,
+		Parent = detailsPanel
+	})
+	create("TextLabel", { Name = "RarityLabel", Text = "---", Size = UDim2.new(1, 0, 1, 0), Font = FONTS.Mono, TextSize = 14, TextColor3 = COLORS.TEXT_DIM, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, Parent = metaFrame })
 
 	create("TextLabel", {
-		Name = "PointsDisplay",
-		Text = "MP_BALANCE: 0",
-		Size = UDim2.new(0.4, 0, 1, 0),
-		Position = UDim2.new(0.6, 0, 0, 0),
-		BackgroundTransparency = 1,
-		Font = FONTS.Main,
-		TextSize = 18,
-		TextColor3 = COLORS.TEXT_MAIN,
-		TextXAlignment = Enum.TextXAlignment.Right,
-		Parent = header
-	})
-
-	local closeBtn = create("TextButton", {
-		Text = "[ X ]",
-		Size = UDim2.new(0, 50, 0, 50),
-		Position = UDim2.new(1, -50, 0, 0),
-		BackgroundTransparency = 1,
-		TextColor3 = COLORS.ACCENT_ALERT,
-		Font = FONTS.Main,
-		TextSize = 18,
-		Parent = header
-	})
-	closeBtn.MouseButton1Click:Connect(function() self:Toggle(false) end)
-
-	local body = create("Frame", {
-		Size = UDim2.new(1, 0, 1, -60),
+		Name = "Description",
+		Text = "Select an item to view details.",
+		Size = UDim2.new(1, 0, 0, 60),
 		Position = UDim2.new(0, 0, 0, 60),
+		Font = FONTS.Body,
+		TextSize = 14,
+		TextColor3 = COLORS.TEXT_DIM,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextWrapped = true,
+		TextYAlignment = Enum.TextYAlignment.Top,
 		BackgroundTransparency = 1,
-		Parent = mainFrame
+		Parent = detailsPanel
 	})
 
-	-- LEFT: Sidebar
-	local sidebar = create("Frame", {
-		Size = UDim2.new(0, 220, 1, 0),
+	local buySection = create("Frame", {
+		Name = "BuySection",
+		Size = UDim2.new(1, 0, 0, 50),
+		Position = UDim2.new(0, 0, 1, -50),
 		BackgroundTransparency = 1,
-		Parent = body
-	})
-	create("UIListLayout", {Padding = UDim.new(0, 5), HorizontalAlignment = Enum.HorizontalAlignment.Center, Parent = sidebar})
-	self:CreateTabs(sidebar)
-
-	-- CENTER: Grid
-	local gridArea = create("Frame", {
-		Size = UDim2.new(1, -540, 1, 0),
-		Position = UDim2.new(0, 230, 0, 0),
-		BackgroundTransparency = 1,
-		Parent = body
+		Parent = detailsPanel
 	})
 
-	gridContainer = create("ScrollingFrame", {
-		Size = UDim2.new(1, 0, 1, 0),
-		BackgroundTransparency = 1,
-		BorderSizePixel = 0,
-		ScrollBarThickness = 4,
-		ScrollBarImageColor3 = COLORS.TEXT_MAIN,
-		CanvasSize = UDim2.new(0,0,0,0),
-		AutomaticCanvasSize = Enum.AutomaticSize.Y,
-		Parent = gridArea
-	})
-	create("UIGridLayout", {
-		CellSize = UDim2.new(0, 100, 0, 120),
-		CellPadding = UDim2.new(0, 10, 0, 10),
-		Parent = gridContainer
-	})
-
-	-- RIGHT: Details (Dossier)
-	detailContainer = create("Frame", {
-		Name = "DetailContainer",
-		Size = UDim2.new(0, 300, 1, 0),
-		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, 0, 0, 0),
-		BackgroundColor3 = COLORS.BG_PANEL,
-		BackgroundTransparency = 0.1,
-		Parent = body,
-		Visible = false
-	})
-	addStroke(detailContainer, COLORS.TEXT_MAIN, 1)
-
-	local content = create("Frame", { Name = "Content", Size = UDim2.new(1, -20, 1, -20), Position = UDim2.new(0, 10, 0, 10), BackgroundTransparency = 1, Parent = detailContainer })
-
-	local dHeader = create("Frame", { Name = "Header", Size = UDim2.new(1, 0, 0, 50), BackgroundTransparency = 1, Parent = content })
-	create("TextLabel", { Name = "Title", Text = "ITEM", Size = UDim2.new(1, 0, 0, 20), Font = FONTS.Header, TextSize = 18, TextColor3 = COLORS.TEXT_MAIN, BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left, Parent = dHeader })
-	create("TextLabel", { Name = "Subtitle", Text = "SUB", Size = UDim2.new(1, 0, 0, 15), Position = UDim2.new(0,0,0,25), Font = FONTS.Main, TextSize = 12, TextColor3 = COLORS.TEXT_DIM, BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left, Parent = dHeader })
-
-	local pFrame = create("Frame", { Name = "PreviewFrame", Size = UDim2.new(1, 0, 0, 200), Position = UDim2.new(0, 0, 0, 60), BackgroundColor3 = COLORS.BG_ROOT, Parent = content })
-	addStroke(pFrame, COLORS.TEXT_DIM, 1)
-	create("ViewportFrame", {Name = "Viewport", Size = UDim2.new(1,0,1,0), BackgroundTransparency = 1, Parent = pFrame})
-	create("ImageLabel", {Name = "Image", Size = UDim2.new(0.8,0,0.8,0), Position = UDim2.new(0.1,0,0.1,0), BackgroundTransparency = 1, ImageColor3 = COLORS.TEXT_MAIN, ScaleType = Enum.ScaleType.Fit, Parent = pFrame})
-
-	local descBox = create("Frame", { Name = "DescContainer", Size = UDim2.new(1, 0, 0, 150), Position = UDim2.new(0, 0, 0, 270), BackgroundTransparency = 1, Parent = content })
-	create("TextLabel", { Name = "DescLabel", Text = "...", Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Font = FONTS.Main, TextSize = 12, TextColor3 = COLORS.TEXT_MAIN, TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, Parent = descBox })
+	local priceFrame = create("Frame", { Name = "PriceFrame", Size = UDim2.new(0.5, 0, 1, 0), BackgroundTransparency = 1, Parent = buySection })
+	create("TextLabel", { Text = "PRICE:", Size = UDim2.new(1, 0, 0, 15), Font = FONTS.Mono, TextSize = 10, TextColor3 = COLORS.TEXT_DIM, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, Parent = priceFrame })
+	create("TextLabel", { Name = "Amount", Text = "0 MP", Size = UDim2.new(1, 0, 0, 35), Position = UDim2.new(0, 0, 0, 15), Font = FONTS.Header, TextSize = 28, TextColor3 = COLORS.ACCENT_GOLD, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, Parent = priceFrame })
 
 	local buyBtn = create("TextButton", {
 		Name = "BuyButton",
-		Size = UDim2.new(1, 0, 0, 40),
-		Position = UDim2.new(0, 0, 1, -40),
-		BackgroundColor3 = COLORS.TEXT_MAIN,
-		Text = "AUTHORIZE",
-		Font = FONTS.Header,
-		TextSize = 16,
-		TextColor3 = COLORS.BG_ROOT,
-		Parent = content
+		Text = "",
+		Size = UDim2.new(0.5, 0, 1, 0),
+		Position = UDim2.new(0.5, 0, 0, 0),
+		BackgroundColor3 = COLORS.ACCENT_GOLD,
+		Parent = buySection
 	})
-	create("Frame", {Name="ProgressBar", Parent=buyBtn}) -- Placeholder to avoid error
-	create("TextLabel", {Name="Label", Parent=buyBtn, Text=""}) -- Placeholder
+	addCorner(buyBtn, 4)
+	create("TextLabel", { Name = "Label", Text = "PURCHASE", Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Font = FONTS.Header, TextSize = 18, TextColor3 = COLORS.BG_ROOT, Parent = buyBtn })
 
-	-- Wire button manually since layout changed
-	buyBtn.MouseButton1Click:Connect(function()
-		if selectedItem then self:PerformPurchase(selectedItem) end
+	buyBtn.MouseButton1Click:Connect(function() self:PurchaseItem() end)
+
+	self:RefreshList()
+end
+
+
+function mpShopUI:PurchaseItem()
+	if not state.selectedItem then return end
+	if state.selectedItem.Owned then return end
+	if state.currentMP < state.selectedItem.Cost then return end
+
+	local btn = detailsPanel.BuySection.BuyButton
+	local lbl = btn.Label
+	lbl.Text = "PROCESSING..."
+
+	local result
+	if state.selectedItem.Type == "Skins" then
+		result = purchaseSkinFunc:InvokeServer(state.selectedItem.Weapon, state.selectedItem.SkinName)
+	else
+		result = purchaseItemFunc:InvokeServer(state.selectedItem.Id)
+	end
+
+	if result.Success then
+		state.selectedItem.Owned = true
+		lbl.Text = "APPROVED"
+		btn.BackgroundColor3 = COLORS.ACCENT_SUCCESS
+		self:UpdateMP()
+		task.delay(1, function()
+			self:UpdateDetails()
+			self:RefreshList()
+		end)
+	else
+		lbl.Text = "DENIED"
+		btn.BackgroundColor3 = COLORS.ACCENT_FAIL
+		task.delay(1, function()
+			self:UpdateDetails()
+		end)
+	end
+end
+
+-- ============================================================================
+-- MAIN LOGIC
+-- ============================================================================
+
+function mpShopUI:UpdateMP()
+	task.spawn(function()
+		local success, points = pcall(function() return getMPFunc:InvokeServer() end)
+		if success then
+			state.currentMP = points
+			if mpValueLabel then mpValueLabel.Text = formatNumber(points) end
+			self:UpdateDetails()
+		end
 	end)
 end
 
-function mpShopUI:Toggle(state)
-	if not screenGui then self:CreateUI() end
-	local blur = game.Lighting:FindFirstChild("MPShopBlur") or Instance.new("BlurEffect", game.Lighting)
-	blur.Name = "MPShopBlur"
-	blur.Size = 0
-
-	if state then
-		self:UpdateMP()
-		self:RefreshGrid()
+function mpShopUI:Show()
+	if screenGui then
 		screenGui.Enabled = true
-		mainFrame.Visible = true
-		mainFrame.Position = UDim2.new(0.5, 0, 0.6, 0)
-		TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.new(0.5, 0, 0.5, 0)}):Play()
-		TweenService:Create(blur, TweenInfo.new(0.5), {Size = 24}):Play()
-	else
-		TweenService:Create(blur, TweenInfo.new(0.5), {Size = 0}):Play()
-		mainFrame.Visible = false
-		screenGui.Enabled = false
-		if activePreview then ModelPreviewModule.destroy(activePreview) activePreview = nil end
+		state.isUIOpen = true
+
+		self:LoadData()
+		self:RefreshList()
+		self:UpdateMP()
+
+		-- Anim: Slide up case
+		if screenGui:FindFirstChild("MainCase") then
+			screenGui.MainCase.Position = UDim2.new(0.5, 0, 0.6, 0)
+			screenGui.MainCase.BackgroundTransparency = 1
+			TweenService:Create(screenGui.MainCase, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+				Position = UDim2.new(0.5, 0, 0.5, 0),
+				BackgroundTransparency = 0
+			}):Play()
+		end
+
+		if #state.allItemsList > 0 then
+			self:SelectItem(state.allItemsList[1])
+		end
 	end
 end
 
--- ============================================================================
--- INITIALIZATION
--- ============================================================================
+function mpShopUI:Hide()
+	if screenGui then
+		screenGui.Enabled = false
+		state.isUIOpen = false
+	end
+	if state.activePreview then
+		ModelPreviewModule.destroy(state.activePreview)
+		state.activePreview = nil
+	end
+end
 
 mpChangedEvent.OnClientEvent:Connect(function(newMP)
-	currentMP = newMP
-	if mainFrame and screenGui.Enabled then
-		-- Update text
-		local h = mainFrame:FindFirstChild("Header")
-		if h then h.PointsDisplay.Text = "MP_BALANCE: " .. formatNumber(newMP) end
-		if selectedItem then mpShopUI:UpdatePurchaseButton(selectedItem) end
+	state.currentMP = newMP
+	if mpValueLabel then mpValueLabel.Text = formatNumber(newMP) end
+	if screenGui and screenGui.Enabled then
+		mpShopUI:UpdateDetails()
 	end
 end)
+
+local function initialize()
+	mpShopUI:Create()
+	mpShopUI:Hide()
+end
+
+if playerGui.Parent then
+	initialize()
+else
+	playerGui.AncestryChanged:Connect(function()
+		if playerGui.Parent then
+			initialize()
+		end
+	end)
+end
 
 local function setupPrompt()
 	local lobbyEnv = Workspace:WaitForChild("LobbyEnvironment", 10)
@@ -681,9 +809,9 @@ local function setupPrompt()
 		if prompt then
 			prompt.Triggered:Connect(function()
 				if screenGui.Enabled then
-					mpShopUI:Toggle(false)
+					mpShopUI:Hide()
 				else
-					mpShopUI:Toggle(true)
+					mpShopUI:Show()
 				end
 			end)
 		end
@@ -691,7 +819,5 @@ local function setupPrompt()
 end
 
 task.spawn(setupPrompt)
-
-mpShopUI:CreateUI()
 
 return mpShopUI
