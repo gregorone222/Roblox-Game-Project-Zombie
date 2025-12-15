@@ -259,10 +259,17 @@ end
 local function BuildLeaderboardArea(env, originCFrame)
 	-- Create dedicated folder in Workspace for Leaderboard Client to find parts
 	local lbFolder = Workspace:FindFirstChild("Leaderboard")
-	if lbFolder then lbFolder:Destroy() end
-	lbFolder = Instance.new("Folder")
-	lbFolder.Name = "Leaderboard"
-	lbFolder.Parent = Workspace
+
+	-- RACE CONDITION FIX:
+	-- Instead of destroying the folder (which breaks client references if they grabbed it early),
+	-- we simply reuse it and clear its contents.
+	if lbFolder then
+		lbFolder:ClearAllChildren()
+	else
+		lbFolder = Instance.new("Folder")
+		lbFolder.Name = "Leaderboard"
+		lbFolder.Parent = Workspace
+	end
 
 	-- Configuration matches LeaderboardConfig.lua
 	local boards = {
