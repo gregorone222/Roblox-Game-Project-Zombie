@@ -214,7 +214,8 @@ local function createOpsPanel(parent)
 	end).TextLabel.TextColor3 = THEME.Colors.TextMain
 
 	createButton(menuView, "QUICK MATCH", UDim2.new(0,0,0,0), UDim2.new(0,0,0,0), THEME.Colors.TextMain, function()
-		lobbyRemote:FireServer("quickMatch")
+		state.activeView = "CONFIG_QUICK"
+		updateOpsView()
 	end).TextLabel.TextColor3 = THEME.Colors.Paper
 
 	createButton(menuView, "FIND SQUAD", UDim2.new(0,0,0,0), UDim2.new(0,0,0,0), THEME.Colors.Paper, function()
@@ -345,6 +346,12 @@ local function createOpsPanel(parent)
 				maxPlayers = state.settings.maxPlayers,
 				isPrivate = (state.settings.visibility == "Private")
 			})
+		elseif state.activeView == "CONFIG_QUICK" then
+			lobbyRemote:FireServer("startMatchmaking", {
+				gameMode = state.settings.gameMode,
+				difficulty = state.settings.difficulty,
+				playerCount = state.settings.maxPlayers
+			})
 		end
 	end)
 	actionBtn.Name = "ActionBtn"
@@ -388,18 +395,26 @@ function updateOpsView()
 
 	if state.activeView == "MENU" then
 		opsViews["MENU"].Visible = true
-	elseif state.activeView == "CONFIG_SOLO" or state.activeView == "CONFIG_SQUAD" then
+	elseif state.activeView == "CONFIG_SOLO" or state.activeView == "CONFIG_SQUAD" or state.activeView == "CONFIG_QUICK" then
 		local v = opsViews["CONFIG"]
 		v.Visible = true
 
 		-- Toggle Input Fields based on mode
-		local nameInput = v:FindFirstChild("Input_roomName", true)
-		local sizeOpt = v:FindFirstChild("TextLabel", true) -- Hacky, better to use names. But for now...
 		-- Better traversal:
 		for _, c in ipairs(v:GetChildren()) do
-			-- Toggle Squad-only options
-			if c.Name == "Input_roomName" or (c:IsA("Frame") and c:FindFirstChild("TextLabel") and (c.TextLabel.Text == "SQUAD SIZE" or c.TextLabel.Text == "VISIBILITY" or c.TextLabel.Text == "SQUAD SIGNATURE")) then
+			if c.Name == "Input_roomName" then
 				c.Visible = (state.activeView == "CONFIG_SQUAD")
+			elseif c:IsA("Frame") and c:FindFirstChild("TextLabel") then
+				local label = c.TextLabel.Text
+				if label == "SQUAD SIZE" then
+					-- Visible for Squad AND Quick Match
+					c.Visible = (state.activeView == "CONFIG_SQUAD" or state.activeView == "CONFIG_QUICK")
+				elseif label == "VISIBILITY" then
+					-- Only for Squad
+					c.Visible = (state.activeView == "CONFIG_SQUAD")
+				elseif label == "SQUAD SIGNATURE" then
+					c.Visible = (state.activeView == "CONFIG_SQUAD")
+				end
 			end
 		end
 
@@ -407,6 +422,8 @@ function updateOpsView()
 		if btn then
 			if state.activeView == "CONFIG_SOLO" then
 				btn.TextLabel.Text = "DEPLOY SOLO"
+			elseif state.activeView == "CONFIG_QUICK" then
+				btn.TextLabel.Text = "SEARCH COMMS"
 			else
 				btn.TextLabel.Text = "ESTABLISH LINK"
 			end
