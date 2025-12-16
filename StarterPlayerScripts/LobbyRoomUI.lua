@@ -752,8 +752,27 @@ function updateLobbyView(roomData)
 	end
 
 	if infoCard then
-		infoCard.RoomTitle.Text = string.upper(roomData.roomName)
-		infoCard.RoomDetails.Text = string.format("HOST: %s\nMODE: %s\nDIFF: %s", roomData.hostName, roomData.gameMode, roomData.difficulty)
+		local rName = roomData.roomName or "UNKNOWN ROOM"
+		local rHost = roomData.hostName or "Unknown"
+		local rMode = roomData.gameMode or "Story"
+		local rDiff = roomData.difficulty or "Normal"
+
+		infoCard.RoomTitle.Text = string.upper(rName)
+		infoCard.RoomDetails.Text = string.format("HOST: %s\nMODE: %s\nDIFF: %s", rHost, rMode, rDiff)
+
+		-- Room Code Display (If Private)
+		if roomData.roomCode then
+			local codeLbl = infoCard:FindFirstChild("RoomCodeLbl") or create("TextLabel", {
+				Name = "RoomCodeLbl", Parent = infoCard, Size = UDim2.new(0.9, 0, 0.15, 0), Position = UDim2.new(0.05, 0, 0.55, 0),
+				Font = getFont("Stamp"), TextScaled = true, TextColor3 = THEME.Colors.AccentRed,
+				BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left, Rotation = -2
+			})
+			codeLbl.Text = "ACCESS KEY: " .. roomData.roomCode
+			create("UITextSizeConstraint", {Parent = codeLbl, MaxTextSize = 18})
+		else
+			local existing = infoCard:FindFirstChild("RoomCodeLbl")
+			if existing then existing:Destroy() end
+		end
 	end
 
 	if rosterArea then
@@ -788,8 +807,10 @@ function updateLobbyView(roomData)
 				-- Photo (Async Load)
 				local photo = create("ImageLabel", {
 					Parent = polaroid, Size = UDim2.new(0.9, 0, 0.75, 0), Position = UDim2.new(0.05, 0, 0.05, 0),
-					BackgroundColor3 = Color3.fromRGB(50, 50, 50), Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
+					BackgroundColor3 = Color3.fromRGB(50, 50, 50), Image = "rbxasset://textures/ui/GuiImagePlaceholder.png",
+					ScaleType = Enum.ScaleType.Crop
 				})
+				create("UIAspectRatioConstraint", {Parent = photo, AspectRatio = 1, AspectType = Enum.AspectType.FitWithinMaxSize})
 
 				-- Async load profile picture
 				task.spawn(function()
