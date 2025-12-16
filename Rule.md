@@ -20,4 +20,13 @@ Dokumen ini berisi aturan baku dan panduan yang harus dipatuhi selama pengembang
 *   **Anchored:** Pastikan bagian statis lingkungan selalu `Anchored = true`.
 
 ---
+## 3. Standards for Modern Tactical UI (Updated)
+*   **Mobile Adaptive Layout:**
+    *   Wajib cek `UserInputService.TouchEnabled` untuk mendeteksi perangkat mobile.
+    *   Jika mobile, ukuran UI utama (MainFrame/Modal) harus diperbesar (misal `0.95, 0.85`) untuk memaksimalkan layar kecil.
+*   **Safe Padding:**
+    *   Tombol lebar **WAJIB** menggunakan `UIPadding` (minimal 10-15%) agar teks tidak pernah menabrak sisi tombol.
+    *   `UITextSizeConstraint.MaxTextSize` harus dibatasi (misal max 24 untuk tombol standar) agar teks pendek tidak menjadi raksasa yang tidak proporsional.
+
+---
 *Perbarui dokumen ini jika ada aturan baru yang disepakati.*

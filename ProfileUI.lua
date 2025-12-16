@@ -44,8 +44,20 @@ local THEME = {
 		Noise = "rbxassetid://6008328723", -- Grain texture
 		PaperTexture = "rbxassetid://6008328723", -- Reusing grain for now, ideally specific paper texture
 		Clip = "rbxassetid://16467339739", -- Hypothetical asset, we will draw it with Frames if needed
+	},
+	Sizes = {
+        -- Base sizes in Scale
+		MainFramePC = UDim2.new(0.7, 0, 0.7, 0), -- Wider ratio for PC
+        MainFrameMobile = UDim2.new(0.95, 0, 0.85, 0), -- Full width for Mobile
 	}
 }
+
+-- Adaptive Sizing
+local isMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
+local currentMainSize = isMobile and THEME.Sizes.MainFrameMobile or THEME.Sizes.MainFramePC
+
+--[[ CORE UI (Immediate) ]]--
+local gui = create("ScreenGui", {Name = "ProfileUI", Parent = playerGui, ResetOnSpawn = false, IgnoreGuiInset = true, Enabled = true, DisplayOrder = 20})
 
 --[[ REMOTES ]]--
 local function getRemote(name, type)
@@ -73,6 +85,7 @@ local function create(className, props)
 end
 
 local function addCorner(parent, radius)
+    -- Use scale-based corner if possible, or small offset
 	create("UICorner", {Parent = parent, CornerRadius = UDim.new(0, radius)})
 end
 
@@ -81,6 +94,7 @@ local function addStroke(parent, color, thickness)
 end
 
 local function addPadding(parent, px)
+    -- Convert px to pseudo-scale or keep small offset for padding
 	create("UIPadding", {Parent = parent, PaddingTop = UDim.new(0,px), PaddingBottom = UDim.new(0,px), PaddingLeft = UDim.new(0,px), PaddingRight = UDim.new(0,px)})
 end
 
@@ -96,6 +110,9 @@ local function createCharacterViewport(parent, size, pos)
 		Name = "PhotoFrame", Parent = parent, Size = size, Position = pos,
 		BackgroundColor3 = Color3.fromRGB(255, 255, 255), Rotation = math.random(-2, 2)
 	})
+    -- Aspect Ratio Constraint to keep photo rectangular regardless of screen shape
+    create("UIAspectRatioConstraint", {Parent = frame, AspectRatio = 0.8})
+
 	-- Photo Border
 	addStroke(frame, Color3.fromRGB(200, 200, 200), 1)
 	create("UIStroke", {Parent = frame, Color = Color3.fromRGB(20, 20, 20), Thickness = 2, Transparency = 0.8}) -- Shadow hint
@@ -122,7 +139,8 @@ local function createCharacterViewport(parent, size, pos)
 
 	-- Paperclip
 	local clip = create("Frame", {
-		Parent = frame, Size = UDim2.new(0, 15, 0, 40), Position = UDim2.new(0.5, -7, 0, -15),
+		Parent = frame, Size = UDim2.new(0.2, 0, 0.15, 0), Position = UDim2.new(0.5, 0, 0, -10),
+        AnchorPoint = Vector2.new(0.5, 0),
 		BackgroundColor3 = Color3.fromRGB(150, 150, 150), ZIndex = 5
 	})
 	addCorner(clip, 8)
@@ -168,8 +186,6 @@ end
 --[[ CORE UI ]]--
 --================================================================================--
 
-local gui = create("ScreenGui", {Name = "ProfileUI", Parent = playerGui, ResetOnSpawn = false, IgnoreGuiInset = true, Enabled = false})
-
 -- Blur Effect
 local camera = workspace.CurrentCamera
 local blurEffect = create("BlurEffect", {Parent = camera, Size = 15, Enabled = false})
@@ -179,25 +195,32 @@ local overlay = create("Frame", {
 	BackgroundColor3 = Color3.new(0,0,0), BackgroundTransparency = 1, ZIndex = 0
 })
 
+-- MAIN FOLDER (Responsive Size)
 local mainFolder = create("Frame", {
-	Name = "Dossier", Parent = gui, Size = UDim2.new(0, 900, 0, 600), Position = UDim2.new(0.5, 0, 1.5, 0),
+	Name = "Dossier", Parent = gui, Size = currentMainSize, Position = UDim2.new(0.5, 0, 1.5, 0),
 	AnchorPoint = Vector2.new(0.5, 0.5), BackgroundColor3 = THEME.Colors.FolderLight
 })
+-- Maintain Aspect Ratio constraint roughly, but allow flexible width
+create("UIAspectRatioConstraint", {Parent = mainFolder, AspectRatio = 1.4, AspectType = Enum.AspectType.FitWithinMaxSize})
 addCorner(mainFolder, 6)
+
 -- Folder Tab at Top
 local folderTab = create("Frame", {
-	Parent = mainFolder, Size = UDim2.new(0.3, 0, 0.05, 0), Position = UDim2.new(0.05, 0, -0.04, 0),
+	Parent = mainFolder, Size = UDim2.new(0.35, 0, 0.08, 0), Position = UDim2.new(0.05, 0, -0.06, 0),
 	BackgroundColor3 = THEME.Colors.FolderLight
 })
-create("UICorner", {Parent = folderTab, CornerRadius = UDim.new(0, 6)})
+create("UICorner", {Parent = folderTab, CornerRadius = UDim.new(0, 8)})
 create("Frame", { -- Cover bottom rounded corners
 	Parent = folderTab, Size = UDim2.new(1,0,0.5,0), Position = UDim2.new(0,0,0.5,0),
 	BackgroundColor3 = THEME.Colors.FolderLight, BorderSizePixel = 0
 })
 create("TextLabel", {
-	Parent = folderTab, Size = UDim2.new(1,0,1,0), Text = "CONFIDENTIAL // SURVIVOR DATA",
-	Font = THEME.Fonts.Stamp, TextSize = 14, TextColor3 = Color3.new(0,0,0), TextTransparency = 0.6
+	Parent = folderTab, Size = UDim2.new(0.9,0,1,0), Position = UDim2.new(0.05,0,0,0),
+    Text = "CONFIDENTIAL // SURVIVOR DATA",
+	Font = THEME.Fonts.Stamp, TextSize = 14, TextColor3 = Color3.new(0,0,0), TextTransparency = 0.6,
+    TextScaled = true
 })
+create("UITextSizeConstraint", {Parent = folderTab:FindFirstChild("TextLabel"), MaxTextSize = 16})
 
 -- Inner Content Area (The Paper)
 local paperSheet = create("Frame", {
@@ -212,11 +235,12 @@ local texture = create("ImageLabel", {
 
 -- Close "Stamp" Button
 local closeBtn = create("TextButton", {
-	Parent = paperSheet, Size = UDim2.new(0, 50, 0, 50), Position = UDim2.new(1, -60, 0, 10),
+	Parent = paperSheet, Size = UDim2.new(0.1, 0, 0.1, 0), Position = UDim2.new(0.9, 0, 0.02, 0), -- Scale Position
 	BackgroundColor3 = Color3.new(0,0,0), BackgroundTransparency = 1,
-	Text = "X", Font = THEME.Fonts.Handwritten, TextSize = 40, TextColor3 = THEME.Colors.AccentRed,
+	Text = "X", Font = THEME.Fonts.Handwritten, TextScaled = true, TextColor3 = THEME.Colors.AccentRed,
 	Rotation = math.random(-15, 15)
 })
+create("UIAspectRatioConstraint", {Parent = closeBtn, AspectRatio = 1}) -- Keep circle
 -- Circle around X
 create("UIStroke", {Parent = closeBtn, Color = THEME.Colors.AccentRed, Thickness = 3, Transparency = 0.2})
 create("UICorner", {Parent = closeBtn, CornerRadius = UDim.new(1,0)})
@@ -226,39 +250,45 @@ create("UICorner", {Parent = closeBtn, CornerRadius = UDim.new(1,0)})
 local leftCol = create("Frame", {
 	Parent = paperSheet, Size = UDim2.new(0.35, 0, 1, 0), BackgroundTransparency = 1
 })
-create("UIListLayout", {Parent = leftCol, HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim.new(0, 20), SortOrder = Enum.SortOrder.LayoutOrder})
-create("UIPadding", {Parent = leftCol, PaddingTop = UDim.new(0, 40)})
+create("UIListLayout", {Parent = leftCol, HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim.new(0.02, 0), SortOrder = Enum.SortOrder.LayoutOrder})
+create("UIPadding", {Parent = leftCol, PaddingTop = UDim.new(0.05, 0)})
 
--- Photo
-local vpFrame, worldModel, cam = createCharacterViewport(leftCol, UDim2.new(0, 220, 0, 280), UDim2.new(0,0,0,0))
+-- Photo (Use Scale)
+local vpFrame, worldModel, cam = createCharacterViewport(leftCol, UDim2.new(0.8, 0, 0.45, 0), UDim2.new(0,0,0,0))
 vpFrame.Parent.LayoutOrder = 1
 
 -- Info Block
 local infoBlock = create("Frame", {
-	Parent = leftCol, Size = UDim2.new(0.85, 0, 0, 150), BackgroundTransparency = 1, LayoutOrder = 2
+	Parent = leftCol, Size = UDim2.new(0.85, 0, 0.3, 0), BackgroundTransparency = 1, LayoutOrder = 2
 })
 -- Name
 local nameLabel = create("TextLabel", {
-	Parent = infoBlock, Size = UDim2.new(1,0,0,30), Position = UDim2.new(0,0,0,0),
+	Parent = infoBlock, Size = UDim2.new(1,0,0.2,0), Position = UDim2.new(0,0,0,0),
 	BackgroundTransparency = 1, Text = "SUBJECT: " .. string.upper(player.Name),
-	Font = THEME.Fonts.Typewriter, TextSize = 18, TextColor3 = THEME.Colors.InkPrimary, TextXAlignment = Enum.TextXAlignment.Left
+	Font = THEME.Fonts.Typewriter, TextScaled = true, TextColor3 = THEME.Colors.InkPrimary, TextXAlignment = Enum.TextXAlignment.Left
 })
+create("UITextSizeConstraint", {Parent = nameLabel, MaxTextSize = 20})
+
 -- Title
 local titleLabel = create("TextLabel", {
-	Parent = infoBlock, Size = UDim2.new(1,0,0,40), Position = UDim2.new(0,0,0,30),
+	Parent = infoBlock, Size = UDim2.new(1,0,0.25,0), Position = UDim2.new(0,0,0.22,0),
 	BackgroundTransparency = 1, Text = "NO TITLE",
-	Font = THEME.Fonts.Stamp, TextSize = 32, TextColor3 = THEME.Colors.AccentRed, TextXAlignment = Enum.TextXAlignment.Left,
+	Font = THEME.Fonts.Stamp, TextScaled = true, TextColor3 = THEME.Colors.AccentRed, TextXAlignment = Enum.TextXAlignment.Left,
 	Rotation = -2
 })
+create("UITextSizeConstraint", {Parent = titleLabel, MaxTextSize = 36})
+
 -- Level
 local levelLabel = create("TextLabel", {
-	Parent = infoBlock, Size = UDim2.new(1,0,0,25), Position = UDim2.new(0,0,0,80),
+	Parent = infoBlock, Size = UDim2.new(1,0,0.15,0), Position = UDim2.new(0,0,0.55,0),
 	BackgroundTransparency = 1, Text = "CLEARANCE LEVEL 0",
-	Font = THEME.Fonts.Typewriter, TextSize = 16, TextColor3 = THEME.Colors.InkSecondary, TextXAlignment = Enum.TextXAlignment.Left
+	Font = THEME.Fonts.Typewriter, TextScaled = true, TextColor3 = THEME.Colors.InkSecondary, TextXAlignment = Enum.TextXAlignment.Left
 })
+create("UITextSizeConstraint", {Parent = levelLabel, MaxTextSize = 18})
+
 -- XP Bar
 local xpBg = create("Frame", {
-	Parent = infoBlock, Size = UDim2.new(1,0,0,12), Position = UDim2.new(0,0,0,105),
+	Parent = infoBlock, Size = UDim2.new(1,0,0.08,0), Position = UDim2.new(0,0,0.75,0),
 	BackgroundColor3 = Color3.fromRGB(200,200,200), BorderSizePixel = 1, BorderColor3 = THEME.Colors.InkSecondary
 })
 local xpFill = create("Frame", {
@@ -272,16 +302,16 @@ local rightCol = create("Frame", {
 
 -- Sticky Note Tabs
 local tabContainer = create("Frame", {
-	Parent = rightCol, Size = UDim2.new(1,0,0,50), Position = UDim2.new(0,0,0,20), BackgroundTransparency = 1
+	Parent = rightCol, Size = UDim2.new(1,0,0.1,0), Position = UDim2.new(0,0,0.02,0), BackgroundTransparency = 1
 })
-local tabLayout = create("UIListLayout", {Parent = tabContainer, FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 10)})
+local tabLayout = create("UIListLayout", {Parent = tabContainer, FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0.02, 0)})
 
 local contentContainer = create("Frame", {
-	Parent = rightCol, Size = UDim2.new(1,0,0.85,0), Position = UDim2.new(0,0,0,80), BackgroundTransparency = 1
+	Parent = rightCol, Size = UDim2.new(1,0,0.85,0), Position = UDim2.new(0,0,0.14,0), BackgroundTransparency = 1
 })
 -- Divider Line
 create("Frame", {
-	Parent = rightCol, Size = UDim2.new(1,0,0,2), Position = UDim2.new(0,0,0,75),
+	Parent = rightCol, Size = UDim2.new(1,0,0.002,0), Position = UDim2.new(0,0,0.13,0),
 	BackgroundColor3 = THEME.Colors.InkSecondary, BackgroundTransparency = 0.5, BorderSizePixel = 0
 })
 
@@ -317,17 +347,21 @@ local tabsDef = {
 }
 
 for _, t in ipairs(tabsDef) do
+    -- Responsive Tab Buttons
 	local btn = create("TextButton", {
 		Parent = tabContainer, Size = UDim2.new(0.3, 0, 1, 0), BackgroundColor3 = t.color,
-		Text = t.label, Font = THEME.Fonts.Handwritten, TextSize = 18, TextColor3 = THEME.Colors.InkPrimary
+		Text = t.label, Font = THEME.Fonts.Handwritten, TextScaled = true, TextColor3 = THEME.Colors.InkPrimary
 	})
-	-- Sticky note look
-	create("UICorner", {Parent = btn, CornerRadius = UDim.new(0, 0)}) -- Sharp corners usually, maybe slightly curl?
+    create("UITextSizeConstraint", {Parent = btn, MaxTextSize = 18})
+	create("UICorner", {Parent = btn, CornerRadius = UDim.new(0.1, 0)})
+    
 	-- Shadow
 	create("Frame", {
 		Parent = btn, Size = UDim2.new(1,2,1,2), Position = UDim2.new(0,1,0,1), ZIndex = -1,
-		BackgroundColor3 = Color3.new(0,0,0), BackgroundTransparency = 0.7
+		BackgroundColor3 = Color3.new(0,0,0), BackgroundTransparency = 0.7,
+        BorderSizePixel = 0
 	})
+    create("UICorner", {Parent = btn:FindFirstChild("Frame"), CornerRadius = UDim.new(0.1, 0)})
 
 	btn.MouseButton1Click:Connect(function()
 		switchTab(t.id)
@@ -339,6 +373,7 @@ for _, t in ipairs(tabsDef) do
 end
 switchTab("Stats") -- Default
 
+
 --================================================================================--
 --[[ DATA POPULATION ]]--
 --================================================================================--
@@ -347,12 +382,16 @@ local function createStatRow(parent, label, value)
 	local row = create("Frame", {Parent = parent, Size = UDim2.new(1,0,0,30), BackgroundTransparency = 1})
 	create("TextLabel", {
 		Parent = row, Size = UDim2.new(0.6,0,1,0), BackgroundTransparency = 1,
-		Text = label, Font = THEME.Fonts.Typewriter, TextSize = 16, TextColor3 = THEME.Colors.InkPrimary, TextXAlignment = Enum.TextXAlignment.Left
+		Text = label, Font = THEME.Fonts.Typewriter, TextScaled = true, TextColor3 = THEME.Colors.InkPrimary, TextXAlignment = Enum.TextXAlignment.Left
 	})
 	create("TextLabel", {
 		Parent = row, Size = UDim2.new(0.4,0,1,0), Position = UDim2.new(0.6,0,0,0), BackgroundTransparency = 1,
-		Text = tostring(value), Font = THEME.Fonts.Handwritten, TextSize = 20, TextColor3 = THEME.Colors.InkSecondary, TextXAlignment = Enum.TextXAlignment.Right
+		Text = tostring(value), Font = THEME.Fonts.Handwritten, TextScaled = true, TextColor3 = THEME.Colors.InkSecondary, TextXAlignment = Enum.TextXAlignment.Right
 	})
+    -- Constraints for readability
+    create("UITextSizeConstraint", {Parent = row:FindFirstChild("TextLabel"), MaxTextSize = 16})
+    create("UITextSizeConstraint", {Parent = row:FindFirstChild("TextLabel", true), MaxTextSize = 20})
+    
 	create("Frame", { -- Dotted line
 		Parent = row, Size = UDim2.new(1,0,0,1), Position = UDim2.new(0,0,1,0),
 		BackgroundColor3 = THEME.Colors.InkSecondary, BackgroundTransparency = 0.8
@@ -360,6 +399,7 @@ local function createStatRow(parent, label, value)
 end
 
 local function updateStats()
+    -- same logic
 	-- Clear
 	for _, c in pairs(statPage:GetChildren()) do if c:IsA("Frame") then c:Destroy() end end
 
@@ -386,9 +426,8 @@ local function updateStats()
 	for _, item in ipairs(map) do
 		createStatRow(statPage, item[1], item[2] or 0)
 	end
-
-	-- Radar Chart Simulation (Visual Only - Skill Graph)
-	-- Ideally we draw lines, but for now let's add a visual "Evaluation" stamp
+    
+    -- Stamp
 	local kills = data.TotalKills or 0
 	local rating = "ROOKIE"
 	if kills > 1000 then rating = "SURVIVOR" end
@@ -397,9 +436,10 @@ local function updateStats()
 
 	local stamp = create("TextLabel", {
 		Parent = statPage, Size = UDim2.new(1,0,0,60), BackgroundTransparency = 1,
-		Text = "RATING: " .. rating, Font = THEME.Fonts.Stamp, TextSize = 28, TextColor3 = THEME.Colors.AccentRed,
+		Text = "RATING: " .. rating, Font = THEME.Fonts.Stamp, TextScaled = true, TextColor3 = THEME.Colors.AccentRed,
 		Rotation = -5
 	})
+    create("UITextSizeConstraint", {Parent = stamp, MaxTextSize = 28})
 	create("UIStroke", {Parent = stamp, Color = THEME.Colors.AccentRed, Thickness = 2, Transparency = 0.5})
 end
 
@@ -421,15 +461,15 @@ local function updateWeapons()
 
 		create("TextLabel", {
 			Parent = row, Size = UDim2.new(0.5,0,0.5,0), Position = UDim2.new(0.05,0,0.1,0), BackgroundTransparency = 1,
-			Text = w.Name, Font = THEME.Fonts.Typewriter, TextSize = 16, TextColor3 = THEME.Colors.InkPrimary, TextXAlignment = Enum.TextXAlignment.Left
+			Text = w.Name, Font = THEME.Fonts.Typewriter, TextScaled = true, TextColor3 = THEME.Colors.InkPrimary, TextXAlignment = Enum.TextXAlignment.Left
 		})
 		create("TextLabel", {
 			Parent = row, Size = UDim2.new(0.4,0,1,0), Position = UDim2.new(0.55,0,0,0), BackgroundTransparency = 1,
-			Text = (w.Kills or 0) .. " KILLS", Font = THEME.Fonts.Handwritten, TextSize = 18, TextColor3 = THEME.Colors.AccentRed, TextXAlignment = Enum.TextXAlignment.Right
+			Text = (w.Kills or 0) .. " KILLS", Font = THEME.Fonts.Handwritten, TextScaled = true, TextColor3 = THEME.Colors.AccentRed, TextXAlignment = Enum.TextXAlignment.Right
 		})
 		create("TextLabel", {
 			Parent = row, Size = UDim2.new(0.5,0,0.4,0), Position = UDim2.new(0.05,0,0.5,0), BackgroundTransparency = 1,
-			Text = "DMG: " .. (w.Damage or 0), Font = THEME.Fonts.Tech, TextSize = 12, TextColor3 = THEME.Colors.InkSecondary, TextXAlignment = Enum.TextXAlignment.Left
+			Text = "DMG: " .. (w.Damage or 0), Font = THEME.Fonts.Tech, TextScaled = true, TextColor3 = THEME.Colors.InkSecondary, TextXAlignment = Enum.TextXAlignment.Left
 		})
 	end
 end
@@ -530,7 +570,7 @@ closeBtn.MouseButton1Click:Connect(toggle)
 
 -- HUD Button (Folder Icon on Screen)
 local hudBtn = create("TextButton", {
-	Name = "ProfileHUD", Parent = gui, Size = UDim2.new(0, 60, 0, 60), Position = UDim2.new(0, 20, 0.5, -30),
+	Name = "ProfileHUD", Parent = gui, Size = UDim2.new(0, 60, 0, 60), Position = UDim2.new(0.02, 0, 0.5, -30),
 	BackgroundColor3 = THEME.Colors.FolderDark, Text = ""
 })
 addCorner(hudBtn, 8)

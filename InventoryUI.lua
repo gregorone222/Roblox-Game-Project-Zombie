@@ -13,6 +13,22 @@ local Lighting = game:GetService("Lighting")
 
 local player = Players.LocalPlayer
 
+-- --- UI CREATION (Immediate) ---
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "InventoryUI"
+screenGui.IgnoreGuiInset = true
+screenGui.ResetOnSpawn = false
+screenGui.DisplayOrder = 10 -- Ensure it's on top of other lobby UIs
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+-- Initialize Blur Effect
+local camera = workspace.CurrentCamera
+local blurEffect = Instance.new("BlurEffect")
+blurEffect.Name = "InventoryBlur"
+blurEffect.Size = 0
+blurEffect.Enabled = false
+blurEffect.Parent = camera
+
 -- Module & Event References
 local ModuleScriptReplicated = ReplicatedStorage:WaitForChild("ModuleScript")
 local WeaponModule = require(ModuleScriptReplicated:WaitForChild("WeaponModule"))
@@ -31,123 +47,6 @@ local skinEvent = ReplicatedStorage.RemoteEvents:WaitForChild("SkinManagementEve
 
 -- --- THEME CONFIGURATION ---
 local THEME = {
-	COLORS = {
-		CANVAS_MAIN = Color3.fromRGB(60, 55, 50),   -- Dark Canvas
-		CANVAS_LIGHT = Color3.fromRGB(80, 75, 70),  -- Lighter Canvas
-		STRAP       = Color3.fromRGB(40, 35, 30),   -- Dark Strap
-		STITCH      = Color3.fromRGB(120, 110, 100),-- Thread
-
-		POCKET_BG   = Color3.fromRGB(50, 45, 40),   -- Inner Pocket
-		POCKET_DARK = Color3.fromRGB(35, 30, 25),   -- Deep Pocket
-
-		ACCENT_ZIP  = Color3.fromRGB(180, 140, 60), -- Brass/Gold Zipper
-		HIGHLIGHT   = Color3.fromRGB(200, 180, 120), -- Highlight Tan
-
-		TEXT_MAIN   = Color3.fromRGB(230, 230, 220), -- Cloth White
-		TEXT_DARK   = Color3.fromRGB(30, 30, 30),    -- Ink Black
-	},
-	FONTS = {
-		TITLE   = Enum.Font.SpecialElite,
-		HEADER  = Enum.Font.GothamBold,
-		BODY    = Enum.Font.GothamMedium,
-	}
-}
-
--- --- UI STATE ---
-local inventoryData = nil
-local selectedWeapon = nil
-local selectedSkin = nil
-local selectedCategory = "All"
-local currentTab = "Weapons"
-local currentPreview = nil
-local blurEffect = nil -- For Blur Effect
-
--- --- UI CREATION ---
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "InventoryUI"
-screenGui.IgnoreGuiInset = true
-screenGui.ResetOnSpawn = false
-screenGui.DisplayOrder = 10 -- Ensure it's on top of other lobby UIs
-screenGui.Parent = player:WaitForChild("PlayerGui")
-
--- Initialize Blur Effect
-local camera = workspace.CurrentCamera
-blurEffect = Instance.new("BlurEffect")
-blurEffect.Name = "InventoryBlur"
-blurEffect.Size = 0
-blurEffect.Enabled = false
-blurEffect.Parent = camera
-
--- Helper: Create Stitching Effect
-local function addStitching(parent)
-	local stitch = Instance.new("UIStroke")
-	stitch.Color = THEME.COLORS.STITCH
-	stitch.Thickness = 2
-	stitch.Transparency = 0.5
-	stitch.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-	stitch.Parent = parent
-	return stitch
-end
-
--- Helper: Create Canvas Texture
-local function addCanvasTexture(parent)
-	local texture = Instance.new("ImageLabel")
-	texture.Name = "CanvasTexture"
-	texture.Size = UDim2.new(1,0,1,0)
-	texture.BackgroundTransparency = 1
-	texture.Image = "rbxassetid://6008328148" -- Noise/Fabric texture
-	texture.ImageTransparency = 0.92
-	texture.ImageColor3 = Color3.new(0,0,0)
-	texture.ScaleType = Enum.ScaleType.Tile
-	texture.TileSize = UDim2.new(0, 64, 0, 64)
-	texture.ZIndex = parent.ZIndex + 1
-	texture.Parent = parent
-	return texture
-end
-
--- Helper: Create Rounded Corner
-local function addCorner(parent, r)
-	local c = Instance.new("UICorner")
-	c.CornerRadius = UDim.new(0, r or 8)
-	c.Parent = parent
-	return c
-end
-
--- Open Button (Backpack Icon)
-local openButton = Instance.new("TextButton")
-openButton.Name = "OpenBtn"
-openButton.Size = UDim2.new(0, 80, 0, 80)
-openButton.Position = UDim2.new(0, 20, 0.5, 0)
-openButton.AnchorPoint = Vector2.new(0, 0.5)
-openButton.BackgroundColor3 = THEME.COLORS.CANVAS_MAIN
-openButton.Text = ""
-openButton.AutoButtonColor = false
-openButton.ZIndex = 100 -- High ZIndex to ensure clickable
-openButton.Parent = screenGui
-addCorner(openButton, 20)
-addStitching(openButton)
-addCanvasTexture(openButton)
-
-local icon = Instance.new("TextLabel")
-icon.Text = "🎒"
-icon.Size = UDim2.new(1,0,1,0)
-icon.BackgroundTransparency = 1
-icon.TextSize = 40
-icon.Parent = openButton
-
--- Main Backpack Panel
-local mainPanel = Instance.new("Frame")
-mainPanel.Name = "BackpackPanel"
-mainPanel.Size = UDim2.new(0.85, 0, 0.85, 0)
-mainPanel.Position = UDim2.new(0.5, 0, 0.5, 0)
-mainPanel.AnchorPoint = Vector2.new(0.5, 0.5)
-mainPanel.BackgroundColor3 = THEME.COLORS.CANVAS_MAIN
-mainPanel.Visible = false
-mainPanel.ZIndex = 101
-mainPanel.Parent = screenGui
-addCorner(mainPanel, 16)
-addStitching(mainPanel)
-addCanvasTexture(mainPanel)
 
 -- Zipper Top
 local zipper = Instance.new("Frame")

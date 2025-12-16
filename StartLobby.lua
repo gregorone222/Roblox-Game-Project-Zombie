@@ -176,15 +176,29 @@ local blinkTweens = {} -- Store blink tweens to cancel them properly
 -- List of Lobby UIs to hide during cinematic
 local LOBBY_UIS = {
 	"CoinsUI", "MissionPointsUI", "AchievementPointsUI",
-	"ProfileUI", "DailyRewardUI", "InventoryUI",
+	"ProfileUI", "DailyRewardUI", "InventoryUI", "LobbyRoomUI",
 	"MissionButton", "DailyRewardHUD" -- Removed "MissionUI" to prevent auto-enabling
 }
 
 local function setLobbyUIVisibility(visible)
+	print("StartLobby: Setting Lobby UI Visibility to", visible)
 	for _, name in ipairs(LOBBY_UIS) do
+		-- Try to find immediately
 		local ui = playerGui:FindFirstChild(name)
+		
+		-- If not found and we are trying to SHOW it, wait a bit (it might be loading)
+		if not ui and visible then
+			warn("StartLobby: UI '"..name.."' not found immediately. Waiting...")
+			ui = playerGui:WaitForChild(name, 2) -- Wait up to 2 seconds
+		end
+
 		if ui and ui:IsA("ScreenGui") then
 			ui.Enabled = visible
+			print("StartLobby: Successfully set", name, "Enabled =", visible)
+		else
+			if visible then
+				warn("StartLobby: FAILED to find or enable UI:", name)
+			end
 		end
 	end
 end
@@ -358,6 +372,10 @@ local function exitTitleMode()
 	isTitleMode = false
 	stopUIEnforcer()
 
+	-- RESTORE CONTROLS
+	-- [DEPRECATED] UIS.ModalEnabled = false
+	game:GetService("GuiService").TouchControlsEnabled = true
+
 	if inputConnection then
 		inputConnection:Disconnect()
 		inputConnection = nil
@@ -451,7 +469,8 @@ local function enterTitleMode()
 	cinematicFrame.Visible = true
 
 	-- Hide Mobile Controls (Analog/Jump)
-	UIS.ModalEnabled = true
+	-- [DEPRECATED] UIS.ModalEnabled = true
+	game:GetService("GuiService").TouchControlsEnabled = false
 
 	-- Freeze Character
 	local char = player.Character or player.CharacterAdded:Wait()

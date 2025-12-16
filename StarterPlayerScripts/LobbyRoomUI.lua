@@ -36,9 +36,15 @@ local THEME = {
 		Stamp  = Enum.Font.GothamBlack     -- Stamped status (Fallback to generic if needed)
 	},
 	Sizes = {
-		MainFrame = UDim2.new(0.85, 0, 0.8, 0), -- Reduced size for mobile safety
+		MainFrame = UDim2.new(0.85, 0, 0.8, 0), -- Default PC
 	}
 }
+
+-- Adaptive Sizing (Mobile Check)
+if UserInputService.TouchEnabled and not UserInputService.MouseEnabled then
+    -- On mobile, use 95% width, but limit height to 85% to allow room for Tabs on top
+    THEME.Sizes.MainFrame = UDim2.new(0.95, 0, 0.85, 0)
+end
 
 -- Fallback for specific fonts if not available
 local function getFont(type)
@@ -46,20 +52,23 @@ local function getFont(type)
 end
 
 -- ================== STATE MANAGEMENT ==================
-local state = {
+	state = {
 	isUIOpen = false,
 	activeTab = "OPS",
-	activeView = "MENU", -- MENU, CONFIG_SOLO, CONFIG_SQUAD, LIST
+	activeView = "MENU", -- MENU, CONFIG_SOLO, CONFIG_SQUAD, LIST, CONFIG_QUICK, MATCHMAKING
 	currentRoom = nil,
 	settings = {
 		gameMode = "Story",
 		difficulty = "Easy",
 		roomName = "",
 		maxPlayers = 4,
-		visibility = "Public"
+		visibility = "Public",
+        map = "ACT 1: Village" -- Default Map
 	},
 	blurEffect = nil
 }
+
+
 
 -- UI References
 local gui
@@ -100,6 +109,8 @@ end
 
 -- ================== COMPONENT FACTORY ==================
 
+
+
 -- Standard "Paper" Button
 local function createButton(parent, text, size, pos, color, callback)
 	local btn = create("TextButton", {
@@ -119,6 +130,8 @@ local function createButton(parent, text, size, pos, color, callback)
 		Parent = btn, Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1,
 		Text = text, Font = getFont("Label"), TextScaled = true, TextColor3 = THEME.Colors.TextMain
 	})
+    -- Padding to keep text away from borders
+    create("UIPadding", {Parent = btn.TextLabel, PaddingTop = UDim.new(0.15, 0), PaddingBottom = UDim.new(0.15, 0), PaddingLeft = UDim.new(0.1, 0), PaddingRight = UDim.new(0.1, 0)})
 
 	-- Constraint text size
 	create("UITextSizeConstraint", {Parent = btn.TextLabel, MaxTextSize = 24})
@@ -129,6 +142,8 @@ local function createButton(parent, text, size, pos, color, callback)
 		-- playSound(SOUNDS.Click)
 		if callback then callback() end
 	end)
+
+
 
 	return btn
 end
@@ -226,7 +241,7 @@ local function createOpsPanel(parent)
 
 	-- === SUB-VIEW: CONFIG (For Solo/Squad) ===
 	local configView = create("Frame", {
-		Name = "ConfigView", Parent = panel, Size = UDim2.new(0.6, 0, 0.9, 0), Position = UDim2.new(0.2, 0, 0.05, 0),
+		Name = "ConfigView", Parent = panel, Size = UDim2.new(0.95, 0, 0.9, 0), Position = UDim2.new(0.025, 0, 0.05, 0),
 		BackgroundColor3 = THEME.Colors.Paper, Visible = false
 	})
 	create("UICorner", {Parent = configView, CornerRadius = UDim.new(0.05, 0)})
@@ -234,24 +249,23 @@ local function createOpsPanel(parent)
 
 	-- Top Container (Fixed)
 	local topContainer = create("Frame", {
-		Name = "TopContainer", Parent = configView, Size = UDim2.new(1, 0, 0.2, 0), Position = UDim2.new(0, 0, 0, 0),
+		Name = "TopContainer", Parent = configView, Size = UDim2.new(1, 0, 0.15, 0), Position = UDim2.new(0, 0, 0, 0),
 		BackgroundTransparency = 1
 	})
-	local topLayout = create("UIListLayout", {
-		Parent = topContainer, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0.05, 0),
-		HorizontalAlignment = Enum.HorizontalAlignment.Center, VerticalAlignment = Enum.VerticalAlignment.Center
-	})
+    -- Removed UIListLayout to allow manual positioning for valid "Left Back, Center Title" layout
 
-	-- Back Button
-	local backBtn = createButton(topContainer, "< BACK", UDim2.new(0.3, 0, 0.4, 0), UDim2.new(0,0,0,0), THEME.Colors.AccentRed, function()
+	-- Back Button (Top Left) -- Moved to edge (0.005)
+	local backBtn = createButton(topContainer, "< BACK", UDim2.new(0.2, 0, 0.6, 0), UDim2.new(0.005, 0, 0.5, 0), THEME.Colors.AccentRed, function()
 		state.activeView = "MENU"
 		updateOpsView()
 	end)
+    backBtn.AnchorPoint = Vector2.new(0, 0.5) -- Anchor Left-Center
 	backBtn.LayoutOrder = 1
 	backBtn.TextLabel.TextColor3 = THEME.Colors.Paper
 
 	local header = create("TextLabel", {
-		Parent = topContainer, Size = UDim2.new(0.9, 0, 0.4, 0), BackgroundTransparency = 1,
+		Parent = topContainer, Size = UDim2.new(0.5, 0, 0.6, 0), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5),
+		BackgroundTransparency = 1,
 		Text = "MISSION PARAMETERS", Font = getFont("Header"), TextScaled = true, TextColor3 = THEME.Colors.TextMain,
 		LayoutOrder = 2
 	})
@@ -259,12 +273,12 @@ local function createOpsPanel(parent)
 
 	-- Scroll Container (Middle)
 	local scrollContainer = create("ScrollingFrame", {
-		Name = "OptionsScroll", Parent = configView, Size = UDim2.new(1, 0, 0.65, 0), Position = UDim2.new(0, 0, 0.2, 0),
+		Name = "OptionsScroll", Parent = configView, Size = UDim2.new(1, 0, 0.7, 0), Position = UDim2.new(0, 0, 0.15, 0),
 		BackgroundTransparency = 1, ScrollBarThickness = 4, ScrollBarImageColor3 = THEME.Colors.TextMain,
 		CanvasSize = UDim2.new(0,0,0,0), AutomaticCanvasSize = Enum.AutomaticSize.Y
 	})
 	create("UIListLayout", {
-		Parent = scrollContainer, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0.02, 0),
+		Parent = scrollContainer, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0.05, 0),
 		HorizontalAlignment = Enum.HorizontalAlignment.Center
 	})
 	create("UIPadding", {Parent = scrollContainer, PaddingTop = UDim.new(0.02, 0), PaddingBottom = UDim.new(0.02, 0)})
@@ -302,23 +316,43 @@ local function createOpsPanel(parent)
 
 		for _, opt in ipairs(options) do
 			local optStr = tostring(opt)
+            local isSelected = (state.settings[key] == opt)
+            
 			local btn = create("TextButton", {
-				Parent = btnContainer, Size = UDim2.new(1/#options - 0.05, 0, 1, 0),
-				BackgroundColor3 = (state.settings[key] == opt) and THEME.Colors.TextMain or THEME.Colors.PaperDark,
-				BorderSizePixel = 0, Text = optStr, Font = getFont("Body"), TextScaled = true,
-				TextColor3 = (state.settings[key] == opt) and THEME.Colors.Paper or THEME.Colors.TextMain
+				Parent = btnContainer, Size = UDim2.new(1/#options - 0.02, 0, 1, 0), -- Reduced gap
+				BackgroundColor3 = isSelected and THEME.Colors.Paper or THEME.Colors.PaperDark,
+                BackgroundTransparency = isSelected and 1 or 0, -- Transparent when stamped
+				BorderSizePixel = 0, Text = optStr, 
+                Font = isSelected and getFont("Stamp") or getFont("Body"), 
+                TextScaled = true,
+				TextColor3 = isSelected and THEME.Colors.AccentRed or THEME.Colors.TextMain,
+                Rotation = isSelected and math.random(-3, 3) or 0 -- Stamp Tilt
 			})
 			create("UICorner", {Parent = btn, CornerRadius = UDim.new(0.2, 0)})
+            create("UIPadding", {Parent = btn, PaddingTop = UDim.new(0.1, 0), PaddingBottom = UDim.new(0.1, 0), PaddingLeft = UDim.new(0.05, 0), PaddingRight = UDim.new(0.05, 0)})
 			-- TextButton native text logic fix
-			create("UITextSizeConstraint", {Parent = btn, MaxTextSize = 14})
+			create("UITextSizeConstraint", {Parent = btn, MaxTextSize = 12})
+            
+            -- Stamp Box Border (Only Visible when selected)
+            local border = create("UIStroke", {
+                Parent = btn, Thickness = 2, Color = THEME.Colors.AccentRed, 
+                ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Enabled = isSelected
+            })
 
 			btn.MouseButton1Click:Connect(function()
 				state.settings[key] = opt
 				-- Refresh visuals
 				for _, b in ipairs(optionBtns) do
 					local isSel = (b.Text == optStr)
-					b.BackgroundColor3 = isSel and THEME.Colors.TextMain or THEME.Colors.PaperDark
-					b.TextColor3 = isSel and THEME.Colors.Paper or THEME.Colors.TextMain
+                    -- Stamp Effect Logic
+					b.BackgroundTransparency = isSel and 1 or 0
+                    b.BackgroundColor3 = isSel and THEME.Colors.Paper or THEME.Colors.PaperDark
+					b.TextColor3 = isSel and THEME.Colors.AccentRed or THEME.Colors.TextMain
+                    b.Font = isSel and getFont("Stamp") or getFont("Body")
+                    b.Rotation = isSel and math.random(-3, 3) or 0
+                    
+                    local str = b:FindFirstChildOfClass("UIStroke")
+                    if str then str.Enabled = isSel end
 				end
 			end)
 			table.insert(optionBtns, btn)
@@ -353,10 +387,11 @@ local function createOpsPanel(parent)
 	end
 
 	createInput("SQUAD SIGNATURE", "roomName", 0)
-	createOption("OPERATION MODE", {"Story", "Endless"}, "gameMode", 1)
-	createOption("THREAT LEVEL", {"Easy", "Normal", "Hard", "Expert", "Crazy", "Hell"}, "difficulty", 2)
-	createOption("SQUAD SIZE", {2, 3, 4, 5, 6, 7, 8}, "maxPlayers", 3)
-	createOption("VISIBILITY", {"Public", "Private"}, "visibility", 4)
+    createOption("DESTINATION", {"ACT 1: Village"}, "map", 1)
+	createOption("OPERATION MODE", {"Story", "Endless"}, "gameMode", 2)
+	createOption("THREAT LEVEL", {"Easy", "Normal", "Hard", "Expert", "Crazy", "Hell"}, "difficulty", 3)
+	createOption("SQUAD SIZE", {2, 3, 4, 5, 6, 7, 8}, "maxPlayers", 4)
+	createOption("VISIBILITY", {"Public", "Private"}, "visibility", 5)
 
 	-- Action Button (Context Sensitive)
 	local actionBtn = createButton(bottomContainer, "ACTION", UDim2.new(0.9, 0, 0.8, 0), UDim2.new(0,0,0,0), THEME.Colors.AccentGreen, function()
@@ -371,11 +406,7 @@ local function createOpsPanel(parent)
 				isPrivate = (state.settings.visibility == "Private")
 			})
 		elseif state.activeView == "CONFIG_QUICK" then
-			lobbyRemote:FireServer("startMatchmaking", {
-				gameMode = state.settings.gameMode,
-				difficulty = state.settings.difficulty,
-				playerCount = state.settings.maxPlayers
-			})
+			startMatchmaking()
 		end
 	end)
 	actionBtn.Name = "ActionBtn"
@@ -510,6 +541,160 @@ local function createOpsPanel(parent)
 	actionBtn.Name = "ActionBtn"
 	actionBtn.TextLabel.TextColor3 = THEME.Colors.Paper
 	actionBtn.TextLabel.Font = getFont("Stamp")
+	-- === SUB-VIEW: MATCHMAKING (New) ===
+	local matchmakingView = create("Frame", {
+		Name = "MatchmakingView", Parent = panel, Size = UDim2.new(1, 0, 1, 0),
+		BackgroundTransparency = 1, Visible = false
+	})
+	opsViews["MATCHMAKING"] = matchmakingView
+
+	local mmHeader = create("TextLabel", {
+		Parent = matchmakingView, Size = UDim2.new(1, 0, 0.1, 0), Position = UDim2.new(0, 0, 0.05, 0),
+		Text = "ESTABLISHING UPLINK...", Font = getFont("Header"), TextScaled = true,
+		TextColor3 = THEME.Colors.AccentGreen, BackgroundTransparency = 1
+	})
+	create("UITextSizeConstraint", {Parent = mmHeader, MaxTextSize = 24})
+
+	-- Blinking Text Effect
+	task.spawn(function()
+		while matchmakingView.Parent do
+			for i = 1, 0, -0.1 do mmHeader.TextTransparency = i task.wait(0.05) end
+			for i = 0, 1, 0.1 do mmHeader.TextTransparency = i task.wait(0.05) end
+		end
+	end)
+
+    -- Info Container (Threat Level & Destination)
+    local infoContainer = create("Frame", {
+        Name = "InfoContainer", Parent = matchmakingView, Size = UDim2.new(0.8, 0, 0.15, 0), Position = UDim2.new(0.5, 0, 0.15, 0),
+        AnchorPoint = Vector2.new(0.5, 0), BackgroundTransparency = 1
+    })
+
+    local destLabel = create("TextLabel", {
+        Name = "DestinationLabel", Parent = infoContainer, Size = UDim2.new(1, 0, 0.4, 0), Position = UDim2.new(0, 0, 0, 0),
+        Text = "DESTINATION: VILLAGE", Font = getFont("Label"), TextScaled = true, TextColor3 = THEME.Colors.TextMain,
+        TextXAlignment = Enum.TextXAlignment.Center, BackgroundTransparency = 1
+    })
+    create("UITextSizeConstraint", {Parent = destLabel, MaxTextSize = 18})
+
+    local threatLabel = create("TextLabel", {
+        Name = "ThreatLabel", Parent = infoContainer, Size = UDim2.new(1, 0, 0.4, 0), Position = UDim2.new(0, 0, 0.5, 0),
+        Text = "THREAT LEVEL: NORMAL", Font = getFont("Label"), TextScaled = true, TextColor3 = THEME.Colors.AccentRed,
+        TextXAlignment = Enum.TextXAlignment.Center, BackgroundTransparency = 1
+    })
+    create("UITextSizeConstraint", {Parent = threatLabel, MaxTextSize = 18})
+
+
+	local slotsContainer = create("Frame", {
+		Name = "SlotsContainer", Parent = matchmakingView, Size = UDim2.new(0.9, 0, 0.45, 0),
+		Position = UDim2.new(0.5, 0, 0.45, 0), AnchorPoint = Vector2.new(0.5, 0.5),
+		BackgroundTransparency = 1
+	})
+	-- Grid layout will be set dynamically in startMatchmaking to center slots
+
+	local cancelMMBtn = createButton(matchmakingView, "ABORT SEQUENCE", UDim2.new(0.4, 0, 0.1, 0), UDim2.new(0.3, 0, 0.85, 0), THEME.Colors.AccentRed, function()
+		state.activeView = "MENU"
+		updateOpsView()
+	end)
+	cancelMMBtn.TextLabel.TextColor3 = THEME.Colors.Paper
+
+end -- End of createOpsPanel
+
+function startMatchmaking()
+	state.activeView = "MATCHMAKING"
+	updateOpsView()
+
+	local view = opsViews["MATCHMAKING"]
+	local container = view:FindFirstChild("SlotsContainer")
+    local infoContainer = view:FindFirstChild("InfoContainer")
+	if not container or not infoContainer then return end
+
+    -- Update Info Labels
+    local diff = state.settings.difficulty or "NORMAL"
+    local map = state.settings.map or "ACT 1: Village"
+    
+    infoContainer.DestinationLabel.Text = string.upper(map)
+    infoContainer.ThreatLabel.Text = "THREAT LEVEL: " .. string.upper(diff)
+
+	-- Clear old slots
+	for _, c in ipairs(container:GetChildren()) do if c:IsA("Frame") then c:Destroy() end end
+	
+	-- Remove old layout if exists
+	local oldLayout = container:FindFirstChildOfClass("UIGridLayout")
+	if oldLayout then oldLayout:Destroy() end
+
+	local playerCount = state.settings.maxPlayers or 4
+	
+	-- Create Dynamic Grid Layout
+	create("UIGridLayout", {
+		Parent = container, 
+		CellSize = UDim2.new(1/playerCount - 0.02, 0, 0.8, 0), 
+		CellPadding = UDim2.new(0.02, 0, 0, 0),
+		HorizontalAlignment = Enum.HorizontalAlignment.Center,
+		VerticalAlignment = Enum.VerticalAlignment.Center
+	})
+
+    local currentPlayers = Players:GetPlayers()
+    -- Sort to ensure local player is first or consistent
+    table.sort(currentPlayers, function(a,b) return a.Name < b.Name end)
+
+	-- Create Slots
+	for i = 1, playerCount do
+		local slot = create("Frame", {
+			Parent = container, BackgroundColor3 = THEME.Colors.PaperDark, BorderSizePixel = 0
+		})
+        create("UICorner", {Parent = slot, CornerRadius = UDim.new(0.1, 0)})
+        -- Transparent background for modern look
+        slot.BackgroundTransparency = 1
+
+        local pData = currentPlayers[i]
+		
+        -- Icon/Profile
+		local icon = create("ImageLabel", {
+			Parent = slot, Size = UDim2.new(1, 0, 0.5, 0), Position = UDim2.new(0.5, 0, 0.4, 0), AnchorPoint = Vector2.new(0.5, 0.5),
+			Image = "rbxasset://textures/ui/GuiImagePlaceholder.png", BackgroundTransparency = 1, 
+            ImageColor3 = pData and Color3.new(1,1,1) or THEME.Colors.TextDim,
+            ScaleType = Enum.ScaleType.Crop
+		})
+        create("UIAspectRatioConstraint", {Parent = icon, AspectRatio = 1, AspectType = Enum.AspectType.FitWithinMaxSize})
+        create("UICorner", {Parent = icon, CornerRadius = UDim.new(1, 0)})
+        create("UIStroke", {Parent = icon, Thickness = 3, Color = THEME.Colors.TextMain, ApplyStrokeMode = Enum.ApplyStrokeMode.Border})
+        
+        -- Name Label (Moved to Bottom)
+        local nameLbl = create("TextLabel", {
+            Parent = slot, Size = UDim2.new(1.2, 0, 0.2, 0), Position = UDim2.new(0.5, 0, 0.75, 0), AnchorPoint = Vector2.new(0.5, 0.5),
+            Text = pData and pData.Name or "", 
+            Font = getFont("Body"), TextScaled = true, TextColor3 = THEME.Colors.TextMain, BackgroundTransparency = 1
+        })
+        create("UITextSizeConstraint", {Parent = nameLbl, MaxTextSize = 14})
+		
+		-- Status Text (Moved further down)
+		local statusLbl = create("TextLabel", {
+			Parent = slot, Size = UDim2.new(1, 0, 0.15, 0), Position = UDim2.new(0, 0, 0.9, 0),
+			Text = pData and "LINKED" or "SEARCHING...", 
+            Font = getFont("Data"), TextScaled = true, 
+            TextColor3 = pData and THEME.Colors.AccentGreen or THEME.Colors.TextDim, 
+            BackgroundTransparency = 1
+		})
+
+        if pData then
+            -- Load Avatar (Switched to AvatarBust)
+            task.spawn(function()
+                local content = Players:GetUserThumbnailAsync(pData.UserId, Enum.ThumbnailType.AvatarBust, Enum.ThumbnailSize.Size150x150)
+                if content then icon.Image = content end
+            end)
+        else
+            -- Pulse Effect for Searching
+             task.spawn(function()
+                 local t = 0
+                 while slot.Parent do
+                     t = t + 0.1
+                     local alpha = 0.5 + 0.5 * math.sin(t)
+                     statusLbl.TextTransparency = 0.2 + 0.5 * alpha
+                     task.wait(0.05)
+                 end
+             end)
+        end
+	end
 end
 
 function updateOpsView()
@@ -518,6 +703,8 @@ function updateOpsView()
 
 	if state.activeView == "MENU" then
 		opsViews["MENU"].Visible = true
+	elseif state.activeView == "MATCHMAKING" then
+		opsViews["MATCHMAKING"].Visible = true
 	elseif state.activeView == "CONFIG_SOLO" or state.activeView == "CONFIG_SQUAD" or state.activeView == "CONFIG_QUICK" then
 		local v = opsViews["CONFIG"]
 		v.Visible = true
@@ -619,7 +806,7 @@ local function createIntelPanel(parent)
 
 	local actTitle = create("TextLabel", {
 		Parent = headerFrame, Size = UDim2.new(0.9, 0, 1, 0), Position = UDim2.new(0.05, 0, 0, 0),
-		Text = "ACT 1: THE CURSED VILLAGE", Font = getFont("Header"), TextScaled = true, TextColor3 = THEME.Colors.TextMain, BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left
+		Text = "ACT 1: Village", Font = getFont("Header"), TextScaled = true, TextColor3 = THEME.Colors.TextMain, BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left
 	})
 	create("UITextSizeConstraint", {Parent = actTitle, MaxTextSize = 24})
 
@@ -682,6 +869,15 @@ local function createGUI()
 	})
 	create("UICorner", {Parent = mainFrame, CornerRadius = UDim.new(0.02, 0)})
 	create("UIAspectRatioConstraint", {Parent = mainFrame, AspectRatio = 1.6, AspectType = Enum.AspectType.FitWithinMaxSize}) -- Widen aspect ratio
+
+    -- Paper Texture Overlay
+    create("ImageLabel", {
+        Name = "PaperTexture", Parent = mainFrame, Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1, Image = "rbxassetid://6071575925", -- Grunge/Paper Texture
+        ImageTransparency = 0.9, -- Subtle effect
+        ScaleType = Enum.ScaleType.Tile, TileSize = UDim2.new(0.5, 0, 0.5, 0)
+    })
+    create("UICorner", {Parent = mainFrame.PaperTexture, CornerRadius = UDim.new(0.02, 0)})
 
 	-- Shadow behind main frame
 	create("Frame", {
