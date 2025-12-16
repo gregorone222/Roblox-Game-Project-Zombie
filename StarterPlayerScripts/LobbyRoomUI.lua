@@ -796,21 +796,18 @@ function updateLobbyView(roomData)
 
 			for _, pData in ipairs(roomData.players) do
 				local polaroid = create("Frame", {
-					Parent = grid, BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0
-				})
-				-- Shadow
-				create("Frame", {
-					Parent = polaroid, Size = UDim2.new(1.04, 0, 1.04, 0), Position = UDim2.new(-0.02, 0, -0.02, 0), ZIndex = -1, -- Converted offsets to relative scale
-					BackgroundColor3 = Color3.new(0,0,0), BackgroundTransparency = 0.8
+					Parent = grid, BackgroundTransparency = 1, BorderSizePixel = 0
 				})
 
-				-- Photo (Async Load)
+				-- Photo (Async Load) - Circular Style
 				local photo = create("ImageLabel", {
-					Parent = polaroid, Size = UDim2.new(0.9, 0, 0.75, 0), Position = UDim2.new(0.05, 0, 0.05, 0),
+					Parent = polaroid, Size = UDim2.new(0.9, 0, 0.75, 0), Position = UDim2.new(0.5, 0, 0, 0), AnchorPoint = Vector2.new(0.5, 0),
 					BackgroundColor3 = Color3.fromRGB(50, 50, 50), Image = "rbxasset://textures/ui/GuiImagePlaceholder.png",
-					ScaleType = Enum.ScaleType.Crop
+					ScaleType = Enum.ScaleType.Crop, BorderSizePixel = 0
 				})
 				create("UIAspectRatioConstraint", {Parent = photo, AspectRatio = 1, AspectType = Enum.AspectType.FitWithinMaxSize})
+				create("UICorner", {Parent = photo, CornerRadius = UDim.new(1, 0)})
+				create("UIStroke", {Parent = photo, Thickness = 3, Color = THEME.Colors.TextMain, ApplyStrokeMode = Enum.ApplyStrokeMode.Border})
 
 				-- Async load profile picture
 				task.spawn(function()
@@ -820,19 +817,20 @@ function updateLobbyView(roomData)
 					end
 				end)
 
-				-- Booster Display
+				-- Booster Display (Overlay on bottom of circle)
 				if pData.ActiveBooster then
-					create("TextLabel", {
-						Parent = polaroid, Size = UDim2.new(0.9, 0, 0.2, 0), Position = UDim2.new(0.05, 0, 0.05, 0),
+					local boosterLbl = create("TextLabel", {
+						Parent = photo, Size = UDim2.new(1, 0, 0.25, 0), Position = UDim2.new(0, 0, 0.75, 0),
 						Text = pData.ActiveBooster, Font = getFont("Label"), TextScaled = true,
-						TextColor3 = THEME.Colors.Highlight, BackgroundTransparency = 1, ZIndex = 2,
-						TextStrokeTransparency = 0.5, TextStrokeColor3 = Color3.new(0,0,0)
+						TextColor3 = THEME.Colors.Highlight, BackgroundTransparency = 0.5, BackgroundColor3 = Color3.new(0,0,0),
+						ZIndex = 2
 					})
+					create("UICorner", {Parent = boosterLbl, CornerRadius = UDim.new(0.5, 0)})
 				end
 
 				create("TextLabel", {
 					Parent = polaroid, Size = UDim2.new(1, 0, 0.2, 0), Position = UDim2.new(0, 0, 0.8, 0),
-					Text = pData.Name, Font = getFont("Hand"), TextScaled = true, TextColor3 = Color3.new(0,0,0),
+					Text = pData.Name, Font = getFont("Hand"), TextScaled = true, TextColor3 = THEME.Colors.TextMain,
 					BackgroundTransparency = 1
 				})
 			end
