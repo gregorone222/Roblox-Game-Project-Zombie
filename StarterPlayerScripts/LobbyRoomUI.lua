@@ -49,6 +49,7 @@ end
 local state = {
 	isUIOpen = false,
 	activeTab = "OPS",
+	activeView = "MENU", -- MENU, CONFIG_SOLO, CONFIG_SQUAD, LIST
 	currentRoom = nil,
 	settings = {
 		gameMode = "Story",
@@ -66,6 +67,7 @@ local mainFrame
 local contentContainer
 local tabs = {}
 local panels = {}
+local opsViews = {} -- Sub-views for OPS panel
 
 -- ================== HELPER FUNCTIONS ==================
 
@@ -190,36 +192,70 @@ local function createOpsPanel(parent)
 	})
 	panels["OPS"] = panel
 
-	-- LEFT COLUMN: Mission Config
-	local leftCol = create("Frame", {
-		Parent = panel, Size = UDim2.new(0.4, 0, 0.95, 0), Position = UDim2.new(0.02, 0, 0.025, 0),
-		BackgroundColor3 = THEME.Colors.Paper, BorderSizePixel = 0
+	-- === SUB-VIEW: MENU (Main Navigation) ===
+	local menuView = create("Frame", {
+		Name = "MenuView", Parent = panel, Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Visible = true
 	})
-	create("UICorner", {Parent = leftCol, CornerRadius = UDim.new(0.05, 0)})
+	opsViews["MENU"] = menuView
 
-	-- Header
-	local header = create("TextLabel", {
-		Parent = leftCol, Size = UDim2.new(1, 0, 0.08, 0), BackgroundTransparency = 1,
-		Text = "MISSION PARAMETERS", Font = getFont("Header"), TextScaled = true, TextColor3 = THEME.Colors.TextMain,
-		LayoutOrder = -2
-	})
-	create("UITextSizeConstraint", {Parent = header, MaxTextSize = 22})
-
-	create("Frame", { -- Divider
-		Parent = leftCol, Size = UDim2.new(0.9, 0, 0.005, 0), Position = UDim2.new(0.05, 0, 0.1, 0),
-		BackgroundColor3 = THEME.Colors.TextDim, BackgroundTransparency = 0.8, BorderSizePixel = 0,
-		LayoutOrder = -1
+	local menuGrid = create("UIGridLayout", {
+		Parent = menuView, CellSize = UDim2.new(0.4, 0, 0.4, 0), CellPadding = UDim2.new(0.05, 0, 0.05, 0),
+		HorizontalAlignment = Enum.HorizontalAlignment.Center, VerticalAlignment = Enum.VerticalAlignment.Center
 	})
 
-	local formList = create("UIListLayout", {
-		Parent = leftCol, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0.01, 0),
+	createButton(menuView, "DEPLOY SOLO", UDim2.new(0,0,0,0), UDim2.new(0,0,0,0), THEME.Colors.TextMain, function()
+		state.activeView = "CONFIG_SOLO"
+		updateOpsView()
+	end).TextLabel.TextColor3 = THEME.Colors.Paper
+
+	createButton(menuView, "CREATE SQUAD", UDim2.new(0,0,0,0), UDim2.new(0,0,0,0), THEME.Colors.FolderDark, function()
+		state.activeView = "CONFIG_SQUAD"
+		updateOpsView()
+	end).TextLabel.TextColor3 = THEME.Colors.TextMain
+
+	createButton(menuView, "QUICK MATCH", UDim2.new(0,0,0,0), UDim2.new(0,0,0,0), THEME.Colors.TextMain, function()
+		lobbyRemote:FireServer("quickMatch")
+	end).TextLabel.TextColor3 = THEME.Colors.Paper
+
+	createButton(menuView, "FIND SQUAD", UDim2.new(0,0,0,0), UDim2.new(0,0,0,0), THEME.Colors.Paper, function()
+		state.activeView = "LIST"
+		updateOpsView()
+	end).TextLabel.TextColor3 = THEME.Colors.TextMain
+
+
+	-- === SUB-VIEW: CONFIG (For Solo/Squad) ===
+	local configView = create("Frame", {
+		Name = "ConfigView", Parent = panel, Size = UDim2.new(0.6, 0, 0.9, 0), Position = UDim2.new(0.2, 0, 0.05, 0),
+		BackgroundColor3 = THEME.Colors.Paper, Visible = false
+	})
+	create("UICorner", {Parent = configView, CornerRadius = UDim.new(0.05, 0)})
+	opsViews["CONFIG"] = configView
+
+	local configLayout = create("UIListLayout", {
+		Parent = configView, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0.02, 0),
 		HorizontalAlignment = Enum.HorizontalAlignment.Center
 	})
+
+	-- Back Button
+	local backBtn = createButton(configView, "< BACK", UDim2.new(0.3, 0, 0.08, 0), UDim2.new(0,0,0,0), THEME.Colors.AccentRed, function()
+		state.activeView = "MENU"
+		updateOpsView()
+	end)
+	backBtn.LayoutOrder = -10
+	backBtn.TextLabel.TextColor3 = THEME.Colors.Paper
+	create("Frame", {Parent = configView, Size = UDim2.new(1,0,0.02,0), LayoutOrder = -9, BackgroundTransparency = 1}) -- Spacer
+
+	local header = create("TextLabel", {
+		Parent = configView, Size = UDim2.new(0.9, 0, 0.1, 0), BackgroundTransparency = 1,
+		Text = "MISSION PARAMETERS", Font = getFont("Header"), TextScaled = true, TextColor3 = THEME.Colors.TextMain,
+		LayoutOrder = -8
+	})
+	create("UITextSizeConstraint", {Parent = header, MaxTextSize = 24})
 
 	-- Helper for Options
 	local function createOption(label, options, key, layout)
 		local container = create("Frame", {
-			Parent = leftCol, Size = UDim2.new(0.9, 0, 0.10, 0), BackgroundTransparency = 1, LayoutOrder = layout
+			Parent = configView, Size = UDim2.new(0.9, 0, 0.12, 0), BackgroundTransparency = 1, LayoutOrder = layout
 		})
 		local lbl = create("TextLabel", {
 			Parent = container, Size = UDim2.new(1, 0, 0.35, 0), Text = label,
@@ -265,7 +301,8 @@ local function createOpsPanel(parent)
 	-- Room Name Input
 	local function createInput(label, key, layout)
 		local container = create("Frame", {
-			Parent = leftCol, Size = UDim2.new(0.9, 0, 0.10, 0), BackgroundTransparency = 1, LayoutOrder = layout
+			Name = "Input_"..key,
+			Parent = configView, Size = UDim2.new(0.9, 0, 0.12, 0), BackgroundTransparency = 1, LayoutOrder = layout
 		})
 		local lbl = create("TextLabel", {
 			Parent = container, Size = UDim2.new(1, 0, 0.4, 0), Text = label,
@@ -294,62 +331,90 @@ local function createOpsPanel(parent)
 	createOption("SQUAD SIZE", {2, 3, 4, 5, 6, 7, 8}, "maxPlayers", 3)
 	createOption("VISIBILITY", {"Public", "Private"}, "visibility", 4)
 
-	-- Solo Start Button (Bottom)
-	-- Using LayoutOrder to push it down
-	local spacer = create("Frame", {Parent = leftCol, Size = UDim2.new(1,0,0.02,0), LayoutOrder = 5, BackgroundTransparency = 1})
+	create("Frame", {Parent = configView, Size = UDim2.new(1,0,0.05,0), LayoutOrder = 99, BackgroundTransparency = 1}) -- Spacer
 
-	local soloBtn = createButton(leftCol, "DEPLOY SOLO", UDim2.new(0.9, 0, 0.08, 0), UDim2.new(0,0,0,0), THEME.Colors.TextMain, function()
-		local btn = leftCol:FindFirstChild("Btn_DEPLOY SOLO")
-		if btn then
-			btn.TextLabel.Text = "INITIALIZING..."
-			btn.BackgroundColor3 = THEME.Colors.TextDim
+	-- Action Button (Context Sensitive)
+	local actionBtn = createButton(configView, "ACTION", UDim2.new(0.9, 0, 0.12, 0), UDim2.new(0,0,0,0), THEME.Colors.AccentGreen, function()
+		if state.activeView == "CONFIG_SOLO" then
+			lobbyRemote:FireServer("startSoloGame", {gameMode = state.settings.gameMode, difficulty = state.settings.difficulty})
+		elseif state.activeView == "CONFIG_SQUAD" then
+			lobbyRemote:FireServer("createRoom", {
+				gameMode = state.settings.gameMode,
+				difficulty = state.settings.difficulty,
+				roomName = state.settings.roomName,
+				maxPlayers = state.settings.maxPlayers,
+				isPrivate = (state.settings.visibility == "Private")
+			})
 		end
-		lobbyRemote:FireServer("startSoloGame", {gameMode = state.settings.gameMode, difficulty = state.settings.difficulty})
 	end)
-	soloBtn.LayoutOrder = 6
-	soloBtn.TextLabel.TextColor3 = THEME.Colors.Paper
+	actionBtn.Name = "ActionBtn"
+	actionBtn.LayoutOrder = 100
+	actionBtn.TextLabel.TextColor3 = THEME.Colors.Paper
 
-	-- Create Squad Button (New)
-	local createSquadBtn = createButton(leftCol, "CREATE SQUAD", UDim2.new(0.9, 0, 0.08, 0), UDim2.new(0,0,0,0), THEME.Colors.FolderDark, function()
-		lobbyRemote:FireServer("createRoom", {
-			gameMode = state.settings.gameMode,
-			difficulty = state.settings.difficulty,
-			roomName = state.settings.roomName,
-			maxPlayers = state.settings.maxPlayers,
-			isPrivate = (state.settings.visibility == "Private")
-		})
-	end)
-	createSquadBtn.LayoutOrder = 7
-	createSquadBtn.TextLabel.TextColor3 = THEME.Colors.TextMain
-
-	-- Quick Match Button (New)
-	local quickMatchBtn = createButton(leftCol, "QUICK MATCH", UDim2.new(0.9, 0, 0.08, 0), UDim2.new(0,0,0,0), THEME.Colors.TextMain, function()
-		lobbyRemote:FireServer("quickMatch")
-	end)
-	quickMatchBtn.LayoutOrder = 8
-	quickMatchBtn.TextLabel.TextColor3 = THEME.Colors.Paper
-
-	-- RIGHT COLUMN: Public Rooms
-	local rightCol = create("Frame", {
-		Name = "RightCol",
-		Parent = panel, Size = UDim2.new(0.55, 0, 0.95, 0), Position = UDim2.new(0.44, 0, 0.025, 0),
-		BackgroundTransparency = 1
+	-- === SUB-VIEW: LIST (Public Lobbies) ===
+	local listView = create("Frame", {
+		Name = "ListView", Parent = panel, Size = UDim2.new(0.7, 0, 0.9, 0), Position = UDim2.new(0.15, 0, 0.05, 0),
+		BackgroundTransparency = 1, Visible = false
 	})
+	opsViews["LIST"] = listView
+
+	-- Back Button (List)
+	local backBtnList = createButton(listView, "< BACK", UDim2.new(0.25, 0, 0.08, 0), UDim2.new(0,0,0,0), THEME.Colors.AccentRed, function()
+		state.activeView = "MENU"
+		updateOpsView()
+	end)
+	backBtnList.TextLabel.TextColor3 = THEME.Colors.Paper
 
 	local listHeader = create("TextLabel", {
-		Parent = rightCol, Size = UDim2.new(1, 0, 0.08, 0), Text = "DISTRESS SIGNALS (PUBLIC LOBBIES)",
+		Parent = listView, Size = UDim2.new(1, 0, 0.08, 0), Position = UDim2.new(0, 0, 0.1, 0),
+		Text = "DISTRESS SIGNALS (PUBLIC LOBBIES)",
 		Font = getFont("Header"), TextScaled = true, TextColor3 = THEME.Colors.TextMain, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
 	})
 	create("UITextSizeConstraint", {Parent = listHeader, MaxTextSize = 18})
 
 	local scroll = create("ScrollingFrame", {
-		Name = "RoomList", Parent = rightCol, Size = UDim2.new(1, 0, 0.9, 0), Position = UDim2.new(0, 0, 0.1, 0),
+		Name = "RoomList", Parent = listView, Size = UDim2.new(1, 0, 0.8, 0), Position = UDim2.new(0, 0, 0.2, 0),
 		BackgroundTransparency = 1, ScrollBarThickness = 4, ScrollBarImageColor3 = THEME.Colors.TextMain,
 		CanvasSize = UDim2.new(0,0,0,0), AutomaticCanvasSize = Enum.AutomaticSize.Y
 	})
 	create("UIGridLayout", {
 		Parent = scroll, CellSize = UDim2.new(1, 0, 0.15, 0), CellPadding = UDim2.new(0, 0, 0.02, 0)
 	})
+end
+
+function updateOpsView()
+	-- Hide all first
+	for _, v in pairs(opsViews) do v.Visible = false end
+
+	if state.activeView == "MENU" then
+		opsViews["MENU"].Visible = true
+	elseif state.activeView == "CONFIG_SOLO" or state.activeView == "CONFIG_SQUAD" then
+		local v = opsViews["CONFIG"]
+		v.Visible = true
+
+		-- Toggle Input Fields based on mode
+		local nameInput = v:FindFirstChild("Input_roomName", true)
+		local sizeOpt = v:FindFirstChild("TextLabel", true) -- Hacky, better to use names. But for now...
+		-- Better traversal:
+		for _, c in ipairs(v:GetChildren()) do
+			-- Toggle Squad-only options
+			if c.Name == "Input_roomName" or (c:IsA("Frame") and c:FindFirstChild("TextLabel") and (c.TextLabel.Text == "SQUAD SIZE" or c.TextLabel.Text == "VISIBILITY" or c.TextLabel.Text == "SQUAD SIGNATURE")) then
+				c.Visible = (state.activeView == "CONFIG_SQUAD")
+			end
+		end
+
+		local btn = v:FindFirstChild("ActionBtn")
+		if btn then
+			if state.activeView == "CONFIG_SOLO" then
+				btn.TextLabel.Text = "DEPLOY SOLO"
+			else
+				btn.TextLabel.Text = "ESTABLISH LINK"
+			end
+		end
+	elseif state.activeView == "LIST" then
+		opsViews["LIST"].Visible = true
+		lobbyRemote:FireServer("getPublicRooms") -- Refresh
+	end
 end
 
 local function createLobbyPanel(parent)
@@ -569,10 +634,9 @@ end
 -- ================== VISUAL LOGIC ==================
 
 function updateRoomList(roomsData)
-	local panel = panels["OPS"]
-	if not panel then return end
-	local rightCol = panel:FindFirstChild("RightCol")
-	local scroll = rightCol and rightCol:FindFirstChild("RoomList")
+	local listView = opsViews["LIST"]
+	if not listView then return end
+	local scroll = listView:FindFirstChild("RoomList")
 	if not scroll then return end
 
 	for _, c in ipairs(scroll:GetChildren()) do if c:IsA("Frame") or c:IsA("TextButton") then c:Destroy() end end
@@ -704,6 +768,8 @@ lobbyRemote.OnClientEvent:Connect(function(action, data)
 		updateRoomList(data)
 	elseif action == "leftRoomSuccess" then
 		state.activeTab = "OPS"
+		state.activeView = "MENU" -- Return to Menu on leave
+		updateOpsView()
 		for pid, p in pairs(panels) do p.Visible = (pid == "OPS") end
 		-- Reset Tab Visuals
 		for tid, tabBtn in pairs(tabs) do
