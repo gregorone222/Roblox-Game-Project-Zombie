@@ -232,31 +232,57 @@ local function createOpsPanel(parent)
 	create("UICorner", {Parent = configView, CornerRadius = UDim.new(0.05, 0)})
 	opsViews["CONFIG"] = configView
 
-	local configLayout = create("UIListLayout", {
-		Parent = configView, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0.02, 0),
-		HorizontalAlignment = Enum.HorizontalAlignment.Center
+	-- Top Container (Fixed)
+	local topContainer = create("Frame", {
+		Name = "TopContainer", Parent = configView, Size = UDim2.new(1, 0, 0.2, 0), Position = UDim2.new(0, 0, 0, 0),
+		BackgroundTransparency = 1
+	})
+	local topLayout = create("UIListLayout", {
+		Parent = topContainer, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0.05, 0),
+		HorizontalAlignment = Enum.HorizontalAlignment.Center, VerticalAlignment = Enum.VerticalAlignment.Center
 	})
 
 	-- Back Button
-	local backBtn = createButton(configView, "< BACK", UDim2.new(0.3, 0, 0.08, 0), UDim2.new(0,0,0,0), THEME.Colors.AccentRed, function()
+	local backBtn = createButton(topContainer, "< BACK", UDim2.new(0.3, 0, 0.4, 0), UDim2.new(0,0,0,0), THEME.Colors.AccentRed, function()
 		state.activeView = "MENU"
 		updateOpsView()
 	end)
-	backBtn.LayoutOrder = -10
+	backBtn.LayoutOrder = 1
 	backBtn.TextLabel.TextColor3 = THEME.Colors.Paper
-	create("Frame", {Parent = configView, Size = UDim2.new(1,0,0.02,0), LayoutOrder = -9, BackgroundTransparency = 1}) -- Spacer
 
 	local header = create("TextLabel", {
-		Parent = configView, Size = UDim2.new(0.9, 0, 0.1, 0), BackgroundTransparency = 1,
+		Parent = topContainer, Size = UDim2.new(0.9, 0, 0.4, 0), BackgroundTransparency = 1,
 		Text = "MISSION PARAMETERS", Font = getFont("Header"), TextScaled = true, TextColor3 = THEME.Colors.TextMain,
-		LayoutOrder = -8
+		LayoutOrder = 2
 	})
 	create("UITextSizeConstraint", {Parent = header, MaxTextSize = 24})
+
+	-- Scroll Container (Middle)
+	local scrollContainer = create("ScrollingFrame", {
+		Name = "OptionsScroll", Parent = configView, Size = UDim2.new(1, 0, 0.65, 0), Position = UDim2.new(0, 0, 0.2, 0),
+		BackgroundTransparency = 1, ScrollBarThickness = 4, ScrollBarImageColor3 = THEME.Colors.TextMain,
+		CanvasSize = UDim2.new(0,0,0,0), AutomaticCanvasSize = Enum.AutomaticSize.Y
+	})
+	create("UIListLayout", {
+		Parent = scrollContainer, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0.02, 0),
+		HorizontalAlignment = Enum.HorizontalAlignment.Center
+	})
+	create("UIPadding", {Parent = scrollContainer, PaddingTop = UDim.new(0.02, 0), PaddingBottom = UDim.new(0.02, 0)})
+
+	-- Bottom Container (Fixed)
+	local bottomContainer = create("Frame", {
+		Name = "BottomContainer", Parent = configView, Size = UDim2.new(1, 0, 0.15, 0), Position = UDim2.new(0, 0, 0.85, 0),
+		BackgroundTransparency = 1
+	})
+	create("UIListLayout", {
+		Parent = bottomContainer, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 0),
+		HorizontalAlignment = Enum.HorizontalAlignment.Center, VerticalAlignment = Enum.VerticalAlignment.Center
+	})
 
 	-- Helper for Options
 	local function createOption(label, options, key, layout)
 		local container = create("Frame", {
-			Parent = configView, Size = UDim2.new(0.9, 0, 0.12, 0), BackgroundTransparency = 1, LayoutOrder = layout
+			Parent = scrollContainer, Size = UDim2.new(0.9, 0, 0.15, 0), BackgroundTransparency = 1, LayoutOrder = layout
 		})
 		local lbl = create("TextLabel", {
 			Parent = container, Size = UDim2.new(1, 0, 0.35, 0), Text = label,
@@ -303,7 +329,7 @@ local function createOpsPanel(parent)
 	local function createInput(label, key, layout)
 		local container = create("Frame", {
 			Name = "Input_"..key,
-			Parent = configView, Size = UDim2.new(0.9, 0, 0.12, 0), BackgroundTransparency = 1, LayoutOrder = layout
+			Parent = scrollContainer, Size = UDim2.new(0.9, 0, 0.15, 0), BackgroundTransparency = 1, LayoutOrder = layout
 		})
 		local lbl = create("TextLabel", {
 			Parent = container, Size = UDim2.new(1, 0, 0.4, 0), Text = label,
@@ -332,10 +358,8 @@ local function createOpsPanel(parent)
 	createOption("SQUAD SIZE", {2, 3, 4, 5, 6, 7, 8}, "maxPlayers", 3)
 	createOption("VISIBILITY", {"Public", "Private"}, "visibility", 4)
 
-	create("Frame", {Parent = configView, Size = UDim2.new(1,0,0.05,0), LayoutOrder = 99, BackgroundTransparency = 1}) -- Spacer
-
 	-- Action Button (Context Sensitive)
-	local actionBtn = createButton(configView, "ACTION", UDim2.new(0.9, 0, 0.12, 0), UDim2.new(0,0,0,0), THEME.Colors.AccentGreen, function()
+	local actionBtn = createButton(bottomContainer, "ACTION", UDim2.new(0.9, 0, 0.8, 0), UDim2.new(0,0,0,0), THEME.Colors.AccentGreen, function()
 		if state.activeView == "CONFIG_SOLO" then
 			lobbyRemote:FireServer("startSoloGame", {gameMode = state.settings.gameMode, difficulty = state.settings.difficulty})
 		elseif state.activeView == "CONFIG_SQUAD" then
@@ -400,25 +424,28 @@ function updateOpsView()
 		v.Visible = true
 
 		-- Toggle Input Fields based on mode
-		-- Better traversal:
-		for _, c in ipairs(v:GetChildren()) do
-			if c.Name == "Input_roomName" then
-				c.Visible = (state.activeView == "CONFIG_SQUAD")
-			elseif c:IsA("Frame") and c:FindFirstChild("TextLabel") then
-				local label = c.TextLabel.Text
-				if label == "SQUAD SIZE" then
-					-- Visible for Squad AND Quick Match
-					c.Visible = (state.activeView == "CONFIG_SQUAD" or state.activeView == "CONFIG_QUICK")
-				elseif label == "VISIBILITY" then
-					-- Only for Squad
+		local scroll = v:FindFirstChild("OptionsScroll")
+		if scroll then
+			for _, c in ipairs(scroll:GetChildren()) do
+				if c.Name == "Input_roomName" then
 					c.Visible = (state.activeView == "CONFIG_SQUAD")
-				elseif label == "SQUAD SIGNATURE" then
-					c.Visible = (state.activeView == "CONFIG_SQUAD")
+				elseif c:IsA("Frame") and c:FindFirstChild("TextLabel") then
+					local label = c.TextLabel.Text
+					if label == "SQUAD SIZE" then
+						-- Visible for Squad AND Quick Match
+						c.Visible = (state.activeView == "CONFIG_SQUAD" or state.activeView == "CONFIG_QUICK")
+					elseif label == "VISIBILITY" then
+						-- Only for Squad
+						c.Visible = (state.activeView == "CONFIG_SQUAD")
+					elseif label == "SQUAD SIGNATURE" then
+						c.Visible = (state.activeView == "CONFIG_SQUAD")
+					end
 				end
 			end
 		end
 
-		local btn = v:FindFirstChild("ActionBtn")
+		local bottomContainer = v:FindFirstChild("BottomContainer")
+		local btn = bottomContainer and bottomContainer:FindFirstChild("ActionBtn")
 		if btn then
 			if state.activeView == "CONFIG_SOLO" then
 				btn.TextLabel.Text = "DEPLOY SOLO"
@@ -758,11 +785,29 @@ function updateLobbyView(roomData)
 					BackgroundColor3 = Color3.new(0,0,0), BackgroundTransparency = 0.8
 				})
 
-				-- Photo (Placeholder)
-				create("ImageLabel", {
+				-- Photo (Async Load)
+				local photo = create("ImageLabel", {
 					Parent = polaroid, Size = UDim2.new(0.9, 0, 0.75, 0), Position = UDim2.new(0.05, 0, 0.05, 0),
 					BackgroundColor3 = Color3.fromRGB(50, 50, 50), Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
 				})
+
+				-- Async load profile picture
+				task.spawn(function()
+					local content, isReady = Players:GetUserThumbnailAsync(pData.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
+					if content then
+						photo.Image = content
+					end
+				end)
+
+				-- Booster Display
+				if pData.ActiveBooster then
+					create("TextLabel", {
+						Parent = polaroid, Size = UDim2.new(0.9, 0, 0.2, 0), Position = UDim2.new(0.05, 0, 0.05, 0),
+						Text = pData.ActiveBooster, Font = getFont("Label"), TextScaled = true,
+						TextColor3 = THEME.Colors.Highlight, BackgroundTransparency = 1, ZIndex = 2,
+						TextStrokeTransparency = 0.5, TextStrokeColor3 = Color3.new(0,0,0)
+					})
+				end
 
 				create("TextLabel", {
 					Parent = polaroid, Size = UDim2.new(1, 0, 0.2, 0), Position = UDim2.new(0, 0, 0.8, 0),
