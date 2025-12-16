@@ -403,14 +403,113 @@ local function createOpsPanel(parent)
 	})
 	create("UITextSizeConstraint", {Parent = listHeader, MaxTextSize = 18})
 
+	-- Private Room Input Area (New Addition)
+	local privateFrame = create("Frame", {
+		Parent = listView, Size = UDim2.new(1, 0, 0.12, 0), Position = UDim2.new(0, 0, 0.20, 0),
+		BackgroundTransparency = 1
+	})
+
+	local privateInput = create("TextBox", {
+		Parent = privateFrame, Size = UDim2.new(0.7, 0, 1, 0), 
+		BackgroundColor3 = THEME.Colors.PaperDark, Text = "", PlaceholderText = "ENTER ENCRYPTED KEY...",
+		Font = getFont("Body"), TextScaled = true, TextColor3 = THEME.Colors.TextMain,
+		PlaceholderColor3 = THEME.Colors.TextDim
+	})
+	create("UICorner", {Parent = privateInput, CornerRadius = UDim.new(0.2, 0)})
+	create("UITextSizeConstraint", {Parent = privateInput, MaxTextSize = 14})
+
+	local joinPrivateBtn = createButton(privateFrame, "JOIN", UDim2.new(0.25, 0, 1, 0), UDim2.new(0.75, 0, 0, 0), THEME.Colors.FolderDark, function()
+		if privateInput.Text ~= "" then
+			lobbyRemote:FireServer("joinRoom", {roomCode = privateInput.Text})
+		end
+	end)
+	joinPrivateBtn.TextLabel.TextColor3 = THEME.Colors.TextMain
+
 	local scroll = create("ScrollingFrame", {
-		Name = "RoomList", Parent = listView, Size = UDim2.new(1, 0, 0.8, 0), Position = UDim2.new(0, 0, 0.2, 0),
+		Name = "RoomList", Parent = listView, Size = UDim2.new(1, 0, 0.65, 0), Position = UDim2.new(0, 0, 0.35, 0),
 		BackgroundTransparency = 1, ScrollBarThickness = 4, ScrollBarImageColor3 = THEME.Colors.TextMain,
 		CanvasSize = UDim2.new(0,0,0,0), AutomaticCanvasSize = Enum.AutomaticSize.Y
 	})
 	create("UIGridLayout", {
 		Parent = scroll, CellSize = UDim2.new(1, 0, 0.15, 0), CellPadding = UDim2.new(0, 0, 0.02, 0)
 	})
+
+	-- === SUB-VIEW: SQUAD ROOM (Replaces old LobbyPanel) ===
+	local squadView = create("Frame", {
+		Name = "SquadView", Parent = panel, Size = UDim2.new(1, 0, 1, 0),
+		BackgroundTransparency = 1, Visible = false
+	})
+	opsViews["SQUAD_ROOM"] = squadView
+
+	-- Info Card (Left)
+	local infoCard = create("Frame", {
+		Parent = squadView, Size = UDim2.new(0.3, 0, 0.9, 0), Position = UDim2.new(0.02, 0, 0.05, 0),
+		BackgroundColor3 = THEME.Colors.Paper, BorderSizePixel = 0
+	})
+	create("UICorner", {Parent = infoCard, CornerRadius = UDim.new(0.05, 0)})
+
+	-- Header Strip
+	local headerFrame = create("Frame", {
+		Name = "HeaderFrame", Parent = infoCard, Size = UDim2.new(1, 0, 0.15, 0), BackgroundColor3 = THEME.Colors.PaperDark, BorderSizePixel = 0
+	})
+	create("UICorner", {Parent = headerFrame, CornerRadius = UDim.new(0.05, 0)})
+	create("Frame", { -- Flatten bottom corners
+		Parent = headerFrame, Size = UDim2.new(1, 0, 0.5, 0), Position = UDim2.new(0,0,0.5,0), BackgroundColor3 = THEME.Colors.PaperDark, BorderSizePixel = 0
+	})
+
+	local roomTitle = create("TextLabel", {
+		Name = "RoomTitle", Parent = headerFrame, Size = UDim2.new(0.9, 0, 1, 0), Position = UDim2.new(0.05, 0, 0, 0),
+		Text = "ROOM NAME", Font = getFont("Header"), TextScaled = true, TextColor3 = THEME.Colors.TextMain, BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Center
+	})
+	create("UITextSizeConstraint", {Parent = roomTitle, MaxTextSize = 24})
+
+	-- Details
+	local roomDetails = create("TextLabel", {
+		Name = "RoomDetails", Parent = infoCard, Size = UDim2.new(0.9, 0, 0.4, 0), Position = UDim2.new(0.05, 0, 0.20, 0),
+		Text = "Mode: Story\nDiff: Easy", Font = getFont("Body"), TextScaled = true, TextColor3 = THEME.Colors.TextDim, BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top
+	})
+	create("UITextSizeConstraint", {Parent = roomDetails, MaxTextSize = 18})
+
+	-- Leave Button
+	createButton(infoCard, "LEAVE SQUAD", UDim2.new(0.9, 0, 0.12, 0), UDim2.new(0.05, 0, 0.85, 0), THEME.Colors.AccentRed, function()
+		lobbyRemote:FireServer("leaveRoom")
+	end).TextLabel.TextColor3 = THEME.Colors.Paper
+
+	-- Roster Area (Right)
+	local rosterArea = create("Frame", {
+		Parent = squadView, Size = UDim2.new(0.65, 0, 0.9, 0), Position = UDim2.new(0.34, 0, 0.05, 0),
+		BackgroundTransparency = 1
+	})
+
+	local rosterHeaderBg = create("Frame", {
+		Parent = rosterArea, Size = UDim2.new(1, 0, 0.1, 0), BackgroundColor3 = THEME.Colors.FolderDark, BackgroundTransparency = 0.5
+	})
+	create("UICorner", {Parent = rosterHeaderBg, CornerRadius = UDim.new(0.2, 0)})
+
+	local rosterHeader = create("TextLabel", {
+		Parent = rosterHeaderBg, Size = UDim2.new(1, 0, 1, 0), Text = "PERSONNEL ROSTER",
+		Font = getFont("Label"), TextScaled = true, TextColor3 = THEME.Colors.TextMain, BackgroundTransparency = 1
+	})
+	create("UITextSizeConstraint", {Parent = rosterHeader, MaxTextSize = 18})
+
+	local rosterGrid = create("ScrollingFrame", {
+		Name = "RosterGrid", Parent = rosterArea, Size = UDim2.new(1, 0, 0.72, 0), Position = UDim2.new(0, 0, 0.12, 0),
+		BackgroundTransparency = 1, ScrollBarThickness = 0,
+		CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y
+	})
+	create("UIGridLayout", {
+		Parent = rosterGrid, CellSize = UDim2.new(0.23, 0, 0.45, 0), CellPadding = UDim2.new(0.02, 0, 0.02, 0)
+	})
+
+	-- Action Button (Host) - Full Width at Bottom
+	local actionBtn = createButton(rosterArea, "START MISSION", UDim2.new(1, 0, 0.12, 0), UDim2.new(0, 0, 0.85, 0), THEME.Colors.AccentGreen, function()
+		if state.currentRoom and state.currentRoom.hostName == player.Name then
+			lobbyRemote:FireServer("forceStartGame")
+		end
+	end)
+	actionBtn.Name = "ActionBtn"
+	actionBtn.TextLabel.TextColor3 = THEME.Colors.Paper
+	actionBtn.TextLabel.Font = getFont("Stamp")
 end
 
 function updateOpsView()
@@ -458,85 +557,9 @@ function updateOpsView()
 	elseif state.activeView == "LIST" then
 		opsViews["LIST"].Visible = true
 		lobbyRemote:FireServer("getPublicRooms") -- Refresh
+	elseif state.activeView == "SQUAD_ROOM" then
+		opsViews["SQUAD_ROOM"].Visible = true
 	end
-end
-
-local function createLobbyPanel(parent)
-	local panel = create("Frame", {
-		Name = "LobbyPanel", Parent = parent, Size = UDim2.new(1, 0, 1, 0),
-		BackgroundTransparency = 1, Visible = false
-	})
-	panels["LOBBY"] = panel
-
-	-- Info Card (Left)
-	local infoCard = create("Frame", {
-		Parent = panel, Size = UDim2.new(0.3, 0, 0.9, 0), Position = UDim2.new(0.02, 0, 0.05, 0),
-		BackgroundColor3 = THEME.Colors.Paper, BorderSizePixel = 0
-	})
-	create("UICorner", {Parent = infoCard, CornerRadius = UDim.new(0.05, 0)})
-
-	-- Header Strip
-	local headerFrame = create("Frame", {
-		Name = "HeaderFrame", Parent = infoCard, Size = UDim2.new(1, 0, 0.15, 0), BackgroundColor3 = THEME.Colors.PaperDark, BorderSizePixel = 0
-	})
-	create("UICorner", {Parent = headerFrame, CornerRadius = UDim.new(0.05, 0)})
-	create("Frame", { -- Flatten bottom corners
-		Parent = headerFrame, Size = UDim2.new(1, 0, 0.5, 0), Position = UDim2.new(0,0,0.5,0), BackgroundColor3 = THEME.Colors.PaperDark, BorderSizePixel = 0
-	})
-
-	local roomTitle = create("TextLabel", {
-		Name = "RoomTitle", Parent = headerFrame, Size = UDim2.new(0.9, 0, 1, 0), Position = UDim2.new(0.05, 0, 0, 0),
-		Text = "ROOM NAME", Font = getFont("Header"), TextScaled = true, TextColor3 = THEME.Colors.TextMain, BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Center
-	})
-	create("UITextSizeConstraint", {Parent = roomTitle, MaxTextSize = 24})
-
-	-- Details
-	local roomDetails = create("TextLabel", {
-		Name = "RoomDetails", Parent = infoCard, Size = UDim2.new(0.9, 0, 0.4, 0), Position = UDim2.new(0.05, 0, 0.20, 0),
-		Text = "Mode: Story\nDiff: Easy", Font = getFont("Body"), TextScaled = true, TextColor3 = THEME.Colors.TextDim, BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top
-	})
-	create("UITextSizeConstraint", {Parent = roomDetails, MaxTextSize = 18})
-
-	-- Leave Button
-	createButton(infoCard, "LEAVE SQUAD", UDim2.new(0.9, 0, 0.12, 0), UDim2.new(0.05, 0, 0.85, 0), THEME.Colors.AccentRed, function()
-		lobbyRemote:FireServer("leaveRoom")
-	end).TextLabel.TextColor3 = THEME.Colors.Paper
-
-	-- Roster Area (Right)
-	local rosterArea = create("Frame", {
-		Parent = panel, Size = UDim2.new(0.65, 0, 0.9, 0), Position = UDim2.new(0.34, 0, 0.05, 0),
-		BackgroundTransparency = 1
-	})
-
-	local rosterHeaderBg = create("Frame", {
-		Parent = rosterArea, Size = UDim2.new(1, 0, 0.1, 0), BackgroundColor3 = THEME.Colors.FolderDark, BackgroundTransparency = 0.5
-	})
-	create("UICorner", {Parent = rosterHeaderBg, CornerRadius = UDim.new(0.2, 0)})
-
-	local rosterHeader = create("TextLabel", {
-		Parent = rosterHeaderBg, Size = UDim2.new(1, 0, 1, 0), Text = "PERSONNEL ROSTER",
-		Font = getFont("Label"), TextScaled = true, TextColor3 = THEME.Colors.TextMain, BackgroundTransparency = 1
-	})
-	create("UITextSizeConstraint", {Parent = rosterHeader, MaxTextSize = 18})
-
-	local rosterGrid = create("ScrollingFrame", {
-		Name = "RosterGrid", Parent = rosterArea, Size = UDim2.new(1, 0, 0.72, 0), Position = UDim2.new(0, 0, 0.12, 0),
-		BackgroundTransparency = 1, ScrollBarThickness = 0,
-		CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y
-	})
-	create("UIGridLayout", {
-		Parent = rosterGrid, CellSize = UDim2.new(0.23, 0, 0.45, 0), CellPadding = UDim2.new(0.02, 0, 0.02, 0)
-	})
-
-	-- Action Button (Host) - Full Width at Bottom
-	local actionBtn = createButton(rosterArea, "START MISSION", UDim2.new(1, 0, 0.12, 0), UDim2.new(0, 0, 0.85, 0), THEME.Colors.AccentGreen, function()
-		if state.currentRoom and state.currentRoom.hostName == player.Name then
-			lobbyRemote:FireServer("forceStartGame")
-		end
-	end)
-	actionBtn.Name = "ActionBtn"
-	actionBtn.TextLabel.TextColor3 = THEME.Colors.Paper
-	actionBtn.TextLabel.Font = getFont("Stamp")
 end
 
 local function createIntelPanel(parent)
@@ -678,8 +701,7 @@ local function createGUI()
 	})
 
 	createTab(tabContainer, "OPS", "OPS", 1)
-	createTab(tabContainer, "LOBBY", "SQUAD", 2)
-	createTab(tabContainer, "INTEL", "INTEL", 3)
+	createTab(tabContainer, "INTEL", "INTEL", 2)
 
 	-- Content Container (Paper Sheet inside Folder)
 	contentContainer = create("Frame", {
@@ -704,7 +726,6 @@ local function createGUI()
 
 	-- Initialize Panels
 	createOpsPanel(contentContainer)
-	createLobbyPanel(contentContainer)
 	createIntelPanel(contentContainer)
 
 	panels["OPS"].Visible = true
@@ -762,28 +783,42 @@ function updateRoomList(roomsData)
 end
 
 function updateLobbyView(roomData)
-	local panel = panels["LOBBY"]
-	if not panel then return end
-
-	state.activeTab = "LOBBY"
-	for pid, p in pairs(panels) do p.Visible = (pid == "LOBBY") end
-	-- Update Tabs Visuals
-	for tid, tabBtn in pairs(tabs) do
-		local active = (tid == "LOBBY")
-		tabBtn.BackgroundColor3 = active and THEME.Colors.FolderMain or THEME.Colors.FolderDark
-		tabBtn.ZIndex = active and 2 or 1
-		tabBtn.Frame.BackgroundColor3 = active and THEME.Colors.FolderMain or THEME.Colors.FolderDark
-		tabBtn.Frame.ZIndex = active and 2 or 1
+	-- Switch to OPS tab and SQUAD_ROOM view
+	if state.activeTab ~= "OPS" then
+		state.activeTab = "OPS"
+		for tid, tabBtn in pairs(tabs) do
+			local active = (tid == "OPS")
+			tabBtn.BackgroundColor3 = active and THEME.Colors.FolderMain or THEME.Colors.FolderDark
+			tabBtn.ZIndex = active and 2 or 1
+			tabBtn.Frame.BackgroundColor3 = active and THEME.Colors.FolderMain or THEME.Colors.FolderDark
+			tabBtn.Frame.ZIndex = active and 2 or 1
+			if tabBtn:FindFirstChild("TextLabel") then
+				tabBtn.TextLabel.ZIndex = active and 3 or 2
+			end
+		end
+		for pid, p in pairs(panels) do p.Visible = (pid == "OPS") end
 	end
+
+	state.activeView = "SQUAD_ROOM"
+	updateOpsView()
+
+	local squadView = opsViews["SQUAD_ROOM"]
+	if not squadView then return end
 
 	state.currentRoom = roomData
 	local isHost = (roomData.hostName == player.Name)
-	local infoCard = panel:FindFirstChild("Frame") -- Info Card
-	local rosterArea = panel:FindFirstChild("Frame", true) -- Assuming second frame, better lookup needed
-	-- Safer lookup:
-	for _, c in ipairs(panel:GetChildren()) do
-		if c:FindFirstChild("RoomTitle") then infoCard = c end
+
+	-- Find components inside squadView
+	local infoCard = squadView:FindFirstChild("Frame") -- Info Card
+	local rosterArea = nil
+	for _, c in ipairs(squadView:GetChildren()) do
 		if c:FindFirstChild("RosterGrid") then rosterArea = c end
+	end
+	-- Fallback if infoCard wasn't first child
+	if not infoCard then
+		for _, c in ipairs(squadView:GetChildren()) do
+			if c:FindFirstChild("HeaderFrame") then infoCard = c break end
+		end
 	end
 
 	if infoCard then
@@ -800,7 +835,9 @@ function updateLobbyView(roomData)
 			infoCard.RoomTitle.Text = string.upper(rName)
 		end
 
-		infoCard.RoomDetails.Text = string.format("HOST: %s\nMODE: %s\nDIFF: %s", rHost, rMode, rDiff)
+		if infoCard:FindFirstChild("RoomDetails") then
+			infoCard.RoomDetails.Text = string.format("HOST: %s\nMODE: %s\nDIFF: %s", rHost, rMode, rDiff)
+		end
 
 		-- Room Code Display (If Private)
 		if roomData.roomCode then
@@ -893,22 +930,15 @@ lobbyRemote.OnClientEvent:Connect(function(action, data)
 		state.activeTab = "OPS"
 		state.activeView = "MENU" -- Return to Menu on leave
 		updateOpsView()
+		-- Panels logic is already simple, just ensure OPS is visible
 		for pid, p in pairs(panels) do p.Visible = (pid == "OPS") end
-		-- Reset Tab Visuals
-		for tid, tabBtn in pairs(tabs) do
-			local active = (tid == "OPS")
-			tabBtn.BackgroundColor3 = active and THEME.Colors.FolderMain or THEME.Colors.FolderDark
-			tabBtn.ZIndex = active and 2 or 1
-			tabBtn.Frame.BackgroundColor3 = active and THEME.Colors.FolderMain or THEME.Colors.FolderDark
-			tabBtn.Frame.ZIndex = active and 2 or 1
-		end
 	end
 end)
 
 createGUI()
 lobbyRemote:FireServer("getPublicRooms")
 
--- Part Interaction Logic
+-- Part Interaction LogicLogic
 task.spawn(function()
 	local part = nil
 	while not part do
