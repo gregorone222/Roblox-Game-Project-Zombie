@@ -801,7 +801,7 @@ function updateLobbyView(roomData)
 
 				-- Photo (Async Load) - Circular Style
 				local photo = create("ImageLabel", {
-					Parent = polaroid, Size = UDim2.new(0.9, 0, 0.75, 0), Position = UDim2.new(0.5, 0, 0, 0), AnchorPoint = Vector2.new(0.5, 0),
+					Parent = polaroid, Size = UDim2.new(0.9, 0, 0.70, 0), Position = UDim2.new(0.5, 0, 0.05, 0), AnchorPoint = Vector2.new(0.5, 0),
 					BackgroundColor3 = Color3.fromRGB(50, 50, 50), Image = "rbxasset://textures/ui/GuiImagePlaceholder.png",
 					ScaleType = Enum.ScaleType.Crop, BorderSizePixel = 0
 				})
