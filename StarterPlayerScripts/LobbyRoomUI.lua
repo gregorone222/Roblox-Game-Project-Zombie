@@ -100,7 +100,7 @@ local function createButton(parent, text, size, pos, color, callback)
 	local btn = create("TextButton", {
 		Name = "Btn_"..text, Parent = parent, Size = size, Position = pos,
 		BackgroundColor3 = color or THEME.Colors.Paper, AutoButtonColor = true,
-		BorderSizePixel = 0
+		BorderSizePixel = 0, Text = ""
 	})
 
 	-- Shadow
@@ -197,22 +197,21 @@ local function createOpsPanel(parent)
 	-- Header
 	local header = create("TextLabel", {
 		Parent = leftCol, Size = UDim2.new(1, 0, 0.1, 0), BackgroundTransparency = 1,
-		Text = "MISSION PARAMETERS", Font = getFont("Header"), TextScaled = true, TextColor3 = THEME.Colors.TextMain
+		Text = "MISSION PARAMETERS", Font = getFont("Header"), TextScaled = true, TextColor3 = THEME.Colors.TextMain,
+		LayoutOrder = -2
 	})
 	create("UITextSizeConstraint", {Parent = header, MaxTextSize = 22})
 
 	create("Frame", { -- Divider
 		Parent = leftCol, Size = UDim2.new(0.9, 0, 0.005, 0), Position = UDim2.new(0.05, 0, 0.1, 0),
-		BackgroundColor3 = THEME.Colors.TextDim, BackgroundTransparency = 0.8, BorderSizePixel = 0
+		BackgroundColor3 = THEME.Colors.TextDim, BackgroundTransparency = 0.8, BorderSizePixel = 0,
+		LayoutOrder = -1
 	})
 
 	local formList = create("UIListLayout", {
-		Parent = leftCol, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0.03, 0),
+		Parent = leftCol, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0.015, 0),
 		HorizontalAlignment = Enum.HorizontalAlignment.Center
 	})
-
-	-- Padding Frame
-	create("Frame", {Parent = leftCol, Size = UDim2.new(1,0,0.1,0), LayoutOrder = 0, BackgroundTransparency = 1})
 
 	-- Helper for Options
 	local function createOption(label, options, key, layout)
@@ -264,9 +263,9 @@ local function createOpsPanel(parent)
 
 	-- Solo Start Button (Bottom)
 	-- Using LayoutOrder to push it down
-	local spacer = create("Frame", {Parent = leftCol, Size = UDim2.new(1,0,0.1,0), LayoutOrder = 3, BackgroundTransparency = 1})
+	local spacer = create("Frame", {Parent = leftCol, Size = UDim2.new(1,0,0.05,0), LayoutOrder = 3, BackgroundTransparency = 1})
 
-	local soloBtn = createButton(leftCol, "DEPLOY SOLO", UDim2.new(0.9, 0, 0.12, 0), UDim2.new(0,0,0,0), THEME.Colors.TextMain, function()
+	local soloBtn = createButton(leftCol, "DEPLOY SOLO", UDim2.new(0.9, 0, 0.11, 0), UDim2.new(0,0,0,0), THEME.Colors.TextMain, function()
 		local btn = leftCol:FindFirstChild("Btn_DEPLOY SOLO")
 		if btn then
 			btn.TextLabel.Text = "INITIALIZING..."
@@ -278,14 +277,14 @@ local function createOpsPanel(parent)
 	soloBtn.TextLabel.TextColor3 = THEME.Colors.Paper
 
 	-- Create Squad Button (New)
-	local createSquadBtn = createButton(leftCol, "CREATE SQUAD", UDim2.new(0.9, 0, 0.12, 0), UDim2.new(0,0,0,0), THEME.Colors.FolderDark, function()
+	local createSquadBtn = createButton(leftCol, "CREATE SQUAD", UDim2.new(0.9, 0, 0.11, 0), UDim2.new(0,0,0,0), THEME.Colors.FolderDark, function()
 		lobbyRemote:FireServer("createRoom", {gameMode = state.settings.gameMode, difficulty = state.settings.difficulty})
 	end)
 	createSquadBtn.LayoutOrder = 5
 	createSquadBtn.TextLabel.TextColor3 = THEME.Colors.TextMain
 
 	-- Quick Match Button (New)
-	local quickMatchBtn = createButton(leftCol, "QUICK MATCH", UDim2.new(0.9, 0, 0.12, 0), UDim2.new(0,0,0,0), THEME.Colors.TextMain, function()
+	local quickMatchBtn = createButton(leftCol, "QUICK MATCH", UDim2.new(0.9, 0, 0.11, 0), UDim2.new(0,0,0,0), THEME.Colors.TextMain, function()
 		lobbyRemote:FireServer("quickMatch")
 	end)
 	quickMatchBtn.LayoutOrder = 6
