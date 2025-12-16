@@ -136,7 +136,7 @@ local function createTab(parent, id, text, layoutOrder)
 		Name = "Tab_"..id, Parent = parent, Size = UDim2.new(0.3, 0, 1, 0),
 		BackgroundColor3 = isActive and THEME.Colors.FolderMain or THEME.Colors.FolderDark,
 		BorderSizePixel = 0, LayoutOrder = layoutOrder, AutoButtonColor = false,
-		ZIndex = isActive and 2 or 1
+		ZIndex = isActive and 2 or 1, Text = ""
 	})
 
 	create("UICorner", {Parent = btn, CornerRadius = UDim.new(0.2, 0)})
@@ -541,7 +541,7 @@ function updateRoomList(roomsData)
 	for _, room in pairs(roomsData) do
 		local card = create("TextButton", {
 			Parent = scroll, Size = UDim2.new(1, 0, 0.15, 0), BackgroundColor3 = THEME.Colors.Paper,
-			AutoButtonColor = true, BorderSizePixel = 0
+			AutoButtonColor = true, BorderSizePixel = 0, Text = ""
 		})
 		create("UICorner", {Parent = card, CornerRadius = UDim.new(0.1, 0)})
 		-- Border via Frame
