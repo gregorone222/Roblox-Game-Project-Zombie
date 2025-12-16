@@ -52,7 +52,10 @@ local state = {
 	currentRoom = nil,
 	settings = {
 		gameMode = "Story",
-		difficulty = "Easy"
+		difficulty = "Easy",
+		roomName = "",
+		maxPlayers = 4,
+		visibility = "Public"
 	},
 	blurEffect = nil
 }
@@ -196,7 +199,7 @@ local function createOpsPanel(parent)
 
 	-- Header
 	local header = create("TextLabel", {
-		Parent = leftCol, Size = UDim2.new(1, 0, 0.1, 0), BackgroundTransparency = 1,
+		Parent = leftCol, Size = UDim2.new(1, 0, 0.08, 0), BackgroundTransparency = 1,
 		Text = "MISSION PARAMETERS", Font = getFont("Header"), TextScaled = true, TextColor3 = THEME.Colors.TextMain,
 		LayoutOrder = -2
 	})
@@ -209,17 +212,17 @@ local function createOpsPanel(parent)
 	})
 
 	local formList = create("UIListLayout", {
-		Parent = leftCol, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0.015, 0),
+		Parent = leftCol, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0.01, 0),
 		HorizontalAlignment = Enum.HorizontalAlignment.Center
 	})
 
 	-- Helper for Options
 	local function createOption(label, options, key, layout)
 		local container = create("Frame", {
-			Parent = leftCol, Size = UDim2.new(0.9, 0, 0.15, 0), BackgroundTransparency = 1, LayoutOrder = layout
+			Parent = leftCol, Size = UDim2.new(0.9, 0, 0.10, 0), BackgroundTransparency = 1, LayoutOrder = layout
 		})
 		local lbl = create("TextLabel", {
-			Parent = container, Size = UDim2.new(1, 0, 0.3, 0), Text = label,
+			Parent = container, Size = UDim2.new(1, 0, 0.35, 0), Text = label,
 			Font = getFont("Label"), TextScaled = true, TextColor3 = THEME.Colors.TextDim,
 			TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
 		})
@@ -229,16 +232,17 @@ local function createOpsPanel(parent)
 			Parent = container, Size = UDim2.new(1, 0, 0.6, 0), Position = UDim2.new(0, 0, 0.4, 0), BackgroundTransparency = 1
 		})
 		create("UIListLayout", {
-			Parent = btnContainer, FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0.05, 0)
+			Parent = btnContainer, FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0.02, 0)
 		})
 
 		local optionBtns = {}
 
 		for _, opt in ipairs(options) do
+			local optStr = tostring(opt)
 			local btn = create("TextButton", {
 				Parent = btnContainer, Size = UDim2.new(1/#options - 0.05, 0, 1, 0),
 				BackgroundColor3 = (state.settings[key] == opt) and THEME.Colors.TextMain or THEME.Colors.PaperDark,
-				BorderSizePixel = 0, Text = opt, Font = getFont("Body"), TextScaled = true,
+				BorderSizePixel = 0, Text = optStr, Font = getFont("Body"), TextScaled = true,
 				TextColor3 = (state.settings[key] == opt) and THEME.Colors.Paper or THEME.Colors.TextMain
 			})
 			create("UICorner", {Parent = btn, CornerRadius = UDim.new(0.2, 0)})
@@ -249,7 +253,7 @@ local function createOpsPanel(parent)
 				state.settings[key] = opt
 				-- Refresh visuals
 				for _, b in ipairs(optionBtns) do
-					local isSel = (b.Text == opt)
+					local isSel = (b.Text == optStr)
 					b.BackgroundColor3 = isSel and THEME.Colors.TextMain or THEME.Colors.PaperDark
 					b.TextColor3 = isSel and THEME.Colors.Paper or THEME.Colors.TextMain
 				end
@@ -258,14 +262,43 @@ local function createOpsPanel(parent)
 		end
 	end
 
-	createOption("OPERATION MODE", {"Story", "Endless", "Crazy"}, "gameMode", 1)
+	-- Room Name Input
+	local function createInput(label, key, layout)
+		local container = create("Frame", {
+			Parent = leftCol, Size = UDim2.new(0.9, 0, 0.10, 0), BackgroundTransparency = 1, LayoutOrder = layout
+		})
+		local lbl = create("TextLabel", {
+			Parent = container, Size = UDim2.new(1, 0, 0.4, 0), Text = label,
+			Font = getFont("Label"), TextScaled = true, TextColor3 = THEME.Colors.TextDim,
+			TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
+		})
+		create("UITextSizeConstraint", {Parent = lbl, MaxTextSize = 14})
+
+		local textBox = create("TextBox", {
+			Parent = container, Size = UDim2.new(1, 0, 0.5, 0), Position = UDim2.new(0, 0, 0.5, 0),
+			BackgroundColor3 = THEME.Colors.PaperDark, Text = "", PlaceholderText = "ENTER ROOM NAME...",
+			Font = getFont("Body"), TextScaled = true, TextColor3 = THEME.Colors.TextMain,
+			PlaceholderColor3 = THEME.Colors.TextDim
+		})
+		create("UICorner", {Parent = textBox, CornerRadius = UDim.new(0.2, 0)})
+		create("UITextSizeConstraint", {Parent = textBox, MaxTextSize = 14})
+
+		textBox.FocusLost:Connect(function()
+			state.settings[key] = textBox.Text
+		end)
+	end
+
+	createInput("SQUAD SIGNATURE", "roomName", 0)
+	createOption("OPERATION MODE", {"Story", "Endless"}, "gameMode", 1)
 	createOption("THREAT LEVEL", {"Easy", "Normal", "Hard", "Expert", "Crazy", "Hell"}, "difficulty", 2)
+	createOption("SQUAD SIZE", {2, 3, 4, 5, 6, 7, 8}, "maxPlayers", 3)
+	createOption("VISIBILITY", {"Public", "Private"}, "visibility", 4)
 
 	-- Solo Start Button (Bottom)
 	-- Using LayoutOrder to push it down
-	local spacer = create("Frame", {Parent = leftCol, Size = UDim2.new(1,0,0.05,0), LayoutOrder = 3, BackgroundTransparency = 1})
+	local spacer = create("Frame", {Parent = leftCol, Size = UDim2.new(1,0,0.02,0), LayoutOrder = 5, BackgroundTransparency = 1})
 
-	local soloBtn = createButton(leftCol, "DEPLOY SOLO", UDim2.new(0.9, 0, 0.11, 0), UDim2.new(0,0,0,0), THEME.Colors.TextMain, function()
+	local soloBtn = createButton(leftCol, "DEPLOY SOLO", UDim2.new(0.9, 0, 0.08, 0), UDim2.new(0,0,0,0), THEME.Colors.TextMain, function()
 		local btn = leftCol:FindFirstChild("Btn_DEPLOY SOLO")
 		if btn then
 			btn.TextLabel.Text = "INITIALIZING..."
@@ -273,21 +306,27 @@ local function createOpsPanel(parent)
 		end
 		lobbyRemote:FireServer("startSoloGame", {gameMode = state.settings.gameMode, difficulty = state.settings.difficulty})
 	end)
-	soloBtn.LayoutOrder = 4
+	soloBtn.LayoutOrder = 6
 	soloBtn.TextLabel.TextColor3 = THEME.Colors.Paper
 
 	-- Create Squad Button (New)
-	local createSquadBtn = createButton(leftCol, "CREATE SQUAD", UDim2.new(0.9, 0, 0.11, 0), UDim2.new(0,0,0,0), THEME.Colors.FolderDark, function()
-		lobbyRemote:FireServer("createRoom", {gameMode = state.settings.gameMode, difficulty = state.settings.difficulty})
+	local createSquadBtn = createButton(leftCol, "CREATE SQUAD", UDim2.new(0.9, 0, 0.08, 0), UDim2.new(0,0,0,0), THEME.Colors.FolderDark, function()
+		lobbyRemote:FireServer("createRoom", {
+			gameMode = state.settings.gameMode,
+			difficulty = state.settings.difficulty,
+			roomName = state.settings.roomName,
+			maxPlayers = state.settings.maxPlayers,
+			isPrivate = (state.settings.visibility == "Private")
+		})
 	end)
-	createSquadBtn.LayoutOrder = 5
+	createSquadBtn.LayoutOrder = 7
 	createSquadBtn.TextLabel.TextColor3 = THEME.Colors.TextMain
 
 	-- Quick Match Button (New)
-	local quickMatchBtn = createButton(leftCol, "QUICK MATCH", UDim2.new(0.9, 0, 0.11, 0), UDim2.new(0,0,0,0), THEME.Colors.TextMain, function()
+	local quickMatchBtn = createButton(leftCol, "QUICK MATCH", UDim2.new(0.9, 0, 0.08, 0), UDim2.new(0,0,0,0), THEME.Colors.TextMain, function()
 		lobbyRemote:FireServer("quickMatch")
 	end)
-	quickMatchBtn.LayoutOrder = 6
+	quickMatchBtn.LayoutOrder = 8
 	quickMatchBtn.TextLabel.TextColor3 = THEME.Colors.Paper
 
 	-- RIGHT COLUMN: Public Rooms
