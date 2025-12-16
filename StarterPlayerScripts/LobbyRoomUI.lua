@@ -555,7 +555,7 @@ local function createIntelPanel(parent)
 
 	-- Map Photo
 	local photoFrame = create("Frame", {
-		Parent = mapContainer, Size = UDim2.new(0.9, 0, 0.5, 0), Position = UDim2.new(0.05, 0, 0.05, 0),
+		Parent = mapContainer, Size = UDim2.new(0.9, 0, 0.6, 0), Position = UDim2.new(0.05, 0, 0.05, 0),
 		BackgroundColor3 = Color3.new(0,0,0)
 	})
 	create("ImageLabel", {
@@ -565,14 +565,14 @@ local function createIntelPanel(parent)
 
 	-- Map Stats
 	local sectorLbl = create("TextLabel", {
-		Parent = mapContainer, Size = UDim2.new(0.9, 0, 0.08, 0), Position = UDim2.new(0.05, 0, 0.6, 0),
+		Parent = mapContainer, Size = UDim2.new(0.9, 0, 0.08, 0), Position = UDim2.new(0.05, 0, 0.7, 0),
 		Text = "SECTOR: VILLAGE [GROUND ZERO]", Font = getFont("Header"), TextScaled = true,
 		TextColor3 = THEME.Colors.TextMain, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
 	})
 	create("UITextSizeConstraint", {Parent = sectorLbl, MaxTextSize = 18})
 
 	local hazardLbl = create("TextLabel", {
-		Parent = mapContainer, Size = UDim2.new(0.9, 0, 0.15, 0), Position = UDim2.new(0.05, 0, 0.7, 0),
+		Parent = mapContainer, Size = UDim2.new(0.9, 0, 0.15, 0), Position = UDim2.new(0.05, 0, 0.8, 0),
 		Text = "HAZARD: EXTREME RADIATION\nSTATUS: ACTIVE HOSTILES\nENTRY: PERMITTED", Font = getFont("Body"), TextScaled = true,
 		TextColor3 = THEME.Colors.AccentRed, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
 	})
@@ -581,40 +581,61 @@ local function createIntelPanel(parent)
 	-- Right Side: Dossier / Objectives
 	local dossier = create("Frame", {
 		Parent = panel, Size = UDim2.new(0.5, 0, 0.9, 0), Position = UDim2.new(0.48, 0, 0.05, 0),
-		BackgroundTransparency = 1
+		BackgroundColor3 = THEME.Colors.Paper, BorderSizePixel = 0
+	})
+	create("UICorner", {Parent = dossier, CornerRadius = UDim.new(0.05, 0)})
+
+	-- Header Strip for Dossier
+	local headerFrame = create("Frame", {
+		Name = "HeaderFrame", Parent = dossier, Size = UDim2.new(1, 0, 0.15, 0), BackgroundColor3 = THEME.Colors.PaperDark, BorderSizePixel = 0
+	})
+	create("UICorner", {Parent = headerFrame, CornerRadius = UDim.new(0.05, 0)})
+	create("Frame", { -- Flatten bottom corners
+		Parent = headerFrame, Size = UDim2.new(1, 0, 0.5, 0), Position = UDim2.new(0,0,0.5,0), BackgroundColor3 = THEME.Colors.PaperDark, BorderSizePixel = 0
 	})
 
 	local actTitle = create("TextLabel", {
-		Parent = dossier, Size = UDim2.new(1, 0, 0.1, 0), Text = "ACT 1: THE CURSED VILLAGE",
-		Font = getFont("Header"), TextScaled = true, TextColor3 = THEME.Colors.TextMain, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
+		Parent = headerFrame, Size = UDim2.new(0.9, 0, 1, 0), Position = UDim2.new(0.05, 0, 0, 0),
+		Text = "ACT 1: THE CURSED VILLAGE", Font = getFont("Header"), TextScaled = true, TextColor3 = THEME.Colors.TextMain, BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left
 	})
 	create("UITextSizeConstraint", {Parent = actTitle, MaxTextSize = 24})
 
-	create("Frame", { -- Divider
-		Parent = dossier, Size = UDim2.new(1, 0, 0.005, 0), Position = UDim2.new(0, 0, 0.11, 0),
+	-- Description
+	local descLbl = create("TextLabel", {
+		Parent = dossier, Size = UDim2.new(0.9, 0, 0.25, 0), Position = UDim2.new(0.05, 0, 0.20, 0),
+		Text = "High energy readings detected. Source is located beneath the village square. Investigate the anomaly and neutralize any biological threats.",
+		Font = getFont("Body"), TextScaled = true, TextColor3 = THEME.Colors.TextMain, TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, BackgroundTransparency = 1,
+		TextYAlignment = Enum.TextYAlignment.Top
+	})
+	create("UITextSizeConstraint", {Parent = descLbl, MaxTextSize = 16})
+
+	-- Divider
+	create("Frame", {
+		Parent = dossier, Size = UDim2.new(0.9, 0, 0.005, 0), Position = UDim2.new(0.05, 0, 0.45, 0),
 		BackgroundColor3 = THEME.Colors.TextDim, BackgroundTransparency = 0.5, BorderSizePixel = 0
 	})
 
-	local descLbl = create("TextLabel", {
-		Parent = dossier, Size = UDim2.new(1, 0, 0.2, 0), Position = UDim2.new(0, 0, 0.14, 0),
-		Text = "High energy readings detected. Source is located beneath the village square. Investigate the anomaly and neutralize any biological threats.",
-		Font = getFont("Body"), TextScaled = true, TextColor3 = THEME.Colors.TextMain, TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, BackgroundTransparency = 1
+	-- Objectives Header
+	local objHeader = create("TextLabel", {
+		Parent = dossier, Size = UDim2.new(0.9, 0, 0.1, 0), Position = UDim2.new(0.05, 0, 0.47, 0),
+		Text = "PRIMARY OBJECTIVES", Font = getFont("Label"), TextScaled = true, TextColor3 = THEME.Colors.TextDim,
+		TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
 	})
-	create("UITextSizeConstraint", {Parent = descLbl, MaxTextSize = 14})
+	create("UITextSizeConstraint", {Parent = objHeader, MaxTextSize = 14})
 
 	-- Objectives List
 	local objList = create("Frame", {
-		Parent = dossier, Size = UDim2.new(1, 0, 0.6, 0), Position = UDim2.new(0, 0, 0.35, 0), BackgroundTransparency = 1
+		Parent = dossier, Size = UDim2.new(0.9, 0, 0.4, 0), Position = UDim2.new(0.05, 0, 0.55, 0), BackgroundTransparency = 1
 	})
 
 	local objLbl = create("TextLabel", {
 		Parent = objList, Size = UDim2.new(1, 0, 1, 0),
-		Text = "MISSION OBJECTIVES ARE CLASSIFIED.\n\nPROCEED TO DEPLOYMENT ZONE FOR BRIEFING.",
+		Text = "> Locate the Source\n> Eliminate Hostiles\n> Survive until Extraction\n\n[CLASSIFIED INTEL ENCRYPTED]",
 		Font = getFont("Body"), TextScaled = true, TextColor3 = THEME.Colors.AccentRed,
 		TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top,
 		BackgroundTransparency = 1
 	})
-	create("UITextSizeConstraint", {Parent = objLbl, MaxTextSize = 14})
+	create("UITextSizeConstraint", {Parent = objLbl, MaxTextSize = 16})
 end
 
 -- ================== MAIN UI STRUCTURE ==================
