@@ -475,21 +475,30 @@ local function createLobbyPanel(parent)
 	})
 	create("UICorner", {Parent = infoCard, CornerRadius = UDim.new(0.05, 0)})
 
-	-- Adjusted positions for Title and Details to prevent overlap
-	local roomTitle = create("TextLabel", {
-		Name = "RoomTitle", Parent = infoCard, Size = UDim2.new(0.9, 0, 0.12, 0), Position = UDim2.new(0.05, 0, 0.05, 0),
-		Text = "ROOM NAME", Font = getFont("Header"), TextScaled = true, TextColor3 = THEME.Colors.TextMain, BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left
+	-- Header Strip
+	local headerFrame = create("Frame", {
+		Name = "HeaderFrame", Parent = infoCard, Size = UDim2.new(1, 0, 0.15, 0), BackgroundColor3 = THEME.Colors.PaperDark, BorderSizePixel = 0
 	})
-	create("UITextSizeConstraint", {Parent = roomTitle, MaxTextSize = 20})
+	create("UICorner", {Parent = headerFrame, CornerRadius = UDim.new(0.05, 0)})
+	create("Frame", { -- Flatten bottom corners
+		Parent = headerFrame, Size = UDim2.new(1, 0, 0.5, 0), Position = UDim2.new(0,0,0.5,0), BackgroundColor3 = THEME.Colors.PaperDark, BorderSizePixel = 0
+	})
 
+	local roomTitle = create("TextLabel", {
+		Name = "RoomTitle", Parent = headerFrame, Size = UDim2.new(0.9, 0, 1, 0), Position = UDim2.new(0.05, 0, 0, 0),
+		Text = "ROOM NAME", Font = getFont("Header"), TextScaled = true, TextColor3 = THEME.Colors.TextMain, BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Center
+	})
+	create("UITextSizeConstraint", {Parent = roomTitle, MaxTextSize = 24})
+
+	-- Details
 	local roomDetails = create("TextLabel", {
-		Name = "RoomDetails", Parent = infoCard, Size = UDim2.new(0.9, 0, 0.3, 0), Position = UDim2.new(0.05, 0, 0.20, 0), -- Moved down
+		Name = "RoomDetails", Parent = infoCard, Size = UDim2.new(0.9, 0, 0.4, 0), Position = UDim2.new(0.05, 0, 0.20, 0),
 		Text = "Mode: Story\nDiff: Easy", Font = getFont("Body"), TextScaled = true, TextColor3 = THEME.Colors.TextDim, BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top
 	})
-	create("UITextSizeConstraint", {Parent = roomDetails, MaxTextSize = 16})
+	create("UITextSizeConstraint", {Parent = roomDetails, MaxTextSize = 18})
 
 	-- Leave Button
-	createButton(infoCard, "LEAVE SQUAD", UDim2.new(0.9, 0, 0.1, 0), UDim2.new(0.05, 0, 0.88, 0), THEME.Colors.AccentRed, function()
+	createButton(infoCard, "LEAVE SQUAD", UDim2.new(0.9, 0, 0.12, 0), UDim2.new(0.05, 0, 0.85, 0), THEME.Colors.AccentRed, function()
 		lobbyRemote:FireServer("leaveRoom")
 	end).TextLabel.TextColor3 = THEME.Colors.Paper
 
@@ -499,23 +508,28 @@ local function createLobbyPanel(parent)
 		BackgroundTransparency = 1
 	})
 
-	local rosterHeader = create("TextLabel", {
-		Parent = rosterArea, Size = UDim2.new(1, 0, 0.08, 0), Text = "PERSONNEL ROSTER",
-		Font = getFont("Label"), TextScaled = true, TextColor3 = THEME.Colors.TextDim, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
+	local rosterHeaderBg = create("Frame", {
+		Parent = rosterArea, Size = UDim2.new(1, 0, 0.1, 0), BackgroundColor3 = THEME.Colors.FolderDark, BackgroundTransparency = 0.5
 	})
-	create("UITextSizeConstraint", {Parent = rosterHeader, MaxTextSize = 14})
+	create("UICorner", {Parent = rosterHeaderBg, CornerRadius = UDim.new(0.2, 0)})
+
+	local rosterHeader = create("TextLabel", {
+		Parent = rosterHeaderBg, Size = UDim2.new(1, 0, 1, 0), Text = "PERSONNEL ROSTER",
+		Font = getFont("Label"), TextScaled = true, TextColor3 = THEME.Colors.TextMain, BackgroundTransparency = 1
+	})
+	create("UITextSizeConstraint", {Parent = rosterHeader, MaxTextSize = 18})
 
 	local rosterGrid = create("ScrollingFrame", {
-		Name = "RosterGrid", Parent = rosterArea, Size = UDim2.new(1, 0, 0.65, 0), Position = UDim2.new(0, 0, 0.1, 0), -- Shrunk height
+		Name = "RosterGrid", Parent = rosterArea, Size = UDim2.new(1, 0, 0.72, 0), Position = UDim2.new(0, 0, 0.12, 0),
 		BackgroundTransparency = 1, ScrollBarThickness = 0,
 		CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y
 	})
 	create("UIGridLayout", {
-		Parent = rosterGrid, CellSize = UDim2.new(0.3, 0, 0.4, 0), CellPadding = UDim2.new(0.03, 0, 0.03, 0)
+		Parent = rosterGrid, CellSize = UDim2.new(0.23, 0, 0.45, 0), CellPadding = UDim2.new(0.02, 0, 0.02, 0)
 	})
 
-	-- Action Button (Host) - Moved UP significantly
-	local actionBtn = createButton(rosterArea, "START MISSION", UDim2.new(0.4, 0, 0.15, 0), UDim2.new(0.6, 0, 0.8, 0), THEME.Colors.AccentGreen, function()
+	-- Action Button (Host) - Full Width at Bottom
+	local actionBtn = createButton(rosterArea, "START MISSION", UDim2.new(1, 0, 0.12, 0), UDim2.new(0, 0, 0.85, 0), THEME.Colors.AccentGreen, function()
 		if state.currentRoom and state.currentRoom.hostName == player.Name then
 			lobbyRemote:FireServer("forceStartGame")
 		end
@@ -757,15 +771,22 @@ function updateLobbyView(roomData)
 		local rMode = roomData.gameMode or "Story"
 		local rDiff = roomData.difficulty or "Normal"
 
-		infoCard.RoomTitle.Text = string.upper(rName)
+		local headerFrame = infoCard:FindFirstChild("HeaderFrame")
+		if headerFrame and headerFrame:FindFirstChild("RoomTitle") then
+			headerFrame.RoomTitle.Text = string.upper(rName)
+		elseif infoCard:FindFirstChild("RoomTitle") then
+			-- Fallback for legacy layout
+			infoCard.RoomTitle.Text = string.upper(rName)
+		end
+
 		infoCard.RoomDetails.Text = string.format("HOST: %s\nMODE: %s\nDIFF: %s", rHost, rMode, rDiff)
 
 		-- Room Code Display (If Private)
 		if roomData.roomCode then
 			local codeLbl = infoCard:FindFirstChild("RoomCodeLbl") or create("TextLabel", {
-				Name = "RoomCodeLbl", Parent = infoCard, Size = UDim2.new(0.9, 0, 0.15, 0), Position = UDim2.new(0.05, 0, 0.55, 0),
+				Name = "RoomCodeLbl", Parent = infoCard, Size = UDim2.new(0.9, 0, 0.12, 0), Position = UDim2.new(0.05, 0, 0.72, 0),
 				Font = getFont("Stamp"), TextScaled = true, TextColor3 = THEME.Colors.AccentRed,
-				BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left, Rotation = -2
+				BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Center, Rotation = -2
 			})
 			codeLbl.Text = "ACCESS KEY: " .. roomData.roomCode
 			create("UITextSizeConstraint", {Parent = codeLbl, MaxTextSize = 18})
