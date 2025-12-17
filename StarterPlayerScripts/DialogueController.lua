@@ -20,22 +20,26 @@ local StartDialogueEvent = RemoteEvents:WaitForChild("StartDialogueEvent")
 -- Module: DialogueConfig
 local DialogueConfig = require(ReplicatedStorage:WaitForChild("ModuleScript"):WaitForChild("DialogueConfig"))
 
--- ================== THEME ==================
+-- ================== THEME (Military/Tactical) ==================
 local THEME = {
 	Colors = {
-		Background = Color3.fromRGB(15, 15, 20),
-		Panel = Color3.fromRGB(30, 32, 35),
-		PanelBorder = Color3.fromRGB(80, 80, 90),
-		Text = Color3.fromRGB(230, 230, 230),
-		SpeakerName = Color3.fromRGB(100, 255, 100), -- Green like radio
-		Prompt = Color3.fromRGB(150, 150, 150),
+		Background = Color3.fromRGB(10, 12, 10),
+		Panel = Color3.fromRGB(20, 25, 20), -- Dark grey-green
+		PanelBorder = Color3.fromRGB(50, 200, 80), -- Neon green border
+		Text = Color3.fromRGB(220, 225, 220), -- Off-white
+		SpeakerName = Color3.fromRGB(80, 255, 120), -- Bright tactical green
+		Prompt = Color3.fromRGB(100, 180, 100), -- Muted green
+		ChoiceDefault = Color3.fromRGB(35, 40, 35),
+		ChoiceHover = Color3.fromRGB(50, 80, 50),
+		ChoiceBorder = Color3.fromRGB(60, 180, 80),
 	},
 	Fonts = {
-		Speaker = Enum.Font.GothamBold,
-		Body = Enum.Font.Gotham,
-		Prompt = Enum.Font.GothamMedium,
+		Speaker = Enum.Font.Sarpanch, -- Military stencil-like
+		Body = Enum.Font.SourceSans, -- Clean typewriter feel
+		Prompt = Enum.Font.Code, -- Tactical/tech
+		Choice = Enum.Font.Sarpanch,
 	},
-	TypewriterSpeed = 0.03, -- Seconds per character
+	TypewriterSpeed = 0.025, -- Slightly faster
 }
 
 -- ================== STATE ==================
@@ -46,6 +50,7 @@ local state = {
 	skipRequested = false,
 	typewriterComplete = false,
     isWaitingForChoice = false,
+    currentJobId = 0, -- Unique ID for the current typewriter job
 }
 
 local skipToChoice = nil -- Forward declaration
@@ -71,8 +76,8 @@ local function createUI()
 	-- Cinematic Bars (Top & Bottom)
 	local topBar = Instance.new("Frame")
 	topBar.Name = "TopBar"
-	topBar.Size = UDim2.new(1, 0, 0.1, 0)
-	topBar.Position = UDim2.new(0, 0, -0.1, 0) -- Start hidden
+	topBar.Size = UDim2.new(1, 0, 0.08, 0)
+	topBar.Position = UDim2.new(0, 0, -0.08, 0) -- Start hidden
 	topBar.BackgroundColor3 = Color3.new(0, 0, 0)
 	topBar.BorderSizePixel = 0
 	topBar.ZIndex = 5
@@ -80,7 +85,7 @@ local function createUI()
 
 	local bottomBar = Instance.new("Frame")
 	bottomBar.Name = "BottomBar"
-	bottomBar.Size = UDim2.new(1, 0, 0.1, 0)
+	bottomBar.Size = UDim2.new(1, 0, 0.08, 0)
 	bottomBar.Position = UDim2.new(0, 0, 1, 0) -- Start hidden
 	bottomBar.AnchorPoint = Vector2.new(0, 0)
 	bottomBar.BackgroundColor3 = Color3.new(0, 0, 0)
@@ -88,42 +93,63 @@ local function createUI()
 	bottomBar.ZIndex = 5
 	bottomBar.Parent = dialogueGui
 
-	-- Main Dialogue Panel (Bottom of screen, inside bottom bar area)
+	-- Main Dialogue Panel (Military/Tactical Style)
 	mainFrame = Instance.new("Frame")
 	mainFrame.Name = "DialoguePanel"
-	mainFrame.Size = UDim2.new(0.7, 0, 0.18, 0)
+	mainFrame.Size = UDim2.new(0.75, 0, 0.20, 0)
 	mainFrame.Position = UDim2.new(0.5, 0, 1, 0) -- Start below screen
 	mainFrame.AnchorPoint = Vector2.new(0.5, 1)
 	mainFrame.BackgroundColor3 = THEME.Colors.Panel
-	mainFrame.BackgroundTransparency = 0.1
+	mainFrame.BackgroundTransparency = 0.15
 	mainFrame.BorderSizePixel = 0
 	mainFrame.ZIndex = 10
 	mainFrame.Parent = dialogueGui
 
 	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 12)
+	corner.CornerRadius = UDim.new(0, 8)
 	corner.Parent = mainFrame
 
+	-- Glowing Green Border
 	local stroke = Instance.new("UIStroke")
 	stroke.Color = THEME.Colors.PanelBorder
-	stroke.Thickness = 2
+	stroke.Thickness = 3
+	stroke.Transparency = 0.2
 	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 	stroke.Parent = mainFrame
 
+	-- Inner glow effect (via secondary frame)
+	local innerGlow = Instance.new("Frame")
+	innerGlow.Name = "InnerGlow"
+	innerGlow.Size = UDim2.new(1, -4, 1, -4)
+	innerGlow.Position = UDim2.new(0.5, 0, 0.5, 0)
+	innerGlow.AnchorPoint = Vector2.new(0.5, 0.5)
+	innerGlow.BackgroundTransparency = 1
+	innerGlow.ZIndex = 10
+	innerGlow.Parent = mainFrame
+	local innerStroke = Instance.new("UIStroke")
+	innerStroke.Color = THEME.Colors.PanelBorder
+	innerStroke.Thickness = 1
+	innerStroke.Transparency = 0.7
+	innerStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	innerStroke.Parent = innerGlow
+	local innerCorner = Instance.new("UICorner")
+	innerCorner.CornerRadius = UDim.new(0, 6)
+	innerCorner.Parent = innerGlow
+
 	local padding = Instance.new("UIPadding")
-	padding.PaddingTop = UDim.new(0.1, 0)
-	padding.PaddingBottom = UDim.new(0.1, 0)
-	padding.PaddingLeft = UDim.new(0.03, 0)
-	padding.PaddingRight = UDim.new(0.03, 0)
+	padding.PaddingTop = UDim.new(0, 12)
+	padding.PaddingBottom = UDim.new(0, 12)
+	padding.PaddingLeft = UDim.new(0, 20)
+	padding.PaddingRight = UDim.new(0, 20)
 	padding.Parent = mainFrame
 
-	-- Speaker Name (Top Left)
+	-- Speaker Name (Top Left) - Military Stencil Style
 	speakerLabel = Instance.new("TextLabel")
 	speakerLabel.Name = "SpeakerName"
-	speakerLabel.Size = UDim2.new(0.3, 0, 0.25, 0)
+	speakerLabel.Size = UDim2.new(0.5, 0, 0.22, 0)
 	speakerLabel.Position = UDim2.new(0, 0, 0, 0)
 	speakerLabel.BackgroundTransparency = 1
-	speakerLabel.Text = "SPEAKER"
+	speakerLabel.Text = "COMMANDER"
 	speakerLabel.Font = THEME.Fonts.Speaker
 	speakerLabel.TextScaled = true
 	speakerLabel.TextColor3 = THEME.Colors.SpeakerName
@@ -132,14 +158,14 @@ local function createUI()
 	speakerLabel.Parent = mainFrame
 
 	local speakerConstraint = Instance.new("UITextSizeConstraint")
-	speakerConstraint.MaxTextSize = 22
+	speakerConstraint.MaxTextSize = 26
 	speakerConstraint.Parent = speakerLabel
 
-	-- Dialogue Text (Main Area)
+	-- Dialogue Text (Main Area) - Clean Typewriter Feel
 	textLabel = Instance.new("TextLabel")
 	textLabel.Name = "DialogueText"
-	textLabel.Size = UDim2.new(1, 0, 0.6, 0)
-	textLabel.Position = UDim2.new(0, 0, 0.25, 0)
+	textLabel.Size = UDim2.new(1, 0, 0.55, 0)
+	textLabel.Position = UDim2.new(0, 0, 0.22, 0)
 	textLabel.BackgroundTransparency = 1
 	textLabel.Text = ""
 	textLabel.Font = THEME.Fonts.Body
@@ -152,17 +178,17 @@ local function createUI()
 	textLabel.Parent = mainFrame
 
 	local textConstraint = Instance.new("UITextSizeConstraint")
-	textConstraint.MaxTextSize = 20
+	textConstraint.MaxTextSize = 22
 	textConstraint.Parent = textLabel
 
-    -- Continue Prompt (Bottom Right)
+    -- Continue Prompt (Bottom Right) - Tactical Style
     promptLabel = Instance.new("TextLabel")
     promptLabel.Name = "ContinuePrompt"
-    promptLabel.Size = UDim2.new(0.4, 0, 0.15, 0)
+    promptLabel.Size = UDim2.new(0.35, 0, 0.18, 0)
     promptLabel.Position = UDim2.new(1, 0, 1, 0)
     promptLabel.AnchorPoint = Vector2.new(1, 1)
     promptLabel.BackgroundTransparency = 1
-    promptLabel.Text = "[Click / Enter to continue]"
+    promptLabel.Text = "[ CLICK / ENTER ]"
     promptLabel.Font = THEME.Fonts.Prompt
     promptLabel.TextScaled = true
     promptLabel.TextColor3 = THEME.Colors.Prompt
@@ -175,22 +201,40 @@ local function createUI()
     promptConstraint.MaxTextSize = 14
     promptConstraint.Parent = promptLabel
 
-    -- Skip Button (Visible when typing)
-     local skipBtn = Instance.new("TextButton")
-     skipBtn.Name = "SkipButton"
-     skipBtn.Size = UDim2.new(0.1, 0, 0.2, 0)
-     skipBtn.Position = UDim2.new(0.98, 0, 0, 0)
-     skipBtn.AnchorPoint = Vector2.new(1, 0)
-     skipBtn.BackgroundTransparency = 1
-     skipBtn.Text = "SKIP >>"
-     skipBtn.Font = THEME.Fonts.Prompt
-     skipBtn.TextScaled = true
-     skipBtn.TextColor3 = Color3.fromRGB(150, 150, 150)
-     skipBtn.ZIndex = 12
-     skipBtn.Parent = mainFrame
-     skipBtn.MouseButton1Click:Connect(function()
-         skipToChoice()
-     end)
+    -- Skip Button (Tactical Style with Border)
+    local skipBtn = Instance.new("TextButton")
+    skipBtn.Name = "SkipButton"
+    skipBtn.Size = UDim2.new(0, 80, 0, 28)
+    skipBtn.Position = UDim2.new(1, 0, 0, 0)
+    skipBtn.AnchorPoint = Vector2.new(1, 0)
+    skipBtn.BackgroundColor3 = THEME.Colors.ChoiceDefault
+    skipBtn.BackgroundTransparency = 0.3
+    skipBtn.Text = "SKIP >>"
+    skipBtn.Font = THEME.Fonts.Prompt
+    skipBtn.TextSize = 14
+    skipBtn.TextColor3 = THEME.Colors.Prompt
+    skipBtn.ZIndex = 12
+    skipBtn.Parent = mainFrame
+    
+    local skipCorner = Instance.new("UICorner")
+    skipCorner.CornerRadius = UDim.new(0, 4)
+    skipCorner.Parent = skipBtn
+    
+    local skipStroke = Instance.new("UIStroke")
+    skipStroke.Color = THEME.Colors.ChoiceBorder
+    skipStroke.Thickness = 1
+    skipStroke.Transparency = 0.5
+    skipStroke.Parent = skipBtn
+    
+    skipBtn.MouseEnter:Connect(function()
+        skipBtn.BackgroundColor3 = THEME.Colors.ChoiceHover
+    end)
+    skipBtn.MouseLeave:Connect(function()
+        skipBtn.BackgroundColor3 = THEME.Colors.ChoiceDefault
+    end)
+    skipBtn.MouseButton1Click:Connect(function()
+        skipToChoice()
+    end)
 
     dialogueGui.Enabled = false
 end
@@ -202,12 +246,12 @@ local function showUI()
 	local topBar = dialogueGui:FindFirstChild("TopBar")
 	local bottomBar = dialogueGui:FindFirstChild("BottomBar")
 
-	-- Animate bars
+	-- Animate bars (0.08 height bars)
 	TweenService:Create(topBar, TweenInfo.new(0.5, Enum.EasingStyle.Quad), {Position = UDim2.new(0, 0, 0, 0)}):Play()
-	TweenService:Create(bottomBar, TweenInfo.new(0.5, Enum.EasingStyle.Quad), {Position = UDim2.new(0, 0, 0.9, 0)}):Play()
+	TweenService:Create(bottomBar, TweenInfo.new(0.5, Enum.EasingStyle.Quad), {Position = UDim2.new(0, 0, 0.92, 0)}):Play()
 
 	-- Animate panel
-	TweenService:Create(mainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.new(0.5, 0, 0.88, 0)}):Play()
+	TweenService:Create(mainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.new(0.5, 0, 0.90, 0)}):Play()
 end
 
 local function hideUI()
@@ -225,7 +269,7 @@ local function hideUI()
 end
 
 -- ================== TYPEWRITER ==================
-local function typewriterEffect(text)
+local function typewriterEffect(text, jobId)
 	state.typewriterComplete = false
 	state.skipRequested = false
 	promptLabel.TextTransparency = 1
@@ -236,6 +280,8 @@ local function typewriterEffect(text)
 	if skipBtn then skipBtn.Visible = true end
 
 	for i = 1, #text do
+        if state.currentJobId ~= jobId then return end -- Job changed, abort
+
 		if state.skipRequested then
 			-- Skip to full text
 			textLabel.Text = text
@@ -245,6 +291,8 @@ local function typewriterEffect(text)
 		textLabel.Text = string.sub(text, 1, i)
 		task.wait(THEME.TypewriterSpeed)
 	end
+    
+    if state.currentJobId ~= jobId then return end -- Check again
 
 	-- Keep Skip Button visible until choice or end
 	-- if skipBtn then skipBtn.Visible = false end
@@ -259,13 +307,14 @@ local function typewriterEffect(text)
 	-- Blinking effect
 	task.spawn(function()
 		while state.isActive and state.typewriterComplete do
+            if state.currentJobId ~= jobId then break end -- Job changed, abort
 			for alpha = 0, 1, 0.1 do
-				if not state.isActive or not state.typewriterComplete then break end
+				if not state.isActive or not state.typewriterComplete or state.currentJobId ~= jobId then break end
 				promptLabel.TextTransparency = alpha * 0.5
 				task.wait(0.05)
 			end
 			for alpha = 1, 0, -0.1 do
-				if not state.isActive or not state.typewriterComplete then break end
+				if not state.isActive or not state.typewriterComplete or state.currentJobId ~= jobId then break end
 				promptLabel.TextTransparency = alpha * 0.5
 				task.wait(0.05)
 			end
@@ -277,8 +326,15 @@ end
 local function displayNode(node)
 	if not node then return end
 
-	speakerLabel.Text = string.upper(node.Speaker or "???")
-	typewriterEffect(node.Text or "")
+    -- New Job
+    state.currentJobId = state.currentJobId + 1
+
+	speakerLabel.Text = string.upper(node.Speaker or "???" )
+    
+    -- [FIX] Spawn to prevent blocking safeAdvance/Input thread
+    task.spawn(function()
+	    typewriterEffect(node.Text or "", state.currentJobId)
+    end)
 
 	-- Execute Actions
 	if node.Actions then
@@ -318,29 +374,43 @@ local function displayNode(node)
             if child:IsA("TextButton") then child:Destroy() end
         end
 
-        -- Spawn buttons
-        for _, choice in ipairs(node.Choices) do
+        -- Spawn buttons (Tactical Style)
+        for idx, choice in ipairs(node.Choices) do
             local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(0.8, 0, 0, 30)
-            btn.BackgroundColor3 = THEME.Colors.Panel
-            btn.BackgroundTransparency = 0.2
-            btn.Text = "  > " .. choice.Text
+            btn.Size = UDim2.new(0.7, 0, 0, 36)
+            btn.BackgroundColor3 = THEME.Colors.ChoiceDefault
+            btn.BackgroundTransparency = 0.1
+            btn.Text = "  [ " .. idx .. " ]  " .. choice.Text:upper()
             btn.TextColor3 = THEME.Colors.Text
-            btn.Font = THEME.Fonts.Body
-            btn.TextSize = 14
+            btn.Font = THEME.Fonts.Choice
+            btn.TextSize = 16
             btn.TextXAlignment = Enum.TextXAlignment.Left
+            btn.ZIndex = 12
             btn.Parent = choiceContainer
             
             -- Styling
             local stroke = Instance.new("UIStroke")
-            stroke.Color = THEME.Colors.PanelBorder
-            stroke.Thickness = 1
+            stroke.Color = THEME.Colors.ChoiceBorder
+            stroke.Thickness = 2
+            stroke.Transparency = 0.3
             stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
             stroke.Parent = btn
             
             local corner = Instance.new("UICorner")
             corner.CornerRadius = UDim.new(0, 6)
             corner.Parent = btn
+            
+            -- Hover Effects
+            btn.MouseEnter:Connect(function()
+                btn.BackgroundColor3 = THEME.Colors.ChoiceHover
+                stroke.Color = THEME.Colors.SpeakerName
+                stroke.Transparency = 0
+            end)
+            btn.MouseLeave:Connect(function()
+                btn.BackgroundColor3 = THEME.Colors.ChoiceDefault
+                stroke.Color = THEME.Colors.ChoiceBorder
+                stroke.Transparency = 0.3
+            end)
 
             -- Click event
             btn.MouseButton1Click:Connect(function()
@@ -408,6 +478,12 @@ local function advanceDialogue()
 	-- Get next node
 	local nextID = currentNode.NextID
 	if nextID == nil then
+        -- Check for Signal on the final node
+        if currentNode.Signal == "OpenLobby" then
+            local evt = ReplicatedStorage:FindFirstChild("OpenLobbyUI")
+            if evt then evt:Fire() end
+        end
+
 		-- No more nodes
 		endDialogue()
 		return
@@ -447,6 +523,12 @@ skipToChoice = function()
 
     -- 2. Find next node with choices
     local currentNode = state.currentDialogue[state.currentNodeIndex]
+
+    -- [FIX] If current node already has choices, stop here and let them show
+    if currentNode and currentNode.Choices and #currentNode.Choices > 0 then
+        return
+    end
+
     local nextNodeID = currentNode and currentNode.NextID
     local targetNode = nil
     local targetIndex = nil

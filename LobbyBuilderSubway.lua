@@ -194,7 +194,8 @@ local function spawnNPC(name, cframe, parent, appearanceColor)
 	end
 
 	-- Add Name Tag if Head exists and doesn't have one
-	if head and not head:FindFirstChild("BillboardGui") then
+    -- [UPDATED] Only create if NOT Alexander (Alexander has built-in tag), needed for Quartermaster
+	if head and not head:FindFirstChild("BillboardGui") and name ~= "Alexander" then
 		local bg = Instance.new("BillboardGui")
 		bg.Size = UDim2.new(0, 100, 0, 50)
 		bg.StudsOffset = Vector3.new(0, 2.5, 0)
@@ -541,7 +542,7 @@ function LobbyBuilder.Build()
 	createSoundEmitter("RadioChatter", tableBase, "rbxassetid://9063255294", 0.4, true, 20) -- Static chatter
 
 	-- Interaction Point
-	createInteraction("LobbyRoom", alexPos, Vector3.new(8, 8, 8), "Mission Briefing", env)
+	-- createInteraction("LobbyRoom", alexPos, Vector3.new(8, 8, 8), "Mission Briefing", env) -- REMOVED: Now integrated into dialogue
 	createInteraction("DialogueAlexander", alexPos, Vector3.new(6, 6, 6), "Talk", env)
 
 	-- C. SHOPS & UTILITIES

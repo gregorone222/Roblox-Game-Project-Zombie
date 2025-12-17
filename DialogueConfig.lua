@@ -42,13 +42,13 @@ DialogueConfig.Dialogues = {
         {
             ID = 4,
             Speaker = "Alexander",
-            Text = "When you are ready, meet me at the command table. We will discuss your mission.",
+            Text = "When you are ready, I will brief you on the mission details.",
             NextID = nil,
             Choices = {
                 {
                     Text = "I'm ready now.",
-                    NextID = 5,
-                    Signal = "OpenLobby"
+                    NextID = 5
+                    -- Signal removed: Triggered at end of dialogue now
                 },
                 {
                     Text = "I need more time.",
@@ -59,39 +59,14 @@ DialogueConfig.Dialogues = {
         {
             ID = 5,
             Speaker = "Alexander",
-            Text = "That's the spirit. Check the map board behind me to start ACT 1.",
-            NextID = nil
+            Text = "Good. I'm pulling up the mission dossier now. Select your squad and gear up.",
+            NextID = nil,
+            Signal = "OpenLobby" -- Trigger UI when this node ends
         }
     },
 
-    -- Alexander: Mission Briefing (called from LobbyRoomUI or directly)
-    ["alexander_mission_briefing"] = {
-        {
-            ID = 1,
-            Speaker = "Alexander",
-            Text = "Alright, Operator. Listen closely.",
-            Actions = { PlaySound = "RadioStatic" },
-            NextID = 2
-        },
-        {
-            ID = 2,
-            Speaker = "Alexander",
-            Text = "Our target is the Village in the Red Zone. Intel suggests high-level mutation activity.",
-            NextID = 3
-        },
-        {
-            ID = 3,
-            Speaker = "Alexander",
-            Text = "Main Objective: Survive until Wave 50 and neutralize the biggest threats.",
-            NextID = 4
-        },
-        {
-            ID = 4,
-            Speaker = "Alexander",
-            Text = "Good luck. Prepare your weapons and choose your difficulty at the command board.",
-            NextID = nil
-        }
-    },
+    -- Alexander: Mission Briefing (REMOVED: Integrated into 'alexander_intro')
+    -- ["alexander_mission_briefing"] = { ... }
 
     -- Quartermaster: Short greeting
     ["quartermaster_greet"] = {

@@ -15,28 +15,53 @@ local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 local lobbyRemote = ReplicatedStorage:WaitForChild("LobbyRemote")
 
--- ================== THEME CONSTANTS ==================
+-- ================== THEME CONSTANTS (Tactical Dossier Style) ==================
 local THEME = {
 	Colors = {
-		Background   = Color3.fromRGB(40, 40, 45),       -- Dark surrounding
-		FolderMain   = Color3.fromRGB(210, 180, 140),    -- Manila Folder
-		FolderDark   = Color3.fromRGB(180, 150, 110),    -- Tab darker shade
-		Paper        = Color3.fromRGB(245, 245, 240),    -- Clean Paper
-		PaperDark    = Color3.fromRGB(230, 230, 225),    -- Alt Paper
-		TextMain     = Color3.fromRGB(30, 30, 35),       -- Ink
-		TextDim      = Color3.fromRGB(100, 100, 100),    -- Pencil/Faded
-		AccentRed    = Color3.fromRGB(200, 60, 60),      -- Alert/Cancel
-		AccentGreen  = Color3.fromRGB(60, 160, 80),      -- Success/Go
-		Highlight    = Color3.fromRGB(255, 230, 100),    -- Sticky Note
+		-- Background & Atmosphere
+		Background   = Color3.fromRGB(25, 28, 30),       -- Dark tactical
+		Overlay      = Color3.fromRGB(15, 18, 20),       -- Darker overlay
+		
+		-- Dossier/Folder Colors
+		FolderMain   = Color3.fromRGB(195, 165, 120),    -- Aged Manila Folder
+		FolderDark   = Color3.fromRGB(160, 130, 90),     -- Tab darker shade
+		FolderEdge   = Color3.fromRGB(140, 110, 70),     -- Edge worn color
+		
+		-- Paper & Document
+		Paper        = Color3.fromRGB(248, 245, 235),    -- Aged Paper (slightly yellow)
+		PaperDark    = Color3.fromRGB(235, 230, 218),    -- Alt Paper
+		PaperLines   = Color3.fromRGB(200, 195, 185),    -- Faint lines
+		
+		-- Text & Ink
+		TextMain     = Color3.fromRGB(25, 25, 30),       -- Dark Ink
+		TextDim      = Color3.fromRGB(90, 85, 80),       -- Pencil/Faded
+		TextType     = Color3.fromRGB(40, 45, 55),       -- Typewriter ink
+		
+		-- Stamps & Accents
+		StampRed     = Color3.fromRGB(180, 45, 45),      -- CLASSIFIED stamp
+		StampGreen   = Color3.fromRGB(45, 140, 65),      -- AUTHORIZED stamp
+		StampBlue    = Color3.fromRGB(45, 80, 140),      -- INFO stamp
+		Highlight    = Color3.fromRGB(255, 240, 120),    -- Sticky Note Yellow
+		HighlightAlt = Color3.fromRGB(255, 180, 100),    -- Orange highlight
+		
+		-- Tactical Accents
+		TacticalGreen = Color3.fromRGB(60, 180, 90),     -- Go/Success
+		TacticalRed   = Color3.fromRGB(200, 55, 55),     -- Cancel/Alert
+		BorderDark    = Color3.fromRGB(80, 70, 55),      -- Border
+        
+        -- Aliases for compatibility
+        AccentRed     = Color3.fromRGB(200, 55, 55),
+        AccentGreen   = Color3.fromRGB(60, 180, 90),
 	},
 	Fonts = {
-		Header = Enum.Font.SpecialElite,   -- Typewriter (Narrative feel)
-		Body   = Enum.Font.GothamMedium,   -- Clean Sans-Serif (Readability)
-		Label  = Enum.Font.GothamBold,     -- UI Labels
-		Stamp  = Enum.Font.GothamBlack     -- Stamped status (Fallback to generic if needed)
+		Header    = Enum.Font.SpecialElite,   -- Typewriter (Narrative feel)
+		Body      = Enum.Font.SourceSans,     -- Clean Sans-Serif (Readability)
+		Label     = Enum.Font.GothamBold,     -- UI Labels
+		Stamp     = Enum.Font.Sarpanch,       -- Military stamp style
+		Typewriter = Enum.Font.Code,          -- Code/Typewriter
 	},
 	Sizes = {
-		MainFrame = UDim2.new(0.85, 0, 0.8, 0), -- Default PC
+		MainFrame = UDim2.new(0.85, 0, 0.85, 0), -- Default PC
 	}
 }
 
@@ -109,41 +134,58 @@ end
 
 -- ================== COMPONENT FACTORY ==================
 
-
-
--- Standard "Paper" Button
+-- Standard "Dossier Document" Button (Stamp Style)
 local function createButton(parent, text, size, pos, color, callback)
+	local isStampStyle = (color == THEME.Colors.StampRed or color == THEME.Colors.StampGreen or color == THEME.Colors.FolderDark)
+	local bgColor = color or THEME.Colors.Paper
+	
 	local btn = create("TextButton", {
 		Name = "Btn_"..text, Parent = parent, Size = size, Position = pos,
-		BackgroundColor3 = color or THEME.Colors.Paper, AutoButtonColor = true,
+		BackgroundColor3 = bgColor, AutoButtonColor = false,
 		BorderSizePixel = 0, Text = ""
 	})
 
-	-- Shadow
-	create("Frame", {
-		Parent = btn, ZIndex = btn.ZIndex - 1, Size = UDim2.new(1, 0, 1, 0), Position = UDim2.new(0.02, 0, 0.05, 0),
-		BackgroundColor3 = Color3.new(0,0,0), BackgroundTransparency = 0.8, BorderSizePixel = 0
+	-- Shadow (offset like paper on desk)
+	local shadow = create("Frame", {
+		Name = "Shadow",
+		Parent = btn, ZIndex = btn.ZIndex - 1, Size = UDim2.new(1, 4, 1, 4), Position = UDim2.new(0.01, 0, 0.02, 0),
+		BackgroundColor3 = Color3.new(0,0,0), BackgroundTransparency = 0.7, BorderSizePixel = 0
+	})
+	create("UICorner", {Parent = shadow, CornerRadius = UDim.new(0, 6)})
+
+	-- Border (Document edge)
+	local border = create("UIStroke", {
+		Parent = btn, Color = THEME.Colors.BorderDark, Thickness = 2, Transparency = 0.3
 	})
 
 	-- Text
-	create("TextLabel", {
+	local textLabel = create("TextLabel", {
+		Name = "TextLabel",
 		Parent = btn, Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1,
-		Text = text, Font = getFont("Label"), TextScaled = true, TextColor3 = THEME.Colors.TextMain
+		Text = text:upper(), Font = isStampStyle and getFont("Stamp") or getFont("Label"),
+		TextScaled = true, TextColor3 = isStampStyle and THEME.Colors.Paper or THEME.Colors.TextMain
 	})
     -- Padding to keep text away from borders
-    create("UIPadding", {Parent = btn.TextLabel, PaddingTop = UDim.new(0.15, 0), PaddingBottom = UDim.new(0.15, 0), PaddingLeft = UDim.new(0.1, 0), PaddingRight = UDim.new(0.1, 0)})
+    create("UIPadding", {Parent = textLabel, PaddingTop = UDim.new(0.12, 0), PaddingBottom = UDim.new(0.12, 0), PaddingLeft = UDim.new(0.08, 0), PaddingRight = UDim.new(0.08, 0)})
 
 	-- Constraint text size
-	create("UITextSizeConstraint", {Parent = btn.TextLabel, MaxTextSize = 24})
+	create("UITextSizeConstraint", {Parent = textLabel, MaxTextSize = 22})
 
-	create("UICorner", {Parent = btn, CornerRadius = UDim.new(0.1, 0)})
+	create("UICorner", {Parent = btn, CornerRadius = UDim.new(0, 6)})
 
-	btn.MouseButton1Click:Connect(function()
-		-- playSound(SOUNDS.Click)
-		if callback then callback() end
+	-- Hover Effects
+	btn.MouseEnter:Connect(function()
+		TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = bgColor:Lerp(Color3.new(1,1,1), 0.15)}):Play()
+		TweenService:Create(border, TweenInfo.new(0.15), {Transparency = 0, Color = THEME.Colors.TacticalGreen}):Play()
+	end)
+	btn.MouseLeave:Connect(function()
+		TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = bgColor}):Play()
+		TweenService:Create(border, TweenInfo.new(0.15), {Transparency = 0.3, Color = THEME.Colors.BorderDark}):Play()
 	end)
 
-
+	btn.MouseButton1Click:Connect(function()
+		if callback then callback() end
+	end)
 
 	return btn
 end
@@ -214,29 +256,33 @@ local function createOpsPanel(parent)
 	opsViews["MENU"] = menuView
 
 	local menuGrid = create("UIGridLayout", {
-		Parent = menuView, CellSize = UDim2.new(0.4, 0, 0.4, 0), CellPadding = UDim2.new(0.05, 0, 0.05, 0),
+		Parent = menuView, CellSize = UDim2.new(0.42, 0, 0.38, 0), CellPadding = UDim2.new(0.05, 0, 0.06, 0),
 		HorizontalAlignment = Enum.HorizontalAlignment.Center, VerticalAlignment = Enum.VerticalAlignment.Center
 	})
 
-	createButton(menuView, "DEPLOY SOLO", UDim2.new(0,0,0,0), UDim2.new(0,0,0,0), THEME.Colors.TextMain, function()
+	-- Primary Action (Stamp Green) - Solo Deploy
+	createButton(menuView, "DEPLOY SOLO", UDim2.new(0,0,0,0), UDim2.new(0,0,0,0), THEME.Colors.StampGreen, function()
 		state.activeView = "CONFIG_SOLO"
 		updateOpsView()
-	end).TextLabel.TextColor3 = THEME.Colors.Paper
+	end)
 
+	-- Secondary Action (Folder Dark) - Create Squad
 	createButton(menuView, "CREATE SQUAD", UDim2.new(0,0,0,0), UDim2.new(0,0,0,0), THEME.Colors.FolderDark, function()
 		state.activeView = "CONFIG_SQUAD"
 		updateOpsView()
-	end).TextLabel.TextColor3 = THEME.Colors.TextMain
+	end)
 
-	createButton(menuView, "QUICK MATCH", UDim2.new(0,0,0,0), UDim2.new(0,0,0,0), THEME.Colors.TextMain, function()
+	-- Tertiary Action (Stamp Blue) - Quick Match
+	createButton(menuView, "QUICK MATCH", UDim2.new(0,0,0,0), UDim2.new(0,0,0,0), THEME.Colors.StampBlue, function()
 		state.activeView = "CONFIG_QUICK"
 		updateOpsView()
-	end).TextLabel.TextColor3 = THEME.Colors.Paper
+	end)
 
+	-- Neutral Action (Paper) - Find Squad
 	createButton(menuView, "FIND SQUAD", UDim2.new(0,0,0,0), UDim2.new(0,0,0,0), THEME.Colors.Paper, function()
 		state.activeView = "LIST"
 		updateOpsView()
-	end).TextLabel.TextColor3 = THEME.Colors.TextMain
+	end)
 
 
 	-- === SUB-VIEW: CONFIG (For Solo/Squad) ===
@@ -254,14 +300,13 @@ local function createOpsPanel(parent)
 	})
     -- Removed UIListLayout to allow manual positioning for valid "Left Back, Center Title" layout
 
-	-- Back Button (Top Left) -- Moved to edge (0.005)
-	local backBtn = createButton(topContainer, "< BACK", UDim2.new(0.2, 0, 0.6, 0), UDim2.new(0.005, 0, 0.5, 0), THEME.Colors.AccentRed, function()
+	-- Back Button (Top Left) - Tactical Red
+	local backBtn = createButton(topContainer, "< BACK", UDim2.new(0.2, 0, 0.6, 0), UDim2.new(0.005, 0, 0.5, 0), THEME.Colors.TacticalRed, function()
 		state.activeView = "MENU"
 		updateOpsView()
 	end)
     backBtn.AnchorPoint = Vector2.new(0, 0.5) -- Anchor Left-Center
 	backBtn.LayoutOrder = 1
-	backBtn.TextLabel.TextColor3 = THEME.Colors.Paper
 
 	local header = create("TextLabel", {
 		Parent = topContainer, Size = UDim2.new(0.5, 0, 0.6, 0), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5),
@@ -442,11 +487,17 @@ local function createOpsPanel(parent)
 
 	local privateInput = create("TextBox", {
 		Parent = privateFrame, Size = UDim2.new(0.7, 0, 1, 0), 
-		BackgroundColor3 = THEME.Colors.PaperDark, Text = "", PlaceholderText = "ENTER ENCRYPTED KEY...",
-		Font = getFont("Body"), TextScaled = true, TextColor3 = THEME.Colors.TextMain,
+		BackgroundColor3 = THEME.Colors.Overlay, Text = "", PlaceholderText = "ENTER ENCRYPTED KEY...", -- Darker bg
+		Font = getFont("Typewriter"), TextScaled = true, TextColor3 = THEME.Colors.Paper,
 		PlaceholderColor3 = THEME.Colors.TextDim
 	})
-	create("UICorner", {Parent = privateInput, CornerRadius = UDim.new(0.2, 0)})
+	create("UICorner", {Parent = privateInput, CornerRadius = UDim.new(0.1, 0)})
+    
+    -- Add Stroke for better visibility
+    create("UIStroke", {
+        Parent = privateInput, Color = THEME.Colors.BorderDark, Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    })
+
 	create("UITextSizeConstraint", {Parent = privateInput, MaxTextSize = 14})
 
 	local joinPrivateBtn = createButton(privateFrame, "JOIN", UDim2.new(0.25, 0, 1, 0), UDim2.new(0.75, 0, 0, 0), THEME.Colors.FolderDark, function()
