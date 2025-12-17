@@ -170,94 +170,157 @@ local cameraTween = nil
 local hideCharactersConnection = nil
 local inputConnection = nil
 local uiEnforcerConnection = nil
-local uiEnforcerLoop = nil -- Used for RenderStepped connection now
+local uiPropertyConnections = {} -- Store property change connections for clean disconnect
 local blinkTweens = {} -- Store blink tweens to cancel them properly
 
 -- List of Lobby UIs to hide during cinematic
 local LOBBY_UIS = {
 	"CoinsUI", "MissionPointsUI", "AchievementPointsUI",
-	"ProfileUI", "DailyRewardUI", "InventoryUI", "LobbyRoomUI",
-	"MissionButton", "DailyRewardHUD" -- Removed "MissionUI" to prevent auto-enabling
+	"ProfileUI", "DailyRewardUI", "InventoryUI",
+	"MissionButton", "DailyRewardHUD" -- Removed "LobbyRoomUI" (controlled by ProximityPrompt only)
 }
+
+-- Helper: Find ScreenGui by name (handles case where LocalScript has same name)
+local function findScreenGuiByName(name)
+	for _, child in ipairs(playerGui:GetChildren()) do
+		if child:IsA("ScreenGui") and child.Name == name then
+			return child
+		end
+	end
+	return nil
+end
 
 local function setLobbyUIVisibility(visible)
 	print("StartLobby: Setting Lobby UI Visibility to", visible)
-	for _, name in ipairs(LOBBY_UIS) do
-		-- Try to find immediately
-		local ui = playerGui:FindFirstChild(name)
-		
-		-- If not found and we are trying to SHOW it, wait a bit (it might be loading)
-		if not ui and visible then
-			warn("StartLobby: UI '"..name.."' not found immediately. Waiting...")
-			ui = playerGui:WaitForChild(name, 2) -- Wait up to 2 seconds
-		end
-
-		if ui and ui:IsA("ScreenGui") then
-			ui.Enabled = visible
-			print("StartLobby: Successfully set", name, "Enabled =", visible)
-		else
-			if visible then
-				warn("StartLobby: FAILED to find or enable UI:", name)
+	
+	if not visible then
+		-- When hiding, just iterate once (UIs that don't exist yet will be caught by ChildAdded)
+		for _, name in ipairs(LOBBY_UIS) do
+			local ui = findScreenGuiByName(name)
+			if ui then
+				ui.Enabled = false
 			end
 		end
+		return
+	end
+	
+	-- When showing, use retry mechanism for each UI that doesn't exist yet
+	local pendingUIs = {}
+	for _, name in ipairs(LOBBY_UIS) do
+		pendingUIs[name] = true
+	end
+	
+	-- Retry for up to 5 seconds
+	local maxAttempts = 10
+	local attemptDelay = 0.5
+	
+	for attempt = 1, maxAttempts do
+		for name, _ in pairs(pendingUIs) do
+			local ui = findScreenGuiByName(name)
+			if ui then
+				ui.Enabled = true
+				if ui.DisplayOrder < 1 then
+					ui.DisplayOrder = 10
+				end
+				print("StartLobby: Successfully set", name, "Enabled = true (attempt", attempt..")")
+				pendingUIs[name] = nil -- Remove from pending
+			end
+		end
+		
+		-- If all UIs found, exit early
+		if next(pendingUIs) == nil then
+			print("StartLobby: All UIs found and enabled!")
+			return
+		end
+		
+		-- Wait before next attempt (except on last attempt)
+		if attempt < maxAttempts then
+			task.wait(attemptDelay)
+		end
+	end
+	
+	-- Log UIs that were never found
+	for name, _ in pairs(pendingUIs) do
+		warn("StartLobby: UI '"..name.."' not found after", maxAttempts, "attempts")
 	end
 end
 
+-- Helper function to enforce UI disabled state via event (not polling)
+local function enforceUIDisabled(ui)
+	if not ui:IsA("ScreenGui") then return end
+	
+	-- Set initial state
+	ui.Enabled = false
+	
+	-- Hook to property change (fires only when something tries to change it)
+	local conn = ui:GetPropertyChangedSignal("Enabled"):Connect(function()
+		if isTitleMode and ui.Enabled then
+			ui.Enabled = false
+		end
+	end)
+	table.insert(uiPropertyConnections, conn)
+end
+
+local uiEnforcerHeartbeat = nil -- Heartbeat backup loop
+
 local function startUIEnforcer()
-	-- 1. Catch new UIs loading in
+	-- 1. Hook new UIs that load later FIRST (before iterating existing)
 	if uiEnforcerConnection then uiEnforcerConnection:Disconnect() end
 	uiEnforcerConnection = playerGui.ChildAdded:Connect(function(child)
-		if table.find(LOBBY_UIS, child.Name) and child:IsA("ScreenGui") then
-			child.Enabled = false
-			-- Hook into property change to enforce it stays disabled
-			child:GetPropertyChangedSignal("Enabled"):Connect(function()
-				if isTitleMode and child.Enabled then
-					child.Enabled = false
-				end
-			end)
+		if table.find(LOBBY_UIS, child.Name) then
+			print("StartLobby: ChildAdded caught -", child.Name, "- disabling")
+			enforceUIDisabled(child)
 		end
 	end)
-
+	
 	-- 2. Hook existing UIs immediately
 	for _, name in ipairs(LOBBY_UIS) do
-		local ui = playerGui:FindFirstChild(name)
-		if ui and ui:IsA("ScreenGui") then
-			ui:GetPropertyChangedSignal("Enabled"):Connect(function()
-				if isTitleMode and ui.Enabled then
-					ui.Enabled = false
-				end
-			end)
+		local ui = findScreenGuiByName(name)
+		if ui then
+			print("StartLobby: Found existing UI -", name, "- disabling")
+			enforceUIDisabled(ui)
 		end
 	end
-
-	-- 3. Aggressive enforcement (RenderStepped)
-	if uiEnforcerLoop then uiEnforcerLoop:Disconnect() end
-	uiEnforcerLoop = RunService.RenderStepped:Connect(function()
-		if isTitleMode then
-			-- Aggressively scan and hide UIs (More robust than FindFirstChild)
-			local children = playerGui:GetChildren()
-			for _, child in ipairs(children) do
-				if child:IsA("ScreenGui") and table.find(LOBBY_UIS, child.Name) then
-					if child.Enabled then
-						child.Enabled = false
-						-- print("StartLobby: Force hiding " .. child.Name) -- Debug
-					end
-				end
+	
+	-- 3. Heartbeat backup: periodically check and disable UIs (handles race conditions)
+	if uiEnforcerHeartbeat then uiEnforcerHeartbeat:Disconnect() end
+	local lastCheck = 0
+	uiEnforcerHeartbeat = RunService.Heartbeat:Connect(function()
+		if not isTitleMode then return end
+		
+		-- Check every 0.1 seconds for faster response
+		local now = tick()
+		if now - lastCheck < 0.1 then return end
+		lastCheck = now
+		
+		for _, name in ipairs(LOBBY_UIS) do
+			local ui = findScreenGuiByName(name)
+			if ui and ui.Enabled then
+				print("StartLobby Heartbeat: Force disabling", name)
+				ui.Enabled = false
 			end
-		else
-			if uiEnforcerLoop then uiEnforcerLoop:Disconnect() end
 		end
 	end)
+	
+	print("StartLobby: UI Enforcer started, isTitleMode =", isTitleMode)
 end
 
 local function stopUIEnforcer()
+	-- Disconnect Heartbeat backup
+	if uiEnforcerHeartbeat then
+		uiEnforcerHeartbeat:Disconnect()
+		uiEnforcerHeartbeat = nil
+	end
+	
+	-- Disconnect all property change connections
+	for _, conn in ipairs(uiPropertyConnections) do
+		if conn then conn:Disconnect() end
+	end
+	uiPropertyConnections = {}
+	
 	if uiEnforcerConnection then
 		uiEnforcerConnection:Disconnect()
 		uiEnforcerConnection = nil
-	end
-	if uiEnforcerLoop then
-		uiEnforcerLoop:Disconnect()
-		uiEnforcerLoop = nil
 	end
 end
 
@@ -371,6 +434,7 @@ local function exitTitleMode()
 	if not isTitleMode then return end
 	isTitleMode = false
 	stopUIEnforcer()
+	task.wait(0.1) -- Small delay to ensure all connections are fully disconnected
 
 	-- RESTORE CONTROLS
 	-- [DEPRECATED] UIS.ModalEnabled = false

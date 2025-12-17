@@ -16,7 +16,8 @@ local GameConfig = require(ServerScriptService.ModuleScript.GameConfig)
 local ZombieModule = require(ModuleScriptServerScriptService:WaitForChild("ZombieModule"))
 local BuildingManager = require(ModuleScriptServerScriptService:WaitForChild("BuildingModule"))
 
-_G.bossSpawnTracker = _G.bossSpawnTracker or {}
+-- Module-level state (safer than _G)
+local bossSpawnTracker = {}
 
 local function resetBossWindowIfNeeded(currentWave)
 	for bossName, bossConf in pairs(ZombieConfig.Types) do
@@ -25,7 +26,7 @@ local function resetBossWindowIfNeeded(currentWave)
 			local maxW = bossConf.ChanceWaveMax or -1
 			local windowKey = bossName .. "WindowSpawned"
 			if currentWave < minW or currentWave > maxW then
-				_G[windowKey] = false
+				bossSpawnTracker[windowKey] = false
 			end
 		end
 	end
@@ -42,12 +43,12 @@ function SpawnerModule.IsBossWave(wave, gameMode, difficulty)
 				return true, bossName
 			end
 			local windowKey = bossName .. "WindowSpawned"
-			local isSpawned = _G[windowKey] or false
+			local isSpawned = bossSpawnTracker[windowKey] or false
 			if not isSpawned and
 				wave >= (bossConf.ChanceWaveMin or -1) and
 				wave <= (bossConf.ChanceWaveMax or -1) and
 				math.random() < (bossConf.ChanceToSpawn or 0) then
-				_G[windowKey] = true -- Tandai sebagai terpilih untuk spawn
+				bossSpawnTracker[windowKey] = true -- Tandai sebagai terpilih untuk spawn
 				return true, bossName
 			end
 		end

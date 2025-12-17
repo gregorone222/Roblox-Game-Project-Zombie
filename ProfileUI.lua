@@ -46,15 +46,39 @@ local THEME = {
 		Clip = "rbxassetid://16467339739", -- Hypothetical asset, we will draw it with Frames if needed
 	},
 	Sizes = {
-        -- Base sizes in Scale
+		-- Base sizes in Scale
 		MainFramePC = UDim2.new(0.7, 0, 0.7, 0), -- Wider ratio for PC
-        MainFrameMobile = UDim2.new(0.95, 0, 0.85, 0), -- Full width for Mobile
+		MainFrameMobile = UDim2.new(0.95, 0, 0.85, 0), -- Full width for Mobile
 	}
 }
 
 -- Adaptive Sizing
 local isMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
 local currentMainSize = isMobile and THEME.Sizes.MainFrameMobile or THEME.Sizes.MainFramePC
+
+--================================================================================--
+--[[ UI ENGINE (Moved up to prevent forward reference error) ]]--
+--================================================================================--
+
+local function create(className, props)
+	local inst = Instance.new(className)
+	for k, v in pairs(props) do inst[k] = v end
+	return inst
+end
+
+local function addCorner(parent, radius)
+	-- Use scale-based corner if possible, or small offset
+	create("UICorner", {Parent = parent, CornerRadius = UDim.new(0, radius)})
+end
+
+local function addStroke(parent, color, thickness)
+	create("UIStroke", {Parent = parent, Color = color, Thickness = thickness, ApplyStrokeMode = Enum.ApplyStrokeMode.Border})
+end
+
+local function addPadding(parent, px)
+	-- Convert px to pseudo-scale or keep small offset for padding
+	create("UIPadding", {Parent = parent, PaddingTop = UDim.new(0,px), PaddingBottom = UDim.new(0,px), PaddingLeft = UDim.new(0,px), PaddingRight = UDim.new(0,px)})
+end
 
 --[[ CORE UI (Immediate) ]]--
 local gui = create("ScreenGui", {Name = "ProfileUI", Parent = playerGui, ResetOnSpawn = false, IgnoreGuiInset = true, Enabled = true, DisplayOrder = 20})
@@ -74,30 +98,6 @@ local titleFunc = getRemote("GetTitleData", "Function")
 local equipTitleEvent = getRemote("SetEquippedTitle", "Event")
 local weaponStatsFunc = getRemote("GetWeaponStats", "Function")
 
---================================================================================--
---[[ UI ENGINE ]]--
---================================================================================--
-
-local function create(className, props)
-	local inst = Instance.new(className)
-	for k, v in pairs(props) do inst[k] = v end
-	return inst
-end
-
-local function addCorner(parent, radius)
-    -- Use scale-based corner if possible, or small offset
-	create("UICorner", {Parent = parent, CornerRadius = UDim.new(0, radius)})
-end
-
-local function addStroke(parent, color, thickness)
-	create("UIStroke", {Parent = parent, Color = color, Thickness = thickness, ApplyStrokeMode = Enum.ApplyStrokeMode.Border})
-end
-
-local function addPadding(parent, px)
-    -- Convert px to pseudo-scale or keep small offset for padding
-	create("UIPadding", {Parent = parent, PaddingTop = UDim.new(0,px), PaddingBottom = UDim.new(0,px), PaddingLeft = UDim.new(0,px), PaddingRight = UDim.new(0,px)})
-end
-
 local function playSound(id, parent)
 	local s = create("Sound", {Parent = parent or playerGui, SoundId = id, Volume = 0.5})
 	s:Play()
@@ -110,8 +110,8 @@ local function createCharacterViewport(parent, size, pos)
 		Name = "PhotoFrame", Parent = parent, Size = size, Position = pos,
 		BackgroundColor3 = Color3.fromRGB(255, 255, 255), Rotation = math.random(-2, 2)
 	})
-    -- Aspect Ratio Constraint to keep photo rectangular regardless of screen shape
-    create("UIAspectRatioConstraint", {Parent = frame, AspectRatio = 0.8})
+	-- Aspect Ratio Constraint to keep photo rectangular regardless of screen shape
+	create("UIAspectRatioConstraint", {Parent = frame, AspectRatio = 0.8})
 
 	-- Photo Border
 	addStroke(frame, Color3.fromRGB(200, 200, 200), 1)
@@ -140,7 +140,7 @@ local function createCharacterViewport(parent, size, pos)
 	-- Paperclip
 	local clip = create("Frame", {
 		Parent = frame, Size = UDim2.new(0.2, 0, 0.15, 0), Position = UDim2.new(0.5, 0, 0, -10),
-        AnchorPoint = Vector2.new(0.5, 0),
+		AnchorPoint = Vector2.new(0.5, 0),
 		BackgroundColor3 = Color3.fromRGB(150, 150, 150), ZIndex = 5
 	})
 	addCorner(clip, 8)
@@ -216,9 +216,9 @@ create("Frame", { -- Cover bottom rounded corners
 })
 create("TextLabel", {
 	Parent = folderTab, Size = UDim2.new(0.9,0,1,0), Position = UDim2.new(0.05,0,0,0),
-    Text = "CONFIDENTIAL // SURVIVOR DATA",
+	Text = "CONFIDENTIAL // SURVIVOR DATA",
 	Font = THEME.Fonts.Stamp, TextSize = 14, TextColor3 = Color3.new(0,0,0), TextTransparency = 0.6,
-    TextScaled = true
+	TextScaled = true
 })
 create("UITextSizeConstraint", {Parent = folderTab:FindFirstChild("TextLabel"), MaxTextSize = 16})
 
@@ -347,21 +347,21 @@ local tabsDef = {
 }
 
 for _, t in ipairs(tabsDef) do
-    -- Responsive Tab Buttons
+	-- Responsive Tab Buttons
 	local btn = create("TextButton", {
 		Parent = tabContainer, Size = UDim2.new(0.3, 0, 1, 0), BackgroundColor3 = t.color,
 		Text = t.label, Font = THEME.Fonts.Handwritten, TextScaled = true, TextColor3 = THEME.Colors.InkPrimary
 	})
-    create("UITextSizeConstraint", {Parent = btn, MaxTextSize = 18})
+	create("UITextSizeConstraint", {Parent = btn, MaxTextSize = 18})
 	create("UICorner", {Parent = btn, CornerRadius = UDim.new(0.1, 0)})
-    
+
 	-- Shadow
 	create("Frame", {
 		Parent = btn, Size = UDim2.new(1,2,1,2), Position = UDim2.new(0,1,0,1), ZIndex = -1,
 		BackgroundColor3 = Color3.new(0,0,0), BackgroundTransparency = 0.7,
-        BorderSizePixel = 0
+		BorderSizePixel = 0
 	})
-    create("UICorner", {Parent = btn:FindFirstChild("Frame"), CornerRadius = UDim.new(0.1, 0)})
+	create("UICorner", {Parent = btn:FindFirstChild("Frame"), CornerRadius = UDim.new(0.1, 0)})
 
 	btn.MouseButton1Click:Connect(function()
 		switchTab(t.id)
@@ -388,10 +388,10 @@ local function createStatRow(parent, label, value)
 		Parent = row, Size = UDim2.new(0.4,0,1,0), Position = UDim2.new(0.6,0,0,0), BackgroundTransparency = 1,
 		Text = tostring(value), Font = THEME.Fonts.Handwritten, TextScaled = true, TextColor3 = THEME.Colors.InkSecondary, TextXAlignment = Enum.TextXAlignment.Right
 	})
-    -- Constraints for readability
-    create("UITextSizeConstraint", {Parent = row:FindFirstChild("TextLabel"), MaxTextSize = 16})
-    create("UITextSizeConstraint", {Parent = row:FindFirstChild("TextLabel", true), MaxTextSize = 20})
-    
+	-- Constraints for readability
+	create("UITextSizeConstraint", {Parent = row:FindFirstChild("TextLabel"), MaxTextSize = 16})
+	create("UITextSizeConstraint", {Parent = row:FindFirstChild("TextLabel", true), MaxTextSize = 20})
+
 	create("Frame", { -- Dotted line
 		Parent = row, Size = UDim2.new(1,0,0,1), Position = UDim2.new(0,0,1,0),
 		BackgroundColor3 = THEME.Colors.InkSecondary, BackgroundTransparency = 0.8
@@ -399,7 +399,7 @@ local function createStatRow(parent, label, value)
 end
 
 local function updateStats()
-    -- same logic
+	-- same logic
 	-- Clear
 	for _, c in pairs(statPage:GetChildren()) do if c:IsA("Frame") then c:Destroy() end end
 
@@ -426,8 +426,8 @@ local function updateStats()
 	for _, item in ipairs(map) do
 		createStatRow(statPage, item[1], item[2] or 0)
 	end
-    
-    -- Stamp
+
+	-- Stamp
 	local kills = data.TotalKills or 0
 	local rating = "ROOKIE"
 	if kills > 1000 then rating = "SURVIVOR" end
@@ -439,7 +439,7 @@ local function updateStats()
 		Text = "RATING: " .. rating, Font = THEME.Fonts.Stamp, TextScaled = true, TextColor3 = THEME.Colors.AccentRed,
 		Rotation = -5
 	})
-    create("UITextSizeConstraint", {Parent = stamp, MaxTextSize = 28})
+	create("UITextSizeConstraint", {Parent = stamp, MaxTextSize = 28})
 	create("UIStroke", {Parent = stamp, Color = THEME.Colors.AccentRed, Thickness = 2, Transparency = 0.5})
 end
 

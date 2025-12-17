@@ -1,404 +1,451 @@
--- MissionUI.lua (LocalScript)
--- Path: StarterGui/MissionUI.client.lua
+-- InventoryUI.lua (LocalScript)
+-- Path: StarterGui/InventoryUI.lua
 -- Script Place: Lobby
--- Theme: Notice Board / Clipboard (Paper Texture, Pushpins, Polaroid Photos)
+-- Theme: Survival Backpack (Grid Canvas, Fabric Texture, Straps)
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
-local StarterGui = game:GetService("StarterGui")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local GuiService = game:GetService("GuiService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Cleanup existing
-if playerGui:FindFirstChild("MissionUI") then
-	playerGui.MissionUI:Destroy()
-end
-if playerGui:FindFirstChild("MissionButton") then
-	playerGui.MissionButton:Destroy()
-end
-
--- ======================================================
--- 1. CONFIGURATION & THEME (Paperwork)
--- ======================================================
-
+-- --- THEME CONFIGURATION ---
 local THEME = {
-	BoardWood = Color3.fromRGB(139, 69, 19),    -- Corkboard/Wood
-	PaperWhite = Color3.fromRGB(240, 235, 225), -- Aged Paper
-	PaperYellow = Color3.fromRGB(245, 230, 160),-- Note Paper
-
-	InkBlue = Color3.fromRGB(20, 20, 100),      -- Pen Ink
-	InkBlack = Color3.fromRGB(20, 20, 20),      -- Printed Text
-	InkRed = Color3.fromRGB(200, 30, 30),       -- Stamp Ink
-
-	PinRed = Color3.fromRGB(200, 50, 50),
-	PinGreen = Color3.fromRGB(50, 150, 50),
-	PinMetal = Color3.fromRGB(200, 200, 200),
+	COLORS = {
+		CANVAS_BG = Color3.fromRGB(80, 70, 55),       -- Backpack fabric
+		POCKET_BG = Color3.fromRGB(60, 55, 45),       -- Pocket inner
+		POCKET_DARK = Color3.fromRGB(45, 40, 35),     -- Darker pocket
+		STRAP = Color3.fromRGB(100, 85, 60),          -- Leather straps
+		ACCENT_ZIP = Color3.fromRGB(200, 180, 100),   -- Zipper/Gold
+		HIGHLIGHT = Color3.fromRGB(255, 200, 80),     -- Selection highlight
+		TEXT_MAIN = Color3.fromRGB(240, 230, 210),    -- Light text
+		TEXT_DARK = Color3.fromRGB(30, 25, 20),       -- Dark text
+		STITCH = Color3.fromRGB(150, 140, 120),       -- Stitching color
+	},
+	FONTS = {
+		TITLE = Enum.Font.PermanentMarker,
+		HEADER = Enum.Font.GothamBold,
+		BODY = Enum.Font.Gotham,
+	}
 }
 
-local FONTS = {
-	Hand = Enum.Font.IndieFlower,        -- Handwritten notes
-	Type = Enum.Font.SpecialElite,       -- Typewritten docs
-	Stamp = Enum.Font.Bangers,           -- Rubber stamps
-}
-
--- Remote Functions/Events
-local RemoteFunctions = ReplicatedStorage:WaitForChild("RemoteFunctions")
-local RemoteEvents = ReplicatedStorage:WaitForChild("RemoteEvents")
-
-local getMissionData = RemoteFunctions:WaitForChild("GetMissionData")
-local claimMissionReward = RemoteFunctions:WaitForChild("ClaimMissionReward")
-local rerollMission = RemoteFunctions:WaitForChild("RerollMission")
-
-local missionProgressUpdated = RemoteEvents:WaitForChild("MissionProgressUpdated")
-local missionsReset = RemoteEvents:WaitForChild("MissionsReset")
-
--- State
-local currentMissionData = nil
-local currentTab = "Daily"
-local missionToRerollId = nil
-local missionToRerollType = nil
-
--- UI References
-local screenGui, mainBoard
-local contentArea
-local dailyPaper, weeklyPaper
-local toastContainer
-
--- ======================================================
--- 2. UI UTILITIES
--- ======================================================
-
-local function addShadow(instance)
-	local shadow = Instance.new("ImageLabel")
-	shadow.Name = "DropShadow"
-	shadow.AnchorPoint = Vector2.new(0.5, 0.5)
-	shadow.BackgroundTransparency = 1
-	shadow.Position = UDim2.new(0.5, 5, 0.5, 5)
-	shadow.Size = UDim2.new(1, 10, 1, 10)
-	shadow.ZIndex = instance.ZIndex - 1
-	shadow.Image = "rbxassetid://1316045217"
-	shadow.ImageColor3 = Color3.new(0,0,0)
-	shadow.ImageTransparency = 0.6
-	shadow.ScaleType = Enum.ScaleType.Slice
-	shadow.SliceCenter = Rect.new(10, 10, 118, 118)
-	shadow.Parent = instance
+-- --- HELPER FUNCTIONS ---
+local function create(className, props)
+	local inst = Instance.new(className)
+	for k, v in pairs(props) do inst[k] = v end
+	return inst
 end
 
-local function addPin(parent, pos)
-	local pin = Instance.new("Frame")
-	pin.Size = UDim2.fromOffset(12, 12)
-	pin.Position = pos
-	pin.AnchorPoint = Vector2.new(0.5, 0.5)
-	pin.BackgroundColor3 = THEME.PinRed
-	pin.ZIndex = parent.ZIndex + 5
-	pin.Parent = parent
-
-	local c = Instance.new("UICorner")
-	c.CornerRadius = UDim.new(1,0)
-	c.Parent = pin
-
-	-- Shine
-	local s = Instance.new("Frame")
-	s.Size = UDim2.fromOffset(4,4)
-	s.Position = UDim2.fromOffset(2,2)
-	s.BackgroundColor3 = Color3.new(1,1,1)
-	s.BorderSizePixel = 0
-	s.ZIndex = pin.ZIndex
-	s.Parent = pin
-	local sc = Instance.new("UICorner"); sc.CornerRadius=UDim.new(1,0); sc.Parent=s
-
-	-- Needle shadow implied
+local function addCorner(parent, radius)
+	create("UICorner", {Parent = parent, CornerRadius = UDim.new(0, radius)})
 end
 
-local function createPaper(parent, size, pos, color)
-	local paper = Instance.new("Frame")
-	paper.Size = size
-	paper.Position = pos
-	paper.BackgroundColor3 = color or THEME.PaperWhite
-	paper.Parent = parent
-	-- slight rotation for messy look
-	paper.Rotation = math.random(-2, 2)
-	addShadow(paper)
-	return paper
+local function addStitching(parent)
+	create("UIStroke", {
+		Parent = parent,
+		Color = THEME.COLORS.STITCH,
+		Thickness = 2,
+		LineJoinMode = Enum.LineJoinMode.Round,
+		ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	})
 end
 
--- ======================================================
--- 3. UI CONSTRUCTION
--- ======================================================
+-- --- UI CREATION ---
+local screenGui = create("ScreenGui", {
+	Name = "InventoryUI",
+	Parent = playerGui,
+	IgnoreGuiInset = true,
+	ResetOnSpawn = false,
+	DisplayOrder = 10
+})
 
-screenGui = Instance.new("ScreenGui")
-screenGui.Name = "MissionUI"
-screenGui.Enabled = false
-screenGui.ResetOnSpawn = false
-screenGui.Parent = playerGui
+-- Initialize Blur Effect
+local camera = workspace.CurrentCamera
+local blurEffect = create("BlurEffect", {
+	Name = "InventoryBlur",
+	Size = 0,
+	Enabled = false,
+	Parent = camera
+})
 
--- HUD Button (Clipboard Icon)
-local hud = Instance.new("TextButton")
-hud.Name = "OpenBtn"
-hud.Size = UDim2.fromOffset(60, 80)
-hud.Position = UDim2.new(0, 20, 0, 120)
-hud.BackgroundColor3 = THEME.BoardWood
-hud.Text = ""
-hud.Parent = screenGui
--- Clipboard Clip
-local clip = Instance.new("Frame")
-clip.Size = UDim2.new(0.8, 0, 0.2, 0)
-clip.Position = UDim2.new(0.1, 0, 0, 0)
-clip.BackgroundColor3 = Color3.new(0.5,0.5,0.5)
-clip.Parent = hud
--- Paper
-local p = Instance.new("Frame")
-p.Size = UDim2.new(0.8, 0, 0.7, 0)
-p.Position = UDim2.new(0.1, 0, 0.2, 0)
-p.BackgroundColor3 = THEME.PaperWhite
-p.Parent = hud
--- Text
-local t = Instance.new("TextLabel")
-t.Text = "JOBS"
-t.Size = UDim2.fromScale(1,1)
-t.BackgroundTransparency = 1
-t.Font = FONTS.Stamp
-t.TextSize = 18
-t.TextColor3 = THEME.InkBlack
-t.Parent = p
+-- Module & Event References
+local ModuleScriptReplicated = ReplicatedStorage:WaitForChild("ModuleScript")
+local WeaponModule = require(ModuleScriptReplicated:WaitForChild("WeaponModule"))
+local ModelPreviewModule = require(ModuleScriptReplicated:WaitForChild("ModelPreviewModule"))
 
-hud.MouseButton1Click:Connect(function()
-	if screenGui.Enabled and mainBoard.Visible then
-		mainBoard.Visible = false
-	else
-		screenGui.Enabled = true
-		mainBoard.Visible = true
-		-- Refresh logic
-		local s, r = pcall(function() return getMissionData:InvokeServer() end)
-		if s then currentMissionData = r; populateBoard() end
-	end
-end)
+-- Safe Remote Retrieval
+local RemoteFunctions = ReplicatedStorage:WaitForChild("RemoteFunctions", 10)
+local inventoryRemote
+if RemoteFunctions then
+	inventoryRemote = RemoteFunctions:WaitForChild("GetInventoryData", 5)
+else
+	warn("InventoryUI: RemoteFunctions folder not found!")
+end
 
--- Main Board (Corkboard)
-mainBoard = Instance.new("Frame")
-mainBoard.Name = "Board"
-mainBoard.Size = UDim2.fromOffset(900, 600)
-mainBoard.Position = UDim2.new(0.5, 0, 0.5, 0)
-mainBoard.AnchorPoint = Vector2.new(0.5, 0.5)
-mainBoard.BackgroundColor3 = THEME.BoardWood
-mainBoard.Visible = false
-mainBoard.Parent = screenGui
+local skinEvent = ReplicatedStorage.RemoteEvents:WaitForChild("SkinManagementEvent", 5)
 
--- Wood Texture
-local woodTex = Instance.new("ImageLabel")
-woodTex.Size = UDim2.fromScale(1,1)
-woodTex.BackgroundTransparency = 1
-woodTex.Image = "rbxassetid://6008328148" -- Noise
-woodTex.ImageColor3 = Color3.fromRGB(100, 50, 0)
-woodTex.Parent = mainBoard
+-- --- STATE VARIABLES ---
+local selectedCategory = "All"
+local selectedWeapon = nil
+local currentTab = "Weapons"
+local currentPreview = nil
+local inventoryData = nil
 
--- Close Button (Pinned note)
-local closeNote = createPaper(mainBoard, UDim2.fromOffset(50, 50), UDim2.new(1, -60, 0, 10), THEME.PaperYellow)
-addPin(closeNote, UDim2.fromScale(0.5, 0.1))
-local cb = Instance.new("TextButton")
-cb.Size = UDim2.fromScale(1,1)
-cb.BackgroundTransparency = 1
-cb.Text = "X"
-cb.Font = FONTS.Hand
-cb.TextSize = 40
-cb.TextColor3 = THEME.InkRed
-cb.Parent = closeNote
-cb.MouseButton1Click:Connect(function() mainBoard.Visible = false end)
+-- --- MAIN PANEL ---
+local mainPanel = create("Frame", {
+	Name = "MainPanel",
+	Parent = screenGui,
+	Size = UDim2.new(0.85, 0, 0.85, 0),
+	Position = UDim2.new(0.5, 0, 0.5, 0),
+	AnchorPoint = Vector2.new(0.5, 0.5),
+	BackgroundColor3 = THEME.COLORS.CANVAS_BG,
+	Visible = false,
+	ZIndex = 100
+})
+addCorner(mainPanel, 12)
+addStitching(mainPanel)
 
--- Header Note
-local headerNote = createPaper(mainBoard, UDim2.new(0, 300, 0, 60), UDim2.new(0.5, -150, 0, 20))
-addPin(headerNote, UDim2.fromScale(0.1, 0.5))
-addPin(headerNote, UDim2.fromScale(0.9, 0.5))
-local ht = Instance.new("TextLabel")
-ht.Size = UDim2.fromScale(1,1)
-ht.BackgroundTransparency = 1
-ht.Text = "NOTICE BOARD"
-ht.Font = FONTS.Stamp
-ht.TextSize = 36
-ht.TextColor3 = THEME.InkBlack
-ht.Parent = headerNote
+-- Zipper Top
+local zipper = create("Frame", {
+	Parent = mainPanel,
+	Size = UDim2.new(1, 0, 0, 10),
+	Position = UDim2.new(0, 0, 0.12, -5),
+	BackgroundColor3 = Color3.new(0.1, 0.1, 0.1),
+	BorderSizePixel = 0,
+	ZIndex = 105
+})
 
--- Tabs (Folders on the bottom left/right)
--- We'll use two large papers for Daily/Weekly lists
+-- Close Button (Zipper Pull)
+local closeBtn = create("TextButton", {
+	Parent = zipper,
+	Size = UDim2.new(0, 30, 0, 60),
+	Position = UDim2.new(0.95, 0, 0, -20),
+	BackgroundColor3 = THEME.COLORS.ACCENT_ZIP,
+	Text = "X",
+	TextColor3 = Color3.new(0, 0, 0),
+	TextSize = 18,
+	Font = Enum.Font.GothamBold,
+	ZIndex = 110
+})
+addCorner(closeBtn, 15)
 
--- DAILY PAPER (Left)
-dailyPaper = createPaper(mainBoard, UDim2.new(0.45, 0, 0.75, 0), UDim2.new(0.03, 0, 0.2, 0), THEME.PaperWhite)
-addPin(dailyPaper, UDim2.fromScale(0.5, 0.05))
+-- Content Container
+local content = create("Frame", {
+	Parent = mainPanel,
+	Size = UDim2.new(1, -40, 1, -100),
+	Position = UDim2.new(0, 20, 0, 80),
+	BackgroundTransparency = 1,
+	ZIndex = 102
+})
 
-local dHeader = Instance.new("TextLabel")
-dHeader.Text = "DAILY ORDERS"
-dHeader.Font = FONTS.Type
-dHeader.TextSize = 24
-dHeader.TextColor3 = THEME.InkBlack
-dHeader.Size = UDim2.new(1, 0, 0, 40)
-dHeader.BackgroundTransparency = 1
-dHeader.Parent = dailyPaper
+-- 1. Sidebar (Straps)
+local sidebar = create("Frame", {
+	Parent = content,
+	Size = UDim2.new(0, 200, 1, 0),
+	BackgroundTransparency = 1
+})
 
-local dList = Instance.new("ScrollingFrame")
-dList.Size = UDim2.new(0.9, 0, 0.85, 0)
-dList.Position = UDim2.new(0.05, 0, 0.15, 0)
-dList.BackgroundTransparency = 1
-dList.ScrollBarThickness = 4
-dList.ScrollBarImageColor3 = Color3.new(0,0,0)
-dList.Parent = dailyPaper
-local dlLayout = Instance.new("UIListLayout")
-dlLayout.Padding = UDim.new(0, 10)
-dlLayout.Parent = dList
+create("UIListLayout", {
+	Parent = sidebar,
+	Padding = UDim.new(0, 10)
+})
 
--- WEEKLY PAPER (Right)
-weeklyPaper = createPaper(mainBoard, UDim2.new(0.45, 0, 0.75, 0), UDim2.new(0.52, 0, 0.2, 0), THEME.PaperYellow)
-addPin(weeklyPaper, UDim2.fromScale(0.5, 0.05))
+local function createTab(name)
+	local btn = create("TextButton", {
+		Name = name,
+		Parent = sidebar,
+		Size = UDim2.new(1, 0, 0, 50),
+		BackgroundColor3 = THEME.COLORS.STRAP,
+		Text = name:upper(),
+		TextColor3 = THEME.COLORS.TEXT_MAIN,
+		Font = THEME.FONTS.HEADER,
+		TextSize = 18
+	})
+	addCorner(btn, 8)
+	addStitching(btn)
+	return btn
+end
 
-local wHeader = Instance.new("TextLabel")
-wHeader.Text = "WEEKLY GOALS"
-wHeader.Font = FONTS.Hand
-wHeader.TextSize = 28
-wHeader.TextColor3 = THEME.InkBlue
-wHeader.Size = UDim2.new(1, 0, 0, 40)
-wHeader.BackgroundTransparency = 1
-wHeader.Parent = weeklyPaper
+local tWeapons = createTab("Weapons")
 
-local wList = Instance.new("ScrollingFrame")
-wList.Size = UDim2.new(0.9, 0, 0.85, 0)
-wList.Position = UDim2.new(0.05, 0, 0.15, 0)
-wList.BackgroundTransparency = 1
-wList.ScrollBarThickness = 4
-wList.ScrollBarImageColor3 = THEME.InkBlue
-wList.Parent = weeklyPaper
-local wlLayout = Instance.new("UIListLayout")
-wlLayout.Padding = UDim.new(0, 10)
-wlLayout.Parent = wList
+-- 2. Grid Area (Pockets)
+local gridArea = create("Frame", {
+	Parent = content,
+	Size = UDim2.new(1, -220, 1, 0),
+	Position = UDim2.new(0, 220, 0, 0),
+	BackgroundTransparency = 1
+})
 
+-- Filter Pockets
+local filterRow = create("ScrollingFrame", {
+	Parent = gridArea,
+	Size = UDim2.new(1, 0, 0, 40),
+	BackgroundTransparency = 1,
+	ScrollBarThickness = 0,
+	ScrollingDirection = Enum.ScrollingDirection.X,
+	CanvasSize = UDim2.new(2, 0, 0, 0)
+})
 
--- ======================================================
--- 4. LOGIC
--- ======================================================
+create("UIListLayout", {
+	Parent = filterRow,
+	FillDirection = Enum.FillDirection.Horizontal,
+	Padding = UDim.new(0, 5)
+})
 
-local function createMissionItem(id, info, listParent, isWeekly)
-	local frame = Instance.new("Frame")
-	frame.Size = UDim2.new(1, 0, 0, 80)
-	frame.BackgroundColor3 = Color3.new(1,1,1)
-	frame.BackgroundTransparency = 0.5 -- See paper texture
-	frame.BorderSizePixel = 0
+-- Item Grid
+local itemGrid = create("ScrollingFrame", {
+	Parent = gridArea,
+	Size = UDim2.new(0.6, 0, 1, -50),
+	Position = UDim2.new(0, 0, 0, 50),
+	BackgroundColor3 = THEME.COLORS.POCKET_BG,
+	BackgroundTransparency = 0.5,
+	BorderSizePixel = 0
+})
+addCorner(itemGrid, 8)
 
-	-- Underline
-	local line = Instance.new("Frame")
-	line.Size = UDim2.new(1, 0, 0, 1)
-	line.Position = UDim2.new(0, 0, 1, -1)
-	line.BackgroundColor3 = isWeekly and THEME.InkBlue or THEME.InkBlack
-	line.BorderSizePixel = 0
-	line.Parent = frame
+create("UIGridLayout", {
+	Parent = itemGrid,
+	CellSize = UDim2.new(0, 100, 0, 100),
+	CellPadding = UDim2.new(0, 10, 0, 10)
+})
 
-	-- Text
-	local desc = Instance.new("TextLabel")
-	desc.Text = "- " .. info.Description
-	desc.Size = UDim2.new(0.7, 0, 0.6, 0)
-	desc.BackgroundTransparency = 1
-	desc.Font = isWeekly and FONTS.Hand or FONTS.Type
-	desc.TextColor3 = isWeekly and THEME.InkBlue or THEME.InkBlack
-	desc.TextSize = 18
-	desc.TextXAlignment = Enum.TextXAlignment.Left
-	desc.TextWrapped = true
-	desc.Parent = frame
+create("UIPadding", {
+	Parent = itemGrid,
+	PaddingTop = UDim.new(0, 10),
+	PaddingLeft = UDim.new(0, 10)
+})
 
-	local progress = Instance.new("TextLabel")
-	progress.Text = "(" .. info.Progress .. "/" .. info.Target .. ")"
-	progress.Size = UDim2.new(0.7, 0, 0.3, 0)
-	progress.Position = UDim2.new(0, 0, 0.6, 0)
-	progress.BackgroundTransparency = 1
-	progress.Font = FONTS.Type
-	progress.TextColor3 = Color3.fromRGB(100,100,100)
-	progress.TextSize = 14
-	progress.TextXAlignment = Enum.TextXAlignment.Left
-	progress.Parent = frame
+-- 3. Inspector Panel
+local inspector = create("Frame", {
+	Parent = gridArea,
+	Size = UDim2.new(0.38, 0, 1, -50),
+	Position = UDim2.new(0.62, 0, 0, 50),
+	BackgroundColor3 = THEME.COLORS.POCKET_DARK
+})
+addCorner(inspector, 8)
+addStitching(inspector)
 
-	-- Stamp / Button
-	local stamp = Instance.new("TextButton")
-	stamp.Size = UDim2.new(0.25, 0, 0.6, 0)
-	stamp.Position = UDim2.new(0.75, 0, 0.2, 0)
-	stamp.BackgroundTransparency = 1
-	stamp.Font = FONTS.Stamp
-	stamp.TextSize = 24
-	stamp.Rotation = math.random(-15, 15)
-	stamp.Parent = frame
+local vp = create("ViewportFrame", {
+	Parent = inspector,
+	Size = UDim2.new(1, 0, 0.5, 0),
+	BackgroundTransparency = 1
+})
 
-	if info.Claimed then
-		stamp.Text = "DONE"
-		stamp.TextColor3 = THEME.InkBlack
-		stamp.AutoButtonColor = false
-	elseif info.Completed then
-		stamp.Text = "CLAIM!"
-		stamp.TextColor3 = THEME.InkRed
+local info = create("Frame", {
+	Parent = inspector,
+	Size = UDim2.new(1, -20, 0.5, -20),
+	Position = UDim2.new(0, 10, 0.5, 10),
+	BackgroundTransparency = 1
+})
 
-		-- Box around stamp
-		local border = Instance.new("UIStroke")
-		border.Color = THEME.InkRed
-		border.Thickness = 2
-		border.Parent = stamp
+local iName = create("TextLabel", {
+	Parent = info,
+	Size = UDim2.new(1, 0, 0, 30),
+	BackgroundTransparency = 1,
+	Text = "SELECT ITEM",
+	TextColor3 = THEME.COLORS.TEXT_MAIN,
+	Font = THEME.FONTS.TITLE,
+	TextSize = 24,
+	TextXAlignment = Enum.TextXAlignment.Left
+})
 
-		stamp.MouseButton1Click:Connect(function()
-			local s, r = pcall(function() return claimMissionReward:InvokeServer(id) end)
-			if s and r.Success then
-				info.Claimed = true
-				populateBoard()
-			end
-		end)
-	else
-		-- In progress, show reward
-		stamp.Text = "+"..info.Reward.Value.." MP"
-		stamp.TextColor3 = Color3.fromRGB(100, 100, 100)
-		stamp.TextSize = 18
-		stamp.Rotation = 0
-		stamp.AutoButtonColor = false
+local equipBtn = create("TextButton", {
+	Parent = info,
+	Size = UDim2.new(1, 0, 0, 50),
+	Position = UDim2.new(0, 0, 1, 0),
+	AnchorPoint = Vector2.new(0, 1),
+	BackgroundColor3 = THEME.COLORS.ACCENT_ZIP,
+	Text = "EQUIP",
+	Font = THEME.FONTS.HEADER,
+	TextSize = 20,
+	TextColor3 = THEME.COLORS.TEXT_DARK
+})
+addCorner(equipBtn, 8)
 
-		-- Reroll (Eraser?)
-		if not isWeekly and not currentMissionData.Daily.RerollUsed then
-			local reroll = Instance.new("TextButton")
-			reroll.Text = "X"
-			reroll.Size = UDim2.new(0, 20, 0, 20)
-			reroll.Position = UDim2.new(1, -20, 0, 0)
-			reroll.BackgroundTransparency = 1
-			reroll.TextColor3 = THEME.InkRed
-			reroll.Parent = frame
-			reroll.MouseButton1Click:Connect(function()
-				local s = rerollMission:InvokeServer("Daily", id)
-				if s then
-					currentMissionData = getMissionData:InvokeServer()
-					populateBoard()
-				end
-			end)
+-- --- OPEN BUTTON (HUD) ---
+local openButton = create("TextButton", {
+	Name = "OpenInventoryBtn",
+	Parent = screenGui,
+	Size = UDim2.new(0, 60, 0, 60),
+	Position = UDim2.new(0.02, 0, 0.55, 0),
+	BackgroundColor3 = THEME.COLORS.CANVAS_BG,
+	Text = "BAG",
+	TextColor3 = THEME.COLORS.TEXT_MAIN,
+	Font = THEME.FONTS.HEADER,
+	TextSize = 14
+})
+addCorner(openButton, 8)
+addStitching(openButton)
+
+-- --- LOGIC ---
+local CATEGORIES = {"All", "Rifle", "SMG", "Shotgun", "Sniper", "Pistol", "LMG"}
+
+local function updateDetails(id)
+	if not WeaponModule or not WeaponModule.Weapons then return end
+	local data = WeaponModule.Weapons[id]
+	if not data then return end
+	iName.Text = data.DisplayName or id
+
+	if currentPreview then ModelPreviewModule.destroy(currentPreview) end
+
+	-- Default skin preview
+	local sData = nil
+	if data.Skins then
+		for k, v in pairs(data.Skins) do
+			if k == "Default Skin" then sData = v break end
+		end
+		if not sData then
+			local k, v = next(data.Skins)
+			sData = v
 		end
 	end
 
-	frame.Parent = listParent
-end
-
-function populateBoard()
-	if not currentMissionData then return end
-
-	-- Clear Lists
-	for _, c in ipairs(dList:GetChildren()) do if c:IsA("Frame") then c:Destroy() end end
-	for _, c in ipairs(wList:GetChildren()) do if c:IsA("Frame") then c:Destroy() end end
-
-	-- Daily
-	for id, info in pairs(currentMissionData.Daily.Missions) do
-		createMissionItem(id, info, dList, false)
-	end
-
-	-- Weekly
-	for id, info in pairs(currentMissionData.Weekly.Missions) do
-		createMissionItem(id, info, wList, true)
+	if sData then
+		currentPreview = ModelPreviewModule.create(vp, data, sData)
+		ModelPreviewModule.startRotation(currentPreview, 1)
 	end
 end
 
-missionProgressUpdated.OnClientEvent:Connect(function()
-	if mainBoard.Visible then
-		currentMissionData = getMissionData:InvokeServer()
-		populateBoard()
+local function updateWeaponList()
+	-- Clean grid
+	for _, c in ipairs(itemGrid:GetChildren()) do
+		if c:IsA("TextButton") then c:Destroy() end
+	end
+
+	if not WeaponModule or not WeaponModule.Weapons then
+		warn("InventoryUI: WeaponModule not loaded correctly.")
+		return
+	end
+
+	local list = {}
+	for id, data in pairs(WeaponModule.Weapons) do
+		local match = false
+		if selectedCategory == "All" then
+			match = true
+		elseif data.Category then
+			if string.find(string.lower(data.Category), string.lower(selectedCategory)) then
+				match = true
+			end
+		end
+
+		if match then
+			table.insert(list, {id = id, name = data.DisplayName or id})
+		end
+	end
+	table.sort(list, function(a, b) return a.name < b.name end)
+
+	for _, w in ipairs(list) do
+		local btn = create("TextButton", {
+			Parent = itemGrid,
+			BackgroundColor3 = (w.id == selectedWeapon) and THEME.COLORS.HIGHLIGHT or THEME.COLORS.POCKET_BG,
+			Text = ""
+		})
+		addCorner(btn, 6)
+		addStitching(btn)
+
+		create("TextLabel", {
+			Parent = btn,
+			Size = UDim2.new(1, 0, 1, 0),
+			BackgroundTransparency = 1,
+			Text = string.sub(w.name, 1, 2),
+			TextSize = 30,
+			Font = THEME.FONTS.HEADER,
+			TextColor3 = (w.id == selectedWeapon) and THEME.COLORS.TEXT_DARK or THEME.COLORS.TEXT_MAIN
+		})
+
+		create("TextLabel", {
+			Parent = btn,
+			Size = UDim2.new(1, 0, 0, 20),
+			Position = UDim2.new(0, 0, 1, -20),
+			BackgroundTransparency = 1,
+			Text = w.name,
+			TextSize = 10,
+			Font = THEME.FONTS.BODY,
+			TextColor3 = (w.id == selectedWeapon) and THEME.COLORS.TEXT_DARK or THEME.COLORS.TEXT_MAIN
+		})
+
+		btn.MouseButton1Click:Connect(function()
+			selectedWeapon = w.id
+			updateWeaponList()
+			updateDetails(w.id)
+		end)
+	end
+end
+
+local function updateFilters()
+	for _, c in ipairs(filterRow:GetChildren()) do
+		if c:IsA("TextButton") then c:Destroy() end
+	end
+
+	for _, cat in ipairs(CATEGORIES) do
+		local b = create("TextButton", {
+			Parent = filterRow,
+			Text = cat,
+			Size = UDim2.new(0, 80, 1, 0),
+			BackgroundColor3 = (selectedCategory == cat) and THEME.COLORS.HIGHLIGHT or THEME.COLORS.STRAP,
+			TextColor3 = (selectedCategory == cat) and THEME.COLORS.TEXT_DARK or THEME.COLORS.TEXT_MAIN,
+			Font = THEME.FONTS.BODY
+		})
+		addCorner(b, 4)
+
+		b.MouseButton1Click:Connect(function()
+			selectedCategory = cat
+			updateFilters()
+			if currentTab == "Weapons" then updateWeaponList() end
+		end)
+	end
+end
+
+-- --- MAIN EVENTS ---
+openButton.MouseButton1Click:Connect(function()
+	print("InventoryUI: Open Button Clicked")
+	mainPanel.Visible = true
+	mainPanel.Size = UDim2.new(0.5, 0, 0.5, 0)
+	mainPanel:TweenSize(UDim2.new(0.85, 0, 0.85, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Back, 0.3, true)
+	openButton.Visible = false
+
+	-- Enable Blur
+	if blurEffect then
+		blurEffect.Enabled = true
+		TweenService:Create(blurEffect, TweenInfo.new(0.3), {Size = 15}):Play()
+	end
+
+	updateFilters()
+	updateWeaponList()
+end)
+
+closeBtn.MouseButton1Click:Connect(function()
+	mainPanel.Visible = false
+	openButton.Visible = true
+
+	-- Disable Blur
+	if blurEffect then
+		TweenService:Create(blurEffect, TweenInfo.new(0.3), {Size = 0}):Play()
+		task.delay(0.3, function() blurEffect.Enabled = false end)
 	end
 end)
 
-return {}
+tWeapons.MouseButton1Click:Connect(function()
+	currentTab = "Weapons"
+	itemGrid.Visible = true
+	inspector.Visible = true
+	updateWeaponList()
+end)
+
+-- Initial Data Load
+task.spawn(function()
+	if inventoryRemote then
+		local s, d = pcall(function() return inventoryRemote:InvokeServer() end)
+		if s then
+			inventoryData = d
+		else
+			warn("InventoryUI: Failed to fetch data from server.")
+		end
+	end
+end)
+
+print("InventoryUI Loaded")
