@@ -40,6 +40,7 @@ Constants.Events = {
 	STAMINA_UPDATE = "StaminaUpdate",
 	JUMP = "JumpEvent",
 	GACHA_SKIN_WON = "GachaSkinWonEvent",
+	START_DIALOGUE = "StartDialogueEvent",
 
 	-- Bindable Events
 	ZOMBIE_DIED = "ZombieDiedEvent",

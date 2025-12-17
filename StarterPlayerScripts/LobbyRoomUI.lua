@@ -1131,6 +1131,25 @@ lobbyRemote.OnClientEvent:Connect(function(action, data)
 	end
 end)
 
+-- Bindable Event for Client-Client communication
+local openLobbyEvent = ReplicatedStorage:FindFirstChild("OpenLobbyUI")
+if not openLobbyEvent then
+    openLobbyEvent = Instance.new("BindableEvent")
+    openLobbyEvent.Name = "OpenLobbyUI"
+    openLobbyEvent.Parent = ReplicatedStorage
+end
+
+openLobbyEvent.Event:Connect(function()
+    if state.isUIOpen then return end -- Already open
+    state.isUIOpen = true
+    gui.Enabled = true
+    if state.blurEffect then state.blurEffect.Enabled = true end
+    
+    mainFrame.Size = UDim2.new(0,0,0,0)
+    local tween = TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = THEME.Sizes.MainFrame})
+    tween:Play()
+end)
+
 createGUI()
 lobbyRemote:FireServer("getPublicRooms")
 

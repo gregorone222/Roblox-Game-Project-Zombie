@@ -9,6 +9,7 @@ local Workspace = game:GetService("Workspace")
 local Lighting = game:GetService("Lighting")
 local ServerStorage = game:GetService("ServerStorage")
 local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- Constants (Expanded Size)
 local STATION_LENGTH = 300 
@@ -209,6 +210,14 @@ local function spawnNPC(name, cframe, parent, appearanceColor)
 		txt.Font = Enum.Font.SpecialElite
 		txt.TextSize = 20
 		txt.Parent = bg
+	end
+
+	-- Force Anchor
+	for _, desc in ipairs(model:GetDescendants()) do
+		if desc:IsA("BasePart") then
+			desc.Anchored = true
+			desc.CanCollide = true -- Optional: Player collision
+		end
 	end
 
 	return model
@@ -533,6 +542,7 @@ function LobbyBuilder.Build()
 
 	-- Interaction Point
 	createInteraction("LobbyRoom", alexPos, Vector3.new(8, 8, 8), "Mission Briefing", env)
+	createInteraction("DialogueAlexander", alexPos, Vector3.new(6, 6, 6), "Talk", env)
 
 	-- C. SHOPS & UTILITIES
 	-- Booster Shop (Medical Tent Area)
