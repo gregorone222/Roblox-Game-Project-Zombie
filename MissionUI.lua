@@ -131,7 +131,7 @@ end
 
 screenGui = Instance.new("ScreenGui")
 screenGui.Name = "MissionUI"
-screenGui.Enabled = false -- Hidden by default (until cinematic ends)
+screenGui.Enabled = false -- Hidden until cinematic ends
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
@@ -148,6 +148,8 @@ end
 openLobbyEvent.Event:Connect(function()
     screenGui.Enabled = true
 end)
+
+
 
 -- HUD Button (Clipboard Icon)
 local hud = Instance.new("TextButton")

@@ -452,6 +452,7 @@ function LobbyBuilder.Build()
 	spawn.CFrame = CFrame.new(0, PLATFORM_HEIGHT + 1, 40)
 	spawn.Size = Vector3.new(30, 0.5, 30)
 	spawn.Transparency = 1
+	spawn.Duration = 0 -- Disable ForceField
 	spawn.CanCollide = false
 	spawn.Anchored = true
 	spawn.Parent = env

@@ -61,7 +61,7 @@ DialogueConfig.Dialogues = {
             Speaker = "Alexander",
             Text = "Good. I'm pulling up the mission dossier now. Select your squad and gear up.",
             NextID = nil,
-            Signal = "OpenLobby" -- Trigger UI when this node ends
+            Signal = "OpenLobbyRoom" -- Trigger UI when this node ends
         }
     },
 

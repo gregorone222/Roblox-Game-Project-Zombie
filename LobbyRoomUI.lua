@@ -1190,8 +1190,16 @@ if not openLobbyEvent then
     openLobbyEvent.Parent = ReplicatedStorage
 end
 
-openLobbyEvent.Event:Connect(function()
-    if state.isUIOpen then return end -- Already open
+-- NEW LISTENER: OpenLobbyRoomUI (Triggered by NPC Dialogue)
+local openLobbyRoomEvent = ReplicatedStorage:FindFirstChild("OpenLobbyRoomUI")
+if not openLobbyRoomEvent then
+    openLobbyRoomEvent = Instance.new("BindableEvent")
+    openLobbyRoomEvent.Name = "OpenLobbyRoomUI"
+    openLobbyRoomEvent.Parent = ReplicatedStorage
+end
+
+openLobbyRoomEvent.Event:Connect(function()
+    if state.isUIOpen then return end
     state.isUIOpen = true
     gui.Enabled = true
     if state.blurEffect then state.blurEffect.Enabled = true end
@@ -1200,6 +1208,8 @@ openLobbyEvent.Event:Connect(function()
     local tween = TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = THEME.Sizes.MainFrame})
     tween:Play()
 end)
+
+
 
 createGUI()
 lobbyRemote:FireServer("getPublicRooms")

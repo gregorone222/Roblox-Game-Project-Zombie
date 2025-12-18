@@ -93,10 +93,15 @@ local function createUI()
 	bottomBar.ZIndex = 5
 	bottomBar.Parent = dialogueGui
 
+	-- Mobile Check
+    local isMobile = UserInputService.TouchEnabled
+    local panelWidth = isMobile and 0.95 or 0.75
+    local panelHeight = isMobile and 0.25 or 0.20
+
 	-- Main Dialogue Panel (Military/Tactical Style)
 	mainFrame = Instance.new("Frame")
 	mainFrame.Name = "DialoguePanel"
-	mainFrame.Size = UDim2.new(0.75, 0, 0.20, 0)
+	mainFrame.Size = UDim2.new(panelWidth, 0, panelHeight, 0)
 	mainFrame.Position = UDim2.new(0.5, 0, 1, 0) -- Start below screen
 	mainFrame.AnchorPoint = Vector2.new(0.5, 1)
 	mainFrame.BackgroundColor3 = THEME.Colors.Panel
@@ -204,17 +209,26 @@ local function createUI()
     -- Skip Button (Tactical Style with Border)
     local skipBtn = Instance.new("TextButton")
     skipBtn.Name = "SkipButton"
-    skipBtn.Size = UDim2.new(0, 80, 0, 28)
-    skipBtn.Position = UDim2.new(1, 0, 0, 0)
+    skipBtn.Size = UDim2.new(0.12, 0, 0.25, 0) -- Converted to Scale
+    skipBtn.Position = UDim2.new(1, 0, -0.3, 0) -- Moved up slightly
     skipBtn.AnchorPoint = Vector2.new(1, 0)
     skipBtn.BackgroundColor3 = THEME.Colors.ChoiceDefault
     skipBtn.BackgroundTransparency = 0.3
     skipBtn.Text = "SKIP >>"
     skipBtn.Font = THEME.Fonts.Prompt
-    skipBtn.TextSize = 14
+    skipBtn.TextScaled = true -- Rule Compliance
     skipBtn.TextColor3 = THEME.Colors.Prompt
     skipBtn.ZIndex = 12
     skipBtn.Parent = mainFrame
+    
+    local skipPadding = Instance.new("UIPadding") -- Rule Compliance
+    skipPadding.PaddingLeft = UDim.new(0.1, 0)
+    skipPadding.PaddingRight = UDim.new(0.1, 0)
+    skipPadding.Parent = skipBtn
+    
+    local skipSizeConstraint = Instance.new("UITextSizeConstraint")
+    skipSizeConstraint.MaxTextSize = 18
+    skipSizeConstraint.Parent = skipBtn
     
     local skipCorner = Instance.new("UICorner")
     skipCorner.CornerRadius = UDim.new(0, 4)
@@ -331,128 +345,142 @@ local function displayNode(node)
 
 	speakerLabel.Text = string.upper(node.Speaker or "???" )
     
-    -- [FIX] Spawn to prevent blocking safeAdvance/Input thread
+    -- [FIX] Spawn typewriter and wait for completion before showing choices
     task.spawn(function()
 	    typewriterEffect(node.Text or "", state.currentJobId)
-    end)
-
-	-- Execute Actions
-	if node.Actions then
-		if node.Actions.PlaySound then
-			-- Placeholder for sound playback
-			-- local sound = Instance.new("Sound", playerGui)
-			-- sound.SoundId = "rbxassetid://" .. node.Actions.PlaySound
-			-- sound:Play()
-		end
-	end
-
-    -- Handle Choices
-    if node.Choices and #node.Choices > 0 then
-        state.isWaitingForChoice = true
-        promptLabel.Visible = false -- Hide continue prompt
         
-        -- Create container if missing
-        local choiceContainer = mainFrame:FindFirstChild("ChoiceContainer")
-        if not choiceContainer then
-            choiceContainer = Instance.new("Frame")
-            choiceContainer.Name = "ChoiceContainer"
-            choiceContainer.Size = UDim2.new(1, 0, 0, 100)
-            choiceContainer.Position = UDim2.new(0, 0, -0.6, 0) -- Above the panel
-            choiceContainer.AnchorPoint = Vector2.new(0, 1)
-            choiceContainer.BackgroundTransparency = 1
-            choiceContainer.Parent = mainFrame
-            
-            local layout = Instance.new("UIListLayout")
-            layout.VerticalAlignment = Enum.VerticalAlignment.Bottom
-            layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-            layout.Padding = UDim.new(0, 5)
-            layout.Parent = choiceContainer
+        -- If job changed during wait, abort
+        if state.currentJobId ~= state.currentJobId then return end
+        
+        -- Execute Actions
+        if node.Actions then
+            if node.Actions.PlaySound then
+                -- Placeholder
+            end
         end
 
-        -- clear old choices
-        for _, child in ipairs(choiceContainer:GetChildren()) do
-            if child:IsA("TextButton") then child:Destroy() end
-        end
+        -- Handle Choices AFTER text is done
+        if node.Choices and #node.Choices > 0 then
+            state.isWaitingForChoice = true
+            promptLabel.Visible = false -- Hide continue prompt
+            
+            -- Create container if missing
+            local choiceContainer = mainFrame:FindFirstChild("ChoiceContainer")
+            if not choiceContainer then
+                choiceContainer = Instance.new("Frame")
+                choiceContainer.Name = "ChoiceContainer"
+                choiceContainer.Size = UDim2.new(0.5, 0, 0.6, 0) -- Reduced width to 50%
+                choiceContainer.Position = UDim2.new(1, 0, -0.1, 0) -- Align to Right edge
+                choiceContainer.AnchorPoint = Vector2.new(1, 1) -- Bottom-Right anchor
+                choiceContainer.BackgroundTransparency = 1
+                choiceContainer.Parent = mainFrame
+                
+                local layout = Instance.new("UIListLayout")
+                layout.VerticalAlignment = Enum.VerticalAlignment.Bottom
+                layout.HorizontalAlignment = Enum.HorizontalAlignment.Right -- Align items to Right
+                layout.Padding = UDim.new(0.05, 0) 
+                layout.Parent = choiceContainer
+            end
 
-        -- Spawn buttons (Tactical Style)
-        for idx, choice in ipairs(node.Choices) do
-            local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(0.7, 0, 0, 36)
-            btn.BackgroundColor3 = THEME.Colors.ChoiceDefault
-            btn.BackgroundTransparency = 0.1
-            btn.Text = "  [ " .. idx .. " ]  " .. choice.Text:upper()
-            btn.TextColor3 = THEME.Colors.Text
-            btn.Font = THEME.Fonts.Choice
-            btn.TextSize = 16
-            btn.TextXAlignment = Enum.TextXAlignment.Left
-            btn.ZIndex = 12
-            btn.Parent = choiceContainer
-            
-            -- Styling
-            local stroke = Instance.new("UIStroke")
-            stroke.Color = THEME.Colors.ChoiceBorder
-            stroke.Thickness = 2
-            stroke.Transparency = 0.3
-            stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-            stroke.Parent = btn
-            
-            local corner = Instance.new("UICorner")
-            corner.CornerRadius = UDim.new(0, 6)
-            corner.Parent = btn
-            
-            -- Hover Effects
-            btn.MouseEnter:Connect(function()
-                btn.BackgroundColor3 = THEME.Colors.ChoiceHover
-                stroke.Color = THEME.Colors.SpeakerName
-                stroke.Transparency = 0
-            end)
-            btn.MouseLeave:Connect(function()
+            -- clear old choices
+            for _, child in ipairs(choiceContainer:GetChildren()) do
+                if child:IsA("TextButton") then child:Destroy() end
+            end
+
+            -- Spawn buttons (Tactical Style)
+            for idx, choice in ipairs(node.Choices) do
+                local btn = Instance.new("TextButton")
+                btn.Size = UDim2.new(1, 0, 0.25, 0) -- Scale Height
                 btn.BackgroundColor3 = THEME.Colors.ChoiceDefault
+                btn.BackgroundTransparency = 0.1
+                btn.Text = "  [ " .. idx .. " ]  " .. choice.Text:upper()
+                btn.TextColor3 = THEME.Colors.Text
+                btn.Font = THEME.Fonts.Choice
+                btn.TextScaled = true -- Rule Compliance
+                btn.TextXAlignment = Enum.TextXAlignment.Left
+                btn.ZIndex = 12
+                btn.Parent = choiceContainer
+                
+                local btnPadding = Instance.new("UIPadding") -- Rule Compliance
+                btnPadding.PaddingLeft = UDim.new(0.05, 0)
+                btnPadding.Parent = btn
+                
+                local btnSizeConstraint = Instance.new("UITextSizeConstraint")
+                btnSizeConstraint.MaxTextSize = 20
+                btnSizeConstraint.Parent = btn
+                
+                -- Styling
+                local stroke = Instance.new("UIStroke")
                 stroke.Color = THEME.Colors.ChoiceBorder
+                stroke.Thickness = 2
                 stroke.Transparency = 0.3
-            end)
+                stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+                stroke.Parent = btn
+                
+                local corner = Instance.new("UICorner")
+                corner.CornerRadius = UDim.new(0, 6)
+                corner.Parent = btn
+                
+                -- Hover Effects
+                btn.MouseEnter:Connect(function()
+                    btn.BackgroundColor3 = THEME.Colors.ChoiceHover
+                    stroke.Color = THEME.Colors.SpeakerName
+                    stroke.Transparency = 0
+                end)
+                btn.MouseLeave:Connect(function()
+                    btn.BackgroundColor3 = THEME.Colors.ChoiceDefault
+                    stroke.Color = THEME.Colors.ChoiceBorder
+                    stroke.Transparency = 0.3
+                end)
 
-            -- Click event
-            btn.MouseButton1Click:Connect(function()
-                state.isWaitingForChoice = false
+                -- Click event
+                btn.MouseButton1Click:Connect(function()
+                    state.isWaitingForChoice = false
 
-                -- Handle Signal
-                if choice.Signal == "OpenLobby" then
-                    -- Fire BindableEvent for UI
-                    local evt = ReplicatedStorage:FindFirstChild("OpenLobbyUI")
-                    if evt then evt:Fire() end
-                end
-
-                -- Find next node based on choice
-                if choice.NextID then
-                     -- Manual advance logic for choice
-                    local nextNodeID = choice.NextID
-                    
-                     -- Find next node
-                    local found = false
-                    for i, n in ipairs(state.currentDialogue) do
-                        if n.ID == nextNodeID then
-                            state.currentNodeIndex = i
-                            displayNode(n)
-                            found = true
-                            break
+                    -- Handle Signal
+                    if choice.Signal then
+                        -- Fire BindableEvent for UI
+                        local evt = ReplicatedStorage:FindFirstChild(choice.Signal .. "UI")
+                        if evt then 
+                            evt:Fire() 
+                        else
+                             -- Fallback: If signal is full event name
+                             evt = ReplicatedStorage:FindFirstChild(choice.Signal)
+                             if evt then evt:Fire() end
                         end
                     end
-                    if not found then endDialogue() end
-                else
-                    endDialogue()
-                end
-                
-                -- Clear choices
-                for _, c in ipairs(choiceContainer:GetChildren()) do
-                    if c:IsA("TextButton") then c:Destroy() end
-                end
-            end)
+
+                    -- Find next node based on choice
+                    if choice.NextID then
+                         -- Manual advance logic for choice
+                        local nextNodeID = choice.NextID
+                        
+                         -- Find next node
+                        local found = false
+                        for i, n in ipairs(state.currentDialogue) do
+                            if n.ID == nextNodeID then
+                                state.currentNodeIndex = i
+                                displayNode(n)
+                                found = true
+                                break
+                            end
+                        end
+                        if not found then endDialogue() end
+                    else
+                        endDialogue()
+                    end
+                    
+                    -- Clear choices
+                    for _, c in ipairs(choiceContainer:GetChildren()) do
+                        if c:IsA("TextButton") then c:Destroy() end
+                    end
+                end)
+            end
+        else
+            state.isWaitingForChoice = false
+            promptLabel.Visible = true
         end
-    else
-        state.isWaitingForChoice = false
-        promptLabel.Visible = true
-    end
+    end)
 end
 
 local function advanceDialogue()
@@ -479,9 +507,15 @@ local function advanceDialogue()
 	local nextID = currentNode.NextID
 	if nextID == nil then
         -- Check for Signal on the final node
-        if currentNode.Signal == "OpenLobby" then
-            local evt = ReplicatedStorage:FindFirstChild("OpenLobbyUI")
-            if evt then evt:Fire() end
+        if currentNode.Signal then
+            local evt = ReplicatedStorage:FindFirstChild(currentNode.Signal .. "UI")
+             if evt then 
+                evt:Fire() 
+            else
+                 -- Fallback
+                 evt = ReplicatedStorage:FindFirstChild(currentNode.Signal)
+                 if evt then evt:Fire() end
+            end
         end
 
 		-- No more nodes

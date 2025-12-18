@@ -177,7 +177,7 @@ local blinkTweens = {} -- Store blink tweens to cancel them properly
 local LOBBY_UIS = {
 	"CoinsUI", "MissionPointsUI", "AchievementPointsUI",
 	"ProfileUI", "DailyRewardUI", "InventoryUI",
-	"MissionButton", "DailyRewardHUD" -- Removed "LobbyRoomUI" (controlled by ProximityPrompt only)
+	"MissionUI", "DailyRewardHUD" -- Removed "LobbyRoomUI" (controlled by ProximityPrompt only)
 }
 
 -- Helper: Find ScreenGui by name (handles case where LocalScript has same name)
@@ -502,6 +502,10 @@ local function exitTitleMode()
 
 		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, true)
 		setLobbyUIVisibility(true)
+		
+		-- SIGNAL MISSION UI TO OPEN
+		local openLobbyEvent = ReplicatedStorage:FindFirstChild("OpenLobbyUI")
+		if openLobbyEvent then openLobbyEvent:Fire() end
 
 		-- Check Daily Reward
 		task.spawn(function()
