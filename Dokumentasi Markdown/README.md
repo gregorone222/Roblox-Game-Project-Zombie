@@ -1,76 +1,39 @@
-# Zombie?
+# 🧟 Zombie? - Project Documentation
 
-**Zombie?** adalah game Co-op Zombie Survival (Wave Shooter) yang intens di Roblox. Pemain harus bekerja sama untuk bertahan hidup dari gelombang mayat hidup yang tak ada habisnya, menyelesaikan misi yang menantang, dan meningkatkan persenjataan mereka untuk menghadapi bos yang kuat.
+**Zombie?** adalah game Co-op Survival Wave Shooter di Roblox.
+Dokumentasi ini adalah panduan lengkap untuk pengembangan, pemeliharaan, dan pemahaman sistem game.
 
-## ⚠️ PENTING UNTUK PENGEMBANG
-Sebelum memulai pengembangan atau kontribusi, Anda **WAJIB** membaca dan memahami dokumen berikut:
-1.  **[Error.md](Error.md):** Daftar error umum, batasan teknis, dan catatan debugging.
-2.  **[Rule.md](Rule.md):** Aturan baku pengembangan, termasuk standar UI/UX (Scale) dan tata tertib struktur proyek.
-3.  **[STORY.md](STORY.md)**
+## 📚 Daftar Dokumentasi
 
-Kelalaian dalam mengikuti panduan ini dapat menyebabkan konflik kode atau UI yang tidak responsif.
+### 🔹 Core & Maps
+*   **[Place.md](Place.md):** Detail Map (Lobby & Village), Layout, dan Tema.
+*   **[Fitur.md](Fitur.md):** Gameplay Loop, Mode, dan Ringkasan Sistem.
+*   **[STORY.md](STORY.md):** Naskah cerita, Dialog, dan Plot Campaign.
 
-## 🎮 Gambaran Game
+### 🔹 Systems & Mechanics
+*   **[Entities.md](Entities.md):** Data Musuh (Zombie/Boss) dan NPC.
+*   **[Items.md](Items.md):** Senjata, Perks, Skill, dan Shop.
+*   **[UI.md](UI.md):** Struktur Antarmuka (HUD, Menu, Alerts).
+*   **[Controls.md](Controls.md):** Mapping Input (PC & Mobile).
 
-*   **Genre:** Co-op Survival / Wave Shooter
-*   **Tujuan:** Bertahan dari gelombang yang semakin sulit, kalahkan bos, dan selesaikan cerita (Wave 50).
-*   **Perspektif:** First-Person / Third-Person Shooter
+### 🔹 Technical & Ops
+*   **[Technical.md](Technical.md):** Arsitektur Script, DataStore Schema, Networking.
+*   **[Configuration.md](Configuration.md):** Panduan Game Balancing (Config).
+*   **[Admin.md](Admin.md):** Protokol Keamanan Data & Perintah Admin.
 
-## 🕹️ Mode Permainan
+### 🔹 Environment & Graphics
+*   **[Lighting.md](Lighting.md):** Sistem Pencahayaan Dinamis (Dark Wave, Blood Moon).
+*   **[Environment.md](Environment.md):** Atmosfer, Fog, VFX, dan Audio.
 
-*   **Story Mode:** Mode standar di mana pemain bertujuan untuk bertahan hidup hingga Wave 50 untuk menyelesaikan bab cerita.
-*   **Crazy Mode:** Tantangan hardcore untuk pemain veteran.
-    *   *Aturan:* Tidak ada Revive, Friendly Fire AKTIF, Perk Terbatas, Statistik Musuh Meningkat.
+### 🔹 Guidelines & Troubleshooting
+*   **[Rule.md](Rule.md):** Standar Pengembangan (UI Scale, Code Style).
+*   **[Error.md](Error.md):** Log Error Umum & Batasan Teknis (Constraints).
 
-## ✨ Fitur Utama
-
-### Sistem Tempur
-*   **Balistik Raycast:** Mekanisme menembak yang akurat dengan recoil, spread, dan pengurangan damage berdasarkan jarak.
-*   **Critical Hits:** Multiplier headshot menghargai bidikan yang presisi.
-*   **Variasi Senjata:** Pistol, Assault Rifle, Shotgun, SMG, LMG, dan Sniper.
-*   **Upgrade:** Peningkatan senjata dalam game gaya "Pack-a-Punch" (Level 1-3).
-
-### Daftar Musuh
-*   **Common Infected:** Zombie standar.
-*   **Runner:** HP rendah tapi kecepatan tinggi.
-*   **Shooter:** Penyerang jarak jauh yang meninggalkan genangan asam.
-*   **Tank:** Kumpulan HP yang sangat besar, membutuhkan tembakan terfokus.
-*   **Bos:** Pertemuan unik dengan mekanik multi-fase:
-    *   *Plague Titan:* Aura radiasi dan hantaman korosif.
-    *   *The Hive Mother:* Inkubator berjalan yang memanggil pasukan larva dan awan racun.
-    *   *The Blighted Alchemist:* Peperangan kimia.
-
-### Progresi & Ekonomi
-*   **Points (Sesi):** Diperoleh dengan memberikan damage pada zombie. Digunakan untuk membeli senjata, perk, dan membuka area peta. Direset setelah game over.
-*   **Coins (Persisten):** Diperoleh dengan menyelesaikan wave dan game. Digunakan untuk skin dan item permanen.
-*   **XP & Level:** Progresi akun yang membuka Title dan Hadiah.
-*   **Skill Tree:** Buff pasif permanen (Health+, Kecepatan Reload+, dll).
-*   **Perks:** Buff dalam game (Boost HP gaya Juggernog, Boost reload gaya Speed Cola, dll).
-
-### Sistem Misi
-*   **Tugas Harian & Mingguan:** Objektif bergilir (misalnya, "Dapatkan 50 Headshot") untuk mendapatkan hadiah.
-*   **Sistem Reroll:** Pemain dapat mengacak ulang misi yang tidak mereka sukai.
-
-## 🛠️ Arsitektur Teknis
-
-Proyek ini menggunakan **Pola Service-Manager** yang kuat untuk memastikan skalabilitas dan kemudahan pemeliharaan.
-
-### Struktur Inti
-*   **ServerScriptService (Logic):**
-    *   `GameManager`: Mengatur loop utama permainan (Status Wave, Voting, Menang/Kalah).
-    *   `WeaponManager`: Validasi sisi server untuk pertempuran dan registrasi hit.
-    *   `DataStoreManager`: Menangani semua persistensi data (Data Pemain & Data Global) dengan caching.
-    *   `LobbyManager`: Mengelola logika pra-permainan, profil, dan hadiah harian.
-*   **ReplicatedStorage (Shared):**
-    *   `GameConfig`: Konfigurasi terpusat untuk penyeimbangan (Ekonomi, Kesulitan).
-    *   `ZombieConfig` & `WeaponModule`: Definisi data untuk entitas dan item.
-
-### Teknologi Kunci
-*   **DataStoreService:** Untuk menyimpan statistik pemain, inventaris, dan papan peringkat.
-*   **RemoteEvents/Functions:** Jaringan aman untuk komunikasi Client-Server.
-*   **ModuleScripts:** Organisasi kode modular.
-
-## 📝 Kredit
-*   **Pengembangan:** Agen One-Man Army (Desain Game, UI/UX, Pemrograman, VFX, Bangunan, Audio, Fisika, Animasi).
 ---
-*Dokumentasi dibuat secara otomatis berdasarkan analisis proyek.*
+
+## 🛠️ Ringkasan Proyek
+*   **Genre:** Co-op FPS/TPS Survival.
+*   **Engine:** Roblox (Luau).
+*   **Arsitektur:** Service-Manager Pattern, Modular, Event-Driven.
+
+*Dokumentasi diperbarui otomatis berdasarkan analisis codebase terkini.*

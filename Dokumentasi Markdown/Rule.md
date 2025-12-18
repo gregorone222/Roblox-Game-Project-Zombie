@@ -1,32 +1,21 @@
-# Development Rules & Guidelines
+# 📏 Development Rules & Guidelines
 
-Dokumen ini berisi aturan baku dan panduan yang harus dipatuhi selama pengembangan proyek "Zombie?".
+Aturan baku pengembangan untuk menjaga kualitas kode dan konsistensi UI.
 
-## 1. UI/UX Design & Responsiveness
-*   **Wajib Menggunakan Scale:** Seluruh elemen UI (Frame, Button, TextLabel, dll) **HARUS** menggunakan properti `Scale` untuk posisi dan ukuran (`UDim2.new(scaleX, 0, scaleY, 0)`).
-    *   **Dilarang** menggunakan `Offset` untuk ukuran utama agar UI responsif di PC, Mobile, dan Tablet.
-    *   *Pengecualian:* Border tipis atau padding kecil boleh menggunakan Offset jika benar-benar diperlukan.
-*   **Anchor Point:** Gunakan `AnchorPoint` (misal `0.5, 0.5`) untuk memudahkan pemosisian elemen di tengah layar atau container.
-*   **Aspek Rasio:** Gunakan `UIAspectRatioConstraint` untuk elemen yang harus mempertahankan bentuknya (seperti ikon bulat atau gambar senjata).
-*   **Text Scaling:** Gunakan `TextScaled = true` atau `UITextSizeConstraint` untuk memastikan teks terbaca di semua resolusi.
-*   **ScrollingFrame:** Setiap `ScrollingFrame` **WAJIB** menggunakan:
-    *   `CanvasSize = UDim2.new(0, 0, 0, 0)`
-    *   `AutomaticCanvasSize = Enum.AutomaticSize.Y` (atau X/XY sesuai kebutuhan, tapi hindari manual pixel size).
-*   **ScreenInsets:** Jika UI dirancang untuk menggunakan seluruh lebar layar (seperti intro sinematik), atur `ScreenGui.ScreenInsets = Enum.ScreenInsets.None` untuk menutupi *Safe Area* (notch/poni layar).
-*   **Blur UI:** Semua UI berbasis Menu (Shop, Inventory, Profile, dll) **WAJIB** menerapkan efek `BlurEffect` pada `CurrentCamera` saat dibuka untuk meningkatkan fokus visual dan imersi.
+## 1. UI/UX Standards
+*   **Scale Over Offset:** Semua elemen UI **WAJIB** menggunakan `Scale` untuk ukuran dan posisi. `Offset` dilarang kecuali untuk border/padding kecil.
+*   **Anchor Point:** Gunakan `0.5, 0.5` untuk elemen tengah.
+*   **Text Scaling:** Gunakan `TextScaled` atau `UITextSizeConstraint`.
+*   **Mobile Support:**
+    *   Cek `TouchEnabled`.
+    *   Perbesar tombol pada layar mobile (Safe Padding minimal 15%).
+*   **Immersive Menus:** Terapkan `BlurEffect` kamera saat membuka menu full-screen.
 
-## 2. Environment & Building
-*   **Hierarchy:** Jaga kebersihan `Workspace`. Kelompokkan objek peta dalam Folder atau Model (misal `Map_Village`, `LobbyEnvironment`).
-*   **Anchored:** Pastikan bagian statis lingkungan selalu `Anchored = true`.
+## 2. Code Structure
+*   **Modular:** Gunakan `ModuleScript` di `ServerScriptService` untuk logika.
+*   **Services:** Gunakan `GetService` di awal script, jangan panggil berulang-ulang.
+*   **Type Safety:** Gunakan `tonumber()` saat mengolah data konfigurasi.
 
----
-## 3. Standards for Modern Tactical UI (Updated)
-*   **Mobile Adaptive Layout:**
-    *   Wajib cek `UserInputService.TouchEnabled` untuk mendeteksi perangkat mobile.
-    *   Jika mobile, ukuran UI utama (MainFrame/Modal) harus diperbesar (misal `0.95, 0.85`) untuk memaksimalkan layar kecil.
-*   **Safe Padding:**
-    *   Tombol lebar **WAJIB** menggunakan `UIPadding` (minimal 10-15%) agar teks tidak pernah menabrak sisi tombol.
-    *   `UITextSizeConstraint.MaxTextSize` harus dibatasi (misal max 24 untuk tombol standar) agar teks pendek tidak menjadi raksasa yang tidak proporsional.
-
----
-*Perbarui dokumen ini jika ada aturan baru yang disepakati.*
+## 3. Environment
+*   **Hierarchy:** Workspace harus rapi. Gunakan Folder (`Map_Village`, `LobbyEnv`).
+*   **Optimization:** Pastikan part statis di-Anchor. Gunakan Fog untuk menyembunyikan rendering jarak jauh.
