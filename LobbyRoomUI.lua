@@ -643,6 +643,8 @@ local function createOpsPanel(parent)
 	-- Grid layout will be set dynamically in startMatchmaking to center slots
 
 	local cancelMMBtn = createButton(matchmakingView, "ABORT SEQUENCE", UDim2.new(0.4, 0, 0.1, 0), UDim2.new(0.3, 0, 0.85, 0), THEME.Colors.AccentRed, function()
+		-- Send cancel request to server before returning to menu
+		lobbyRemote:FireServer("cancelMatchmaking")
 		state.activeView = "MENU"
 		updateOpsView()
 	end)
@@ -746,6 +748,14 @@ function startMatchmaking()
              end)
         end
 	end
+
+	-- Send matchmaking request to server
+	lobbyRemote:FireServer("startMatchmaking", {
+		playerCount = state.settings.maxPlayers or 4,
+		gameMode = state.settings.gameMode or "Story",
+		difficulty = state.settings.difficulty or "Easy",
+		map = state.settings.map or "ACT 1: Village"
+	})
 end
 
 function updateOpsView()
@@ -1179,6 +1189,21 @@ lobbyRemote.OnClientEvent:Connect(function(action, data)
 		updateOpsView()
 		-- Panels logic is already simple, just ensure OPS is visible
 		for pid, p in pairs(panels) do p.Visible = (pid == "OPS") end
+	-- ===== QUICK MATCH EVENT HANDLERS =====
+	elseif action == "matchmakingStarted" then
+		-- Server confirmed matchmaking started, update UI if needed
+		print("Matchmaking started - waiting for other players...")
+		-- UI is already showing matchmaking view from startMatchmaking()
+	elseif action == "matchmakingCancelled" then
+		-- Matchmaking was cancelled (by us or server), return to menu
+		print("Matchmaking cancelled.")
+		state.activeView = "MENU"
+		updateOpsView()
+	elseif action == "matchFound" then
+		-- Match found! Server created a room for us
+		print("Match found! Room ID: " .. tostring(data.roomId))
+		-- The roomUpdate event will be sent separately by server with full room data
+		-- Just switch to squad room view - updateLobbyView will be called by roomUpdate
 	end
 end)
 
