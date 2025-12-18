@@ -1,7 +1,8 @@
 -- InventoryUI.lua (LocalScript)
 -- Path: StarterGui/InventoryUI.lua
 -- Script Place: Lobby
--- Theme: Survival Backpack (Grid Canvas, Fabric Texture, Straps)
+-- Theme: "Procedural Military Case" (No External Assets/Textures)
+-- Redesigned by Lead Game Developer.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -13,23 +14,23 @@ local GuiService = game:GetService("GuiService")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- --- THEME CONFIGURATION ---
+-- --- THEME CONFIGURATION (No Assets) ---
 local THEME = {
 	COLORS = {
-		CANVAS_BG = Color3.fromRGB(80, 70, 55),       -- Backpack fabric
-		POCKET_BG = Color3.fromRGB(60, 55, 45),       -- Pocket inner
-		POCKET_DARK = Color3.fromRGB(45, 40, 35),     -- Darker pocket
-		STRAP = Color3.fromRGB(100, 85, 60),          -- Leather straps
-		ACCENT_ZIP = Color3.fromRGB(200, 180, 100),   -- Zipper/Gold
-		HIGHLIGHT = Color3.fromRGB(255, 200, 80),     -- Selection highlight
-		TEXT_MAIN = Color3.fromRGB(240, 230, 210),    -- Light text
-		TEXT_DARK = Color3.fromRGB(30, 25, 20),       -- Dark text
-		STITCH = Color3.fromRGB(150, 140, 120),       -- Stitching color
+		CaseOuter = Color3.fromRGB(35, 35, 40),        -- Outer shell plastic
+		CaseInner = Color3.fromRGB(25, 25, 28),        -- Inner void
+		FoamSurface = Color3.fromRGB(40, 40, 45),      -- Foam surface
+		FoamDeep = Color3.fromRGB(15, 15, 18),         -- Cutout holes
+		AccentYellow = Color3.fromRGB(255, 180, 0),    -- Warning/Caution
+		AccentCyan = Color3.fromRGB(0, 200, 255),      -- Hologram/highlight
+		TextLight = Color3.fromRGB(220, 220, 230),     -- Main Text
+		TextDark = Color3.fromRGB(120, 120, 130),      -- Label Text
+		Metal = Color3.fromRGB(80, 80, 85),            -- Hinges/Mechanical
 	},
 	FONTS = {
-		TITLE = Enum.Font.PermanentMarker,
-		HEADER = Enum.Font.GothamBold,
-		BODY = Enum.Font.Gotham,
+		Header = Enum.Font.Michroma,    -- Tech/Industrial
+		Label = Enum.Font.Oswald,       -- Legible
+		Data = Enum.Font.Code,          -- Coding style
 	}
 }
 
@@ -44,408 +45,336 @@ local function addCorner(parent, radius)
 	create("UICorner", {Parent = parent, CornerRadius = UDim.new(0, radius)})
 end
 
-local function addStitching(parent)
+local function addStroke(parent, color, thickness)
 	create("UIStroke", {
-		Parent = parent,
-		Color = THEME.COLORS.STITCH,
-		Thickness = 2,
-		LineJoinMode = Enum.LineJoinMode.Round,
+		Parent = parent, Color = color or THEME.COLORS.CaseOuter, Thickness = thickness or 1,
 		ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 	})
 end
 
+local function addGradient(parent, rotation, transparencyKeypoints)
+	local g = create("UIGradient", {
+		Parent = parent, Rotation = rotation or 90
+	})
+	if transparencyKeypoints then
+		g.Transparency = NumberSequence.new(transparencyKeypoints)
+	else
+		-- Default subtle vertical shadow
+		g.Transparency = NumberSequence.new{
+			NumberSequenceKeypoint.new(0, 0),
+			NumberSequenceKeypoint.new(1, 0.2)
+		}
+	end
+	return g
+end
+
 -- --- UI CREATION ---
 local screenGui = create("ScreenGui", {
-	Name = "InventoryUI",
-	Parent = playerGui,
-	IgnoreGuiInset = true,
-	ResetOnSpawn = false,
-	DisplayOrder = 10
+	Name = "InventoryUI", Parent = playerGui, IgnoreGuiInset = true, ResetOnSpawn = false, DisplayOrder = 10
 })
 
--- Initialize Blur Effect
 local camera = workspace.CurrentCamera
-local blurEffect = create("BlurEffect", {
-	Name = "InventoryBlur",
-	Size = 0,
-	Enabled = false,
-	Parent = camera
-})
+local blurEffect = create("BlurEffect", {Name = "InventoryBlur", Size = 0, Enabled = false, Parent = camera})
 
--- Module & Event References
+-- Modules
 local ModuleScriptReplicated = ReplicatedStorage:WaitForChild("ModuleScript")
 local WeaponModule = require(ModuleScriptReplicated:WaitForChild("WeaponModule"))
 local ModelPreviewModule = require(ModuleScriptReplicated:WaitForChild("ModelPreviewModule"))
-
--- Safe Remote Retrieval
 local RemoteFunctions = ReplicatedStorage:WaitForChild("RemoteFunctions", 10)
-local inventoryRemote
-if RemoteFunctions then
-	inventoryRemote = RemoteFunctions:WaitForChild("GetInventoryData", 5)
-else
-	warn("InventoryUI: RemoteFunctions folder not found!")
-end
+local inventoryRemote = RemoteFunctions and RemoteFunctions:WaitForChild("GetInventoryData", 5)
 
-local skinEvent = ReplicatedStorage.RemoteEvents:WaitForChild("SkinManagementEvent", 5)
-
--- --- STATE VARIABLES ---
+-- State
 local selectedCategory = "All"
 local selectedWeapon = nil
-local currentTab = "Weapons"
 local currentPreview = nil
-local inventoryData = nil
 
--- --- MAIN PANEL ---
+-- --- MAIN PANEL (Pure Shapes) ---
 local mainPanel = create("Frame", {
-	Name = "MainPanel",
-	Parent = screenGui,
-	Size = UDim2.new(0.85, 0, 0.85, 0),
-	Position = UDim2.new(0.5, 0, 0.5, 0),
-	AnchorPoint = Vector2.new(0.5, 0.5),
-	BackgroundColor3 = THEME.COLORS.CANVAS_BG,
-	Visible = false,
-	ZIndex = 100
+	Name = "MainPanel", Parent = screenGui, Size = UDim2.new(0.85, 0, 0.8, 0),
+	Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5),
+	BackgroundColor3 = THEME.COLORS.CaseInner, Visible = false, ZIndex = 100
 })
-addCorner(mainPanel, 12)
-addStitching(mainPanel)
+addCorner(mainPanel, 24)
+addStroke(mainPanel, THEME.COLORS.CaseOuter, 8)
 
--- Zipper Top
-local zipper = create("Frame", {
-	Parent = mainPanel,
-	Size = UDim2.new(1, 0, 0, 10),
-	Position = UDim2.new(0, 0, 0.12, -5),
-	BackgroundColor3 = Color3.new(0.1, 0.1, 0.1),
-	BorderSizePixel = 0,
-	ZIndex = 105
-})
-
--- Close Button (Zipper Pull)
-local closeBtn = create("TextButton", {
-	Parent = zipper,
-	Size = UDim2.new(0, 30, 0, 60),
-	Position = UDim2.new(0.95, 0, 0, -20),
-	BackgroundColor3 = THEME.COLORS.ACCENT_ZIP,
-	Text = "X",
-	TextColor3 = Color3.new(0, 0, 0),
-	TextSize = 18,
-	Font = Enum.Font.GothamBold,
-	ZIndex = 110
-})
-addCorner(closeBtn, 15)
-
--- Content Container
-local content = create("Frame", {
-	Parent = mainPanel,
-	Size = UDim2.new(1, -40, 1, -100),
-	Position = UDim2.new(0, 20, 0, 80),
-	BackgroundTransparency = 1,
-	ZIndex = 102
-})
-
--- 1. Sidebar (Straps)
-local sidebar = create("Frame", {
-	Parent = content,
-	Size = UDim2.new(0, 200, 1, 0),
-	BackgroundTransparency = 1
-})
-
-create("UIListLayout", {
-	Parent = sidebar,
-	Padding = UDim.new(0, 10)
-})
-
-local function createTab(name)
-	local btn = create("TextButton", {
-		Name = name,
-		Parent = sidebar,
-		Size = UDim2.new(1, 0, 0, 50),
-		BackgroundColor3 = THEME.COLORS.STRAP,
-		Text = name:upper(),
-		TextColor3 = THEME.COLORS.TEXT_MAIN,
-		Font = THEME.FONTS.HEADER,
-		TextSize = 18
+-- Decoration: "Corner Bumpers" (Pure Frames)
+for _, pos in ipairs({
+	UDim2.new(0,0,0,0), UDim2.new(1,-40,0,0), 
+	UDim2.new(0,0,1,-40), UDim2.new(1,-40,1,-40)
+}) do
+	local bumper = create("Frame", {
+		Parent = mainPanel, Size = UDim2.new(0, 40, 0, 40), Position = pos,
+		BackgroundColor3 = THEME.COLORS.CaseOuter, ZIndex = 101, BorderSizePixel = 0
 	})
-	addCorner(btn, 8)
-	addStitching(btn)
+	addCorner(bumper, 12)
+end
+
+-- 1. LEFT SIDE: CONTROL PLATE
+local sidePanel = create("Frame", {
+	Parent = mainPanel, Size = UDim2.new(0.22, 0, 0.9, 0), Position = UDim2.new(0.02, 0, 0.05, 0),
+	BackgroundColor3 = THEME.COLORS.CaseOuter, ZIndex = 102
+})
+addCorner(sidePanel, 8)
+-- Subtle gradient for metallic look
+addGradient(sidePanel, 45, {
+	NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(1, 0.1)
+})
+
+-- Header Block
+local headerBox = create("Frame", {
+	Parent = sidePanel, Size = UDim2.new(0.9, 0, 0.1, 0), Position = UDim2.new(0.05, 0, 0.03, 0),
+	BackgroundColor3 = THEME.COLORS.AccentYellow, ZIndex = 103
+})
+addCorner(headerBox, 4)
+create("TextLabel", {
+	Parent = headerBox, Size = UDim2.new(1,0,1,0), BackgroundTransparency = 1,
+	Text = "TACTICAL LOADOUT", Font = THEME.FONTS.Header, TextSize = 16,
+	TextColor3 = Color3.new(0,0,0), ZIndex = 104
+})
+
+-- Categories
+local catList = create("Frame", {
+	Parent = sidePanel, Size = UDim2.new(0.9, 0, 0.8, 0), Position = UDim2.new(0.05, 0, 0.16, 0),
+	BackgroundTransparency = 1, ZIndex = 103
+})
+create("UIListLayout", {Parent = catList, Padding = UDim.new(0, 6)})
+
+local CATEGORIES = {"All", "Rifle", "SMG", "Shotgun", "Sniper", "Pistol", "LMG"}
+local catBtns = {}
+
+local function createCatBtn(name)
+	local btn = create("TextButton", {
+		Parent = catList, Size = UDim2.new(1, 0, 0, 38),
+		BackgroundColor3 = THEME.COLORS.CaseInner, AutoButtonColor = false,
+		Text = "", ZIndex = 104
+	})
+	addCorner(btn, 6)
+	
+	local txt = create("TextLabel", {
+		Parent = btn, Size = UDim2.new(0.8, 0, 1, 0), Position = UDim2.new(0.1, 0, 0, 0),
+		BackgroundTransparency = 1, Text = name:upper(),
+		Font = THEME.FONTS.Label, TextSize = 16, TextColor3 = THEME.COLORS.TextDark,
+		TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 105
+	})
+	
+	-- "Light" Indicator (Pure Frame)
+	local led = create("Frame", {
+		Parent = btn, Size = UDim2.new(0, 4, 0, 20), Position = UDim2.new(0, 4, 0.5, -10),
+		BackgroundColor3 = THEME.COLORS.Metal, ZIndex = 105
+	})
+	addCorner(led, 2)
+	
+	catBtns[name] = {Btn = btn, Txt = txt, Led = led}
 	return btn
 end
 
-local tWeapons = createTab("Weapons")
+for _, c in ipairs(CATEGORIES) do createCatBtn(c) end
 
--- 2. Grid Area (Pockets)
-local gridArea = create("Frame", {
-	Parent = content,
-	Size = UDim2.new(1, -220, 1, 0),
-	Position = UDim2.new(0, 220, 0, 0),
-	BackgroundTransparency = 1
+-- 2. CENTER: ITEM GRID
+local gridFrame = create("Frame", {
+	Parent = mainPanel, Size = UDim2.new(0.48, 0, 0.9, 0), Position = UDim2.new(0.26, 0, 0.05, 0),
+	BackgroundColor3 = THEME.COLORS.FoamSurface, ZIndex = 102
+})
+addCorner(gridFrame, 8)
+-- Inset Shadow effect using UIStroke
+create("UIStroke", {
+	Parent = gridFrame, Color = Color3.new(0,0,0), Thickness = 2, Transparency = 0.5
 })
 
--- Filter Pockets
-local filterRow = create("ScrollingFrame", {
-	Parent = gridArea,
-	Size = UDim2.new(1, 0, 0, 40),
-	BackgroundTransparency = 1,
-	ScrollBarThickness = 0,
-	ScrollingDirection = Enum.ScrollingDirection.X,
-	CanvasSize = UDim2.new(2, 0, 0, 0)
+local itemScroll = create("ScrollingFrame", {
+	Parent = gridFrame, Size = UDim2.new(1, -16, 1, -16), Position = UDim2.new(0, 8, 0, 8),
+	BackgroundTransparency = 1, ScrollBarThickness = 4, ScrollBarImageColor3 = THEME.COLORS.AccentYellow,
+	ZIndex = 103
 })
-
-create("UIListLayout", {
-	Parent = filterRow,
-	FillDirection = Enum.FillDirection.Horizontal,
-	Padding = UDim.new(0, 5)
-})
-
--- Item Grid
-local itemGrid = create("ScrollingFrame", {
-	Parent = gridArea,
-	Size = UDim2.new(0.6, 0, 1, -50),
-	Position = UDim2.new(0, 0, 0, 50),
-	BackgroundColor3 = THEME.COLORS.POCKET_BG,
-	BackgroundTransparency = 0.5,
-	BorderSizePixel = 0
-})
-addCorner(itemGrid, 8)
-
 create("UIGridLayout", {
-	Parent = itemGrid,
-	CellSize = UDim2.new(0, 100, 0, 100),
-	CellPadding = UDim2.new(0, 10, 0, 10)
+	Parent = itemScroll, CellSize = UDim2.new(0.31, 0, 0.35, 0), CellPadding = UDim2.new(0.02, 0, 0.02, 0)
 })
 
-create("UIPadding", {
-	Parent = itemGrid,
-	PaddingTop = UDim.new(0, 10),
-	PaddingLeft = UDim.new(0, 10)
+-- 3. RIGHT: DETAIL PREVIEW (Holographic Style)
+local detailFrame = create("Frame", {
+	Parent = mainPanel, Size = UDim2.new(0.22, 0, 0.9, 0), Position = UDim2.new(0.76, 0, 0.05, 0),
+	BackgroundColor3 = THEME.COLORS.CaseInner, ZIndex = 102,
+    BorderSizePixel = 0
 })
+addCorner(detailFrame, 8)
+-- Border stroke
+addStroke(detailFrame, THEME.COLORS.Metal, 1)
 
--- 3. Inspector Panel
-local inspector = create("Frame", {
-	Parent = gridArea,
-	Size = UDim2.new(0.38, 0, 1, -50),
-	Position = UDim2.new(0.62, 0, 0, 50),
-	BackgroundColor3 = THEME.COLORS.POCKET_DARK
+-- Scanner/Holo Box
+local holoBox = create("Frame", {
+	Parent = detailFrame, Size = UDim2.new(0.9, 0, 0.5, 0), Position = UDim2.new(0.05, 0, 0.05, 0),
+	BackgroundColor3 = Color3.fromRGB(15, 20, 25), ZIndex = 103
 })
-addCorner(inspector, 8)
-addStitching(inspector)
+addCorner(holoBox, 4)
+addStroke(holoBox, THEME.COLORS.AccentCyan, 1)
 
+-- Viewport
 local vp = create("ViewportFrame", {
-	Parent = inspector,
-	Size = UDim2.new(1, 0, 0.5, 0),
-	BackgroundTransparency = 1
+	Parent = holoBox, Size = UDim2.new(1,0,1,0), BackgroundTransparency = 1,
+	LightColor = Color3.fromRGB(200, 255, 255), LightDirection = Vector3.new(-1, -1, 1),
+	Ambient = Color3.fromRGB(100, 100, 100), ZIndex = 104
 })
 
-local info = create("Frame", {
-	Parent = inspector,
-	Size = UDim2.new(1, -20, 0.5, -20),
-	Position = UDim2.new(0, 10, 0.5, 10),
-	BackgroundTransparency = 1
+-- Scan line (Pure Frame)
+local scanLine = create("Frame", {
+	Parent = holoBox, Size = UDim2.new(1, 0, 0, 2), Position = UDim2.new(0, 0, 0, 0),
+	BackgroundColor3 = THEME.COLORS.AccentCyan, BorderSizePixel = 0, ZIndex = 105
+})
+-- Animate scan line
+task.spawn(function()
+    while detailFrame.Parent do -- Only animate while UI exists
+        TweenService:Create(scanLine, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+            Position = UDim2.new(0,0,1,0)
+        }):Play()
+        task.wait(4.1)
+    end
+end)
+
+
+-- Info Text
+local infoName = create("TextLabel", {
+	Parent = detailFrame, Size = UDim2.new(0.9, 0, 0, 30), Position = UDim2.new(0.05, 0, 0.58, 0),
+	BackgroundTransparency = 1, Text = "SELECT MODULE",
+	Font = THEME.FONTS.Header, TextSize = 16, TextColor3 = THEME.COLORS.AccentCyan,
+	TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 104
+})
+local infoDesc = create("TextLabel", {
+	Parent = detailFrame, Size = UDim2.new(0.9, 0, 0.2, 0), Position = UDim2.new(0.05, 0, 0.65, 0),
+	BackgroundTransparency = 1, Text = "Awaiting input...",
+	Font = THEME.FONTS.Data, TextSize = 12, TextColor3 = THEME.COLORS.TextDark,
+	TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top,
+	TextWrapped = true, ZIndex = 104
 })
 
-local iName = create("TextLabel", {
-	Parent = info,
-	Size = UDim2.new(1, 0, 0, 30),
-	BackgroundTransparency = 1,
-	Text = "SELECT ITEM",
-	TextColor3 = THEME.COLORS.TEXT_MAIN,
-	Font = THEME.FONTS.TITLE,
-	TextSize = 24,
-	TextXAlignment = Enum.TextXAlignment.Left
-})
-
+-- Equip
 local equipBtn = create("TextButton", {
-	Parent = info,
-	Size = UDim2.new(1, 0, 0, 50),
-	Position = UDim2.new(0, 0, 1, 0),
-	AnchorPoint = Vector2.new(0, 1),
-	BackgroundColor3 = THEME.COLORS.ACCENT_ZIP,
-	Text = "EQUIP",
-	Font = THEME.FONTS.HEADER,
-	TextSize = 20,
-	TextColor3 = THEME.COLORS.TEXT_DARK
+	Parent = detailFrame, Size = UDim2.new(0.9, 0, 0.1, 0), Position = UDim2.new(0.05, 0, 0.88, 0),
+	BackgroundColor3 = THEME.COLORS.AccentYellow, Text = "EQUIP",
+	Font = THEME.FONTS.Header, TextSize = 18, TextColor3 = Color3.new(0,0,0), ZIndex = 104
 })
-addCorner(equipBtn, 8)
+addCorner(equipBtn, 4)
 
--- --- OPEN BUTTON (HUD) ---
-local openButton = create("TextButton", {
-	Name = "OpenInventoryBtn",
-	Parent = screenGui,
-	Size = UDim2.new(0, 60, 0, 60),
-	Position = UDim2.new(0.02, 0, 0.7, 0),
-	BackgroundColor3 = THEME.COLORS.CANVAS_BG,
-	Text = "BAG",
-	TextColor3 = THEME.COLORS.TEXT_MAIN,
-	Font = THEME.FONTS.HEADER,
-	TextSize = 14
-})
-addCorner(openButton, 8)
-addStitching(openButton)
 
 -- --- LOGIC ---
-local CATEGORIES = {"All", "Rifle", "SMG", "Shotgun", "Sniper", "Pistol", "LMG"}
-
-local function updateDetails(id)
+local function updatePreview(id)
 	if not WeaponModule or not WeaponModule.Weapons then return end
 	local data = WeaponModule.Weapons[id]
-	if not data then return end
-	iName.Text = data.DisplayName or id
+	infoName.Text = string.upper(data.DisplayName or id)
+    infoDesc.Text = data.Description or "Standard issue equipment."
 
 	if currentPreview then ModelPreviewModule.destroy(currentPreview) end
-
-	-- Default skin preview
 	local sData = nil
-	if data.Skins then
-		for k, v in pairs(data.Skins) do
-			if k == "Default Skin" then sData = v break end
-		end
-		if not sData then
-			local k, v = next(data.Skins)
-			sData = v
-		end
-	end
+	if data.Skins then for _,v in pairs(data.Skins) do sData = v break end end
 
 	if sData then
 		currentPreview = ModelPreviewModule.create(vp, data, sData)
 		ModelPreviewModule.startRotation(currentPreview, 1)
+		local cam = vp.CurrentCamera
+		if cam then cam.CFrame = cam.CFrame * CFrame.new(0, 0, 1.5) end
 	end
 end
 
-local function updateWeaponList()
-	-- Clean grid
-	for _, c in ipairs(itemGrid:GetChildren()) do
-		if c:IsA("TextButton") then c:Destroy() end
-	end
-
-	if not WeaponModule or not WeaponModule.Weapons then
-		warn("InventoryUI: WeaponModule not loaded correctly.")
-		return
-	end
-
+local function updateList()
+	for _,c in ipairs(itemScroll:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
+	if not WeaponModule or not WeaponModule.Weapons then return end
 	local list = {}
-	for id, data in pairs(WeaponModule.Weapons) do
-		local match = false
-		if selectedCategory == "All" then
-			match = true
-		elseif data.Category then
-			if string.find(string.lower(data.Category), string.lower(selectedCategory)) then
-				match = true
-			end
-		end
-
-		if match then
-			table.insert(list, {id = id, name = data.DisplayName or id})
-		end
+	for id,d in pairs(WeaponModule.Weapons) do
+		local match = selectedCategory == "All" or (d.Category and string.find(d.Category, selectedCategory))
+		if match then table.insert(list, {id=id, name=d.DisplayName or id}) end
 	end
-	table.sort(list, function(a, b) return a.name < b.name end)
+	table.sort(list, function(a,b) return a.name < b.name end)
 
 	for _, w in ipairs(list) do
+		local isSel = (w.id == selectedWeapon)
+		
+		-- Cutout Style Button
 		local btn = create("TextButton", {
-			Parent = itemGrid,
-			BackgroundColor3 = (w.id == selectedWeapon) and THEME.COLORS.HIGHLIGHT or THEME.COLORS.POCKET_BG,
-			Text = ""
+			Parent = itemScroll, BackgroundColor3 = THEME.COLORS.FoamDeep,
+			Text = "", AutoButtonColor = false, ZIndex = 104
 		})
 		addCorner(btn, 6)
-		addStitching(btn)
+		
+		if isSel then
+			-- Highlight Border
+			addStroke(btn, THEME.COLORS.AccentCyan, 2)
+			-- Inner glow frame
+			local glow = create("Frame", {
+				Parent = btn, Size = UDim2.new(1,0,1,0), BackgroundColor3 = THEME.COLORS.AccentCyan,
+				BackgroundTransparency = 0.8, ZIndex = 103
+			})
+			addCorner(glow, 6)
+		else
+			-- Subtle Inset Border
+			create("UIStroke", {
+				Parent = btn, Color = Color3.fromRGB(50,50,55), Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+			})
+		end
 
 		create("TextLabel", {
-			Parent = btn,
-			Size = UDim2.new(1, 0, 1, 0),
-			BackgroundTransparency = 1,
-			Text = string.sub(w.name, 1, 2),
-			TextSize = 30,
-			Font = THEME.FONTS.HEADER,
-			TextColor3 = (w.id == selectedWeapon) and THEME.COLORS.TEXT_DARK or THEME.COLORS.TEXT_MAIN
-		})
-
-		create("TextLabel", {
-			Parent = btn,
-			Size = UDim2.new(1, 0, 0, 20),
-			Position = UDim2.new(0, 0, 1, -20),
-			BackgroundTransparency = 1,
-			Text = w.name,
-			TextSize = 10,
-			Font = THEME.FONTS.BODY,
-			TextColor3 = (w.id == selectedWeapon) and THEME.COLORS.TEXT_DARK or THEME.COLORS.TEXT_MAIN
+			Parent = btn, Size = UDim2.new(1, -10, 0.4, 0), Position = UDim2.new(0,5,0.6,0),
+			BackgroundTransparency = 1, Text = w.name, Font = THEME.FONTS.Label,
+			TextColor3 = isSel and THEME.COLORS.AccentCyan or THEME.COLORS.TextDark,
+			TextScaled = true, ZIndex = 105
 		})
 
 		btn.MouseButton1Click:Connect(function()
 			selectedWeapon = w.id
-			updateWeaponList()
-			updateDetails(w.id)
+			updateList()
+			updatePreview(w.id)
 		end)
 	end
 end
 
-local function updateFilters()
-	for _, c in ipairs(filterRow:GetChildren()) do
-		if c:IsA("TextButton") then c:Destroy() end
-	end
-
-	for _, cat in ipairs(CATEGORIES) do
-		local b = create("TextButton", {
-			Parent = filterRow,
-			Text = cat,
-			Size = UDim2.new(0, 80, 1, 0),
-			BackgroundColor3 = (selectedCategory == cat) and THEME.COLORS.HIGHLIGHT or THEME.COLORS.STRAP,
-			TextColor3 = (selectedCategory == cat) and THEME.COLORS.TEXT_DARK or THEME.COLORS.TEXT_MAIN,
-			Font = THEME.FONTS.BODY
-		})
-		addCorner(b, 4)
-
-		b.MouseButton1Click:Connect(function()
-			selectedCategory = cat
-			updateFilters()
-			if currentTab == "Weapons" then updateWeaponList() end
-		end)
-	end
-end
-
--- --- MAIN EVENTS ---
-openButton.MouseButton1Click:Connect(function()
-	print("InventoryUI: Open Button Clicked")
-	mainPanel.Visible = true
-	mainPanel.Size = UDim2.new(0.5, 0, 0.5, 0)
-	mainPanel:TweenSize(UDim2.new(0.85, 0, 0.85, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Back, 0.3, true)
-	openButton.Visible = false
-
-	-- Enable Blur
-	if blurEffect then
-		blurEffect.Enabled = true
-		TweenService:Create(blurEffect, TweenInfo.new(0.3), {Size = 15}):Play()
-	end
-
-	updateFilters()
-	updateWeaponList()
-end)
-
-closeBtn.MouseButton1Click:Connect(function()
-	mainPanel.Visible = false
-	openButton.Visible = true
-
-	-- Disable Blur
-	if blurEffect then
-		TweenService:Create(blurEffect, TweenInfo.new(0.3), {Size = 0}):Play()
-		task.delay(0.3, function() blurEffect.Enabled = false end)
-	end
-end)
-
-tWeapons.MouseButton1Click:Connect(function()
-	currentTab = "Weapons"
-	itemGrid.Visible = true
-	inspector.Visible = true
-	updateWeaponList()
-end)
-
--- Initial Data Load
-task.spawn(function()
-	if inventoryRemote then
-		local s, d = pcall(function() return inventoryRemote:InvokeServer() end)
-		if s then
-			inventoryData = d
+local function updateTabs()
+	for name, obj in pairs(catBtns) do
+		local active = (name == selectedCategory)
+		if active then
+			obj.Btn.BackgroundColor3 = THEME.COLORS.FoamSurface
+			obj.Txt.TextColor3 = THEME.COLORS.AccentYellow
+			obj.Led.BackgroundColor3 = THEME.COLORS.AccentYellow
+			-- Add glow effect
+            if not obj.Led:FindFirstChild("Glow") then
+                create("UIStroke", {
+                    Name = "Glow", Parent = obj.Led, Thickness = 2,
+                    Color = THEME.COLORS.AccentYellow, Transparency = 0.5
+                })
+            end
 		else
-			warn("InventoryUI: Failed to fetch data from server.")
+			obj.Btn.BackgroundColor3 = THEME.COLORS.CaseInner
+			obj.Txt.TextColor3 = THEME.COLORS.TextDark
+			obj.Led.BackgroundColor3 = THEME.COLORS.Metal
+			if obj.Led:FindFirstChild("Glow") then obj.Led.Glow:Destroy() end
 		end
 	end
+end
+for name, obj in pairs(catBtns) do obj.Btn.MouseButton1Click:Connect(function() selectedCategory = name; updateTabs(); updateList() end) end
+updateTabs()
+
+-- HUD
+local hudBtn = create("TextButton", {
+	Name = "OpenInv", Parent = screenGui, Size = UDim2.new(0, 60, 0, 60), Position = UDim2.new(0.02, 0, 0.7, 0),
+	BackgroundColor3 = THEME.COLORS.CaseOuter, Text = "", ZIndex = 50
+})
+addCorner(hudBtn, 12)
+addStroke(hudBtn, THEME.COLORS.AccentYellow, 2)
+create("TextLabel", {Parent=hudBtn, Size=UDim2.new(1,0,1,0), BackgroundTransparency=1, Text="GEAR", Font=THEME.FONTS.Header, TextSize=14, TextColor3=THEME.COLORS.AccentYellow, ZIndex=51})
+
+hudBtn.MouseButton1Click:Connect(function()
+	mainPanel.Visible = true; hudBtn.Visible = false; blurEffect.Enabled = true
+	TweenService:Create(blurEffect, TweenInfo.new(0.5), {Size = 25}):Play()
+	updateList()
 end)
 
-print("InventoryUI Loaded")
+local close = create("TextButton", {
+	Parent = mainPanel, Size = UDim2.new(0, 30, 0, 30), Position = UDim2.new(0.97, 0, 0.02, 0),
+	BackgroundColor3 = Color3.fromRGB(180, 50, 50), Text = "X", Font = THEME.FONTS.Header, TextColor3 = Color3.new(1,1,1), ZIndex = 110
+})
+addCorner(close, 6)
+close.MouseButton1Click:Connect(function()
+	mainPanel.Visible = false; hudBtn.Visible = true; blurEffect.Enabled = false
+end)
+
+task.spawn(function()
+	if inventoryRemote then pcall(function() inventoryRemote:InvokeServer() end) end
+end)
+print("InventoryUI (Procedural Case) Loaded")

@@ -7,11 +7,13 @@ Daftar fitur yang sering menyebabkan error jika salah penggunaan.
 
 | Fitur | Masalah / Batasan | Solusi / Alternatif |
 | :--- | :--- | :--- |
+
 | **Attributes** | Tidak bisa menyimpan Function/Table/UserData. | Gunakan ModuleScript atau BindableEvent. |
 | **CanvasGroup** | Masalah performa/rendering (flickering). | **DILARANG.** Gunakan ImageLabel overlay. |
 | **UIGradient** | `Transparency` tidak bisa di-tween. | Gunakan loop `RunService` manual. |
 | **UIListLayout** | Urutan elemen acak. | Set `SortOrder = Enum.SortOrder.LayoutOrder`. |
 | **ColorSequence**| Max 20 Keypoints. | Pecah menjadi 2 gradient jika butuh lebih. |
+| **Enum.Font** | `GloriaHallelujah`, `BlackOpsOne` belum disupport. | Gunakan `PermanentMarker` atau `Michroma`. |
 
 ## ⚠️ Common Scripting Pitfalls
 *   **Race Conditions:** Akses UI sebelum loading selesai -> *Solusi:* Selalu gunakan `:WaitForChild()` atau `FindFirstChild` defensif.
