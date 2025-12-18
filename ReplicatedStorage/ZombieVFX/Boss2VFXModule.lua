@@ -1,4 +1,6 @@
--- Boss2VFXModule.lua (ReplicatedStorage)
+-- Boss2VFXModule.lua (Mdulescript)
+-- Path: ReplicatedStorage/ZombieVFX/Boss2VFXModule.lua
+-- Script Place: ACT 1: Village
 -- Handling Hive Mother Visuals
 
 local Boss2VFX = {}

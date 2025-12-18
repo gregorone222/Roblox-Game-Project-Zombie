@@ -1,5 +1,5 @@
 -- LobbyRoomUI.lua (LocalScript)
--- Path: StarterPlayerScripts/LobbyRoomUI.lua
+-- Path: StarterPlayer/StarterPlayerScripts/LobbyRoomUI.lua
 -- Script Place: Lobby
 -- Theme: Modern Tactical Investigation (Clean Folder/Clipboard Style)
 

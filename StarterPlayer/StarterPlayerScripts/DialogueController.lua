@@ -1,5 +1,5 @@
 -- DialogueController.lua (LocalScript)
--- Path: StarterPlayerScripts/DialogueController.lua
+-- Path: StarterPlayer/StarterPlayerScripts/DialogueController.lua
 -- Script Place: Lobby, ACT 1: Village
 -- Description: Client-side handler for NPC dialogues with Typewriter effect.
 

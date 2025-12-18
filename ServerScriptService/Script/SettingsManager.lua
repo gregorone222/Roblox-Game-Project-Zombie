@@ -1,5 +1,5 @@
 -- SettingsManager.lua (Script)
--- Path: ServerScriptService/SettingsManager.lua
+-- Path: ServerScriptService/Script/SettingsManager.lua
 -- Script Place: ACT 1: Village
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")

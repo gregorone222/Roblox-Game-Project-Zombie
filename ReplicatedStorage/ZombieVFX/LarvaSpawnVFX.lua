@@ -1,4 +1,6 @@
 -- LarvaSpawnVFX.lua (ModuleScript)
+-- Path: ReplicatedStorage/ZombieVFX/LarvaSpawnVFX.lua
+-- Script Place: ACT 1: Village
 -- Egg Burst
 
 local VFX = {}

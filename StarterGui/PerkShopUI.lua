@@ -1,5 +1,5 @@
 -- PerkShopUI.lua (LocalScript)
--- Path: PerkShopUI.lua (Repository Root -> StarterGui in-game)
+-- Path: StarterGui/PerkShopUI.lua
 -- Script Place: ACT 1: Village
 -- Theme: Wasteland Workshop (Scrap Metal, Rust, Industrial, Mad Max)
 

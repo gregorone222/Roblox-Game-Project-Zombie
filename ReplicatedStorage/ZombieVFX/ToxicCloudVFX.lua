@@ -1,4 +1,6 @@
 -- ToxicCloudVFX.lua (ModuleScript)
+-- Path: ReplicatedStorage/ZombieVFX/ToxicCloudVFX.lua
+-- Script Place: ACT 1: Village
 -- Expanding green smoke
 
 local VFX = {}

@@ -1,5 +1,5 @@
 -- BossVFXHandler.lua (LocalScript)
--- Path: StarterPlayerScripts/BossVFXHandler.lua
+-- Path: StarterPlayer/StarterPlayerScripts/BossVFXHandler.lua
 -- Listens for PlayBossSkillEvent and triggers Client VFX
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")

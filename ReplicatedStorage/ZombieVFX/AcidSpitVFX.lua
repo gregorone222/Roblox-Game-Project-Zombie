@@ -1,5 +1,6 @@
 -- AcidSpitVFX.lua (ModuleScript)
--- Green projectile with splash
+-- Path: ReplicatedStorage/ZombieVFX/AcidSpitVFX.lua
+-- Script Place: ACT 1: Village
 
 local VFX = {}
 local TweenService = game:GetService("TweenService")

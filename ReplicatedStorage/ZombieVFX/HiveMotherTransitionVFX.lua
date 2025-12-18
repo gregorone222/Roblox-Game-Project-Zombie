@@ -1,4 +1,6 @@
 -- HiveMotherTransitionVFX.lua (ModuleScript)
+-- Path: ReplicatedStorage/ZombieVFX/HiveMotherTransitionVFX.lua
+-- Script Place: ACT 1: Village
 -- Phase change scream
 
 local VFX = {}
