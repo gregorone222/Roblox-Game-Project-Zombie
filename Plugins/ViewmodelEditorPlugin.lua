@@ -1,7 +1,6 @@
 -- ViewmodelEditorPlugin.lua
--- A Roblox Studio Plugin for editing Viewmodel Position and Rotation in real-time
+-- A Roblox Studio Plugin for editing Viewmodel Position, Rotation, and ADS in real-time
 -- Save this file to: %localappdata%\Roblox\Plugins\ViewmodelEditorPlugin.lua
--- Or install via Plugin Manager in Roblox Studio
 
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local RunService = game:GetService("RunService")
@@ -11,19 +10,19 @@ local Selection = game:GetService("Selection")
 local toolbar = plugin:CreateToolbar("Viewmodel Editor")
 local toggleButton = toolbar:CreateButton(
 	"Viewmodel Editor",
-	"Edit viewmodel position and rotation in real-time",
-	"rbxassetid://6031071053" -- Icon
+	"Edit viewmodel position, rotation, and ADS in real-time",
+	"rbxassetid://6031071053"
 )
 
 -- Widget Setup
 local widgetInfo = DockWidgetPluginGuiInfo.new(
 	Enum.InitialDockState.Float,
-	false, -- Initially disabled
-	false, -- Override previous enabled state
-	400,   -- Default width
-	600,   -- Default height
-	300,   -- Minimum width
-	400    -- Minimum height
+	false,
+	false,
+	420,
+	900,
+	350,
+	600
 )
 
 local widget = plugin:CreateDockWidgetPluginGuiAsync("ViewmodelEditorWidget", widgetInfo)
@@ -32,120 +31,181 @@ widget.Title = "Viewmodel Editor"
 -- State
 local isActive = false
 local currentWeaponName = nil
+local currentSkinName = "Default Skin"
 local currentTool = nil
 local previewModel = nil
 local renderConnection = nil
+local isADSPreview = false
+local isMobilePreview = false
+local showHitmarker = false
+local hitmarkerGui = nil
 
+-- Values
 local posX, posY, posZ = 1.5, -1, -2.5
 local rotX, rotY, rotZ = 0, 0, 0
 
+local adsX, adsY, adsZ = 0.15, -0.37, -1
+local adsRotX, adsRotY, adsRotZ = 0, 0, 0
+
+local adsMobileX, adsMobileY, adsMobileZ = 0.15, -0.37, -1
+local adsMobileRotX, adsMobileRotY, adsMobileRotZ = 0, 0, 0
+
 -- UI Creation
 local function createUI()
-	-- Main Frame
-	local mainFrame = Instance.new("Frame")
-	mainFrame.Name = "MainFrame"
-	mainFrame.Size = UDim2.new(1, 0, 1, 0)
-	mainFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-	mainFrame.BorderSizePixel = 0
-	mainFrame.Parent = widget
+	-- Main ScrollingFrame
+	local scrollFrame = Instance.new("ScrollingFrame")
+	scrollFrame.Name = "MainScroll"
+	scrollFrame.Size = UDim2.new(1, 0, 1, 0)
+	scrollFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+	scrollFrame.BorderSizePixel = 0
+	scrollFrame.ScrollBarThickness = 8
+	scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 1400)
+	scrollFrame.Parent = widget
 
 	local layout = Instance.new("UIListLayout")
 	layout.FillDirection = Enum.FillDirection.Vertical
 	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	layout.Padding = UDim.new(0, 8)
-	layout.Parent = mainFrame
+	layout.Padding = UDim.new(0, 6)
+	layout.SortOrder = Enum.SortOrder.LayoutOrder -- Ensure sorting by order
+	layout.Parent = scrollFrame
 
 	local padding = Instance.new("UIPadding")
 	padding.PaddingTop = UDim.new(0, 10)
 	padding.PaddingBottom = UDim.new(0, 10)
 	padding.PaddingLeft = UDim.new(0, 10)
 	padding.PaddingRight = UDim.new(0, 10)
-	padding.Parent = mainFrame
+	padding.Parent = scrollFrame
+
+	-- Section Header Helper
+	local function createSectionHeader(text, parent, order)
+		local header = Instance.new("TextLabel")
+		header.Size = UDim2.new(1, 0, 0, 25)
+		header.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+		header.Text = text
+		header.TextColor3 = Color3.new(1, 1, 1)
+		header.TextSize = 14
+		header.Font = Enum.Font.GothamBold
+		header.LayoutOrder = order -- Set order
+		header.Parent = parent
+		
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(0, 4)
+		corner.Parent = header
+		
+		return header
+	end
 
 	-- Title
 	local title = Instance.new("TextLabel")
 	title.Name = "Title"
 	title.Size = UDim2.new(1, 0, 0, 30)
 	title.BackgroundTransparency = 1
-	title.Text = "Viewmodel Editor"
+	title.Text = "Viewmodel & ADS Editor"
 	title.TextColor3 = Color3.new(1, 1, 1)
-	title.TextSize = 20
+	title.TextSize = 18
 	title.Font = Enum.Font.GothamBold
-	title.Parent = mainFrame
-
-	-- Instructions
-	local instructions = Instance.new("TextLabel")
-	instructions.Name = "Instructions"
-	instructions.Size = UDim2.new(1, 0, 0, 40)
-	instructions.BackgroundTransparency = 1
-	instructions.Text = "1. Select a Tool (weapon) in Explorer\n2. Adjust sliders below\n3. Click 'Apply to WeaponModule'"
-	instructions.TextColor3 = Color3.fromRGB(180, 180, 180)
-	instructions.TextSize = 12
-	instructions.Font = Enum.Font.Gotham
-	instructions.TextWrapped = true
-	instructions.Parent = mainFrame
+	title.LayoutOrder = 1
+	title.Parent = scrollFrame
 
 	-- Selected Weapon Display
 	local selectedLabel = Instance.new("TextLabel")
 	selectedLabel.Name = "SelectedLabel"
-	selectedLabel.Size = UDim2.new(1, 0, 0, 25)
+	selectedLabel.Size = UDim2.new(1, 0, 0, 22)
 	selectedLabel.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 	selectedLabel.Text = "Selected: None"
 	selectedLabel.TextColor3 = Color3.fromRGB(100, 200, 100)
-	selectedLabel.TextSize = 14
+	selectedLabel.TextSize = 13
 	selectedLabel.Font = Enum.Font.GothamMedium
-	selectedLabel.Parent = mainFrame
+	selectedLabel.LayoutOrder = 2
+	selectedLabel.Parent = scrollFrame
 
-	-- Helper function to create slider group
-	local function createSliderGroup(name, label, min, max, default, step, callback)
+	-- Toggle Buttons Frame
+	local toggleFrame = Instance.new("Frame")
+	toggleFrame.Size = UDim2.new(1, 0, 0, 35)
+	toggleFrame.BackgroundTransparency = 1
+	toggleFrame.LayoutOrder = 3
+	toggleFrame.Parent = scrollFrame
+
+	local toggleLayout = Instance.new("UIListLayout")
+	toggleLayout.FillDirection = Enum.FillDirection.Horizontal
+	toggleLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	toggleLayout.Padding = UDim.new(0, 10)
+	toggleLayout.Parent = toggleFrame
+
+	local adsToggle = Instance.new("TextButton")
+	adsToggle.Name = "ADSToggle"
+	adsToggle.Size = UDim2.new(0, 100, 0, 30)
+	adsToggle.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+	adsToggle.Text = "Preview: HIP"
+	adsToggle.TextColor3 = Color3.new(1, 1, 1)
+	adsToggle.TextSize = 11
+	adsToggle.Font = Enum.Font.GothamMedium
+	adsToggle.Parent = toggleFrame
+	Instance.new("UICorner", adsToggle).CornerRadius = UDim.new(0, 4)
+
+	local mobileToggle = Instance.new("TextButton")
+	mobileToggle.Name = "MobileToggle"
+	mobileToggle.Size = UDim2.new(0, 100, 0, 30)
+	mobileToggle.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+	mobileToggle.Text = "Mode: Desktop"
+	mobileToggle.TextColor3 = Color3.new(1, 1, 1)
+	mobileToggle.TextSize = 11
+	mobileToggle.Font = Enum.Font.GothamMedium
+	mobileToggle.Parent = toggleFrame
+	Instance.new("UICorner", mobileToggle).CornerRadius = UDim.new(0, 4)
+
+	local hitmarkerToggle = Instance.new("TextButton")
+	hitmarkerToggle.Name = "HitmarkerToggle"
+	hitmarkerToggle.Size = UDim2.new(0, 80, 0, 30)
+	hitmarkerToggle.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+	hitmarkerToggle.Text = "Crosshair"
+	hitmarkerToggle.TextColor3 = Color3.new(1, 1, 1)
+	hitmarkerToggle.TextSize = 11
+	hitmarkerToggle.Font = Enum.Font.GothamMedium
+	hitmarkerToggle.Parent = toggleFrame
+	Instance.new("UICorner", hitmarkerToggle).CornerRadius = UDim.new(0, 4)
+
+	-- Slider Helper
+	local function createSliderGroup(name, label, min, max, default, step, callback, parent, order)
 		local group = Instance.new("Frame")
 		group.Name = name .. "Group"
-		group.Size = UDim2.new(1, 0, 0, 50)
+		group.Size = UDim2.new(1, 0, 0, 40)
 		group.BackgroundTransparency = 1
-		group.Parent = mainFrame
-
-		local groupLayout = Instance.new("UIListLayout")
-		groupLayout.FillDirection = Enum.FillDirection.Vertical
-		groupLayout.Padding = UDim.new(0, 2)
-		groupLayout.Parent = group
+		group.LayoutOrder = order -- Set order
+		group.Parent = parent
 
 		local labelText = Instance.new("TextLabel")
-		labelText.Size = UDim2.new(1, 0, 0, 16)
+		labelText.Size = UDim2.new(1, 0, 0, 14)
 		labelText.BackgroundTransparency = 1
 		labelText.Text = label
-		labelText.TextColor3 = Color3.new(1, 1, 1)
-		labelText.TextSize = 12
-		labelText.Font = Enum.Font.GothamMedium
+		labelText.TextColor3 = Color3.fromRGB(200, 200, 200)
+		labelText.TextSize = 11
+		labelText.Font = Enum.Font.Gotham
 		labelText.TextXAlignment = Enum.TextXAlignment.Left
 		labelText.Parent = group
 
 		local sliderFrame = Instance.new("Frame")
-		sliderFrame.Size = UDim2.new(1, 0, 0, 30)
+		sliderFrame.Size = UDim2.new(1, 0, 0, 22)
+		sliderFrame.Position = UDim2.new(0, 0, 0, 16)
 		sliderFrame.BackgroundTransparency = 1
 		sliderFrame.Parent = group
 
 		local slider = Instance.new("Frame")
 		slider.Name = "SliderTrack"
-		slider.Size = UDim2.new(0.7, 0, 0, 8)
-		slider.Position = UDim2.new(0, 0, 0.5, -4)
+		slider.Size = UDim2.new(0.7, 0, 0, 6)
+		slider.Position = UDim2.new(0, 0, 0.5, -3)
 		slider.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
 		slider.BorderSizePixel = 0
 		slider.Parent = sliderFrame
-
-		local sliderCorner = Instance.new("UICorner")
-		sliderCorner.CornerRadius = UDim.new(0, 4)
-		sliderCorner.Parent = slider
+		Instance.new("UICorner", slider).CornerRadius = UDim.new(0, 3)
 
 		local fill = Instance.new("Frame")
 		fill.Name = "Fill"
-		fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+		fill.Size = UDim2.new(math.clamp((default - min) / (max - min), 0, 1), 0, 1, 0)
 		fill.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
 		fill.BorderSizePixel = 0
 		fill.Parent = slider
-
-		local fillCorner = Instance.new("UICorner")
-		fillCorner.CornerRadius = UDim.new(0, 4)
-		fillCorner.Parent = fill
+		Instance.new("UICorner", fill).CornerRadius = UDim.new(0, 3)
 
 		local inputBox = Instance.new("TextBox")
 		inputBox.Name = "ValueInput"
@@ -153,16 +213,12 @@ local function createUI()
 		inputBox.Position = UDim2.new(0.75, 5, 0, 0)
 		inputBox.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 		inputBox.TextColor3 = Color3.new(1, 1, 1)
-		inputBox.Text = tostring(default)
-		inputBox.TextSize = 14
+		inputBox.Text = string.format("%.2f", default)
+		inputBox.TextSize = 12
 		inputBox.Font = Enum.Font.Gotham
 		inputBox.Parent = sliderFrame
+		Instance.new("UICorner", inputBox).CornerRadius = UDim.new(0, 3)
 
-		local inputCorner = Instance.new("UICorner")
-		inputCorner.CornerRadius = UDim.new(0, 4)
-		inputCorner.Parent = inputBox
-
-		-- Slider interaction
 		local dragging = false
 
 		slider.InputBegan:Connect(function(input)
@@ -188,7 +244,7 @@ local function createUI()
 			end
 		end)
 
-		inputBox.FocusLost:Connect(function(enterPressed)
+		inputBox.FocusLost:Connect(function()
 			local value = tonumber(inputBox.Text)
 			if value then
 				value = math.clamp(value, min, max)
@@ -210,73 +266,167 @@ local function createUI()
 		}
 	end
 
-	-- Position Sliders
-	local posXSlider = createSliderGroup("PosX", "Position X", -5, 5, posX, 0.1, function(v) posX = v end)
-	local posYSlider = createSliderGroup("PosY", "Position Y", -5, 5, posY, 0.1, function(v) posY = v end)
-	local posZSlider = createSliderGroup("PosZ", "Position Z", -10, 0, posZ, 0.1, function(v) posZ = v end)
+	-- ===== VIEWMODEL SECTION =====
+	createSectionHeader("📍 Viewmodel Position", scrollFrame, 10)
+	local posXSlider = createSliderGroup("PosX", "X", -5, 5, posX, 0.1, function(v) posX = v end, scrollFrame, 11)
+	local posYSlider = createSliderGroup("PosY", "Y", -5, 5, posY, 0.1, function(v) posY = v end, scrollFrame, 12)
+	local posZSlider = createSliderGroup("PosZ", "Z", -10, 0, posZ, 0.1, function(v) posZ = v end, scrollFrame, 13)
 
-	-- Rotation Sliders
-	local rotXSlider = createSliderGroup("RotX", "Rotation X (degrees)", -180, 180, rotX, 1, function(v) rotX = v end)
-	local rotYSlider = createSliderGroup("RotY", "Rotation Y (degrees)", -180, 180, rotY, 1, function(v) rotY = v end)
-	local rotZSlider = createSliderGroup("RotZ", "Rotation Z (degrees)", -180, 180, rotZ, 1, function(v) rotZ = v end)
+	createSectionHeader("🔄 Viewmodel Rotation", scrollFrame, 20)
+	local rotXSlider = createSliderGroup("RotX", "X (deg)", -180, 180, rotX, 1, function(v) rotX = v end, scrollFrame, 21)
+	local rotYSlider = createSliderGroup("RotY", "Y (deg)", -180, 180, rotY, 1, function(v) rotY = v end, scrollFrame, 22)
+	local rotZSlider = createSliderGroup("RotZ", "Z (deg)", -180, 180, rotZ, 1, function(v) rotZ = v end, scrollFrame, 23)
 
-	-- Apply Button
+	-- ===== ADS DESKTOP SECTION =====
+	createSectionHeader("🎯 ADS Position (Desktop)", scrollFrame, 30)
+	local adsXSlider = createSliderGroup("AdsX", "X", -2, 2, adsX, 0.01, function(v) adsX = v end, scrollFrame, 31)
+	local adsYSlider = createSliderGroup("AdsY", "Y", -2, 2, adsY, 0.01, function(v) adsY = v end, scrollFrame, 32)
+	local adsZSlider = createSliderGroup("AdsZ", "Z", -5, 0, adsZ, 0.1, function(v) adsZ = v end, scrollFrame, 33)
+
+	createSectionHeader("🔄 ADS Rotation (Desktop)", scrollFrame, 40)
+	local adsRotXSlider = createSliderGroup("AdsRotX", "X (deg)", -45, 45, adsRotX, 1, function(v) adsRotX = v end, scrollFrame, 41)
+	local adsRotYSlider = createSliderGroup("AdsRotY", "Y (deg)", -45, 45, adsRotY, 1, function(v) adsRotY = v end, scrollFrame, 42)
+	local adsRotZSlider = createSliderGroup("AdsRotZ", "Z (deg)", -45, 45, adsRotZ, 1, function(v) adsRotZ = v end, scrollFrame, 43)
+
+	-- ===== ADS MOBILE SECTION =====
+	createSectionHeader("📱 ADS Position (Mobile)", scrollFrame, 50)
+	local adsMobileXSlider = createSliderGroup("AdsMobileX", "X", -2, 2, adsMobileX, 0.01, function(v) adsMobileX = v end, scrollFrame, 51)
+	local adsMobileYSlider = createSliderGroup("AdsMobileY", "Y", -2, 2, adsMobileY, 0.01, function(v) adsMobileY = v end, scrollFrame, 52)
+	local adsMobileZSlider = createSliderGroup("AdsMobileZ", "Z", -5, 0, adsMobileZ, 0.1, function(v) adsMobileZ = v end, scrollFrame, 53)
+
+	createSectionHeader("🔄 ADS Rotation (Mobile)", scrollFrame, 60)
+	local adsMobileRotXSlider = createSliderGroup("AdsMobileRotX", "X (deg)", -45, 45, adsMobileRotX, 1, function(v) adsMobileRotX = v end, scrollFrame, 61)
+	local adsMobileRotYSlider = createSliderGroup("AdsMobileRotY", "Y (deg)", -45, 45, adsMobileRotY, 1, function(v) adsMobileRotY = v end, scrollFrame, 62)
+	local adsMobileRotZSlider = createSliderGroup("AdsMobileRotZ", "Z (deg)", -45, 45, adsMobileRotZ, 1, function(v) adsMobileRotZ = v end, scrollFrame, 63)
+
+	-- ===== BUTTONS =====
+	createSectionHeader("💾 Actions", scrollFrame, 70)
+
 	local applyButton = Instance.new("TextButton")
 	applyButton.Name = "ApplyButton"
-	applyButton.Size = UDim2.new(1, 0, 0, 40)
+	applyButton.Size = UDim2.new(1, 0, 0, 35)
 	applyButton.BackgroundColor3 = Color3.fromRGB(0, 150, 80)
-	applyButton.Text = "Apply to WeaponModule"
+	applyButton.Text = "Apply All to WeaponModule"
 	applyButton.TextColor3 = Color3.new(1, 1, 1)
-	applyButton.TextSize = 16
+	applyButton.TextSize = 14
 	applyButton.Font = Enum.Font.GothamBold
-	applyButton.Parent = mainFrame
+	applyButton.LayoutOrder = 71
+	applyButton.Parent = scrollFrame
+	Instance.new("UICorner", applyButton).CornerRadius = UDim.new(0, 6)
 
-	local applyCorner = Instance.new("UICorner")
-	applyCorner.CornerRadius = UDim.new(0, 6)
-	applyCorner.Parent = applyButton
-
-	-- Copy Code Button
 	local copyButton = Instance.new("TextButton")
 	copyButton.Name = "CopyButton"
-	copyButton.Size = UDim2.new(1, 0, 0, 35)
+	copyButton.Size = UDim2.new(1, 0, 0, 30)
 	copyButton.BackgroundColor3 = Color3.fromRGB(80, 80, 150)
-	copyButton.Text = "Copy Values to Clipboard"
+	copyButton.Text = "Print Values to Output"
 	copyButton.TextColor3 = Color3.new(1, 1, 1)
-	copyButton.TextSize = 14
+	copyButton.TextSize = 12
 	copyButton.Font = Enum.Font.GothamMedium
-	copyButton.Parent = mainFrame
+	copyButton.LayoutOrder = 72
+	copyButton.Parent = scrollFrame
+	Instance.new("UICorner", copyButton).CornerRadius = UDim.new(0, 6)
 
-	local copyCorner = Instance.new("UICorner")
-	copyCorner.CornerRadius = UDim.new(0, 6)
-	copyCorner.Parent = copyButton
-
-	-- Status Label
 	local statusLabel = Instance.new("TextLabel")
 	statusLabel.Name = "StatusLabel"
-	statusLabel.Size = UDim2.new(1, 0, 0, 20)
+	statusLabel.Size = UDim2.new(1, 0, 0, 40)
 	statusLabel.BackgroundTransparency = 1
 	statusLabel.Text = ""
 	statusLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
-	statusLabel.TextSize = 12
+	statusLabel.TextSize = 11
 	statusLabel.Font = Enum.Font.Gotham
-	statusLabel.Parent = mainFrame
+	statusLabel.TextWrapped = true
+	statusLabel.LayoutOrder = 73
+	statusLabel.Parent = scrollFrame
 
 	return {
-		MainFrame = mainFrame,
+		ScrollFrame = scrollFrame,
 		SelectedLabel = selectedLabel,
 		StatusLabel = statusLabel,
+		ADSToggle = adsToggle,
+		MobileToggle = mobileToggle,
 		ApplyButton = applyButton,
 		CopyButton = copyButton,
-		PosX = posXSlider,
-		PosY = posYSlider,
-		PosZ = posZSlider,
-		RotX = rotXSlider,
-		RotY = rotYSlider,
-		RotZ = rotZSlider
+		-- Viewmodel
+		PosX = posXSlider, PosY = posYSlider, PosZ = posZSlider,
+		RotX = rotXSlider, RotY = rotYSlider, RotZ = rotZSlider,
+		-- ADS Desktop
+		AdsX = adsXSlider, AdsY = adsYSlider, AdsZ = adsZSlider,
+		AdsRotX = adsRotXSlider, AdsRotY = adsRotYSlider, AdsRotZ = adsRotZSlider,
+		-- ADS Mobile
+		AdsMobileX = adsMobileXSlider, AdsMobileY = adsMobileYSlider, AdsMobileZ = adsMobileZSlider,
+		AdsMobileRotX = adsMobileRotXSlider, AdsMobileRotY = adsMobileRotYSlider, AdsMobileRotZ = adsMobileRotZSlider,
+		HitmarkerToggle = hitmarkerToggle
 	}
 end
 
 local ui = createUI()
+
+-- Toggle Handlers
+ui.ADSToggle.MouseButton1Click:Connect(function()
+	isADSPreview = not isADSPreview
+	ui.ADSToggle.Text = isADSPreview and "Preview: ADS" or "Preview: HIP"
+	ui.ADSToggle.BackgroundColor3 = isADSPreview and Color3.fromRGB(0, 150, 80) or Color3.fromRGB(80, 80, 80)
+end)
+
+ui.MobileToggle.MouseButton1Click:Connect(function()
+	isMobilePreview = not isMobilePreview
+	ui.MobileToggle.Text = isMobilePreview and "Mode: Mobile" or "Mode: Desktop"
+	ui.MobileToggle.BackgroundColor3 = isMobilePreview and Color3.fromRGB(150, 100, 0) or Color3.fromRGB(80, 80, 80)
+end)
+
+ui.HitmarkerToggle.MouseButton1Click:Connect(function()
+	showHitmarker = not showHitmarker
+	ui.HitmarkerToggle.BackgroundColor3 = showHitmarker and Color3.fromRGB(0, 150, 80) or Color3.fromRGB(80, 80, 80)
+	
+	if showHitmarker then
+		if not hitmarkerGui then
+			hitmarkerGui = Instance.new("ScreenGui")
+			hitmarkerGui.Name = "ViewmodelEditorCrosshair"
+			hitmarkerGui.DisplayOrder = 1000
+			
+			-- Try to parent to CoreGui for overlay (requires plugin permissions usually), fallback to PlayerGui
+			pcall(function() hitmarkerGui.Parent = game:GetService("CoreGui") end)
+			if not hitmarkerGui.Parent then
+				hitmarkerGui.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+			end
+			
+			local container = Instance.new("Frame")
+			container.Name = "Container"
+			container.Size = UDim2.new(0, 50, 0, 50)
+			container.AnchorPoint = Vector2.new(0.5, 0.5)
+			container.Position = UDim2.new(0.5, 0, 0.5, 0)
+			container.BackgroundTransparency = 1
+			container.Parent = hitmarkerGui
+			
+			local lineThickness = 2
+			local lineLength = 15
+			local color = Color3.fromRGB(255, 255, 255)
+			
+			local function createLine(name, size, pos)
+				local line = Instance.new("Frame")
+				line.Name = name
+				line.Size = size
+				line.Position = pos
+				line.BackgroundColor3 = color
+				line.BorderSizePixel = 0
+				line.Parent = container
+			end
+			
+			createLine("TopLine", UDim2.new(0, lineThickness, 0, lineLength), UDim2.new(0.5, -1, 0.5, -lineLength - 5))
+			createLine("BottomLine", UDim2.new(0, lineThickness, 0, lineLength), UDim2.new(0.5, -1, 0.5, 5))
+			createLine("LeftLine", UDim2.new(0, lineLength, 0, lineThickness), UDim2.new(0.5, -lineLength - 5, 0.5, -1))
+			createLine("RightLine", UDim2.new(0, lineLength, 0, lineThickness), UDim2.new(0.5, 5, 0.5, -1))
+		end
+		hitmarkerGui.Enabled = true
+	else
+		if hitmarkerGui then
+			hitmarkerGui.Enabled = false
+			hitmarkerGui:Destroy()
+			hitmarkerGui = nil
+		end
+	end
+end)
+
 
 -- Preview Functions
 local function cleanupPreview()
@@ -298,20 +448,15 @@ local function createPreview(tool)
 	local handle = tool:FindFirstChild("Handle")
 	if not handle then return end
 	
-	-- Clone the tool for preview
 	previewModel = tool:Clone()
 	previewModel.Name = "ViewmodelPreview"
 	
-	-- Get the preview handle reference
 	local previewHandle = previewModel:FindFirstChild("Handle")
 	
-	-- Setup parts - ONLY anchor Handle, keep others unanchored so welds work
 	for _, desc in pairs(previewModel:GetDescendants()) do
 		if desc:IsA("BasePart") then
 			desc.CanCollide = false
 			desc.CastShadow = false
-			
-			-- Only anchor the Handle, other parts should follow via welds
 			if desc == previewHandle then
 				desc.Anchored = true
 			else
@@ -324,7 +469,6 @@ local function createPreview(tool)
 	
 	previewModel.Parent = workspace.CurrentCamera
 	
-	-- Render loop
 	renderConnection = RunService.RenderStepped:Connect(function()
 		if not previewModel or not previewModel.Parent then return end
 		
@@ -332,8 +476,20 @@ local function createPreview(tool)
 		if not ph then return end
 		
 		local camera = workspace.CurrentCamera
-		local offset = CFrame.new(posX, posY, posZ)
-		local rotation = CFrame.Angles(math.rad(rotX), math.rad(rotY), math.rad(rotZ))
+		local offset, rotation
+		
+		if isADSPreview then
+			if isMobilePreview then
+				offset = CFrame.new(adsMobileX, adsMobileY, adsMobileZ)
+				rotation = CFrame.Angles(math.rad(adsMobileRotX), math.rad(adsMobileRotY), math.rad(adsMobileRotZ))
+			else
+				offset = CFrame.new(adsX, adsY, adsZ)
+				rotation = CFrame.Angles(math.rad(adsRotX), math.rad(adsRotY), math.rad(adsRotZ))
+			end
+		else
+			offset = CFrame.new(posX, posY, posZ)
+			rotation = CFrame.Angles(math.rad(rotX), math.rad(rotY), math.rad(rotZ))
+		end
 		
 		ph.CFrame = camera.CFrame * offset * rotation
 	end)
@@ -347,7 +503,6 @@ local function onSelectionChanged()
 		currentWeaponName = currentTool.Name
 		ui.SelectedLabel.Text = "Selected: " .. currentWeaponName
 		
-		-- Try to load existing values from WeaponModule
 		local weaponModule = game.ReplicatedStorage:FindFirstChild("ModuleScript")
 		if weaponModule then
 			weaponModule = weaponModule:FindFirstChild("WeaponModule")
@@ -360,21 +515,37 @@ local function onSelectionChanged()
 			
 			if success and result and result.Weapons and result.Weapons[currentWeaponName] then
 				local stats = result.Weapons[currentWeaponName]
+				
+				-- Load Viewmodel
 				if stats.ViewmodelPosition then
-					posX = stats.ViewmodelPosition.X
-					posY = stats.ViewmodelPosition.Y
-					posZ = stats.ViewmodelPosition.Z
-					ui.PosX.SetValue(posX)
-					ui.PosY.SetValue(posY)
-					ui.PosZ.SetValue(posZ)
+					posX, posY, posZ = stats.ViewmodelPosition.X, stats.ViewmodelPosition.Y, stats.ViewmodelPosition.Z
+					ui.PosX.SetValue(posX); ui.PosY.SetValue(posY); ui.PosZ.SetValue(posZ)
 				end
 				if stats.ViewmodelRotation then
-					rotX = stats.ViewmodelRotation.X
-					rotY = stats.ViewmodelRotation.Y
-					rotZ = stats.ViewmodelRotation.Z
-					ui.RotX.SetValue(rotX)
-					ui.RotY.SetValue(rotY)
-					ui.RotZ.SetValue(rotZ)
+					rotX, rotY, rotZ = stats.ViewmodelRotation.X, stats.ViewmodelRotation.Y, stats.ViewmodelRotation.Z
+					ui.RotX.SetValue(rotX); ui.RotY.SetValue(rotY); ui.RotZ.SetValue(rotZ)
+				end
+				
+				-- Load ADS from Default Skin
+				currentSkinName = stats.Use_Skin or "Default Skin"
+				if stats.Skins and stats.Skins[currentSkinName] then
+					local skin = stats.Skins[currentSkinName]
+					if skin.ADS_Position then
+						adsX, adsY, adsZ = skin.ADS_Position.X, skin.ADS_Position.Y, skin.ADS_Position.Z
+						ui.AdsX.SetValue(adsX); ui.AdsY.SetValue(adsY); ui.AdsZ.SetValue(adsZ)
+					end
+					if skin.ADS_Rotation then
+						adsRotX, adsRotY, adsRotZ = skin.ADS_Rotation.X, skin.ADS_Rotation.Y, skin.ADS_Rotation.Z
+						ui.AdsRotX.SetValue(adsRotX); ui.AdsRotY.SetValue(adsRotY); ui.AdsRotZ.SetValue(adsRotZ)
+					end
+					if skin.ADS_Position_Mobile then
+						adsMobileX, adsMobileY, adsMobileZ = skin.ADS_Position_Mobile.X, skin.ADS_Position_Mobile.Y, skin.ADS_Position_Mobile.Z
+						ui.AdsMobileX.SetValue(adsMobileX); ui.AdsMobileY.SetValue(adsMobileY); ui.AdsMobileZ.SetValue(adsMobileZ)
+					end
+					if skin.ADS_Rotation_Mobile then
+						adsMobileRotX, adsMobileRotY, adsMobileRotZ = skin.ADS_Rotation_Mobile.X, skin.ADS_Rotation_Mobile.Y, skin.ADS_Rotation_Mobile.Z
+						ui.AdsMobileRotX.SetValue(adsMobileRotX); ui.AdsMobileRotY.SetValue(adsMobileRotY); ui.AdsMobileRotZ.SetValue(adsMobileRotZ)
+					end
 				end
 			end
 		end
@@ -410,49 +581,67 @@ ui.ApplyButton.MouseButton1Click:Connect(function()
 	end
 	
 	local source = weaponModuleScript.Source
+	local escapedName = currentWeaponName:gsub("%-", "%%-")
+	local replaced = 0
 	
-	-- Find and replace ViewmodelPosition
-	local posPattern = '(%[%"' .. currentWeaponName:gsub("%-", "%%-") .. '"%].-ViewmodelPosition = Vector3%.new%()([^%)]+)(%))' 
-	local newPosValue = string.format("%.2f, %.2f, %.2f", posX, posY, posZ)
+	-- Viewmodel Position
+	local posPattern = '(%["' .. escapedName .. '"%].-ViewmodelPosition = Vector3%.new%()([^%)]+)(%))' 
+	local newSource, count = source:gsub(posPattern, "%1" .. string.format("%.2f, %.2f, %.2f", posX, posY, posZ) .. "%3")
+	if count > 0 then source = newSource; replaced = replaced + count end
 	
-	local newSource, posReplaced = source:gsub(posPattern, "%1" .. newPosValue .. "%3")
+	-- Viewmodel Rotation
+	local rotPattern = '(%["' .. escapedName .. '"%].-ViewmodelRotation = Vector3%.new%()([^%)]+)(%))' 
+	newSource, count = source:gsub(rotPattern, "%1" .. string.format("%.0f, %.0f, %.0f", rotX, rotY, rotZ) .. "%3")
+	if count > 0 then source = newSource; replaced = replaced + count end
 	
-	if posReplaced > 0 then
-		source = newSource
-	end
+	-- ADS Desktop (in skin)
+	local adsPattern = '(%["' .. currentSkinName:gsub("%-", "%%-") .. '"%].-ADS_Position = Vector3%.new%()([^%)]+)(%))' 
+	newSource, count = source:gsub(adsPattern, "%1" .. string.format("%.2f, %.2f, %.2f", adsX, adsY, adsZ) .. "%3")
+	if count > 0 then source = newSource; replaced = replaced + count end
 	
-	-- Find and replace ViewmodelRotation
-	local rotPattern = '(%[%"' .. currentWeaponName:gsub("%-", "%%-") .. '"%].-ViewmodelRotation = Vector3%.new%()([^%)]+)(%))' 
-	local newRotValue = string.format("%.0f, %.0f, %.0f", rotX, rotY, rotZ)
+	local adsRotPattern = '(%["' .. currentSkinName:gsub("%-", "%%-") .. '"%].-ADS_Rotation = Vector3%.new%()([^%)]+)(%))' 
+	newSource, count = source:gsub(adsRotPattern, "%1" .. string.format("%.0f, %.0f, %.0f", adsRotX, adsRotY, adsRotZ) .. "%3")
+	if count > 0 then source = newSource; replaced = replaced + count end
 	
-	local newSource2, rotReplaced = source:gsub(rotPattern, "%1" .. newRotValue .. "%3")
+	-- ADS Mobile
+	local adsMobilePattern = '(%["' .. currentSkinName:gsub("%-", "%%-") .. '"%].-ADS_Position_Mobile = Vector3%.new%()([^%)]+)(%))' 
+	newSource, count = source:gsub(adsMobilePattern, "%1" .. string.format("%.2f, %.2f, %.2f", adsMobileX, adsMobileY, adsMobileZ) .. "%3")
+	if count > 0 then source = newSource; replaced = replaced + count end
 	
-	if rotReplaced > 0 then
-		source = newSource2
-	end
+	local adsMobileRotPattern = '(%["' .. currentSkinName:gsub("%-", "%%-") .. '"%].-ADS_Rotation_Mobile = Vector3%.new%()([^%)]+)(%))' 
+	newSource, count = source:gsub(adsMobileRotPattern, "%1" .. string.format("%.0f, %.0f, %.0f", adsMobileRotX, adsMobileRotY, adsMobileRotZ) .. "%3")
+	if count > 0 then source = newSource; replaced = replaced + count end
 	
-	if posReplaced > 0 or rotReplaced > 0 then
+	if replaced > 0 then
 		ChangeHistoryService:SetWaypoint("Viewmodel Edit: " .. currentWeaponName)
 		weaponModuleScript.Source = source
 		ChangeHistoryService:SetWaypoint("Viewmodel Edit Applied")
-		ui.StatusLabel.Text = "Success! Applied to " .. currentWeaponName
+		ui.StatusLabel.Text = "Success! " .. replaced .. " values updated for " .. currentWeaponName
 	else
-		ui.StatusLabel.Text = "Warning: Pattern not found in WeaponModule"
+		ui.StatusLabel.Text = "Warning: No patterns matched in WeaponModule"
 	end
 end)
 
 -- Copy Button
 ui.CopyButton.MouseButton1Click:Connect(function()
-	local code = string.format(
-		"ViewmodelPosition = Vector3.new(%.2f, %.2f, %.2f),\nViewmodelRotation = Vector3.new(%.0f, %.0f, %.0f),",
-		posX, posY, posZ, rotX, rotY, rotZ
-	)
+	local code = string.format([[
+-- Viewmodel
+ViewmodelPosition = Vector3.new(%.2f, %.2f, %.2f),
+ViewmodelRotation = Vector3.new(%.0f, %.0f, %.0f),
+
+-- Skin: %s
+ADS_Position = Vector3.new(%.2f, %.2f, %.2f),
+ADS_Rotation = Vector3.new(%.0f, %.0f, %.0f),
+ADS_Position_Mobile = Vector3.new(%.2f, %.2f, %.2f),
+ADS_Rotation_Mobile = Vector3.new(%.0f, %.0f, %.0f),
+]], posX, posY, posZ, rotX, rotY, rotZ, currentSkinName or "Default Skin",
+	adsX, adsY, adsZ, adsRotX, adsRotY, adsRotZ,
+	adsMobileX, adsMobileY, adsMobileZ, adsMobileRotX, adsMobileRotY, adsMobileRotZ)
 	
-	-- Note: setClipboard is not available in plugins, so we'll just display it
-	ui.StatusLabel.Text = "Copy this:\n" .. code
-	print("=== COPY THIS ===")
+	print("=== VIEWMODEL VALUES ===")
 	print(code)
-	print("=================")
+	print("========================")
+	ui.StatusLabel.Text = "Values printed to Output!"
 end)
 
 -- Toggle Button
@@ -462,15 +651,18 @@ toggleButton.Click:Connect(function()
 	toggleButton:SetActive(isActive)
 	
 	if isActive then
-		onSelectionChanged() -- Refresh selection
+		onSelectionChanged()
 	else
 		cleanupPreview()
 	end
 end)
 
--- Cleanup on unload
+-- Cleanup
 plugin.Unloading:Connect(function()
 	cleanupPreview()
+	if hitmarkerGui then
+		hitmarkerGui:Destroy()
+	end
 end)
 
-print("[Viewmodel Editor] Plugin loaded successfully!")
+print("[Viewmodel Editor] Plugin loaded with ADS support!")
