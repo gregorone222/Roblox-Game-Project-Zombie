@@ -22,6 +22,7 @@ function ViewmodelModule.new(tool, player, weaponName, weaponModule)
 	-- Viewmodel state
 	self.viewmodel = nil
 	self.viewmodelHandle = nil
+	self.viewmodelMuzzle = nil
 	self.adsBlend = 0
 	self.currentSway = Vector3.new()
 	self.targetSway = Vector3.new()
@@ -138,24 +139,72 @@ function ViewmodelModule:createViewmodel()
 		self.viewmodel = nil
 	end
 
+	-- Clone the ENTIRE tool to preserve parts, meshes, and welds (Multi-Part support)
 	self.viewmodel = self.tool:Clone()
 	self.viewmodel.Name = "FirstPersonViewmodel"
 	self.viewmodel:SetAttribute("IsViewmodel", true)
 	self.viewmodel.Parent = self.camera
-	self.viewmodel:ClearAllChildren()
-
-	local originalHandle = self.tool:FindFirstChild("Handle")
-	if originalHandle then
-		self.viewmodelHandle = originalHandle:Clone()
+	
+	-- We do NOT ClearAllChildren anymore. Instead we process the existing children.
+	
+	-- 1. Setup Handle and Muzzle references
+	local originalHandle = self.viewmodel:FindFirstChild("Handle")
+	if originalHandle and originalHandle:IsA("BasePart") then
+		self.viewmodelHandle = originalHandle
 		self.viewmodelHandle.Name = "ViewmodelHandle"
-		self.viewmodelHandle.Parent = self.viewmodel
-
-		for _, child in ipairs(self.viewmodelHandle:GetChildren()) do
-			if child:IsA("Weld") or child:IsA("WeldConstraint") then
-				child:Destroy()
+		self.viewmodelHandle.Anchored = true -- Handle acts as the anchor for the assembly
+		self.viewmodelHandle.CanCollide = false
+	end
+	
+	local originalMuzzle = self.viewmodel:FindFirstChild("Muzzle")
+	if originalMuzzle and originalMuzzle:IsA("BasePart") then
+		self.viewmodelMuzzle = originalMuzzle
+		self.viewmodelMuzzle.Name = "ViewmodelMuzzle"
+		self.viewmodelMuzzle.Anchored = false
+		self.viewmodelMuzzle.CanCollide = false
+	end
+	
+	-- 2. Cleanup and Audit Descendants
+	for _, desc in ipairs(self.viewmodel:GetDescendants()) do
+		if desc:IsA("BasePart") then
+			desc.CanCollide = false
+			desc.CastShadow = false -- Optimization for viewmodel
+			
+			if desc ~= self.viewmodelHandle then
+				desc.Anchored = false -- Ensure only Handle is anchored so welds work
+			end
+			
+			-- Ensure Transparency is 0 (visible) initially, unless it's a special invisible part
+			-- Note: You might want to keep Muzzle invisible if it was invisible in the tool
+			if desc.Name ~= "Muzzle" and desc.Name ~= "ViewmodelMuzzle" then
+				desc.Transparency = 0
+			end
+		elseif desc:IsA("Script") or desc:IsA("LocalScript") or desc:IsA("Sound") then
+			-- Remove logic and sounds from viewmodel (sounds usually played via AudioManager at Handle)
+			desc:Destroy()
+		end
+	end
+	
+	-- 3. Safety: Auto-weld Muzzle if it has no welds (User might have forgotten to weld it in the tool)
+	if self.viewmodelHandle and self.viewmodelMuzzle then
+		local isWelded = false
+		for _, joint in ipairs(self.viewmodelMuzzle:GetJoints()) do
+			if joint.Part0 == self.viewmodelMuzzle or joint.Part1 == self.viewmodelMuzzle then
+				isWelded = true
+				break
 			end
 		end
+		
+		if not isWelded then
+			local weld = Instance.new("WeldConstraint")
+			weld.Part0 = self.viewmodelHandle
+			weld.Part1 = self.viewmodelMuzzle
+			weld.Parent = self.viewmodelMuzzle
+		end
+	end
 
+	-- 4. Initial Positioning
+	if self.viewmodelHandle then
 		local weaponStats = self.WeaponModule.Weapons[self.weaponName]
 		local viewmodelPosition = weaponStats.ViewmodelPosition or Vector3.new(1.5, -1, -2.5)
 		local viewmodelRotation = weaponStats.ViewmodelRotation or Vector3.new(0, 0, 0)
@@ -165,11 +214,13 @@ function ViewmodelModule:createViewmodel()
 			math.rad(viewmodelRotation.Y),
 			math.rad(viewmodelRotation.Z)
 		)
-		self.viewmodelHandle.Anchored = true
 	end
 
+	-- 5. Hide Real Tool (Character)
 	if self.tool.Parent == self.player.Character then
-		self.tool.Handle.Transparency = 1
+		local realHandle = self.tool:FindFirstChild("Handle")
+		if realHandle then realHandle.Transparency = 1 end
+		
 		for _, child in ipairs(self.tool:GetChildren()) do
 			if child:IsA("BasePart") and child.Name ~= "Handle" then
 				child.Transparency = 1
@@ -185,6 +236,7 @@ function ViewmodelModule:destroyViewmodel()
 		self.viewmodel:Destroy()
 		self.viewmodel = nil
 		self.viewmodelHandle = nil
+		self.viewmodelMuzzle = nil
 		self:cleanupOldViewmodels()
 	end
 

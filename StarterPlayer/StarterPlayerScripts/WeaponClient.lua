@@ -414,6 +414,29 @@ local function canMobileShoot()
 	return currentWeapon and not reloading and not isKnocked and currentAmmo > 0
 end
 
+local function getMuzzlePosition()
+	-- Priority 1: Viewmodel Muzzle (first person)
+	if viewmodel and viewmodel.viewmodelMuzzle then
+		return viewmodel.viewmodelMuzzle.CFrame.Position
+	end
+	
+	-- Priority 2: Tool Muzzle (fallback/third person)
+	if currentWeapon then
+		local muzzlePart = currentWeapon:FindFirstChild("Muzzle")
+		if muzzlePart and muzzlePart:IsA("BasePart") then
+			return muzzlePart.CFrame.Position
+		end
+	end
+	
+	-- Priority 3: Handle + offset (legacy fallback)
+	local handle = viewmodel and viewmodel.viewmodelHandle or (currentWeapon and currentWeapon:FindFirstChild("Handle"))
+	if handle and weaponStats then
+		return handle.CFrame:PointToWorldSpace(weaponStats.TracerOffset or Vector3.new(0, 0, 0))
+	end
+	
+	return Vector3.new(0, 0, 0)
+end
+
 local function fireFromCenterOnce()
 	if not isFireCooldownReady() then return end
 	markJustFired()
@@ -427,12 +450,13 @@ local function fireFromCenterOnce()
 	currentAmmo = currentAmmo - 1
 	if viewmodel then viewmodel:applyVisualRecoil() end
 
+	-- Get muzzle position with fallback priority
+	local startPos = getMuzzlePosition()
+	local hitPosition = ray.Origin + ray.Direction * 1000
+	TracerEvent:FireServer(startPos, hitPosition, weaponName)
+	
 	local handle = viewmodel and viewmodel.viewmodelHandle or currentWeapon:FindFirstChild("Handle")
 	if handle then
-		local startPos = handle.CFrame:PointToWorldSpace(weaponStats.TracerOffset or Vector3.new(0, 0, 0))
-		-- For visual effect, we still need a target position for the tracer
-		local hitPosition = ray.Origin + ray.Direction * 1000
-		TracerEvent:FireServer(startPos, hitPosition, weaponName)
 		MuzzleFlashEvent:FireServer(handle, weaponName)
 	end
 
@@ -611,12 +635,13 @@ local function onStepped(dt)
 		currentAmmo = currentAmmo - 1
 		if viewmodel then viewmodel:applyVisualRecoil() end
 
+		-- Get muzzle position with fallback priority
+		local startPos = getMuzzlePosition()
+		local hitPosition = mouse.Hit.Position
+		TracerEvent:FireServer(startPos, hitPosition, weaponName)
+		
 		local handle = viewmodel and viewmodel.viewmodelHandle or currentWeapon:FindFirstChild("Handle")
 		if handle then
-			local startPos = handle.CFrame:PointToWorldSpace(weaponStats.TracerOffset or Vector3.new(0,0,0))
-			-- For visual effect, we still need a target position for the tracer
-			local hitPosition = mouse.Hit.Position
-			TracerEvent:FireServer(startPos, hitPosition, weaponName)
 			MuzzleFlashEvent:FireServer(handle, weaponName)
 		end
 

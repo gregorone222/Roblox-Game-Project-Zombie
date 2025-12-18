@@ -20,14 +20,23 @@ MuzzleFlashEvent.OnServerEvent:Connect(function(player, handle, weaponName)
 	local tool = char:FindFirstChild(weaponName)
 	if not tool or not tool:IsA("Tool") then return end
 
-	local handle = tool:FindFirstChild("Handle")
-	if not handle then return end
-
 	local weaponStats = WeaponModule.Weapons[weaponName]
 	if not weaponStats then return end
 
-	local muzzleOffset = weaponStats.MuzzleOffset or Vector3.new(0, 0, -1)
-	local flashCFrame = handle.CFrame * CFrame.new(muzzleOffset)
+	-- Priority 1: Cari Muzzle part
+	local muzzle = tool:FindFirstChild("Muzzle")
+	local flashCFrame
+	
+	if muzzle and muzzle:IsA("BasePart") then
+		-- Gunakan posisi Muzzle langsung
+		flashCFrame = muzzle.CFrame
+	else
+		-- Fallback: Handle + MuzzleOffset
+		local handle = tool:FindFirstChild("Handle")
+		if not handle then return end
+		local muzzleOffset = weaponStats.MuzzleOffset or Vector3.new(0, 0, -1)
+		flashCFrame = handle.CFrame * CFrame.new(muzzleOffset)
+	end
 
 	-- Broadcast ke semua klien
 	MuzzleFlashBroadcast:FireAllClients(flashCFrame, weaponName)
