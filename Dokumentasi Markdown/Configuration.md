@@ -26,6 +26,7 @@ Implementasi lengkap terdapat di `GameConfig.lua` -> `Difficulty`.
     *   *Dark Wave:* Tiap 2 Wave.
     *   *Blood Moon:* 5% Chance saat Dark Wave. Spawn Rate `1.5x`.
     *   *Fast Wave:* 5% Chance. Kecepatan Zombie `1.2x`.
+    *   *Special Wave:* 5% Chance. Hanya memunculkan zombie tipe khusus (Shooter & Tank).
 
 ## 💰 Economy
 *   **Coins:** Didapat dari Wave Clear & Damage. (Base Ratio: 20 Damage = 1 Coin).

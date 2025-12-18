@@ -7,17 +7,25 @@ Sistem senjata dikelola oleh `WeaponManager`.
 
 *   **Tipe:** Pistol, SMG, Rifle, Shotgun, Sniper, LMG.
 *   **Akuisisi:**
-    *   *Wallbuy:* Beli spesifik di dinding map.
-    *   *Mystery Box:* Senjata acak (Gacha).
-*   **Upgrade:** Melalui mesin Pack-a-Punch (Meningkatkan Damage & Ammo Capacity).
+    *   *Mystery Box (Gacha):* Mendapatkan senjata acak dari Vending Machine.
+    *   *Starting Weapon:* Senjata awal saat spawn.
+*   **Upgrade System:**
+    *   **Upgrade Vending Machine:** Meningkatkan Level senjata (Level 1 - 10).
+    *   **Efek:** Meningkatkan Damage dan Kapasitas Ammo secara bertahap.
+    *   **Biaya:** Meningkat eksponensial setiap level.
 
 ## 🥤 Perks (Buffs)
 Minuman kaleng yang memberikan pasif permanen (selama hidup).
 
-*   **Juggernaut:** Meningkatkan Max Health.
-*   **Speed Cola:** Mempercepat Reload.
-*   **Double Tap:** Meningkatkan Fire Rate / Damage.
-*   **Quick Revive:** Revive teman lebih cepat.
+| Nama Perk | Efek |
+| :--- | :--- |
+| **HP Plus** | Meningkatkan Max Health +30%. |
+| **Stamina Plus** | Meningkatkan Max Stamina +30%. |
+| **Reload Plus** | Reload speed +30% lebih cepat. |
+| **Fast Hands** | Fire Rate +30% lebih cepat (`RateBoost`). |
+| **Revive Plus** | Revive teman 50% lebih cepat. |
+| **Medic** | Teman yang di-revive bangun dengan 30% HP (bukan 10%). |
+| **Explosive Rounds** | 10% peluang peluru meledak (Splash Damage). |
 
 ## 🔮 Skills & Elements
 Kemampuan aktif pemain yang bisa dikustomisasi.

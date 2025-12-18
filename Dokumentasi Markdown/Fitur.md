@@ -5,11 +5,12 @@ Dokumentasi ini merangkum fitur-fitur inti (Core Mechanics) yang menggerakkan pe
 ## 🔄 Core Gameplay Loop
 *   **Game Mode:** Story Mode (Wave 1-50).
 *   **Difficulty:**
-    *   *Easy/Normal:* Standar.
-    *   *Crazy:* Hardcore (No Revive, High Scaling).
+    *   *Basic:* Easy, Normal.
+    *   *Advanced:* Hard, Expert, Hell.
+    *   *Hardcore:* Crazy (No Revive, High Scaling).
 *   **Wave System:**
-    *   Infinite Waves (Normal).
-    *   **Special Waves:** Dark Wave, Blood Moon, Fast Wave.
+    *   Infinite Waves (Survival).
+    *   **Special Waves:** Dark Wave, Blood Moon, Fast Wave, Special Wave (Elite).
     *   **Boss Waves:** Muncul interval tertentu (Wave 10, 30, 50).
 
 ## 💰 Economy & Progression
