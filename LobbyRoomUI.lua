@@ -686,60 +686,58 @@ function startMatchmaking()
 		VerticalAlignment = Enum.VerticalAlignment.Center
 	})
 
-    local currentPlayers = Players:GetPlayers()
-    -- Sort to ensure local player is first or consistent
-    table.sort(currentPlayers, function(a,b) return a.Name < b.Name end)
-
-	-- Create Slots
+	-- Create Slots - Local player ALWAYS first (left), rest are empty/searching
 	for i = 1, playerCount do
 		local slot = create("Frame", {
-			Parent = container, BackgroundColor3 = THEME.Colors.PaperDark, BorderSizePixel = 0
+			Parent = container, BackgroundColor3 = THEME.Colors.PaperDark, BorderSizePixel = 0,
+			Name = "Slot_" .. i, LayoutOrder = i
 		})
         create("UICorner", {Parent = slot, CornerRadius = UDim.new(0.1, 0)})
-        -- Transparent background for modern look
         slot.BackgroundTransparency = 1
 
-        local pData = currentPlayers[i]
+		-- Only local player in first slot, rest are empty
+        local isLocalPlayer = (i == 1)
 		
         -- Icon/Profile
 		local icon = create("ImageLabel", {
 			Parent = slot, Size = UDim2.new(1, 0, 0.5, 0), Position = UDim2.new(0.5, 0, 0.4, 0), AnchorPoint = Vector2.new(0.5, 0.5),
 			Image = "rbxasset://textures/ui/GuiImagePlaceholder.png", BackgroundTransparency = 1, 
-            ImageColor3 = pData and Color3.new(1,1,1) or THEME.Colors.TextDim,
-            ScaleType = Enum.ScaleType.Crop
+            ImageColor3 = isLocalPlayer and Color3.new(1,1,1) or THEME.Colors.TextDim,
+            ScaleType = Enum.ScaleType.Crop, Name = "Icon"
 		})
         create("UIAspectRatioConstraint", {Parent = icon, AspectRatio = 1, AspectType = Enum.AspectType.FitWithinMaxSize})
         create("UICorner", {Parent = icon, CornerRadius = UDim.new(1, 0)})
         create("UIStroke", {Parent = icon, Thickness = 3, Color = THEME.Colors.TextMain, ApplyStrokeMode = Enum.ApplyStrokeMode.Border})
         
-        -- Name Label (Moved to Bottom)
+        -- Name Label
         local nameLbl = create("TextLabel", {
             Parent = slot, Size = UDim2.new(1.2, 0, 0.2, 0), Position = UDim2.new(0.5, 0, 0.75, 0), AnchorPoint = Vector2.new(0.5, 0.5),
-            Text = pData and pData.Name or "", 
-            Font = getFont("Body"), TextScaled = true, TextColor3 = THEME.Colors.TextMain, BackgroundTransparency = 1
+            Text = isLocalPlayer and player.Name or "", 
+            Font = getFont("Body"), TextScaled = true, TextColor3 = THEME.Colors.TextMain, BackgroundTransparency = 1,
+			Name = "NameLabel"
         })
         create("UITextSizeConstraint", {Parent = nameLbl, MaxTextSize = 14})
 		
-		-- Status Text (Moved further down)
+		-- Status Text
 		local statusLbl = create("TextLabel", {
 			Parent = slot, Size = UDim2.new(1, 0, 0.15, 0), Position = UDim2.new(0, 0, 0.9, 0),
-			Text = pData and "LINKED" or "SEARCHING...", 
-            Font = getFont("Data"), TextScaled = true, 
-            TextColor3 = pData and THEME.Colors.AccentGreen or THEME.Colors.TextDim, 
-            BackgroundTransparency = 1
+			Text = isLocalPlayer and "LINKED" or "SEARCHING...", 
+            Font = getFont("Body"), TextScaled = true, 
+            TextColor3 = isLocalPlayer and THEME.Colors.AccentGreen or THEME.Colors.TextDim, 
+            BackgroundTransparency = 1, Name = "StatusLabel"
 		})
 
-        if pData then
-            -- Load Avatar (Switched to AvatarBust)
+        if isLocalPlayer then
+            -- Load local player's avatar
             task.spawn(function()
-                local content = Players:GetUserThumbnailAsync(pData.UserId, Enum.ThumbnailType.AvatarBust, Enum.ThumbnailSize.Size150x150)
+                local content = Players:GetUserThumbnailAsync(player.UserId, Enum.ThumbnailType.AvatarBust, Enum.ThumbnailSize.Size150x150)
                 if content then icon.Image = content end
             end)
         else
-            -- Pulse Effect for Searching
+            -- Pulse Effect for Searching slots
              task.spawn(function()
                  local t = 0
-                 while slot.Parent do
+                 while slot.Parent and statusLbl.Text == "SEARCHING..." do
                      t = t + 0.1
                      local alpha = 0.5 + 0.5 * math.sin(t)
                      statusLbl.TextTransparency = 0.2 + 0.5 * alpha
@@ -756,6 +754,87 @@ function startMatchmaking()
 		difficulty = state.settings.difficulty or "Easy",
 		map = state.settings.map or "ACT 1: Village"
 	})
+end
+
+-- Function to update matchmaking slots when server sends queue update
+function updateMatchmakingSlots(queuedPlayers, countdownValue)
+	local view = opsViews["MATCHMAKING"]
+	if not view or not view.Visible then return end
+	
+	local container = view:FindFirstChild("SlotsContainer")
+	local header = view:FindFirstChild("TextLabel") -- The header label
+	if not container then return end
+	
+	-- Update header if countdown is active
+	if countdownValue and countdownValue > 0 then
+		if header then
+			header.Text = "DEPLOYING IN " .. countdownValue .. "..."
+		end
+	elseif countdownValue == 0 then
+		if header then
+			header.Text = "DEPLOYING NOW!"
+		end
+	end
+	
+	local playerCount = state.settings.maxPlayers or 4
+	
+	-- Update each slot based on queued players
+	for i = 1, playerCount do
+		local slot = container:FindFirstChild("Slot_" .. i)
+		if not slot then continue end
+		
+		local icon = slot:FindFirstChild("Icon")
+		local nameLbl = slot:FindFirstChild("NameLabel")
+		local statusLbl = slot:FindFirstChild("StatusLabel")
+		
+		-- Find player data for this slot
+		-- Local player is always slot 1, others fill in order
+		local pData = nil
+		if i == 1 then
+			pData = player -- Local player always first
+		elseif queuedPlayers then
+			-- Find other players (excluding local player)
+			local otherIndex = 1
+			for _, qp in ipairs(queuedPlayers) do
+				if qp.UserId ~= player.UserId then
+					if otherIndex == (i - 1) then
+						pData = qp
+						break
+					end
+					otherIndex = otherIndex + 1
+				end
+			end
+		end
+		
+		if pData then
+			if nameLbl then nameLbl.Text = pData.Name or pData.name or "" end
+			if statusLbl then 
+				statusLbl.Text = "LINKED"
+				statusLbl.TextColor3 = THEME.Colors.AccentGreen
+				statusLbl.TextTransparency = 0
+			end
+			if icon then
+				icon.ImageColor3 = Color3.new(1,1,1)
+				-- Load avatar if we have UserId
+				if pData.UserId then
+					task.spawn(function()
+						local content = Players:GetUserThumbnailAsync(pData.UserId, Enum.ThumbnailType.AvatarBust, Enum.ThumbnailSize.Size150x150)
+						if content and icon.Parent then icon.Image = content end
+					end)
+				end
+			end
+		else
+			if nameLbl then nameLbl.Text = "" end
+			if statusLbl then 
+				statusLbl.Text = "SEARCHING..."
+				statusLbl.TextColor3 = THEME.Colors.TextDim
+			end
+			if icon then 
+				icon.ImageColor3 = THEME.Colors.TextDim
+				icon.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
+			end
+		end
+	end
 end
 
 function updateOpsView()
@@ -1191,19 +1270,31 @@ lobbyRemote.OnClientEvent:Connect(function(action, data)
 		for pid, p in pairs(panels) do p.Visible = (pid == "OPS") end
 	-- ===== QUICK MATCH EVENT HANDLERS =====
 	elseif action == "matchmakingStarted" then
-		-- Server confirmed matchmaking started, update UI if needed
+		-- Server confirmed matchmaking started
 		print("Matchmaking started - waiting for other players...")
-		-- UI is already showing matchmaking view from startMatchmaking()
 	elseif action == "matchmakingCancelled" then
 		-- Matchmaking was cancelled (by us or server), return to menu
 		print("Matchmaking cancelled.")
 		state.activeView = "MENU"
 		updateOpsView()
-	elseif action == "matchFound" then
-		-- Match found! Server created a room for us
-		print("Match found! Room ID: " .. tostring(data.roomId))
-		-- The roomUpdate event will be sent separately by server with full room data
-		-- Just switch to squad room view - updateLobbyView will be called by roomUpdate
+	elseif action == "queueUpdate" then
+		-- Server sent updated queue info (other players joined/left)
+		print("Queue update received. Players in queue: " .. tostring(data.playerCount))
+		updateMatchmakingSlots(data.players, nil)
+	elseif action == "matchmakingCountdown" then
+		-- Countdown is happening (queue is full)
+		print("Matchmaking countdown: " .. tostring(data.countdown))
+		updateMatchmakingSlots(data.players, data.countdown)
+	elseif action == "matchmakingReset" then
+		-- Someone left during countdown, reset to waiting
+		print("Matchmaking reset - player left during countdown")
+		updateMatchmakingSlots(data.players, nil)
+		-- Reset header text
+		local view = opsViews["MATCHMAKING"]
+		if view then
+			local header = view:FindFirstChild("TextLabel")
+			if header then header.Text = "ESTABLISHING UPLINK..." end
+		end
 	end
 end)
 

@@ -9,3 +9,11 @@ Dokumen ini melacak API Roblox yang sudah usang yang ditemukan dalam proyek dan 
 - **Tindakan**: 
     - `ModalEnabled = true` -> `GuiService.TouchControlsEnabled = false` (Logika terbalik: Modal menyala = Kontrol mati)
     - `ModalEnabled = false` -> `GuiService.TouchControlsEnabled = true`
+
+## TeleportService.ReserveServer
+- **Status**: Usang (Deprecated)
+- **Pengganti**: `TeleportService:ReserveServerAsync()`
+- **Konteks**: Digunakan untuk mereservasi private server sebelum teleport pemain dalam matchmaking/room system.
+- **Tindakan**: 
+    - `TeleportService:ReserveServer(placeId)` -> `TeleportService:ReserveServerAsync(placeId)`
+    - Catatan: Fungsi ini async, pastikan dibungkus dalam `pcall` untuk error handling.

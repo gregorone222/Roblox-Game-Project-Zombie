@@ -54,6 +54,9 @@ local updatePlayerBoosterStatusEvent = getOrCreateEvent("UpdatePlayerBoosterStat
 ]]
 local rooms = {}
 
+-- Forward declarations for functions used before definition
+local teleportPlayersToAct1
+
 -- matchmakingQueues[playerCount] = {player1, player2, ...}
 -- matchmakingQueues[playerCount][gameMode][difficulty] = {player1, player2, ...}
 local matchmakingQueues = {}
@@ -230,8 +233,38 @@ local function handleCancelMatchmaking(player)
 				for i, p in ipairs(queue) do
 					if p == player then
 						table.remove(queue, i)
-						print(string.format("Player %s cancelled matchmaking for %d players in %s mode on %s difficulty.", player.Name, playerCount, mode, difficulty))
+						print(string.format("Player %s cancelled matchmaking for %d players in %s mode on %s difficulty. Queue size: %d", player.Name, playerCount, mode, difficulty, #queue))
 						lobbyRemote:FireClient(player, "matchmakingCancelled")
+						
+						-- Cancel any active countdown for this queue if queue is no longer full
+						local queueKey = string.format("%d_%s_%s", playerCount, mode, difficulty)
+						if #queue < playerCount then
+							activeMatchmakingCountdowns[queueKey] = nil
+						end
+						
+						-- Broadcast queue update to remaining players
+						if #queue > 0 then
+							local playersData = {}
+							for _, remainingPlayer in ipairs(queue) do
+								if remainingPlayer and remainingPlayer.Parent then
+									table.insert(playersData, {
+										Name = remainingPlayer.Name,
+										UserId = remainingPlayer.UserId
+									})
+								end
+							end
+							for _, remainingPlayer in ipairs(queue) do
+								if remainingPlayer and remainingPlayer.Parent then
+									lobbyRemote:FireClient(remainingPlayer, "queueUpdate", {
+										players = playersData,
+										playerCount = #queue,
+										maxPlayers = playerCount,
+										gameMode = mode,
+										difficulty = difficulty
+									})
+								end
+							end
+						end
 						return
 					end
 				end
@@ -408,27 +441,134 @@ end
 --// CORE LOGIC: MATCHMAKING
 --==============================================================================
 
--- Checks if a queue is full and, if so, creates a room for the players
+-- Track active matchmaking countdowns per queue key
+local activeMatchmakingCountdowns = {}
+
+-- Helper to generate queue key
+local function getQueueKey(playerCount, gameMode, difficulty)
+	return string.format("%d_%s_%s", playerCount, gameMode, difficulty)
+end
+
+-- Helper to get player data for queue broadcast
+local function getQueuePlayersData(queue)
+	local playersData = {}
+	for _, p in ipairs(queue) do
+		if p and p.Parent then -- Check if player is still valid
+			table.insert(playersData, {
+				Name = p.Name,
+				UserId = p.UserId
+			})
+		end
+	end
+	return playersData
+end
+
+-- Broadcast queue update to all players in queue
+local function broadcastQueueUpdate(queue, playerCount, gameMode, difficulty)
+	local playersData = getQueuePlayersData(queue)
+	for _, p in ipairs(queue) do
+		if p and p.Parent then
+			lobbyRemote:FireClient(p, "queueUpdate", {
+				players = playersData,
+				playerCount = #queue,
+				maxPlayers = playerCount,
+				gameMode = gameMode,
+				difficulty = difficulty
+			})
+		end
+	end
+end
+
+-- Starts countdown when queue is full, teleports directly without creating room
+local function startMatchmakingCountdown(queue, playerCount, gameMode, difficulty)
+	local queueKey = getQueueKey(playerCount, gameMode, difficulty)
+	
+	-- Already running a countdown for this queue?
+	if activeMatchmakingCountdowns[queueKey] then return end
+	
+	activeMatchmakingCountdowns[queueKey] = true
+	print(string.format("Starting matchmaking countdown for queue: %s (%d players)", queueKey, #queue))
+	
+	task.spawn(function()
+		for i = 5, 0, -1 do
+			-- Check if countdown was cancelled (player left)
+			if not activeMatchmakingCountdowns[queueKey] then
+				print("Matchmaking countdown cancelled for queue:", queueKey)
+				return
+			end
+			
+			-- Get current queue from the matchmaking structure
+			local currentQueue = matchmakingQueues[playerCount] 
+				and matchmakingQueues[playerCount][gameMode] 
+				and matchmakingQueues[playerCount][gameMode][difficulty]
+			
+			if not currentQueue or #currentQueue < playerCount then
+				-- Queue no longer full, cancel countdown
+				print("Queue no longer full, cancelling countdown for:", queueKey)
+				activeMatchmakingCountdowns[queueKey] = nil
+				
+				-- Notify remaining players
+				if currentQueue then
+					local playersData = getQueuePlayersData(currentQueue)
+					for _, p in ipairs(currentQueue) do
+						if p and p.Parent then
+							lobbyRemote:FireClient(p, "matchmakingReset", {
+								players = playersData,
+								reason = "Player left during countdown"
+							})
+						end
+					end
+				end
+				return
+			end
+			
+			-- Broadcast countdown to all players in queue
+			local playersData = getQueuePlayersData(currentQueue)
+			for _, p in ipairs(currentQueue) do
+				if p and p.Parent then
+					lobbyRemote:FireClient(p, "matchmakingCountdown", {
+						countdown = i,
+						players = playersData
+					})
+				end
+			end
+			
+			if i == 0 then
+				-- Countdown finished! Teleport all players directly
+				print("Matchmaking countdown finished for:", queueKey, ". Teleporting players...")
+				
+				-- Get players to teleport (copy to avoid modification during teleport)
+				local playersToTeleport = {}
+				for _, p in ipairs(currentQueue) do
+					if p and p.Parent then
+						table.insert(playersToTeleport, p)
+					end
+				end
+				
+				-- Clear the queue
+				matchmakingQueues[playerCount][gameMode][difficulty] = {}
+				
+				-- Teleport players directly without creating room
+				teleportPlayersToAct1(playersToTeleport, gameMode, difficulty)
+			end
+			
+			task.wait(1)
+		end
+		
+		activeMatchmakingCountdowns[queueKey] = nil
+	end)
+end
+
+-- Checks if a queue is full and, if so, starts countdown
 local function checkForFullQueue(playerCount, gameMode, difficulty)
 	local queue = matchmakingQueues[playerCount] and matchmakingQueues[playerCount][gameMode] and matchmakingQueues[playerCount][gameMode][difficulty]
 	if not queue then return end
 
-	if #queue >= playerCount then
-		print(string.format("Full queue found for %d players in %s mode on %s difficulty. Creating room.", playerCount, gameMode, difficulty))
-
-		local playersForGame = {}
-		for i = 1, playerCount do
-			table.insert(playersForGame, table.remove(queue, 1))
-		end
-
-		local settings = { maxPlayers = playerCount, isPrivate = true, gameMode = gameMode, difficulty = difficulty }
-		local newRoomId = handleCreateRoom(playersForGame[1], settings, playersForGame)
-
-		for _, p in ipairs(playersForGame) do
-			if p then
-				lobbyRemote:FireClient(p, "matchFound", { roomId = newRoomId })
-			end
-		end
+	local queueLength = #queue
+	local targetCount = tonumber(playerCount) or 4
+	if queueLength >= targetCount then
+		print(string.format("Full queue found for %d players in %s mode on %s difficulty. Starting countdown.", targetCount, tostring(gameMode), tostring(difficulty)))
+		startMatchmakingCountdown(queue, targetCount, gameMode, difficulty)
 	end
 end
 
@@ -443,10 +583,26 @@ local function handleStartMatchmaking(player, data)
 	if not matchmakingQueues[playerCount][gameMode] then matchmakingQueues[playerCount][gameMode] = {} end
 	if not matchmakingQueues[playerCount][gameMode][difficulty] then matchmakingQueues[playerCount][gameMode][difficulty] = {} end
 
-	table.insert(matchmakingQueues[playerCount][gameMode][difficulty], player)
-	print(string.format("Player %s entered matchmaking for %d players in %s mode on %s difficulty.", player.Name, playerCount, gameMode, difficulty))
+	local queue = matchmakingQueues[playerCount][gameMode][difficulty]
+	
+	-- Check if player is already in this queue
+	for _, p in ipairs(queue) do
+		if p == player then
+			print(string.format("Player %s is already in matchmaking queue.", player.Name))
+			lobbyRemote:FireClient(player, "matchmakingStarted")
+			return
+		end
+	end
+	
+	table.insert(queue, player)
+	local queueSize = #queue -- Store as local to avoid type checker issues
+	print(string.format("Player %s entered matchmaking for %d players in %s mode on %s difficulty. Queue size: %d", player.Name, playerCount, gameMode, difficulty, queueSize))
 
 	lobbyRemote:FireClient(player, "matchmakingStarted")
+	
+	-- Broadcast queue update to all players in queue
+	broadcastQueueUpdate(queue, playerCount, gameMode, difficulty)
+	
 	checkForFullQueue(playerCount, gameMode, difficulty)
 end
 
@@ -456,16 +612,16 @@ end
 
 -- Teleports a group of players to the game place
 -- Teleport a group of players to a private game server
-local function teleportPlayersToAct1(playersToTeleport, gameMode, difficulty)
+teleportPlayersToAct1 = function(playersToTeleport, gameMode, difficulty)
 	local act1Id = PlaceData["ACT 1: Village"]
 	if not act1Id then
 		warn("ACT 1 Place ID not found in PlaceData!")
 		return
 	end
 
-	-- Step 1: Reserve a private server
+	-- Step 1: Reserve a private server (using ReserveServerAsync instead of deprecated ReserveServer)
 	local reserveSuccess, privateServerCode = pcall(function()
-		return TeleportService:ReserveServer(act1Id)
+		return TeleportService:ReserveServerAsync(act1Id)
 	end)
 
 	if not reserveSuccess then
