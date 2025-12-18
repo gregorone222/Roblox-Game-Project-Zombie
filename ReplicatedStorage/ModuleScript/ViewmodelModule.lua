@@ -174,10 +174,11 @@ function ViewmodelModule:createViewmodel()
 				desc.Anchored = false -- Ensure only Handle is anchored so welds work
 			end
 			
-			-- Ensure Transparency is 0 (visible) initially, unless it's a special invisible part
-			-- Note: You might want to keep Muzzle invisible if it was invisible in the tool
-			if desc.Name ~= "Muzzle" and desc.Name ~= "ViewmodelMuzzle" then
-				desc.Transparency = 0
+			-- Ensure Transparency is 0 (visible) for all parts except Muzzle
+			if desc.Name == "Muzzle" or desc.Name == "ViewmodelMuzzle" then
+				desc.Transparency = 1 -- Enforce invisible Muzzle
+			else
+				desc.Transparency = 0 -- Enforce visible parts
 			end
 		elseif desc:IsA("Script") or desc:IsA("LocalScript") or desc:IsA("Sound") then
 			-- Remove logic and sounds from viewmodel (sounds usually played via AudioManager at Handle)

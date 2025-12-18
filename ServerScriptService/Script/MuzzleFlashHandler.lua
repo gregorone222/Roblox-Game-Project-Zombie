@@ -38,6 +38,6 @@ MuzzleFlashEvent.OnServerEvent:Connect(function(player, handle, weaponName)
 		flashCFrame = handle.CFrame * CFrame.new(muzzleOffset)
 	end
 
-	-- Broadcast ke semua klien
-	MuzzleFlashBroadcast:FireAllClients(flashCFrame, weaponName)
+	-- Broadcast ke semua klien dengan info player
+	MuzzleFlashBroadcast:FireAllClients(player, flashCFrame, weaponName)
 end)

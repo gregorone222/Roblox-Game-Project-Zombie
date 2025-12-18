@@ -9,7 +9,13 @@ local RemoteEvents = game.ReplicatedStorage.RemoteEvents
 
 local MuzzleFlashBroadcast = RemoteEvents:WaitForChild("MuzzleFlashBroadcast")
 
-MuzzleFlashBroadcast.OnClientEvent:Connect(function(flashCFrame, weaponName)
+local Players = game:GetService("Players")
+local localPlayer = Players.LocalPlayer
+
+MuzzleFlashBroadcast.OnClientEvent:Connect(function(shooter, flashCFrame, weaponName)
+	-- Ignore self (handled locally by WeaponClient for zero latency)
+	if shooter == localPlayer then return end
+
 	-- Create flash part
 	local flash = Instance.new("Part")
 	flash.Name = "MuzzleFlash"

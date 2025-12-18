@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = game.Players.LocalPlayer
 local mouse = player:GetMouse()
 local camera = workspace.CurrentCamera
+local Debris = game:GetService("Debris") -- Add Debris service
 
 local RemoteEvents = ReplicatedStorage:WaitForChild("RemoteEvents")
 local BindableEvents = ReplicatedStorage:WaitForChild("BindableEvents")
@@ -414,27 +415,128 @@ local function canMobileShoot()
 	return currentWeapon and not reloading and not isKnocked and currentAmmo > 0
 end
 
+-- ZERO LATENCY EFFECT SPAWNING
+local function spawnLocalFlash(part)
+	if not part then return end
+
+	-- Create flash part
+	local flash = Instance.new("Part")
+	flash.Name = "LocalMuzzleFlash"
+	flash.Size = Vector3.new(0.5, 0.5, 0.5)
+	flash.Shape = Enum.PartType.Ball
+	flash.Material = Enum.Material.Neon
+	flash.Color = Color3.fromRGB(255, 100, 0)
+	flash.Transparency = 1
+	flash.Anchored = false -- Must be false to move with gun
+	flash.CanCollide = false
+	flash.CFrame = part.CFrame
+	
+	-- Weld to part (CRITICAL: Moving with gun)
+	local weld = Instance.new("WeldConstraint")
+	weld.Part0 = part
+	weld.Part1 = flash
+	weld.Parent = flash
+	flash.Parent = workspace -- Or camera, but workspace is fine for local
+
+	-- Create fire effect
+	local fire = Instance.new("Fire")
+	fire.Heat = 25
+	fire.Size = 0.01
+	fire.Parent = flash
+
+	-- Create point light
+	local light = Instance.new("PointLight")
+	light.Brightness = 5
+	light.Range = 15
+	light.Color = Color3.fromRGB(255, 100, 0)
+	light.Parent = flash
+
+	Debris:AddItem(flash, 0.06)
+end
+
+local function spawnLocalTracer(startPos, endPos, startPart)
+	local tracerPart = Instance.new("Part")
+	tracerPart.Name = "LocalTracer"
+	tracerPart.Size = Vector3.new(0.1, 0.1, 0.1)
+	tracerPart.Transparency = 1
+	tracerPart.CanCollide = false
+	tracerPart.Anchored = true -- Tracer container is anchored, beam endpoints handle movement
+	tracerPart.CFrame = CFrame.new(startPos, endPos)
+	tracerPart.Parent = workspace
+
+	local beam = Instance.new("Beam")
+	beam.FaceCamera = true
+	beam.Color = ColorSequence.new(Color3.fromRGB(255, 200, 50))
+	beam.Width0 = 0.1
+	beam.Width1 = 0.1
+	beam.Brightness = 5
+	beam.LightEmission = 0.8
+	beam.LightInfluence = 0
+	beam.Texture = "rbxassetid://446111271"
+	beam.TextureSpeed = 10
+
+	-- ATTACHMENT LOGIC FOR MOVING GUN
+	local att0 = Instance.new("Attachment")
+	if startPart then
+		-- Attach to moving gun part
+		att0.Parent = startPart
+		-- StartPos is world position, need local offset if we want perfect alignment?
+		-- Actually, easier: assume startPart is the Muzzle, so offset is 0
+		att0.Position = Vector3.new(0,0,0) 
+	else
+		-- Fallback to static point
+		att0.Parent = tracerPart
+		att0.WorldPosition = startPos
+	end
+
+	local att1 = Instance.new("Attachment")
+	att1.Parent = tracerPart
+	att1.WorldPosition = endPos
+
+	beam.Attachment0 = att0
+	beam.Attachment1 = att1
+	
+	local distance = (startPos - endPos).Magnitude
+	beam.TextureLength = distance / 2
+	beam.Parent = tracerPart
+
+	-- Fade cepat
+	local tween = TweenService:Create(beam, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		Width0 = 0,
+		Width1 = 0,
+		Brightness = 0
+	})
+	tween:Play()
+
+	Debris:AddItem(tracerPart, 0.3)
+	if startPart then
+		Debris:AddItem(att0, 0.3) -- Clean up attachment on gun
+	end
+end
+
 local function getMuzzlePosition()
+	-- Returns: Position (Vector3), Part (Instance or nil)
+	
 	-- Priority 1: Viewmodel Muzzle (first person)
 	if viewmodel and viewmodel.viewmodelMuzzle then
-		return viewmodel.viewmodelMuzzle.CFrame.Position
+		return viewmodel.viewmodelMuzzle.CFrame.Position, viewmodel.viewmodelMuzzle
 	end
 	
 	-- Priority 2: Tool Muzzle (fallback/third person)
 	if currentWeapon then
 		local muzzlePart = currentWeapon:FindFirstChild("Muzzle")
 		if muzzlePart and muzzlePart:IsA("BasePart") then
-			return muzzlePart.CFrame.Position
+			return muzzlePart.CFrame.Position, muzzlePart
 		end
 	end
 	
 	-- Priority 3: Handle + offset (legacy fallback)
 	local handle = viewmodel and viewmodel.viewmodelHandle or (currentWeapon and currentWeapon:FindFirstChild("Handle"))
 	if handle and weaponStats then
-		return handle.CFrame:PointToWorldSpace(weaponStats.TracerOffset or Vector3.new(0, 0, 0))
+		return handle.CFrame:PointToWorldSpace(weaponStats.TracerOffset or Vector3.new(0, 0, 0)), handle
 	end
 	
-	return Vector3.new(0, 0, 0)
+	return Vector3.new(0, 0, 0), nil
 end
 
 local function fireFromCenterOnce()
@@ -450,9 +552,18 @@ local function fireFromCenterOnce()
 	currentAmmo = currentAmmo - 1
 	if viewmodel then viewmodel:applyVisualRecoil() end
 
-	-- Get muzzle position with fallback priority
-	local startPos = getMuzzlePosition()
+	-- Get muzzle position and part for local effects
+	local startPos, muzzlePart = getMuzzlePosition()
 	local hitPosition = ray.Origin + ray.Direction * 1000
+	
+	-- Spawn LOCAL Effects (Zero Latency)
+	if muzzlePart then
+		spawnLocalFlash(muzzlePart)
+		spawnLocalTracer(startPos, hitPosition, muzzlePart)
+	end
+	
+	-- Replicate to server (for others)
+	-- Note: We send the 'startPos' as before, but updated handlers might use it differently
 	TracerEvent:FireServer(startPos, hitPosition, weaponName)
 	
 	local handle = viewmodel and viewmodel.viewmodelHandle or currentWeapon:FindFirstChild("Handle")
@@ -635,9 +746,17 @@ local function onStepped(dt)
 		currentAmmo = currentAmmo - 1
 		if viewmodel then viewmodel:applyVisualRecoil() end
 
-		-- Get muzzle position with fallback priority
-		local startPos = getMuzzlePosition()
+		-- Get muzzle position and part for local effects
+		local startPos, muzzlePart = getMuzzlePosition()
 		local hitPosition = mouse.Hit.Position
+		
+		-- Spawn LOCAL Effects (Zero Latency)
+		if muzzlePart then
+			spawnLocalFlash(muzzlePart)
+			spawnLocalTracer(startPos, hitPosition, muzzlePart)
+		end
+		
+		-- Replicate to server
 		TracerEvent:FireServer(startPos, hitPosition, weaponName)
 		
 		local handle = viewmodel and viewmodel.viewmodelHandle or currentWeapon:FindFirstChild("Handle")
