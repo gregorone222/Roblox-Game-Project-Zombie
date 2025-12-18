@@ -1,380 +1,377 @@
 -- InventoryUI.lua (LocalScript)
 -- Path: StarterGui/InventoryUI.lua
--- Script Place: Lobby
--- Theme: "Procedural Military Case" (No External Assets/Textures)
--- Redesigned by Lead Game Developer.
+-- Theme: "Apocalypse Survival" (Gritty/Amber)
+-- Compliant with Rule.md (Scale-based, Mobile Support)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
-local GuiService = game:GetService("GuiService")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local SoundService = game:GetService("SoundService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- --- THEME CONFIGURATION (No Assets) ---
-local THEME = {
-	COLORS = {
-		CaseOuter = Color3.fromRGB(35, 35, 40),        -- Outer shell plastic
-		CaseInner = Color3.fromRGB(25, 25, 28),        -- Inner void
-		FoamSurface = Color3.fromRGB(40, 40, 45),      -- Foam surface
-		FoamDeep = Color3.fromRGB(15, 15, 18),         -- Cutout holes
-		AccentYellow = Color3.fromRGB(255, 180, 0),    -- Warning/Caution
-		AccentCyan = Color3.fromRGB(0, 200, 255),      -- Hologram/highlight
-		TextLight = Color3.fromRGB(220, 220, 230),     -- Main Text
-		TextDark = Color3.fromRGB(120, 120, 130),      -- Label Text
-		Metal = Color3.fromRGB(80, 80, 85),            -- Hinges/Mechanical
-	},
-	FONTS = {
-		Header = Enum.Font.Michroma,    -- Tech/Industrial
-		Label = Enum.Font.Oswald,       -- Legible
-		Data = Enum.Font.Code,          -- Coding style
-	}
-}
-
--- --- HELPER FUNCTIONS ---
-local function create(className, props)
-	local inst = Instance.new(className)
-	for k, v in pairs(props) do inst[k] = v end
-	return inst
-end
-
-local function addCorner(parent, radius)
-	create("UICorner", {Parent = parent, CornerRadius = UDim.new(0, radius)})
-end
-
-local function addStroke(parent, color, thickness)
-	create("UIStroke", {
-		Parent = parent, Color = color or THEME.COLORS.CaseOuter, Thickness = thickness or 1,
-		ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-	})
-end
-
-local function addGradient(parent, rotation, transparencyKeypoints)
-	local g = create("UIGradient", {
-		Parent = parent, Rotation = rotation or 90
-	})
-	if transparencyKeypoints then
-		g.Transparency = NumberSequence.new(transparencyKeypoints)
-	else
-		-- Default subtle vertical shadow
-		g.Transparency = NumberSequence.new{
-			NumberSequenceKeypoint.new(0, 0),
-			NumberSequenceKeypoint.new(1, 0.2)
-		}
-	end
-	return g
-end
-
--- --- UI CREATION ---
-local screenGui = create("ScreenGui", {
-	Name = "InventoryUI", Parent = playerGui, IgnoreGuiInset = true, ResetOnSpawn = false, DisplayOrder = 10
-})
-
-local camera = workspace.CurrentCamera
-local blurEffect = create("BlurEffect", {Name = "InventoryBlur", Size = 0, Enabled = false, Parent = camera})
-
--- Modules
+-- --- MODULES & REMOTES ---
 local ModuleScriptReplicated = ReplicatedStorage:WaitForChild("ModuleScript")
 local WeaponModule = require(ModuleScriptReplicated:WaitForChild("WeaponModule"))
 local ModelPreviewModule = require(ModuleScriptReplicated:WaitForChild("ModelPreviewModule"))
 local RemoteFunctions = ReplicatedStorage:WaitForChild("RemoteFunctions", 10)
 local inventoryRemote = RemoteFunctions and RemoteFunctions:WaitForChild("GetInventoryData", 5)
 
--- State
-local selectedCategory = "All"
-local selectedWeapon = nil
-local currentPreview = nil
+-- --- THEME CONSTANTS ---
+local THEME = {
+	Colors = {
+		Background = Color3.fromRGB(15, 12, 10),
+		Panel = Color3.fromRGB(28, 24, 20),
+		PanelGlass = Color3.fromRGB(35, 30, 25),
+		AccentMain = Color3.fromRGB(255, 140, 0),      -- AMBER
+		AccentSec = Color3.fromRGB(160, 40, 30),       -- RUST
+		TextHigh = Color3.fromRGB(230, 220, 200),
+		TextMid = Color3.fromRGB(150, 140, 120),
+		TextLow = Color3.fromRGB(80, 70, 60),
+		Success = Color3.fromRGB(100, 180, 80),
+		Error = Color3.fromRGB(200, 60, 60)
+	},
+	Fonts = {
+		Header = Enum.Font.Michroma,
+		Body = Enum.Font.Oswald,
+		Mono = Enum.Font.Code
+	}
+}
 
--- --- MAIN PANEL (Pure Shapes) ---
-local mainPanel = create("Frame", {
-	Name = "MainPanel", Parent = screenGui, Size = UDim2.new(0.85, 0, 0.8, 0),
-	Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5),
-	BackgroundColor3 = THEME.COLORS.CaseInner, Visible = false, ZIndex = 100
-})
-addCorner(mainPanel, 24)
-addStroke(mainPanel, THEME.COLORS.CaseOuter, 8)
+-- Check Mobile
+local IS_MOBILE = UserInputService.TouchEnabled
 
--- Decoration: "Corner Bumpers" (Pure Frames)
-for _, pos in ipairs({
-	UDim2.new(0,0,0,0), UDim2.new(1,-40,0,0), 
-	UDim2.new(0,0,1,-40), UDim2.new(1,-40,1,-40)
-}) do
-	local bumper = create("Frame", {
-		Parent = mainPanel, Size = UDim2.new(0, 40, 0, 40), Position = pos,
-		BackgroundColor3 = THEME.COLORS.CaseOuter, ZIndex = 101, BorderSizePixel = 0
-	})
-	addCorner(bumper, 12)
+-- --- HELPER UTILS ---
+local function create(className, props)
+	local inst = Instance.new(className)
+	for k, v in pairs(props) do inst[k] = v end
+	return inst
 end
 
--- 1. LEFT SIDE: CONTROL PLATE
-local sidePanel = create("Frame", {
-	Parent = mainPanel, Size = UDim2.new(0.22, 0, 0.9, 0), Position = UDim2.new(0.02, 0, 0.05, 0),
-	BackgroundColor3 = THEME.COLORS.CaseOuter, ZIndex = 102
-})
-addCorner(sidePanel, 8)
--- Subtle gradient for metallic look
-addGradient(sidePanel, 45, {
-	NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(1, 0.1)
+local function addCorner(parent, radiusScale)
+	-- Using udim scale for corners usually looks bad, stick to offset for small radius or use extremely small scale
+	-- Rule.md allows offset for border/padding/small elements.
+	create("UICorner", {Parent = parent, CornerRadius = UDim.new(0, radiusScale or 4)})
+end
+
+local function addStroke(parent, color)
+	create("UIStroke", {
+		Parent = parent, Color = color or THEME.Colors.AccentMain,
+		Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	})
+end
+
+-- --- STATE ---
+local State = {
+	SelectedCategory = "All",
+	SelectedWeapon = nil,
+	CurrentPreview = nil
+}
+
+-- --- UI CONSTRUCTION ---
+local screenGui = create("ScreenGui", {
+	Name = "InventoryUI", Parent = playerGui,
+	IgnoreGuiInset = true, ResetOnSpawn = false, DisplayOrder = 20
 })
 
--- Header Block
-local headerBox = create("Frame", {
-	Parent = sidePanel, Size = UDim2.new(0.9, 0, 0.1, 0), Position = UDim2.new(0.05, 0, 0.03, 0),
-	BackgroundColor3 = THEME.COLORS.AccentYellow, ZIndex = 103
+local blur = create("BlurEffect", {Name = "InvBlur", Parent = workspace.CurrentCamera, Size = 0, Enabled = false})
+
+-- MAIN CONTAINER
+local mainContainer = create("CanvasGroup", {
+	Name = "MainContainer", Parent = screenGui,
+	-- Rule: Use Scale.
+	Size = UDim2.fromScale(0.85, 0.8), Position = UDim2.fromScale(0.5, 0.5),
+	AnchorPoint = Vector2.new(0.5, 0.5), BackgroundColor3 = THEME.Colors.Background,
+	BackgroundTransparency = 0.05, GroupTransparency = 1, Visible = false
 })
-addCorner(headerBox, 4)
+addCorner(mainContainer, 8)
+addStroke(mainContainer, THEME.Colors.AccentSec)
+
+-- Top Bar / Header
+local topBar = create("Frame", {
+	Parent = mainContainer, Size = UDim2.fromScale(1, 0.12), -- Scale-based height
+	BackgroundColor3 = THEME.Colors.Panel
+})
+create("Frame", {
+	Parent = topBar, Size = UDim2.new(1, 0, 0, 4), -- Hazard stripe (small detail allowed offset)
+	BackgroundColor3 = THEME.Colors.AccentMain, BorderSizePixel = 0
+})
+
 create("TextLabel", {
-	Parent = headerBox, Size = UDim2.new(1,0,1,0), BackgroundTransparency = 1,
-	Text = "TACTICAL LOADOUT", Font = THEME.FONTS.Header, TextSize = 16,
-	TextColor3 = Color3.new(0,0,0), ZIndex = 104
+	Parent = topBar, Text = "SURVIVAL CACHE // RESTRICTED",
+	Size = UDim2.fromScale(0.6, 1), Position = UDim2.fromScale(0.02, 0),
+	BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left,
+	Font = THEME.Fonts.Header, TextScaled = true, TextColor3 = THEME.Colors.AccentMain
+})
+-- Constraints for text to not look huge
+create("UITextSizeConstraint", {Parent = topBar:FindFirstChild("TextLabel"), MaxTextSize = 28})
+
+local closeBtn = create("TextButton", {
+	Parent = topBar, Size = UDim2.fromScale(0.08, 0.6), Position = UDim2.fromScale(0.98, 0.5),
+	AnchorPoint = Vector2.new(1, 0.5), BackgroundColor3 = THEME.Colors.Error, Text = "X",
+	Font = THEME.Fonts.Header, TextColor3 = Color3.new(0,0,0), TextScaled = true
+})
+create("UIAspectRatioConstraint", {Parent = closeBtn, AspectRatio = 1}) -- Keep Keypad square
+addCorner(closeBtn, 4)
+
+-- --- LAYOUT ---
+-- 1. Sidebar (Categories)
+local sideBar = create("Frame", {
+	Parent = mainContainer, Size = UDim2.fromScale(0.2, 0.88), Position = UDim2.fromScale(0, 0.12),
+	BackgroundColor3 = THEME.Colors.Panel, BackgroundTransparency = 0.5
+})
+local sideList = create("ScrollingFrame", {
+	Parent = sideBar, Size = UDim2.fromScale(0.9, 0.95), Position = UDim2.fromScale(0.05, 0.025),
+	BackgroundTransparency = 1, ScrollBarThickness = 4, ScrollBarImageColor3 = THEME.Colors.AccentSec
+})
+create("UIListLayout", {Parent = sideList, Padding = UDim.new(0.02, 0), SortOrder = Enum.SortOrder.LayoutOrder})
+
+-- 2. Grid Area (Weapons)
+local gridArea = create("Frame", {
+	Parent = mainContainer, Size = UDim2.fromScale(0.5, 0.88), Position = UDim2.fromScale(0.2, 0.12),
+	BackgroundColor3 = THEME.Colors.Background, BackgroundTransparency = 1
+})
+create("UIPadding", {
+	Parent = gridArea, PaddingTop = UDim.new(0.02, 0), PaddingLeft = UDim.new(0.02, 0), PaddingRight = UDim.new(0.02, 0)
 })
 
--- Categories
-local catList = create("Frame", {
-	Parent = sidePanel, Size = UDim2.new(0.9, 0, 0.8, 0), Position = UDim2.new(0.05, 0, 0.16, 0),
-	BackgroundTransparency = 1, ZIndex = 103
+local gridScroll = create("ScrollingFrame", {
+	Parent = gridArea, Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+	ScrollBarThickness = 6, ScrollBarImageColor3 = THEME.Colors.AccentMain
 })
-create("UIListLayout", {Parent = catList, Padding = UDim.new(0, 6)})
+local gridLayout = create("UIGridLayout", {
+	Parent = gridScroll, CellSize = UDim2.fromScale(0.3, 0.25), -- Scale based cells
+	CellPadding = UDim2.fromScale(0.03, 0.02)
+})
 
-local CATEGORIES = {"All", "Rifle", "SMG", "Shotgun", "Sniper", "Pistol", "LMG"}
-local catBtns = {}
+-- 3. Detail Area (Preview)
+local detailArea = create("Frame", {
+	Parent = mainContainer, Size = UDim2.fromScale(0.3, 0.88), Position = UDim2.fromScale(0.7, 0.12),
+	BackgroundColor3 = THEME.Colors.PanelGlass, BackgroundTransparency = 0.1
+})
+create("UIStroke", {Parent = detailArea, Color = THEME.Colors.AccentSec, Thickness = 2, Transparency = 0.5})
 
-local function createCatBtn(name)
+-- --- COMPONENT BUILDERS ---
+
+local function createCategoryBtn(name, order)
 	local btn = create("TextButton", {
-		Parent = catList, Size = UDim2.new(1, 0, 0, 38),
-		BackgroundColor3 = THEME.COLORS.CaseInner, AutoButtonColor = false,
-		Text = "", ZIndex = 104
+		Name = name, Parent = sideList, Size = UDim2.fromScale(1, 0.08), -- Scale Size
+		BackgroundColor3 = THEME.Colors.Background, AutoButtonColor = false,
+		Text = "", LayoutOrder = order
 	})
-	addCorner(btn, 6)
+	addCorner(btn, 0)
+	addStroke(btn, THEME.Colors.TextLow)
 	
-	local txt = create("TextLabel", {
-		Parent = btn, Size = UDim2.new(0.8, 0, 1, 0), Position = UDim2.new(0.1, 0, 0, 0),
-		BackgroundTransparency = 1, Text = name:upper(),
-		Font = THEME.FONTS.Label, TextSize = 16, TextColor3 = THEME.COLORS.TextDark,
-		TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 105
+	local label = create("TextLabel", {
+		Parent = btn, Text = name:upper(), Size = UDim2.fromScale(0.8, 0.8), Position = UDim2.fromScale(0.1, 0.1),
+		BackgroundTransparency = 1, Font = THEME.Fonts.Body, TextScaled = true,
+		TextColor3 = THEME.Colors.TextMid, TextXAlignment = Enum.TextXAlignment.Left
+	})
+	create("UITextSizeConstraint", {Parent = label, MaxTextSize = 18})
+	
+	local mark = create("Frame", {
+		Name = "Mark", Parent = btn, Size = UDim2.fromScale(0.05, 1),
+		BackgroundColor3 = THEME.Colors.AccentMain, Visible = false
 	})
 	
-	-- "Light" Indicator (Pure Frame)
-	local led = create("Frame", {
-		Parent = btn, Size = UDim2.new(0, 4, 0, 20), Position = UDim2.new(0, 4, 0.5, -10),
-		BackgroundColor3 = THEME.COLORS.Metal, ZIndex = 105
-	})
-	addCorner(led, 2)
-	
-	catBtns[name] = {Btn = btn, Txt = txt, Led = led}
-	return btn
+	return btn, label, mark
 end
 
-for _, c in ipairs(CATEGORIES) do createCatBtn(c) end
+local function createGridItem(data)
+	local btn = create("TextButton", {
+		Name = data.Id, Parent = gridScroll, BackgroundColor3 = THEME.Colors.PanelGlass,
+		AutoButtonColor = false, Text = ""
+	})
+	addCorner(btn, 2)
+	local stroke = create("UIStroke", {
+		Parent = btn, Color = THEME.Colors.TextLow, Thickness = 2, Transparency = 0.5
+	})
+	
+	create("TextLabel", {
+		Parent = btn, Text = data.Name, Size = UDim2.fromScale(0.9, 0.2), Position = UDim2.fromScale(0.05, 0.75),
+		BackgroundTransparency = 1, Font = THEME.Fonts.Body, TextScaled = true,
+		TextColor3 = THEME.Colors.TextHigh, TextXAlignment = Enum.TextXAlignment.Left,
+	})
+	
+	create("TextLabel", {
+		Parent = btn, Text = string.sub(data.Name, 1, 1), Size = UDim2.fromScale(0.8, 0.6),
+		Position = UDim2.fromScale(0.1, 0.1), BackgroundTransparency = 1,
+		Font = THEME.Fonts.Header, TextScaled = true, TextColor3 = THEME.Colors.TextLow,
+		TextTransparency = 0.7
+	})
+	
+	return btn, stroke
+end
 
--- 2. CENTER: ITEM GRID
-local gridFrame = create("Frame", {
-	Parent = mainPanel, Size = UDim2.new(0.48, 0, 0.9, 0), Position = UDim2.new(0.26, 0, 0.05, 0),
-	BackgroundColor3 = THEME.COLORS.FoamSurface, ZIndex = 102
-})
-addCorner(gridFrame, 8)
--- Inset Shadow effect using UIStroke
-create("UIStroke", {
-	Parent = gridFrame, Color = Color3.new(0,0,0), Thickness = 2, Transparency = 0.5
-})
+local function buildDetailPanel()
+	local previewBox = create("Frame", {
+		Parent = detailArea, Size = UDim2.fromScale(0.9, 0.45), Position = UDim2.fromScale(0.05, 0.05),
+		BackgroundColor3 = Color3.fromRGB(5, 5, 5), BackgroundTransparency = 0
+	})
+	addCorner(previewBox, 4)
+	addStroke(previewBox, THEME.Colors.AccentMain)
+	
+	local vp = create("ViewportFrame", {
+		Name = "WeaponPreview", Parent = previewBox, Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1, LightColor = Color3.fromRGB(255, 200, 150)
+	})
+	
+	local infoFrame = create("Frame", {
+		Parent = detailArea, Size = UDim2.fromScale(0.9, 0.4), Position = UDim2.fromScale(0.05, 0.52),
+		BackgroundTransparency = 1
+	})
+	
+	local title = create("TextLabel", {
+		Name = "Title", Parent = infoFrame, Text = "SELECT ITEM",
+		Size = UDim2.fromScale(1, 0.15), BackgroundTransparency = 1,
+		Font = THEME.Fonts.Header, TextScaled = true, TextColor3 = THEME.Colors.AccentMain,
+		TextXAlignment = Enum.TextXAlignment.Left
+	})
+	create("UITextSizeConstraint", {Parent = title, MaxTextSize = 22})
+	
+	local desc = create("TextLabel", {
+		Name = "Desc", Parent = infoFrame, Text = "Waiting for selection...",
+		Size = UDim2.fromScale(1, 0.3), Position = UDim2.fromScale(0, 0.2),
+		BackgroundTransparency = 1, Font = THEME.Fonts.Mono, TextScaled = true,
+		TextColor3 = THEME.Colors.TextMid, TextXAlignment = Enum.TextXAlignment.Left,
+		TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top
+	})
+	create("UITextSizeConstraint", {Parent = desc, MaxTextSize = 14})
+	
+	local equipBtn = create("TextButton", {
+		Name = "EquipBtn", Parent = detailArea, Size = UDim2.fromScale(0.9, 0.1),
+		Position = UDim2.fromScale(0.05, 0.88), BackgroundColor3 = THEME.Colors.AccentSec,
+		Text = "TAKE ITEM", Font = THEME.Fonts.Header, TextScaled = true,
+		TextColor3 = Color3.fromRGB(0,0,0)
+	})
+	addCorner(equipBtn, 4)
+	
+	return {Viewport = vp, Title = title, Desc = desc, EquipBtn = equipBtn}
+end
 
-local itemScroll = create("ScrollingFrame", {
-	Parent = gridFrame, Size = UDim2.new(1, -16, 1, -16), Position = UDim2.new(0, 8, 0, 8),
-	BackgroundTransparency = 1, ScrollBarThickness = 4, ScrollBarImageColor3 = THEME.COLORS.AccentYellow,
-	ZIndex = 103
-})
-create("UIGridLayout", {
-	Parent = itemScroll, CellSize = UDim2.new(0.31, 0, 0.35, 0), CellPadding = UDim2.new(0.02, 0, 0.02, 0)
-})
-
--- 3. RIGHT: DETAIL PREVIEW (Holographic Style)
-local detailFrame = create("Frame", {
-	Parent = mainPanel, Size = UDim2.new(0.22, 0, 0.9, 0), Position = UDim2.new(0.76, 0, 0.05, 0),
-	BackgroundColor3 = THEME.COLORS.CaseInner, ZIndex = 102,
-    BorderSizePixel = 0
-})
-addCorner(detailFrame, 8)
--- Border stroke
-addStroke(detailFrame, THEME.COLORS.Metal, 1)
-
--- Scanner/Holo Box
-local holoBox = create("Frame", {
-	Parent = detailFrame, Size = UDim2.new(0.9, 0, 0.5, 0), Position = UDim2.new(0.05, 0, 0.05, 0),
-	BackgroundColor3 = Color3.fromRGB(15, 20, 25), ZIndex = 103
-})
-addCorner(holoBox, 4)
-addStroke(holoBox, THEME.COLORS.AccentCyan, 1)
-
--- Viewport
-local vp = create("ViewportFrame", {
-	Parent = holoBox, Size = UDim2.new(1,0,1,0), BackgroundTransparency = 1,
-	LightColor = Color3.fromRGB(200, 255, 255), LightDirection = Vector3.new(-1, -1, 1),
-	Ambient = Color3.fromRGB(100, 100, 100), ZIndex = 104
-})
-
--- Scan line (Pure Frame)
-local scanLine = create("Frame", {
-	Parent = holoBox, Size = UDim2.new(1, 0, 0, 2), Position = UDim2.new(0, 0, 0, 0),
-	BackgroundColor3 = THEME.COLORS.AccentCyan, BorderSizePixel = 0, ZIndex = 105
-})
--- Animate scan line
-task.spawn(function()
-    while detailFrame.Parent do -- Only animate while UI exists
-        TweenService:Create(scanLine, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
-            Position = UDim2.new(0,0,1,0)
-        }):Play()
-        task.wait(4.1)
-    end
-end)
-
-
--- Info Text
-local infoName = create("TextLabel", {
-	Parent = detailFrame, Size = UDim2.new(0.9, 0, 0, 30), Position = UDim2.new(0.05, 0, 0.58, 0),
-	BackgroundTransparency = 1, Text = "SELECT MODULE",
-	Font = THEME.FONTS.Header, TextSize = 16, TextColor3 = THEME.COLORS.AccentCyan,
-	TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 104
-})
-local infoDesc = create("TextLabel", {
-	Parent = detailFrame, Size = UDim2.new(0.9, 0, 0.2, 0), Position = UDim2.new(0.05, 0, 0.65, 0),
-	BackgroundTransparency = 1, Text = "Awaiting input...",
-	Font = THEME.FONTS.Data, TextSize = 12, TextColor3 = THEME.COLORS.TextDark,
-	TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top,
-	TextWrapped = true, ZIndex = 104
-})
-
--- Equip
-local equipBtn = create("TextButton", {
-	Parent = detailFrame, Size = UDim2.new(0.9, 0, 0.1, 0), Position = UDim2.new(0.05, 0, 0.88, 0),
-	BackgroundColor3 = THEME.COLORS.AccentYellow, Text = "EQUIP",
-	Font = THEME.FONTS.Header, TextSize = 18, TextColor3 = Color3.new(0,0,0), ZIndex = 104
-})
-addCorner(equipBtn, 4)
-
+local DetailRefs = buildDetailPanel()
 
 -- --- LOGIC ---
-local function updatePreview(id)
+local function UpdatePreview(id)
 	if not WeaponModule or not WeaponModule.Weapons then return end
 	local data = WeaponModule.Weapons[id]
-	infoName.Text = string.upper(data.DisplayName or id)
-    infoDesc.Text = data.Description or "Standard issue equipment."
-
-	if currentPreview then ModelPreviewModule.destroy(currentPreview) end
+	if not data then return end
+	
+	State.SelectedWeapon = id
+	DetailRefs.Title.Text = string.upper(data.DisplayName or id)
+	DetailRefs.Desc.Text = data.Description or "Survival gear found in the wasteland."
+	
+	if State.CurrentPreview then ModelPreviewModule.destroy(State.CurrentPreview) end
 	local sData = nil
 	if data.Skins then for _,v in pairs(data.Skins) do sData = v break end end
-
 	if sData then
-		currentPreview = ModelPreviewModule.create(vp, data, sData)
-		ModelPreviewModule.startRotation(currentPreview, 1)
-		local cam = vp.CurrentCamera
-		if cam then cam.CFrame = cam.CFrame * CFrame.new(0, 0, 1.5) end
+		State.CurrentPreview = ModelPreviewModule.create(DetailRefs.Viewport, data, sData)
+		ModelPreviewModule.startRotation(State.CurrentPreview, 0.8)
 	end
+	
+	DetailRefs.EquipBtn.Text = "TAKE"
+	DetailRefs.EquipBtn.BackgroundColor3 = THEME.Colors.AccentSec
 end
 
-local function updateList()
-	for _,c in ipairs(itemScroll:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
-	if not WeaponModule or not WeaponModule.Weapons then return end
+local function PopulateGrid()
+	for _, c in ipairs(gridScroll:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
+	
 	local list = {}
-	for id,d in pairs(WeaponModule.Weapons) do
-		local match = selectedCategory == "All" or (d.Category and string.find(d.Category, selectedCategory))
-		if match then table.insert(list, {id=id, name=d.DisplayName or id}) end
-	end
-	table.sort(list, function(a,b) return a.name < b.name end)
-
-	for _, w in ipairs(list) do
-		local isSel = (w.id == selectedWeapon)
-		
-		-- Cutout Style Button
-		local btn = create("TextButton", {
-			Parent = itemScroll, BackgroundColor3 = THEME.COLORS.FoamDeep,
-			Text = "", AutoButtonColor = false, ZIndex = 104
-		})
-		addCorner(btn, 6)
-		
-		if isSel then
-			-- Highlight Border
-			addStroke(btn, THEME.COLORS.AccentCyan, 2)
-			-- Inner glow frame
-			local glow = create("Frame", {
-				Parent = btn, Size = UDim2.new(1,0,1,0), BackgroundColor3 = THEME.COLORS.AccentCyan,
-				BackgroundTransparency = 0.8, ZIndex = 103
-			})
-			addCorner(glow, 6)
-		else
-			-- Subtle Inset Border
-			create("UIStroke", {
-				Parent = btn, Color = Color3.fromRGB(50,50,55), Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-			})
+	if WeaponModule and WeaponModule.Weapons then
+		for id, d in pairs(WeaponModule.Weapons) do
+			local catMatch = State.SelectedCategory == "All" or (d.Category and string.match(d.Category, State.SelectedCategory))
+			if catMatch then table.insert(list, {Id = id, Name = d.DisplayName or id}) end
 		end
-
-		create("TextLabel", {
-			Parent = btn, Size = UDim2.new(1, -10, 0.4, 0), Position = UDim2.new(0,5,0.6,0),
-			BackgroundTransparency = 1, Text = w.name, Font = THEME.FONTS.Label,
-			TextColor3 = isSel and THEME.COLORS.AccentCyan or THEME.COLORS.TextDark,
-			TextScaled = true, ZIndex = 105
-		})
-
+		table.sort(list, function(a,b) return a.Name < b.Name end)
+	end
+	
+	for _, item in ipairs(list) do
+		local btn, stroke = createGridItem(item)
 		btn.MouseButton1Click:Connect(function()
-			selectedWeapon = w.id
-			updateList()
-			updatePreview(w.id)
+			UpdatePreview(item.Id)
+			for _, b in ipairs(gridScroll:GetChildren()) do
+				if b:IsA("TextButton") then
+					TweenService:Create(b, TweenInfo.new(0.1), {BackgroundColor3 = THEME.Colors.PanelGlass}):Play()
+					b:FindFirstChild("UIStroke").Color = THEME.Colors.TextLow
+				end
+			end
+			TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = THEME.Colors.AccentSec}):Play()
+			stroke.Color = THEME.Colors.AccentMain
 		end)
 	end
 end
 
-local function updateTabs()
-	for name, obj in pairs(catBtns) do
-		local active = (name == selectedCategory)
-		if active then
-			obj.Btn.BackgroundColor3 = THEME.COLORS.FoamSurface
-			obj.Txt.TextColor3 = THEME.COLORS.AccentYellow
-			obj.Led.BackgroundColor3 = THEME.COLORS.AccentYellow
-			-- Add glow effect
-            if not obj.Led:FindFirstChild("Glow") then
-                create("UIStroke", {
-                    Name = "Glow", Parent = obj.Led, Thickness = 2,
-                    Color = THEME.COLORS.AccentYellow, Transparency = 0.5
-                })
-            end
-		else
-			obj.Btn.BackgroundColor3 = THEME.COLORS.CaseInner
-			obj.Txt.TextColor3 = THEME.COLORS.TextDark
-			obj.Led.BackgroundColor3 = THEME.COLORS.Metal
-			if obj.Led:FindFirstChild("Glow") then obj.Led.Glow:Destroy() end
-		end
+local function SetupCategories()
+	local cats = {"All", "Rifle", "SMG", "Shotgun", "Sniper", "Melee"}
+	for i, c in ipairs(cats) do
+		local btn, lbl, mark = createCategoryBtn(c, i)
+		btn.MouseButton1Click:Connect(function()
+			State.SelectedCategory = c
+			PopulateGrid()
+			for _, b in ipairs(sideList:GetChildren()) do
+				if b:IsA("TextButton") then
+					TweenService:Create(b, TweenInfo.new(0.2), {BackgroundColor3 = THEME.Colors.Background}):Play()
+					TweenService:Create(b.TextLabel, TweenInfo.new(0.2), {TextColor3 = THEME.Colors.TextMid}):Play()
+					b.Mark.Visible = false
+				end
+			end
+			TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = THEME.Colors.Panel}):Play()
+			TweenService:Create(lbl, TweenInfo.new(0.2), {TextColor3 = THEME.Colors.AccentMain}):Play()
+			mark.Visible = true
+		end)
 	end
 end
-for name, obj in pairs(catBtns) do obj.Btn.MouseButton1Click:Connect(function() selectedCategory = name; updateTabs(); updateList() end) end
-updateTabs()
 
--- HUD
+-- --- HUD / MOBILE SCALING ---
+local safeScale = IS_MOBILE and 0.15 or 0.1 -- Larger for mobile (Rule.md)
 local hudBtn = create("TextButton", {
-	Name = "OpenInv", Parent = screenGui, Size = UDim2.new(0, 60, 0, 60), Position = UDim2.new(0.02, 0, 0.7, 0),
-	BackgroundColor3 = THEME.COLORS.CaseOuter, Text = "", ZIndex = 50
+	Name = "OpenInv", Parent = screenGui, Size = UDim2.fromScale(safeScale, safeScale),
+	Position = UDim2.fromScale(0.02, 0.95), AnchorPoint = Vector2.new(0, 1),
+	BackgroundColor3 = THEME.Colors.Panel, AutoButtonColor = false,
+	Text = ""
 })
-addCorner(hudBtn, 12)
-addStroke(hudBtn, THEME.COLORS.AccentYellow, 2)
-create("TextLabel", {Parent=hudBtn, Size=UDim2.new(1,0,1,0), BackgroundTransparency=1, Text="GEAR", Font=THEME.FONTS.Header, TextSize=14, TextColor3=THEME.COLORS.AccentYellow, ZIndex=51})
-
-hudBtn.MouseButton1Click:Connect(function()
-	mainPanel.Visible = true; hudBtn.Visible = false; blurEffect.Enabled = true
-	TweenService:Create(blurEffect, TweenInfo.new(0.5), {Size = 25}):Play()
-	updateList()
-end)
-
-local close = create("TextButton", {
-	Parent = mainPanel, Size = UDim2.new(0, 30, 0, 30), Position = UDim2.new(0.97, 0, 0.02, 0),
-	BackgroundColor3 = Color3.fromRGB(180, 50, 50), Text = "X", Font = THEME.FONTS.Header, TextColor3 = Color3.new(1,1,1), ZIndex = 110
+create("UIAspectRatioConstraint", {Parent = hudBtn, AspectRatio = 1})
+addCorner(hudBtn, 100)
+addStroke(hudBtn, THEME.Colors.AccentSec)
+create("TextLabel", {
+	Parent = hudBtn, Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+	Text = "🎒", Font = Enum.Font.Gotham, TextScaled = true,
+	TextColor3 = THEME.Colors.TextHigh
 })
-addCorner(close, 6)
-close.MouseButton1Click:Connect(function()
-	mainPanel.Visible = false; hudBtn.Visible = true; blurEffect.Enabled = false
+
+local function ToggleUI(forceState)
+	local target = forceState ~= nil and forceState or not mainContainer.Visible
+	if target then
+		mainContainer.Visible = true
+		hudBtn.Visible = false
+		blur.Enabled = true
+		TweenService:Create(blur, TweenInfo.new(0.5), {Size = 25}):Play()
+		PopulateGrid()
+	else
+		hudBtn.Visible = true
+		blur.Enabled = false
+		mainContainer.Visible = false
+	end
+end
+
+hudBtn.MouseButton1Click:Connect(function() ToggleUI(true) end)
+closeBtn.MouseButton1Click:Connect(function() ToggleUI(false) end)
+UserInputService.InputBegan:Connect(function(input, gpe)
+	if not gpe and input.KeyCode == Enum.KeyCode.Tab then ToggleUI() end
 end)
 
-task.spawn(function()
-	if inventoryRemote then pcall(function() inventoryRemote:InvokeServer() end) end
+DetailRefs.EquipBtn.MouseButton1Click:Connect(function()
+	if State.SelectedWeapon then
+		DetailRefs.EquipBtn.Text = "TAKEN"
+		DetailRefs.EquipBtn.BackgroundColor3 = THEME.Colors.Success
+		task.wait(1)
+		DetailRefs.EquipBtn.Text = "TAKE"
+		DetailRefs.EquipBtn.BackgroundColor3 = THEME.Colors.AccentSec
+	end
 end)
-print("InventoryUI (Procedural Case) Loaded")
+
+SetupCategories()
+print("InventoryUI (Compliance Checked) Loaded")
