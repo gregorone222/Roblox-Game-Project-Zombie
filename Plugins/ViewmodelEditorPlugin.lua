@@ -50,6 +50,16 @@ local adsRotX, adsRotY, adsRotZ = 0, 0, 0
 local adsMobileX, adsMobileY, adsMobileZ = 0.15, -0.37, -1
 local adsMobileRotX, adsMobileRotY, adsMobileRotZ = 0, 0, 0
 
+-- Presets
+local PRESETS_KEY = "ViewmodelEditor_Presets"
+local presets = plugin:GetSetting(PRESETS_KEY) or {}
+
+-- Values
+local adsRotX, adsRotY, adsRotZ = 0, 0, 0
+
+local adsMobileX, adsMobileY, adsMobileZ = 0.15, -0.37, -1
+local adsMobileRotX, adsMobileRotY, adsMobileRotZ = 0, 0, 0
+
 -- UI Creation
 local function createUI()
 	-- Main ScrollingFrame
@@ -300,7 +310,66 @@ local function createUI()
 	local adsMobileRotZSlider = createSliderGroup("AdsMobileRotZ", "Z (deg)", -45, 45, adsMobileRotZ, 1, function(v) adsMobileRotZ = v end, scrollFrame, 63)
 
 	-- ===== BUTTONS =====
-	createSectionHeader("💾 Actions", scrollFrame, 70)
+	createSectionHeader("💾 Presets", scrollFrame, 70)
+	
+	local itemsFrame = Instance.new("Frame")
+	itemsFrame.Name = "PresetsFrame"
+	itemsFrame.Size = UDim2.new(1, 0, 0, 140)
+	itemsFrame.BackgroundTransparency = 1
+	itemsFrame.LayoutOrder = 71
+	itemsFrame.Parent = scrollFrame
+	
+	local itemsLayout = Instance.new("UIListLayout")
+	itemsLayout.FillDirection = Enum.FillDirection.Vertical
+	itemsLayout.Padding = UDim.new(0, 4)
+	itemsLayout.Parent = itemsFrame
+	
+	-- Input New Preset
+	local inputFrame = Instance.new("Frame")
+	inputFrame.Size = UDim2.new(1, 0, 0, 30)
+	inputFrame.BackgroundTransparency = 1
+	inputFrame.Parent = itemsFrame
+	
+	local nameInput = Instance.new("TextBox")
+	nameInput.Name = "NewPresetName"
+	nameInput.Size = UDim2.new(0.7, -4, 1, 0)
+	nameInput.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	nameInput.PlaceholderText = "Preset Name..."
+	nameInput.Text = ""
+	nameInput.TextColor3 = Color3.new(1, 1, 1)
+	nameInput.TextSize = 12
+	nameInput.Font = Enum.Font.Gotham
+	nameInput.Parent = inputFrame
+	Instance.new("UICorner", nameInput).CornerRadius = UDim.new(0, 4)
+	
+	local saveButton = Instance.new("TextButton")
+	saveButton.Name = "SavePresetButton"
+	saveButton.Size = UDim2.new(0.3, 0, 1, 0)
+	saveButton.Position = UDim2.new(0.7, 4, 0, 0)
+	saveButton.BackgroundColor3 = Color3.fromRGB(0, 120, 200)
+	saveButton.Text = "Save"
+	saveButton.TextColor3 = Color3.new(1, 1, 1)
+	saveButton.TextSize = 12
+	saveButton.Font = Enum.Font.GothamBold
+	saveButton.Parent = inputFrame
+	Instance.new("UICorner", saveButton).CornerRadius = UDim.new(0, 4)
+	
+	-- Presets List
+	local presetsList = Instance.new("ScrollingFrame")
+	presetsList.Name = "PresetsList"
+	presetsList.Size = UDim2.new(1, 0, 1, -34)
+	presetsList.Position = UDim2.new(0, 0, 0, 34)
+	presetsList.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	presetsList.BorderSizePixel = 0
+	presetsList.ScrollBarThickness = 4
+	presetsList.Parent = itemsFrame
+	
+	local listLayout = Instance.new("UIListLayout")
+	listLayout.FillDirection = Enum.FillDirection.Vertical
+	listLayout.Padding = UDim.new(0, 2)
+	listLayout.Parent = presetsList
+
+	createSectionHeader("💾 Actions", scrollFrame, 80)
 
 	local applyButton = Instance.new("TextButton")
 	applyButton.Name = "ApplyButton"
@@ -310,7 +379,7 @@ local function createUI()
 	applyButton.TextColor3 = Color3.new(1, 1, 1)
 	applyButton.TextSize = 14
 	applyButton.Font = Enum.Font.GothamBold
-	applyButton.LayoutOrder = 71
+	applyButton.LayoutOrder = 81
 	applyButton.Parent = scrollFrame
 	Instance.new("UICorner", applyButton).CornerRadius = UDim.new(0, 6)
 
@@ -322,7 +391,7 @@ local function createUI()
 	copyButton.TextColor3 = Color3.new(1, 1, 1)
 	copyButton.TextSize = 12
 	copyButton.Font = Enum.Font.GothamMedium
-	copyButton.LayoutOrder = 72
+	copyButton.LayoutOrder = 82
 	copyButton.Parent = scrollFrame
 	Instance.new("UICorner", copyButton).CornerRadius = UDim.new(0, 6)
 
@@ -335,13 +404,16 @@ local function createUI()
 	statusLabel.TextSize = 11
 	statusLabel.Font = Enum.Font.Gotham
 	statusLabel.TextWrapped = true
-	statusLabel.LayoutOrder = 73
+	statusLabel.LayoutOrder = 83
 	statusLabel.Parent = scrollFrame
 
 	return {
 		ScrollFrame = scrollFrame,
 		SelectedLabel = selectedLabel,
 		StatusLabel = statusLabel,
+		PresetsList = presetsList,
+		PresetNameInput = nameInput,
+		SavePresetButton = saveButton,
 		ADSToggle = adsToggle,
 		MobileToggle = mobileToggle,
 		ApplyButton = applyButton,
@@ -622,7 +694,128 @@ ui.ApplyButton.MouseButton1Click:Connect(function()
 	end
 end)
 
--- Copy Button
+-- Helper to render preset item
+local function renderPresets()
+	-- Clear list
+	for _, child in ipairs(ui.PresetsList:GetChildren()) do
+		if child:IsA("Frame") then child:Destroy() end
+	end
+	
+	-- Calculate canvas size
+	local count = 0
+	for _ in pairs(presets) do count = count + 1 end
+	ui.PresetsList.CanvasSize = UDim2.new(0, 0, 0, count * 26)
+	
+	-- Render items
+	for name, data in pairs(presets) do
+		local item = Instance.new("Frame")
+		item.Size = UDim2.new(1, 0, 0, 24)
+		item.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+		item.BorderSizePixel = 0
+		item.Parent = ui.PresetsList
+		
+		local label = Instance.new("TextLabel")
+		label.Size = UDim2.new(0.6, 0, 1, 0)
+		label.Position = UDim2.new(0, 4, 0, 0)
+		label.BackgroundTransparency = 1
+		label.Text = name
+		label.TextColor3 = Color3.new(1, 1, 1)
+		label.TextSize = 11
+		label.Font = Enum.Font.Gotham
+		label.TextXAlignment = Enum.TextXAlignment.Left
+		label.Parent = item
+		
+		local loadBtn = Instance.new("TextButton")
+		loadBtn.Size = UDim2.new(0.15, 0, 1, 0)
+		loadBtn.Position = UDim2.new(0.65, 0, 0, 0)
+		loadBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 80)
+		loadBtn.Text = "Load"
+		loadBtn.TextColor3 = Color3.new(1, 1, 1)
+		loadBtn.TextSize = 10
+		loadBtn.Font = Enum.Font.GothamBold
+		loadBtn.Parent = item
+		Instance.new("UICorner", loadBtn).CornerRadius = UDim.new(0, 4)
+		
+		loadBtn.MouseButton1Click:Connect(function()
+			-- Load data
+			if data.Pos then
+				posX, posY, posZ = data.Pos.X, data.Pos.Y, data.Pos.Z
+				ui.PosX.SetValue(posX); ui.PosY.SetValue(posY); ui.PosZ.SetValue(posZ)
+			end
+			if data.Rot then
+				rotX, rotY, rotZ = data.Rot.X, data.Rot.Y, data.Rot.Z
+				ui.RotX.SetValue(rotX); ui.RotY.SetValue(rotY); ui.RotZ.SetValue(rotZ)
+			end
+			
+			-- Load ADS (check if exists in preset)
+			if data.AdsPos then
+				adsX, adsY, adsZ = data.AdsPos.X, data.AdsPos.Y, data.AdsPos.Z
+				ui.AdsX.SetValue(adsX); ui.AdsY.SetValue(adsY); ui.AdsZ.SetValue(adsZ)
+			end
+			if data.AdsRot then
+				adsRotX, adsRotY, adsRotZ = data.AdsRot.X, data.AdsRot.Y, data.AdsRot.Z
+				ui.AdsRotX.SetValue(adsRotX); ui.AdsRotY.SetValue(adsRotY); ui.AdsRotZ.SetValue(adsRotZ)
+			end
+			if data.AdsMobPos then
+				adsMobileX, adsMobileY, adsMobileZ = data.AdsMobPos.X, data.AdsMobPos.Y, data.AdsMobPos.Z
+				ui.AdsMobileX.SetValue(adsMobileX); ui.AdsMobileY.SetValue(adsMobileY); ui.AdsMobileZ.SetValue(adsMobileZ)
+			end
+			if data.AdsMobRot then
+				adsMobileRotX, adsMobileRotY, adsMobileRotZ = data.AdsMobRot.X, data.AdsMobRot.Y, data.AdsMobRot.Z
+				ui.AdsMobileRotX.SetValue(adsMobileRotX); ui.AdsMobileRotY.SetValue(adsMobileRotY); ui.AdsMobileRotZ.SetValue(adsMobileRotZ)
+			end
+			
+			ui.StatusLabel.Text = "Loaded Preset: " .. name
+		end)
+		
+		local delBtn = Instance.new("TextButton")
+		delBtn.Size = UDim2.new(0.15, 0, 1, 0)
+		delBtn.Position = UDim2.new(0.82, 0, 0, 0)
+		delBtn.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+		delBtn.Text = "Del"
+		delBtn.TextColor3 = Color3.new(1, 1, 1)
+		delBtn.TextSize = 10
+		delBtn.Font = Enum.Font.GothamBold
+		delBtn.Parent = item
+		Instance.new("UICorner", delBtn).CornerRadius = UDim.new(0, 4)
+		
+		delBtn.MouseButton1Click:Connect(function()
+			presets[name] = nil
+			plugin:SetSetting(PRESETS_KEY, presets)
+			renderPresets()
+			ui.StatusLabel.Text = "Deleted Preset: " .. name
+		end)
+	end
+end
+
+-- Init list
+renderPresets()
+
+-- Save Handler
+ui.SavePresetButton.MouseButton1Click:Connect(function()
+	local name = ui.PresetNameInput.Text
+	if not name or name == "" then
+		ui.StatusLabel.Text = "Error: Enter preset name!"
+		return
+	end
+	
+	-- Save current values
+	presets[name] = {
+		Pos = {X=posX, Y=posY, Z=posZ},
+		Rot = {X=rotX, Y=rotY, Z=rotZ},
+		AdsPos = {X=adsX, Y=adsY, Z=adsZ},
+		AdsRot = {X=adsRotX, Y=adsRotY, Z=adsRotZ},
+		AdsMobPos = {X=adsMobileX, Y=adsMobileY, Z=adsMobileZ},
+		AdsMobRot = {X=adsMobileRotX, Y=adsMobileRotY, Z=adsMobileRotZ},
+	}
+	
+	plugin:SetSetting(PRESETS_KEY, presets)
+	renderPresets()
+	ui.StatusLabel.Text = "Saved Preset: " .. name
+	ui.PresetNameInput.Text = ""
+end)
+
+-- Print Output
 ui.CopyButton.MouseButton1Click:Connect(function()
 	local code = string.format([[
 -- Viewmodel
