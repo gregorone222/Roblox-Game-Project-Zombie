@@ -31,6 +31,7 @@ widget.Title = "Viewmodel Editor"
 -- State
 local isActive = false
 local currentWeaponName = nil
+local targetWeaponName = nil -- Target weapon to apply settings to
 local currentSkinName = "Default Skin"
 local currentTool = nil
 local previewModel = nil
@@ -176,6 +177,108 @@ local function createUI()
 	Instance.new("UICorner", hitmarkerToggle).CornerRadius = UDim.new(0, 4)
 
 	-- Slider Helper
+	local function getAllWeaponNames()
+		local names = {}
+		local mod = game.ReplicatedStorage:FindFirstChild("ModuleScript")
+		if mod then mod = mod:FindFirstChild("WeaponModule") end
+		if not mod then mod = game.ReplicatedStorage:FindFirstChild("WeaponModule", true) end
+		
+		if mod then
+			local success, res = pcall(function() return require(mod) end)
+			if success and res and res.Weapons then
+				for k in pairs(res.Weapons) do table.insert(names, k) end
+				table.sort(names)
+			end
+		end
+		return names
+	end
+
+	local function createDropdown(name, label, textCallback, parent, order)
+		local group = Instance.new("Frame")
+		group.Name = name .. "Group"
+		group.Size = UDim2.new(1, 0, 0, 40)
+		group.BackgroundTransparency = 1
+		group.LayoutOrder = order
+		group.Parent = parent
+
+		local labelText = Instance.new("TextLabel")
+		labelText.Size = UDim2.new(1, 0, 0, 14)
+		labelText.BackgroundTransparency = 1
+		labelText.Text = label
+		labelText.TextColor3 = Color3.fromRGB(200, 200, 200)
+		labelText.TextSize = 11
+		labelText.Font = Enum.Font.Gotham
+		labelText.TextXAlignment = Enum.TextXAlignment.Left
+		labelText.Parent = group
+
+		local mainBtn = Instance.new("TextButton")
+		mainBtn.Size = UDim2.new(1, 0, 0, 24)
+		mainBtn.Position = UDim2.new(0, 0, 0, 16)
+		mainBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+		mainBtn.TextColor3 = Color3.new(1, 1, 1)
+		mainBtn.Text = targetWeaponName or "Select Weapon..."
+		mainBtn.TextSize = 12
+		mainBtn.Font = Enum.Font.Gotham
+		mainBtn.Parent = group
+		Instance.new("UICorner", mainBtn).CornerRadius = UDim.new(0, 4)
+		
+		local dropdownList = nil
+		local isOpen = false
+		
+		local function closeDropdown()
+			if dropdownList then dropdownList:Destroy() dropdownList = nil end
+			isOpen = false
+		end
+		
+		mainBtn.MouseButton1Click:Connect(function()
+			isOpen = not isOpen
+			if isOpen then
+				local weapons = getAllWeaponNames()
+				-- Create overlay list
+				dropdownList = Instance.new("ScrollingFrame")
+				dropdownList.Name = "DropdownList"
+				dropdownList.Size = UDim2.new(1, 0, 0, 150)
+				dropdownList.Position = UDim2.new(0, 0, 1, 2)
+				dropdownList.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+				dropdownList.BorderSizePixel = 0
+				dropdownList.ZIndex = 10
+				dropdownList.Parent = mainBtn
+				
+				local listLayout = Instance.new("UIListLayout")
+				listLayout.Parent = dropdownList
+				listLayout.Padding = UDim.new(0, 2)
+				
+				local count = 0
+				for _, wName in ipairs(weapons) do
+					count = count + 1
+					local item = Instance.new("TextButton")
+					item.Size = UDim2.new(1, 0, 0, 25)
+					item.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+					item.Text = wName
+					item.TextColor3 = Color3.new(1,1,1)
+					item.ZIndex = 11
+					item.Parent = dropdownList
+					
+					item.MouseButton1Click:Connect(function()
+						targetWeaponName = wName
+						mainBtn.Text = wName
+						textCallback(wName)
+						closeDropdown()
+					end)
+				end
+				dropdownList.CanvasSize = UDim2.new(0,0,0, count * 27)
+			else
+				closeDropdown()
+			end
+		end)
+		
+		return {
+			UpdateText = function(txt)
+				mainBtn.Text = txt
+			end
+		}
+	end
+
 	local function createSliderGroup(name, label, min, max, default, step, callback, parent, order)
 		local group = Instance.new("Frame")
 		group.Name = name .. "Group"
@@ -223,7 +326,7 @@ local function createUI()
 		inputBox.Position = UDim2.new(0.75, 5, 0, 0)
 		inputBox.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 		inputBox.TextColor3 = Color3.new(1, 1, 1)
-		inputBox.Text = string.format("%.2f", default)
+		inputBox.Text = string.format("%.3f", default)
 		inputBox.TextSize = 12
 		inputBox.Font = Enum.Font.Gotham
 		inputBox.Parent = sliderFrame
@@ -249,7 +352,7 @@ local function createUI()
 				local value = min + relativeX * (max - min)
 				value = math.floor(value / step + 0.5) * step
 				fill.Size = UDim2.new(relativeX, 0, 1, 0)
-				inputBox.Text = string.format("%.2f", value)
+				inputBox.Text = string.format("%.3f", value)
 				callback(value)
 			end
 		end)
@@ -259,18 +362,18 @@ local function createUI()
 			if value then
 				value = math.clamp(value, min, max)
 				value = math.floor(value / step + 0.5) * step
-				inputBox.Text = string.format("%.2f", value)
+				inputBox.Text = string.format("%.3f", value)
 				fill.Size = UDim2.new((value - min) / (max - min), 0, 1, 0)
 				callback(value)
 			else
-				inputBox.Text = string.format("%.2f", default)
+				inputBox.Text = string.format("%.3f", default)
 			end
 		end)
 
 		return {
 			SetValue = function(val)
 				val = math.clamp(val, min, max)
-				inputBox.Text = string.format("%.2f", val)
+				inputBox.Text = string.format("%.3f", val)
 				fill.Size = UDim2.new((val - min) / (max - min), 0, 1, 0)
 			end
 		}
@@ -278,9 +381,9 @@ local function createUI()
 
 	-- ===== VIEWMODEL SECTION =====
 	createSectionHeader("📍 Viewmodel Position", scrollFrame, 10)
-	local posXSlider = createSliderGroup("PosX", "X", -5, 5, posX, 0.1, function(v) posX = v end, scrollFrame, 11)
-	local posYSlider = createSliderGroup("PosY", "Y", -5, 5, posY, 0.1, function(v) posY = v end, scrollFrame, 12)
-	local posZSlider = createSliderGroup("PosZ", "Z", -10, 0, posZ, 0.1, function(v) posZ = v end, scrollFrame, 13)
+	local posXSlider = createSliderGroup("PosX", "X", -5, 5, posX, 0.001, function(v) posX = v end, scrollFrame, 11)
+	local posYSlider = createSliderGroup("PosY", "Y", -5, 5, posY, 0.001, function(v) posY = v end, scrollFrame, 12)
+	local posZSlider = createSliderGroup("PosZ", "Z", -10, 0, posZ, 0.001, function(v) posZ = v end, scrollFrame, 13)
 
 	createSectionHeader("🔄 Viewmodel Rotation", scrollFrame, 20)
 	local rotXSlider = createSliderGroup("RotX", "X (deg)", -180, 180, rotX, 1, function(v) rotX = v end, scrollFrame, 21)
@@ -289,9 +392,9 @@ local function createUI()
 
 	-- ===== ADS DESKTOP SECTION =====
 	createSectionHeader("🎯 ADS Position (Desktop)", scrollFrame, 30)
-	local adsXSlider = createSliderGroup("AdsX", "X", -2, 2, adsX, 0.01, function(v) adsX = v end, scrollFrame, 31)
-	local adsYSlider = createSliderGroup("AdsY", "Y", -2, 2, adsY, 0.01, function(v) adsY = v end, scrollFrame, 32)
-	local adsZSlider = createSliderGroup("AdsZ", "Z", -5, 0, adsZ, 0.1, function(v) adsZ = v end, scrollFrame, 33)
+	local adsXSlider = createSliderGroup("AdsX", "X", -2, 2, adsX, 0.001, function(v) adsX = v end, scrollFrame, 31)
+	local adsYSlider = createSliderGroup("AdsY", "Y", -2, 2, adsY, 0.001, function(v) adsY = v end, scrollFrame, 32)
+	local adsZSlider = createSliderGroup("AdsZ", "Z", -5, 0, adsZ, 0.001, function(v) adsZ = v end, scrollFrame, 33)
 
 	createSectionHeader("🔄 ADS Rotation (Desktop)", scrollFrame, 40)
 	local adsRotXSlider = createSliderGroup("AdsRotX", "X (deg)", -45, 45, adsRotX, 1, function(v) adsRotX = v end, scrollFrame, 41)
@@ -300,9 +403,9 @@ local function createUI()
 
 	-- ===== ADS MOBILE SECTION =====
 	createSectionHeader("📱 ADS Position (Mobile)", scrollFrame, 50)
-	local adsMobileXSlider = createSliderGroup("AdsMobileX", "X", -2, 2, adsMobileX, 0.01, function(v) adsMobileX = v end, scrollFrame, 51)
-	local adsMobileYSlider = createSliderGroup("AdsMobileY", "Y", -2, 2, adsMobileY, 0.01, function(v) adsMobileY = v end, scrollFrame, 52)
-	local adsMobileZSlider = createSliderGroup("AdsMobileZ", "Z", -5, 0, adsMobileZ, 0.1, function(v) adsMobileZ = v end, scrollFrame, 53)
+	local adsMobileXSlider = createSliderGroup("AdsMobileX", "X", -2, 2, adsMobileX, 0.001, function(v) adsMobileX = v end, scrollFrame, 51)
+	local adsMobileYSlider = createSliderGroup("AdsMobileY", "Y", -2, 2, adsMobileY, 0.001, function(v) adsMobileY = v end, scrollFrame, 52)
+	local adsMobileZSlider = createSliderGroup("AdsMobileZ", "Z", -5, 0, adsMobileZ, 0.001, function(v) adsMobileZ = v end, scrollFrame, 53)
 
 	createSectionHeader("🔄 ADS Rotation (Mobile)", scrollFrame, 60)
 	local adsMobileRotXSlider = createSliderGroup("AdsMobileRotX", "X (deg)", -45, 45, adsMobileRotX, 1, function(v) adsMobileRotX = v end, scrollFrame, 61)
@@ -370,12 +473,16 @@ local function createUI()
 	listLayout.Parent = presetsList
 
 	createSectionHeader("💾 Actions", scrollFrame, 80)
+	
+	local targetSelector = createDropdown("TargetWeapon", "Target Weapon (Apply To)", function(val)
+		targetWeaponName = val
+	end, scrollFrame, 80) -- Order 80, same as header, will be after it due to list layout logic usually
 
 	local applyButton = Instance.new("TextButton")
 	applyButton.Name = "ApplyButton"
 	applyButton.Size = UDim2.new(1, 0, 0, 35)
 	applyButton.BackgroundColor3 = Color3.fromRGB(0, 150, 80)
-	applyButton.Text = "Apply All to WeaponModule"
+	applyButton.Text = "Apply to Selected Target"
 	applyButton.TextColor3 = Color3.new(1, 1, 1)
 	applyButton.TextSize = 14
 	applyButton.Font = Enum.Font.GothamBold
@@ -427,7 +534,8 @@ local function createUI()
 		-- ADS Mobile
 		AdsMobileX = adsMobileXSlider, AdsMobileY = adsMobileYSlider, AdsMobileZ = adsMobileZSlider,
 		AdsMobileRotX = adsMobileRotXSlider, AdsMobileRotY = adsMobileRotYSlider, AdsMobileRotZ = adsMobileRotZSlider,
-		HitmarkerToggle = hitmarkerToggle
+		HitmarkerToggle = hitmarkerToggle,
+		TargetSelector = targetSelector
 	}
 end
 
@@ -573,6 +681,10 @@ local function onSelectionChanged()
 	if #selected == 1 and selected[1]:IsA("Tool") then
 		currentTool = selected[1]
 		currentWeaponName = currentTool.Name
+		if not targetWeaponName then
+			targetWeaponName = currentWeaponName
+			ui.TargetSelector.UpdateText(targetWeaponName)
+		end
 		ui.SelectedLabel.Text = "Selected: " .. currentWeaponName
 		
 		local weaponModule = game.ReplicatedStorage:FindFirstChild("ModuleScript")
@@ -637,8 +749,8 @@ Selection.SelectionChanged:Connect(onSelectionChanged)
 
 -- Apply Button
 ui.ApplyButton.MouseButton1Click:Connect(function()
-	if not currentWeaponName then
-		ui.StatusLabel.Text = "Error: No weapon selected!"
+	if not targetWeaponName then
+		ui.StatusLabel.Text = "Error: No target weapon selected!"
 		return
 	end
 	
@@ -653,42 +765,137 @@ ui.ApplyButton.MouseButton1Click:Connect(function()
 	end
 	
 	local source = weaponModuleScript.Source
-	local escapedName = currentWeaponName:gsub("%-", "%%-")
 	local replaced = 0
 	
-	-- Viewmodel Position
-	local posPattern = '(%["' .. escapedName .. '"%].-ViewmodelPosition = Vector3%.new%()([^%)]+)(%))' 
-	local newSource, count = source:gsub(posPattern, "%1" .. string.format("%.2f, %.2f, %.2f", posX, posY, posZ) .. "%3")
-	if count > 0 then source = newSource; replaced = replaced + count end
+	-- SAFE REPLACEMENT FUNCTION
+	-- This function finds the weapon's table block and only replaces within it
+	local function safeReplaceInWeapon(weaponName, propertyName, newValue)
+		-- Find the start of this weapon's definition: ["WeaponName"] = {
+		local weaponPattern = '%["' .. weaponName:gsub("%-", "%%-") .. '"%]%s*=%s*{'
+		local weaponStart, weaponEnd = source:find(weaponPattern)
+		
+		if not weaponStart then
+			return false
+		end
+		
+		-- Find the next weapon definition to know where this weapon ends
+		-- Pattern: \n\t["AnotherWeapon"] = { (at the same indent level)
+		local searchAfter = source:sub(weaponEnd + 1)
+		local nextWeaponPattern = '\n%s*%["[^"]+"%]%s*=%s*{'
+		local nextWeaponStart = searchAfter:find(nextWeaponPattern)
+		
+		-- Define the boundary (exclusive)
+		local boundary = nextWeaponStart and (weaponEnd + nextWeaponStart) or #source
+		
+		-- Extract only this weapon's content
+		local weaponContent = source:sub(weaponEnd + 1, boundary - 1)
+		
+		-- Find the property within this weapon's content
+		local propPattern = '(' .. propertyName .. '%s*=%s*Vector3%.new%()([^%)]+)(%))' 
+		local propStart, propEnd, prefix, oldValue, suffix = weaponContent:find(propPattern)
+		
+		if propStart then
+			-- Calculate absolute positions
+			local absolutePropStart = weaponEnd + propStart
+			local absolutePropEnd = weaponEnd + propEnd
+			
+			-- Reconstruct the source with the new value
+			local before = source:sub(1, absolutePropStart - 1)
+			local replacement = prefix .. newValue .. suffix
+			local after = source:sub(absolutePropEnd + 1)
+			
+			source = before .. replacement .. after
+			return true
+		end
+		
+		return false
+	end
 	
-	-- Viewmodel Rotation
-	local rotPattern = '(%["' .. escapedName .. '"%].-ViewmodelRotation = Vector3%.new%()([^%)]+)(%))' 
-	newSource, count = source:gsub(rotPattern, "%1" .. string.format("%.0f, %.0f, %.0f", rotX, rotY, rotZ) .. "%3")
-	if count > 0 then source = newSource; replaced = replaced + count end
+	-- SAFE REPLACEMENT FOR SKIN PROPERTIES
+	-- ADS properties are nested inside Skins = { ["SkinName"] = { ... } }
+	local function safeReplaceInSkin(weaponName, skinName, propertyName, newValue)
+		-- First find the weapon
+		local weaponPattern = '%["' .. weaponName:gsub("%-", "%%-") .. '"%]%s*=%s*{'
+		local weaponStart, weaponEnd = source:find(weaponPattern)
+		
+		if not weaponStart then
+			return false
+		end
+		
+		-- Find boundary (next weapon)
+		local searchAfter = source:sub(weaponEnd + 1)
+		local nextWeaponPattern = '\n%s*%["[^"]+"%]%s*=%s*{'
+		local nextWeaponStart = searchAfter:find(nextWeaponPattern)
+		local boundary = nextWeaponStart and (weaponEnd + nextWeaponStart) or #source
+		
+		-- Now find the skin within this weapon
+		local skinPattern = '%["' .. skinName:gsub("%-", "%%-") .. '"%]%s*=%s*{'
+		local weaponContent = source:sub(weaponEnd + 1, boundary - 1)
+		local skinStart, skinEnd = weaponContent:find(skinPattern)
+		
+		if not skinStart then
+			return false
+		end
+		
+		-- Find the property within the skin's content
+		-- Skin ends at the next closing brace at same level, but for simplicity
+		-- we just search for the property after skinEnd
+		local skinContent = weaponContent:sub(skinEnd + 1)
+		local propPattern = '(' .. propertyName .. '%s*=%s*Vector3%.new%()([^%)]+)(%))' 
+		local propStart, propEnd, prefix, oldValue, suffix = skinContent:find(propPattern)
+		
+		if propStart then
+			-- Calculate absolute positions
+			local absolutePropStart = weaponEnd + skinStart + skinEnd + propStart - 1
+			local absolutePropEnd = weaponEnd + skinStart + skinEnd + propEnd - 1
+			
+			-- Reconstruct the source with the new value
+			local before = source:sub(1, absolutePropStart - 1)
+			local replacement = prefix .. newValue .. suffix
+			local after = source:sub(absolutePropEnd + 1)
+			
+			source = before .. replacement .. after
+			return true
+		end
+		
+		return false
+	end
 	
-	-- ADS Desktop (in skin)
-	local adsPattern = '(%["' .. currentSkinName:gsub("%-", "%%-") .. '"%].-ADS_Position = Vector3%.new%()([^%)]+)(%))' 
-	newSource, count = source:gsub(adsPattern, "%1" .. string.format("%.2f, %.2f, %.2f", adsX, adsY, adsZ) .. "%3")
-	if count > 0 then source = newSource; replaced = replaced + count end
+	-- Apply Viewmodel Position
+	if safeReplaceInWeapon(targetWeaponName, "ViewmodelPosition", string.format("%.3f, %.3f, %.3f", posX, posY, posZ)) then
+		replaced = replaced + 1
+	end
 	
-	local adsRotPattern = '(%["' .. currentSkinName:gsub("%-", "%%-") .. '"%].-ADS_Rotation = Vector3%.new%()([^%)]+)(%))' 
-	newSource, count = source:gsub(adsRotPattern, "%1" .. string.format("%.0f, %.0f, %.0f", adsRotX, adsRotY, adsRotZ) .. "%3")
-	if count > 0 then source = newSource; replaced = replaced + count end
+	-- Apply Viewmodel Rotation
+	if safeReplaceInWeapon(targetWeaponName, "ViewmodelRotation", string.format("%.0f, %.0f, %.0f", rotX, rotY, rotZ)) then
+		replaced = replaced + 1
+	end
 	
-	-- ADS Mobile
-	local adsMobilePattern = '(%["' .. currentSkinName:gsub("%-", "%%-") .. '"%].-ADS_Position_Mobile = Vector3%.new%()([^%)]+)(%))' 
-	newSource, count = source:gsub(adsMobilePattern, "%1" .. string.format("%.2f, %.2f, %.2f", adsMobileX, adsMobileY, adsMobileZ) .. "%3")
-	if count > 0 then source = newSource; replaced = replaced + count end
+	-- Apply ADS Desktop Position
+	if safeReplaceInSkin(targetWeaponName, currentSkinName, "ADS_Position", string.format("%.3f, %.3f, %.3f", adsX, adsY, adsZ)) then
+		replaced = replaced + 1
+	end
 	
-	local adsMobileRotPattern = '(%["' .. currentSkinName:gsub("%-", "%%-") .. '"%].-ADS_Rotation_Mobile = Vector3%.new%()([^%)]+)(%))' 
-	newSource, count = source:gsub(adsMobileRotPattern, "%1" .. string.format("%.0f, %.0f, %.0f", adsMobileRotX, adsMobileRotY, adsMobileRotZ) .. "%3")
-	if count > 0 then source = newSource; replaced = replaced + count end
+	-- Apply ADS Desktop Rotation
+	if safeReplaceInSkin(targetWeaponName, currentSkinName, "ADS_Rotation", string.format("%.0f, %.0f, %.0f", adsRotX, adsRotY, adsRotZ)) then
+		replaced = replaced + 1
+	end
+	
+	-- Apply ADS Mobile Position
+	if safeReplaceInSkin(targetWeaponName, currentSkinName, "ADS_Position_Mobile", string.format("%.3f, %.3f, %.3f", adsMobileX, adsMobileY, adsMobileZ)) then
+		replaced = replaced + 1
+	end
+	
+	-- Apply ADS Mobile Rotation
+	if safeReplaceInSkin(targetWeaponName, currentSkinName, "ADS_Rotation_Mobile", string.format("%.0f, %.0f, %.0f", adsMobileRotX, adsMobileRotY, adsMobileRotZ)) then
+		replaced = replaced + 1
+	end
 	
 	if replaced > 0 then
-		ChangeHistoryService:SetWaypoint("Viewmodel Edit: " .. currentWeaponName)
+		ChangeHistoryService:SetWaypoint("Viewmodel Edit: " .. targetWeaponName)
 		weaponModuleScript.Source = source
 		ChangeHistoryService:SetWaypoint("Viewmodel Edit Applied")
-		ui.StatusLabel.Text = "Success! " .. replaced .. " values updated for " .. currentWeaponName
+		ui.StatusLabel.Text = "Success! " .. replaced .. " values updated for " .. targetWeaponName
 	else
 		ui.StatusLabel.Text = "Warning: No patterns matched in WeaponModule"
 	end
@@ -819,13 +1026,13 @@ end)
 ui.CopyButton.MouseButton1Click:Connect(function()
 	local code = string.format([[
 -- Viewmodel
-ViewmodelPosition = Vector3.new(%.2f, %.2f, %.2f),
+ViewmodelPosition = Vector3.new(%.3f, %.3f, %.3f),
 ViewmodelRotation = Vector3.new(%.0f, %.0f, %.0f),
 
 -- Skin: %s
-ADS_Position = Vector3.new(%.2f, %.2f, %.2f),
+ADS_Position = Vector3.new(%.3f, %.3f, %.3f),
 ADS_Rotation = Vector3.new(%.0f, %.0f, %.0f),
-ADS_Position_Mobile = Vector3.new(%.2f, %.2f, %.2f),
+ADS_Position_Mobile = Vector3.new(%.3f, %.3f, %.3f),
 ADS_Rotation_Mobile = Vector3.new(%.0f, %.0f, %.0f),
 ]], posX, posY, posZ, rotX, rotY, rotZ, currentSkinName or "Default Skin",
 	adsX, adsY, adsZ, adsRotX, adsRotY, adsRotZ,
