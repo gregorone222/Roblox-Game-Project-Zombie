@@ -766,131 +766,110 @@ ui.ApplyButton.MouseButton1Click:Connect(function()
 	end
 	
 	local source = weaponModuleScript.Source
+	local originalLength = #source
 	local replaced = 0
 	
-	-- SAFE REPLACEMENT FUNCTION
-	-- This function finds the weapon's table block and only replaces within it
-	local function safeReplaceInWeapon(weaponName, propertyName, newValue)
-		-- Find the start of this weapon's definition: ["WeaponName"] = {
-		local weaponPattern = '%["' .. weaponName:gsub("%-", "%%-") .. '"%]%s*=%s*{'
-		local weaponStart, weaponEnd = source:find(weaponPattern)
+	-- Simple approach: gsub directly on the source
+	-- For ViewmodelPosition, we need to find the one inside the specific weapon's block
+	
+	-- Step 1: Find and replace ViewmodelPosition within weapon block
+	-- We'll use a more unique pattern that includes the weapon name context
+	
+	local escapedWeaponName = targetWeaponName:gsub("%-", "%%-")
+	local skinName = currentSkinName or "Default Skin"
+	local escapedSkinName = skinName:gsub("%-", "%%-"):gsub("'", "")
+	
+	-- Helper function to replace a property value
+	local function replaceVector3(src, propName, x, y, z, isInteger)
+		local pattern = propName .. "%s*=%s*Vector3%.new%([^%)]+%)"
+		local format = isInteger and "%.0f, %.0f, %.0f" or "%.3f, %.3f, %.3f"
+		local replacement = propName .. " = Vector3.new(" .. string.format(format, x, y, z) .. ")"
 		
-		if not weaponStart then
-			return false
+		local newSrc, count = src:gsub(pattern, replacement)
+		return newSrc, count
+	end
+	
+	-- Find the weapon block first to ensure it exists
+	local weaponPattern = '%["' .. escapedWeaponName .. '"%]%s*=%s*{'
+	local weaponStart, weaponEnd = source:find(weaponPattern)
+	
+	if not weaponStart then
+		ui.StatusLabel.Text = "Error: Weapon '" .. targetWeaponName .. "' not found in source!"
+		return
+	end
+	
+	-- Find the end of this weapon's block (next weapon or end)
+	local depth = 1
+	local pos = weaponEnd + 1
+	while depth > 0 and pos <= #source do
+		local char = source:sub(pos, pos)
+		if char == "{" then
+			depth = depth + 1
+		elseif char == "}" then
+			depth = depth - 1
 		end
+		pos = pos + 1
+	end
+	local weaponBlockEnd = pos - 1
+	
+	-- Extract the weapon block
+	local beforeWeapon = source:sub(1, weaponStart - 1)
+	local weaponBlock = source:sub(weaponStart, weaponBlockEnd)
+	local afterWeapon = source:sub(weaponBlockEnd + 1)
+	
+	-- Replace ViewmodelPosition and ViewmodelRotation in this block
+	local newBlock, count
+	
+	newBlock, count = replaceVector3(weaponBlock, "ViewmodelPosition", posX, posY, posZ, false)
+	if count > 0 then weaponBlock = newBlock; replaced = replaced + count end
+	
+	newBlock, count = replaceVector3(weaponBlock, "ViewmodelRotation", rotX, rotY, rotZ, true)
+	if count > 0 then weaponBlock = newBlock; replaced = replaced + count end
+	
+	-- Now find the skin block within the weapon block for ADS properties
+	local skinPattern = '%["' .. escapedSkinName .. '"%]%s*=%s*{'
+	local skinStart, skinEnd = weaponBlock:find(skinPattern)
+	
+	if skinStart then
 		
-		-- Find the next weapon definition to know where this weapon ends
-		-- Pattern: \n\t["AnotherWeapon"] = { (at the same indent level)
-		local searchAfter = source:sub(weaponEnd + 1)
-		local nextWeaponPattern = '\n%s*%["[^"]+"%]%s*=%s*{'
-		local nextWeaponStart = searchAfter:find(nextWeaponPattern)
-		
-		-- Define the boundary (exclusive)
-		local boundary = nextWeaponStart and (weaponEnd + nextWeaponStart) or #source
-		
-		-- Extract only this weapon's content
-		local weaponContent = source:sub(weaponEnd + 1, boundary - 1)
-		
-		-- Find the property within this weapon's content
-		local propPattern = '(' .. propertyName .. '%s*=%s*Vector3%.new%()([^%)]+)(%))' 
-		local propStart, propEnd, prefix, oldValue, suffix = weaponContent:find(propPattern)
-		
-		if propStart then
-			-- Calculate absolute positions
-			local absolutePropStart = weaponEnd + propStart
-			local absolutePropEnd = weaponEnd + propEnd
-			
-			-- Reconstruct the source with the new value
-			local before = source:sub(1, absolutePropStart - 1)
-			local replacement = prefix .. newValue .. suffix
-			local after = source:sub(absolutePropEnd + 1)
-			
-			source = before .. replacement .. after
-			return true
+		-- Find skin block end
+		local skinDepth = 1
+		local skinPos = skinEnd + 1
+		while skinDepth > 0 and skinPos <= #weaponBlock do
+			local char = weaponBlock:sub(skinPos, skinPos)
+			if char == "{" then
+				skinDepth = skinDepth + 1
+			elseif char == "}" then
+				skinDepth = skinDepth - 1
+			end
+			skinPos = skinPos + 1
 		end
+		local skinBlockEnd = skinPos - 1
 		
-		return false
+		-- Extract skin block
+		local beforeSkin = weaponBlock:sub(1, skinStart - 1)
+		local skinBlock = weaponBlock:sub(skinStart, skinBlockEnd)
+		local afterSkin = weaponBlock:sub(skinBlockEnd + 1)
+		
+		-- Replace ADS properties in skin block
+		newBlock, count = replaceVector3(skinBlock, "ADS_Position", adsX, adsY, adsZ, false)
+		if count > 0 then skinBlock = newBlock; replaced = replaced + count end
+		
+		newBlock, count = replaceVector3(skinBlock, "ADS_Rotation", adsRotX, adsRotY, adsRotZ, true)
+		if count > 0 then skinBlock = newBlock; replaced = replaced + count end
+		
+		newBlock, count = replaceVector3(skinBlock, "ADS_Position_Mobile", adsMobileX, adsMobileY, adsMobileZ, false)
+		if count > 0 then skinBlock = newBlock; replaced = replaced + count end
+		
+		newBlock, count = replaceVector3(skinBlock, "ADS_Rotation_Mobile", adsMobileRotX, adsMobileRotY, adsMobileRotZ, true)
+		if count > 0 then skinBlock = newBlock; replaced = replaced + count end
+		
+		weaponBlock = beforeSkin .. skinBlock .. afterSkin
+	else
+		ui.StatusLabel.Text = "Warning: Skin '" .. skinName .. "' not found"
 	end
 	
-	-- SAFE REPLACEMENT FOR SKIN PROPERTIES
-	-- ADS properties are nested inside Skins = { ["SkinName"] = { ... } }
-	local function safeReplaceInSkin(weaponName, skinName, propertyName, newValue)
-		-- First find the weapon
-		local weaponPattern = '%["' .. weaponName:gsub("%-", "%%-") .. '"%]%s*=%s*{'
-		local weaponStart, weaponEnd = source:find(weaponPattern)
-		
-		if not weaponStart then
-			return false
-		end
-		
-		-- Find boundary (next weapon)
-		local searchAfter = source:sub(weaponEnd + 1)
-		local nextWeaponPattern = '\n%s*%["[^"]+"%]%s*=%s*{'
-		local nextWeaponStart = searchAfter:find(nextWeaponPattern)
-		local boundary = nextWeaponStart and (weaponEnd + nextWeaponStart) or #source
-		
-		-- Now find the skin within this weapon
-		local skinPattern = '%["' .. skinName:gsub("%-", "%%-") .. '"%]%s*=%s*{'
-		local weaponContent = source:sub(weaponEnd + 1, boundary - 1)
-		local skinStart, skinEnd = weaponContent:find(skinPattern)
-		
-		if not skinStart then
-			return false
-		end
-		
-		-- Find the property within the skin's content
-		-- Skin ends at the next closing brace at same level, but for simplicity
-		-- we just search for the property after skinEnd
-		local skinContent = weaponContent:sub(skinEnd + 1)
-		local propPattern = '(' .. propertyName .. '%s*=%s*Vector3%.new%()([^%)]+)(%))' 
-		local propStart, propEnd, prefix, oldValue, suffix = skinContent:find(propPattern)
-		
-		if propStart then
-			-- Calculate absolute positions
-			local absolutePropStart = weaponEnd + skinStart + skinEnd + propStart - 1
-			local absolutePropEnd = weaponEnd + skinStart + skinEnd + propEnd - 1
-			
-			-- Reconstruct the source with the new value
-			local before = source:sub(1, absolutePropStart - 1)
-			local replacement = prefix .. newValue .. suffix
-			local after = source:sub(absolutePropEnd + 1)
-			
-			source = before .. replacement .. after
-			return true
-		end
-		
-		return false
-	end
-	
-	-- Apply Viewmodel Position
-	if safeReplaceInWeapon(targetWeaponName, "ViewmodelPosition", string.format("%.3f, %.3f, %.3f", posX, posY, posZ)) then
-		replaced = replaced + 1
-	end
-	
-	-- Apply Viewmodel Rotation
-	if safeReplaceInWeapon(targetWeaponName, "ViewmodelRotation", string.format("%.0f, %.0f, %.0f", rotX, rotY, rotZ)) then
-		replaced = replaced + 1
-	end
-	
-	-- Apply ADS Desktop Position
-	if safeReplaceInSkin(targetWeaponName, currentSkinName, "ADS_Position", string.format("%.3f, %.3f, %.3f", adsX, adsY, adsZ)) then
-		replaced = replaced + 1
-	end
-	
-	-- Apply ADS Desktop Rotation
-	if safeReplaceInSkin(targetWeaponName, currentSkinName, "ADS_Rotation", string.format("%.0f, %.0f, %.0f", adsRotX, adsRotY, adsRotZ)) then
-		replaced = replaced + 1
-	end
-	
-	-- Apply ADS Mobile Position
-	if safeReplaceInSkin(targetWeaponName, currentSkinName, "ADS_Position_Mobile", string.format("%.3f, %.3f, %.3f", adsMobileX, adsMobileY, adsMobileZ)) then
-		replaced = replaced + 1
-	end
-	
-	-- Apply ADS Mobile Rotation
-	if safeReplaceInSkin(targetWeaponName, currentSkinName, "ADS_Rotation_Mobile", string.format("%.0f, %.0f, %.0f", adsMobileRotX, adsMobileRotY, adsMobileRotZ)) then
-		replaced = replaced + 1
-	end
+	source = beforeWeapon .. weaponBlock .. afterWeapon
 	
 	if replaced > 0 then
 		ChangeHistoryService:SetWaypoint("Viewmodel Edit: " .. targetWeaponName)
@@ -898,7 +877,7 @@ ui.ApplyButton.MouseButton1Click:Connect(function()
 		ChangeHistoryService:SetWaypoint("Viewmodel Edit Applied")
 		ui.StatusLabel.Text = "Success! " .. replaced .. " values updated for " .. targetWeaponName
 	else
-		ui.StatusLabel.Text = "Warning: No patterns matched in WeaponModule"
+		ui.StatusLabel.Text = "Warning: No patterns matched for " .. targetWeaponName
 	end
 end)
 
