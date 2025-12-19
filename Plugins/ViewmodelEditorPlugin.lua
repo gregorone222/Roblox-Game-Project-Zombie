@@ -41,6 +41,17 @@ local isMobilePreview = false
 local showHitmarker = false
 local hitmarkerGui = nil
 
+-- Mobile Aspect Ratio Overlay
+local mobileOverlayGui = nil
+local mobileOverlayConnection = nil
+local selectedDeviceRatio = "16:9" -- Default: Phone Landscape
+local DEVICE_RATIOS = {
+	["Full"] = nil, -- No overlay
+	["16:9"] = 16/9,  -- Standard Phone Landscape
+	["19.5:9"] = 19.5/9,  -- Modern Wide Phone
+	["4:3"] = 4/3,  -- Tablet
+}
+
 -- Values
 local posX, posY, posZ = 1.5, -1, -2.5
 local rotX, rotY, rotZ = 0, 0, 0
@@ -176,6 +187,55 @@ scrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	hitmarkerToggle.Font = Enum.Font.GothamMedium
 	hitmarkerToggle.Parent = toggleFrame
 	Instance.new("UICorner", hitmarkerToggle).CornerRadius = UDim.new(0, 4)
+
+	-- Device Ratio Frame (Second Row)
+	local deviceFrame = Instance.new("Frame")
+	deviceFrame.Size = UDim2.new(1, 0, 0, 35)
+	deviceFrame.BackgroundTransparency = 1
+	deviceFrame.LayoutOrder = 4
+	deviceFrame.Parent = scrollFrame
+	
+	local deviceLayout = Instance.new("UIListLayout")
+	deviceLayout.FillDirection = Enum.FillDirection.Horizontal
+	deviceLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	deviceLayout.Padding = UDim.new(0, 8)
+	deviceLayout.Parent = deviceFrame
+	
+	local deviceLabel = Instance.new("TextLabel")
+	deviceLabel.Size = UDim2.new(0, 80, 0, 30)
+	deviceLabel.BackgroundTransparency = 1
+	deviceLabel.Text = "📱 Device:"
+	deviceLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+	deviceLabel.TextSize = 11
+	deviceLabel.Font = Enum.Font.Gotham
+	deviceLabel.Parent = deviceFrame
+	
+	local deviceButtons = {}
+	local deviceOrder = {"Full", "16:9", "19.5:9", "4:3"}
+	local deviceNames = {["Full"] = "Full", ["16:9"] = "Phone", ["19.5:9"] = "Wide", ["4:3"] = "Tablet"}
+	
+	local function updateDeviceButtons()
+		for ratio, btn in pairs(deviceButtons) do
+			if ratio == selectedDeviceRatio then
+				btn.BackgroundColor3 = Color3.fromRGB(0, 150, 80)
+			else
+				btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+			end
+		end
+	end
+	
+	for _, ratio in ipairs(deviceOrder) do
+		local btn = Instance.new("TextButton")
+		btn.Size = UDim2.new(0, 55, 0, 28)
+		btn.BackgroundColor3 = ratio == selectedDeviceRatio and Color3.fromRGB(0, 150, 80) or Color3.fromRGB(60, 60, 60)
+		btn.Text = deviceNames[ratio]
+		btn.TextColor3 = Color3.new(1, 1, 1)
+		btn.TextSize = 10
+		btn.Font = Enum.Font.GothamMedium
+		btn.Parent = deviceFrame
+		Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+		deviceButtons[ratio] = btn
+	end
 
 	-- Slider Helper
 	local function getAllWeaponNames()
@@ -536,7 +596,10 @@ scrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 		AdsMobileX = adsMobileXSlider, AdsMobileY = adsMobileYSlider, AdsMobileZ = adsMobileZSlider,
 		AdsMobileRotX = adsMobileRotXSlider, AdsMobileRotY = adsMobileRotYSlider, AdsMobileRotZ = adsMobileRotZSlider,
 		HitmarkerToggle = hitmarkerToggle,
-		TargetSelector = targetSelector
+		TargetSelector = targetSelector,
+		-- Mobile Overlay
+		DeviceButtons = deviceButtons,
+		UpdateDeviceButtons = updateDeviceButtons
 	}
 end
 
@@ -549,11 +612,138 @@ ui.ADSToggle.MouseButton1Click:Connect(function()
 	ui.ADSToggle.BackgroundColor3 = isADSPreview and Color3.fromRGB(0, 150, 80) or Color3.fromRGB(80, 80, 80)
 end)
 
+-- Mobile Overlay Functions (defined before use)
+local function updateMobileOverlay()
+	if not mobileOverlayGui then return end
+	
+	local targetRatio = DEVICE_RATIOS[selectedDeviceRatio]
+	if not targetRatio then
+		-- Full mode - hide all bars
+		mobileOverlayGui.TopBar.Size = UDim2.new(0, 0, 0, 0)
+		mobileOverlayGui.BottomBar.Size = UDim2.new(0, 0, 0, 0)
+		mobileOverlayGui.LeftBar.Size = UDim2.new(0, 0, 0, 0)
+		mobileOverlayGui.RightBar.Size = UDim2.new(0, 0, 0, 0)
+		return
+	end
+	
+	local camera = workspace.CurrentCamera
+	local viewportSize = camera.ViewportSize
+	local screenW, screenH = viewportSize.X, viewportSize.Y
+	local currentRatio = screenW / screenH
+	
+	-- Calculate safe zone
+	local safeW, safeH, offsetX, offsetY
+	
+	if currentRatio > targetRatio then
+		-- Screen is wider than target - add left/right bars (pillarbox)
+		safeH = screenH
+		safeW = screenH * targetRatio
+		offsetX = (screenW - safeW) / 2
+		offsetY = 0
+	else
+		-- Screen is taller than target - add top/bottom bars (letterbox)
+		safeW = screenW
+		safeH = screenW / targetRatio
+		offsetX = 0
+		offsetY = (screenH - safeH) / 2
+	end
+	
+	-- Position bars
+	mobileOverlayGui.TopBar.Position = UDim2.new(0, 0, 0, 0)
+	mobileOverlayGui.TopBar.Size = UDim2.new(1, 0, 0, offsetY)
+	
+	mobileOverlayGui.BottomBar.Position = UDim2.new(0, 0, 1, -offsetY)
+	mobileOverlayGui.BottomBar.Size = UDim2.new(1, 0, 0, offsetY)
+	
+	mobileOverlayGui.LeftBar.Position = UDim2.new(0, 0, 0, 0)
+	mobileOverlayGui.LeftBar.Size = UDim2.new(0, offsetX, 1, 0)
+	
+	mobileOverlayGui.RightBar.Position = UDim2.new(1, -offsetX, 0, 0)
+	mobileOverlayGui.RightBar.Size = UDim2.new(0, offsetX, 1, 0)
+end
+
+local function createMobileOverlay()
+	if mobileOverlayGui then return end
+	
+	mobileOverlayGui = Instance.new("ScreenGui")
+	mobileOverlayGui.Name = "ViewmodelMobileOverlay"
+	mobileOverlayGui.DisplayOrder = 999
+	mobileOverlayGui.IgnoreGuiInset = true
+	
+	pcall(function() mobileOverlayGui.Parent = game:GetService("CoreGui") end)
+	if not mobileOverlayGui.Parent then
+		mobileOverlayGui.Parent = widget.Parent -- Fallback
+	end
+	
+	-- Create 4 black bars (Top, Bottom, Left, Right)
+	local barColor = Color3.fromRGB(0, 0, 0)
+	
+	local topBar = Instance.new("Frame")
+	topBar.Name = "TopBar"
+	topBar.BackgroundColor3 = barColor
+	topBar.BorderSizePixel = 0
+	topBar.Parent = mobileOverlayGui
+	
+	local bottomBar = Instance.new("Frame")
+	bottomBar.Name = "BottomBar"
+	bottomBar.BackgroundColor3 = barColor
+	bottomBar.BorderSizePixel = 0
+	bottomBar.Parent = mobileOverlayGui
+	
+	local leftBar = Instance.new("Frame")
+	leftBar.Name = "LeftBar"
+	leftBar.BackgroundColor3 = barColor
+	leftBar.BorderSizePixel = 0
+	leftBar.Parent = mobileOverlayGui
+	
+	local rightBar = Instance.new("Frame")
+	rightBar.Name = "RightBar"
+	rightBar.BackgroundColor3 = barColor
+	rightBar.BorderSizePixel = 0
+	rightBar.Parent = mobileOverlayGui
+	
+	-- Update Connection
+	mobileOverlayConnection = RunService.Heartbeat:Connect(function()
+		updateMobileOverlay()
+	end)
+	
+	updateMobileOverlay()
+end
+
+local function cleanupMobileOverlay()
+	if mobileOverlayConnection then
+		mobileOverlayConnection:Disconnect()
+		mobileOverlayConnection = nil
+	end
+	if mobileOverlayGui then
+		mobileOverlayGui:Destroy()
+		mobileOverlayGui = nil
+	end
+end
+
 ui.MobileToggle.MouseButton1Click:Connect(function()
 	isMobilePreview = not isMobilePreview
 	ui.MobileToggle.Text = isMobilePreview and "Mode: Mobile" or "Mode: Desktop"
 	ui.MobileToggle.BackgroundColor3 = isMobilePreview and Color3.fromRGB(150, 100, 0) or Color3.fromRGB(80, 80, 80)
+	
+	-- Toggle Mobile Overlay
+	if isMobilePreview then
+		createMobileOverlay()
+	else
+		cleanupMobileOverlay()
+	end
 end)
+
+-- Device Button Click Handlers
+for ratio, btn in pairs(ui.DeviceButtons) do
+	btn.MouseButton1Click:Connect(function()
+		selectedDeviceRatio = ratio
+		ui.UpdateDeviceButtons()
+		if mobileOverlayGui then
+			updateMobileOverlay()
+		end
+	end)
+end
 
 ui.HitmarkerToggle.MouseButton1Click:Connect(function()
 	showHitmarker = not showHitmarker
@@ -1088,6 +1278,7 @@ toggleButton.Click:Connect(function()
 		cleanupPreview()
 		camera.FieldOfView = 70 -- Reset to default on close
 		if hitmarkerGui then hitmarkerGui:Destroy() hitmarkerGui = nil end
+		cleanupMobileOverlay()
 	end
 end)
 
@@ -1098,6 +1289,7 @@ plugin.Unloading:Connect(function()
 	if hitmarkerGui then
 		hitmarkerGui:Destroy()
 	end
+	cleanupMobileOverlay()
 end)
 
 print("[Viewmodel Editor] Plugin loaded with ADS support & FOV Preview!")
