@@ -38,3 +38,10 @@ Implementasi lengkap terdapat di `GameConfig.lua` -> `Difficulty`.
         *   Hell: 2.5x
         *   Crazy: 3x
 *   **XP:** Didapat dari Damage. (Base Ratio: 5 Damage = 1 XP).
+    *   Difficulty Multiplier (XP):
+        *   Easy: 1x
+        *   Normal: 1.2x
+        *   Hard: 1.5x
+        *   Expert: 2x
+        *   Hell: 2.2x
+        *   Crazy: 2.5x

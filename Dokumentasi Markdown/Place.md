@@ -5,7 +5,7 @@ Dokumentasi ini berisi informasi detil mengenai pengaturan Place, Environment, d
 ## 1. Lobby (Subway Station)
 
 **ID Place:** `101319079083908`
-**Script Utama:** `LobbyBuilderSubway.lua`
+**Script Utama:** `LobbyBuilder_Subway.lua`
 **Tema:** Stasiun Bawah Tanah Terbengkalai (Abandoned Subway).
 **Atmosfer:** Gelap, Dingin, Industrial.
 

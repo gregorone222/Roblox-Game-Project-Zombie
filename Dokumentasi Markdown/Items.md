@@ -5,7 +5,13 @@ Detail mengenai persenjataan, skill, dan sistem belanja.
 ## 🔫 Weapons
 Sistem senjata dikelola oleh `WeaponManager`.
 
-*   **Tipe:** Pistol, SMG, Rifle, Shotgun, Sniper, LMG.
+*   **Classification:**
+    *   **Pistol:** M1911, Desert-Eagle, Glock-19.
+    *   **SMG:** P90, MP5, UZI.
+    *   **Assault Rifle:** AK-47, SCAR, M4A1.
+    *   **Shotgun:** M590A1, AA-12, SPAS-12.
+    *   **Sniper:** L115A1, DSR, Barrett-M82.
+    *   **LMG:** RPD, PKP, M249, Minigun.
 *   **Akuisisi:**
     *   *Mystery Box (Gacha):* Mendapatkan senjata acak dari Vending Machine.
     *   *Starting Weapon:* Senjata awal saat spawn.

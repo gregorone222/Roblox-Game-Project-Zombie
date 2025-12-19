@@ -22,6 +22,10 @@ Elemen yang selalu aktif di layar gameplay.
 *   **`GachaUI`:** Animasi dan hasil mystery box.
 *   **`BoosterShopUI`:** Pembelian buff sementara.
 *   **`ElementShopUI`:** Pembelian elemen skill.
+*   **`APShopUI`:** Toko Achievement Points (Skin premium).
+*   **`MPShopUI`:** Toko Mission Points (Item khusus).
+*   **`PerkShopUI`:** Tempat membeli Perk.
+*   **`RandomWeaponShopUI`:** Mystery Box pembelian senjata acak.
 
 ## ⚠️ Alerts & Notifications
 *   **`BossAlertUI`:** Bar HP Boss di atas layar.

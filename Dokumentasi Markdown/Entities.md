@@ -14,9 +14,9 @@ Musuh standar yang muncul dalam wave.
 
 ### Bosses
 Musuh utama dengan HP bar besar dan fase serangan.
-1.  **Plague Titan** (`Boss1Module`): Tank besar dengan serangan area asam.
-2.  **The Crusher** (`Boss2Module`): Serangan fisik berat dan gempa (`EarthVFX`).
-3.  **The Hive Mother** (`Boss3Module`): Summoner yang memanggil larva.
+1.  **Plague Titan** (`Boss1Module`): Tank besar dengan serangan area asam dan radiasi.
+2.  **The Hive Mother** (`Boss2Module`): Summoner yang memanggil larva dan menyebarkan awan racun.
+3.  **The Blighted Alchemist** (`Boss3Module`): Ilmuwan gila dengan serangan kimia volatil dan eksperimen mutasi.
 
 ## 👥 Friendly NPCs
 Karakter yang membantu pemain di Lobby.
