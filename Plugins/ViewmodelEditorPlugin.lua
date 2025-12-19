@@ -1024,25 +1024,80 @@ ADS_Rotation_Mobile = Vector3.new(%.0f, %.0f, %.0f),
 	ui.StatusLabel.Text = "Values printed to Output!"
 end)
 
--- Toggle Button
+-- FOV Handling
+local originalFOV = 70
+local camera = workspace.CurrentCamera
+
+local function updateFOV()
+	if isADSPreview and currentWeaponName then
+		local weaponModule = game.ReplicatedStorage:FindFirstChild("ModuleScript")
+		if weaponModule then weaponModule = weaponModule:FindFirstChild("WeaponModule") end
+		if weaponModule then
+			local success, result = pcall(function() return require(weaponModule) end)
+			if success and result and result.Weapons and result.Weapons[currentWeaponName] then
+				local stats = result.Weapons[currentWeaponName]
+				if stats.ADSFoV then
+					camera.FieldOfView = stats.ADSFoV
+				end
+			end
+		end
+	else
+		camera.FieldOfView = originalFOV
+	end
+end
+
+-- Hook into Toggle Button
+local originalToggleADS = ui.ADSToggle.MouseButton1Click
+-- We can't really "hook" the existing event without modifying the connection variable which we don't have access to easily if it's anonymous.
+-- However, we can just ADD a new connection since they run in order/parallel.
+-- Actually, the previous connection just toggles the boolean. We can add another one.
+
+ui.ADSToggle.MouseButton1Click:Connect(function()
+	-- The boolean is already toggled by the first connection above (lines 546)
+	-- We just need to update FOV
+	if isADSPreview then
+		originalFOV = camera.FieldOfView -- Capture current FOV before switching (usually 70)
+		-- Safety check: if we are already zoomed in from previous glitch, maybe reset to default
+		if originalFOV < 60 then originalFOV = 70 end 
+	end
+	updateFOV()
+end)
+
+-- Hook into Selection Check to update FOV if we switch weapons while ADS is active
+local function onSelectionChangedFOVWrapper()
+	if isActive then
+		updateFOV()
+	else
+		camera.FieldOfView = 70 -- Reset if plugin inactive
+	end
+end
+Selection.SelectionChanged:Connect(onSelectionChangedFOVWrapper)
+
+
+-- Toggle Button (Main Plugin Toggle)
 toggleButton.Click:Connect(function()
 	isActive = not isActive
 	widget.Enabled = isActive
 	toggleButton:SetActive(isActive)
 	
 	if isActive then
+		originalFOV = camera.FieldOfView
 		onSelectionChanged()
+		updateFOV()
 	else
 		cleanupPreview()
+		camera.FieldOfView = 70 -- Reset to default on close
+		if hitmarkerGui then hitmarkerGui:Destroy() hitmarkerGui = nil end
 	end
 end)
 
 -- Cleanup
 plugin.Unloading:Connect(function()
 	cleanupPreview()
+	workspace.CurrentCamera.FieldOfView = 70 -- Force reset
 	if hitmarkerGui then
 		hitmarkerGui:Destroy()
 	end
 end)
 
-print("[Viewmodel Editor] Plugin loaded with ADS support!")
+print("[Viewmodel Editor] Plugin loaded with ADS support & FOV Preview!")
