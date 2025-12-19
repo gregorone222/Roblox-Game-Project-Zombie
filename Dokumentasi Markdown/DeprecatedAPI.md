@@ -17,3 +17,11 @@ Dokumen ini melacak API Roblox yang sudah usang yang ditemukan dalam proyek dan 
 - **Tindakan**: 
     - `TeleportService:ReserveServer(placeId)` -> `TeleportService:ReserveServerAsync(placeId)`
     - Catatan: Fungsi ini async, pastikan dibungkus dalam `pcall` untuk error handling.
+
+## Players:CreateHumanoidModelFromUserId
+- **Status**: Usang (Deprecated)
+- **Pengganti**: `Players:CreateHumanoidModelFromUserIdAsync(userId)`
+- **Konteks**: Digunakan dalam *Viewmodel Editor Plugin* untuk memuat karakter avatar pengguna saat dalam Edit Mode (di mana `LocalPlayer.Character` nil).
+- **Tindakan**:
+    - `CreateHumanoidModelFromUserId` -> `CreateHumanoidModelFromUserIdAsync`
+    - Catatan: Fungsi ini memerlukan pcall karena melakukan request network.
