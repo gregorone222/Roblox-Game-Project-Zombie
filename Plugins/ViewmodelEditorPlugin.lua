@@ -70,7 +70,8 @@ local function createUI()
 	scrollFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 	scrollFrame.BorderSizePixel = 0
 	scrollFrame.ScrollBarThickness = 8
-	scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 1400)
+	scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+scrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	scrollFrame.Parent = widget
 
 	local layout = Instance.new("UIListLayout")
