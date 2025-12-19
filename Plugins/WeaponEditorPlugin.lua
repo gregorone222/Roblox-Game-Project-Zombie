@@ -4,6 +4,8 @@
 
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local Selection = game:GetService("Selection")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
 
 -- Plugin Setup
 local toolbar = plugin:CreateToolbar("Game Balancing")
@@ -86,6 +88,90 @@ local function loadData()
 	end
 end
 
+-- Test Function Logic
+local function testWeapon(weaponName)
+	if not RunService:IsRunning() then
+		warn("You must actviate 'Play' mode to test weapons!")
+		return
+	end
+	
+	local plr = Players.LocalPlayer
+	if not plr or not plr.Character then return end
+	
+	-- 1. Setup Test Room
+	local TEST_Y = 500
+	local testRoom = workspace:FindFirstChild("TestRoom")
+	if not testRoom then
+		testRoom = Instance.new("Folder")
+		testRoom.Name = "TestRoom"
+		testRoom.Parent = workspace
+		
+		local floor = Instance.new("Part")
+		floor.Name = "Floor"
+		floor.Size = Vector3.new(100, 1, 100)
+		floor.Position = Vector3.new(0, TEST_Y, 0)
+		floor.Anchored = true
+		floor.BrickColor = BrickColor.new("Dark stone grey")
+		floor.Material = Enum.Material.Concrete
+		floor.Parent = testRoom
+		
+		local light = Instance.new("PointLight")
+		light.Range = 60
+		light.Brightness = 2
+		light.Parent = floor
+		
+		-- Dummy Target
+		-- Simple block rig for now if real dummy not available
+		local dummy = Instance.new("Model")
+		dummy.Name = "Target Dummy"
+		dummy.Parent = testRoom
+		
+		local hum = Instance.new("Humanoid")
+		hum.MaxHealth = 100
+		hum.Health = 100
+		hum.Parent = dummy
+		
+		local torso = Instance.new("Part")
+		torso.Name = "HumanoidRootPart"
+		torso.Size = Vector3.new(2, 2, 1)
+		torso.Position = Vector3.new(0, TEST_Y + 3, -20)
+		torso.Anchored = true
+		torso.BrickColor = BrickColor.new("Bright red")
+		torso.Parent = dummy
+		
+		local head = Instance.new("Part")
+		head.Name = "Head"
+		head.Size = Vector3.new(1, 1, 1)
+		head.Position = Vector3.new(0, TEST_Y + 4.5, -20)
+		head.Anchored = true
+		head.BrickColor = BrickColor.new("Bright yellow")
+		head.Parent = dummy
+	end
+	
+	-- 2. Teleport
+	plr.Character:PivotTo(CFrame.new(0, TEST_Y + 5, 0))
+	
+	-- 3. Equip Weapon
+	-- Search in ReplicatedStorage or ServerStorage
+	local tool = nil
+	for _, child in ipairs(game.ReplicatedStorage:GetDescendants()) do
+		if child:IsA("Tool") and child.Name == weaponName then
+			tool = child
+			break
+		end
+	end
+	
+	if not tool then
+		-- Try ServerStorage just in case (though client plugin usually can't see it if in play mode context sometimes?)
+		-- In Play mode, client sees ReplicatedStorage.
+		warn("Weapon Tool '"..weaponName.."' not found in ReplicatedStorage!")
+	else
+		local clone = tool:Clone()
+		clone.Parent = plr.Backpack
+		plr.Character.Humanoid:EquipTool(clone)
+	end
+end
+
 -- UI
 local mainFrame = nil
 local gridScroll = nil
@@ -161,6 +247,16 @@ local function createUI()
 		h.Parent = headerFrame
 		currentX = currentX + col.Width + 2
 	end
+	
+	-- Action Header
+	local actionLabel = Instance.new("TextLabel")
+	actionLabel.Size = UDim2.new(0, 60, 1, 0)
+	actionLabel.Position = UDim2.new(0, currentX, 0, 0)
+	actionLabel.BackgroundTransparency = 1
+	actionLabel.Text = "Action"
+	actionLabel.TextColor3 = Color3.new(1,1,1)
+	actionLabel.Font = Enum.Font.GothamBold
+	actionLabel.Parent = headerFrame
 	
 	-- Grid Content
 	gridScroll = Instance.new("ScrollingFrame")
@@ -253,6 +349,22 @@ function renderGrid()
 			
 			currentX = currentX + col.Width + 2
 		end
+		
+		-- Test Button
+		local testBtn = Instance.new("TextButton")
+		testBtn.Size = UDim2.new(0, 60, 0, 26)
+		testBtn.Position = UDim2.new(0, currentX, 0, 2)
+		testBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 150)
+		testBtn.Text = "TEST"
+		testBtn.TextColor3 = Color3.new(1,1,1)
+		testBtn.Font = Enum.Font.GothamBold
+		testBtn.TextSize = 10
+		testBtn.Parent = row
+		Instance.new("UICorner", testBtn).CornerRadius = UDim.new(0, 4)
+		
+		testBtn.MouseButton1Click:Connect(function()
+			testWeapon(name)
+		end)
 	end
 end
 
