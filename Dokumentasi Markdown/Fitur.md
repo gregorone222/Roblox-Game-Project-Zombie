@@ -30,6 +30,10 @@ Sistem mata uang dan kemajuan pemain.
 ## ⚔️ Combat System
 *   **Mechanics:** Raycast Ballistics (Hitscan/Projectile).
 *   **Feedback:** Damage Numbers, Hitmarkers, Headshot Audio.
+*   **Realistic Ragdoll:** (NEW)
+    *   Zombie tidak lagi memutar animasi "mati" yang kaku.
+    *   Diterapkan fisika penuh saat mati; tubuh bereaksi terhadap arah dan kekuatan tembakan peluru terakhir.
+    *   Contoh: Shotgun jarak dekat akan melempar mayat zombie ke belakang, pistol hanya membuat lemas.
 *   **Features:**
     *   **Revive System:** Pemain jatuh (Knocked) bisa dihidupkan teman.
     *   **Shield System:** Armor tambahan di atas HP.

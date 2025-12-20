@@ -2,6 +2,14 @@
 
 Dokumen ini melacak API Roblox yang sudah usang yang ditemukan dalam proyek dan pengganti modernnya.
 
+## ProximityUIHandler (ModuleScript)
+- **Status**: Dihapus (Removed)
+- **Pengganti**: Logika `ProximityPrompt.Triggered` langsung di LocalScript.
+- **Konteks**: Modul lama yang mencoba mengabstraksi interaksi UI toko tapi menyebabkan bug yield dan recursive dependency.
+- **Tindakan**:
+    - Semua referensi `require(ProximityUIHandler)` dihapus dari UI Toko (`UpgradeShopUI`, `PerkShopUI`, `RandomWeaponShopUI`).
+    - diganti dengan event listener standar Roblox: `prompt.Triggered:Connect(function() ... end)`.
+
 ## UserInputService.ModalEnabled
 - **Status**: Usang (Deprecated)
 - **Pengganti**: `GuiService.TouchControlsEnabled` (untuk visibilitas kontrol seluler) dan `UserInputService.MouseBehavior` (untuk status kunci mouse).
