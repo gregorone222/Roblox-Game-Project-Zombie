@@ -24,6 +24,23 @@ local StatsModule = require(ModuleScriptServerScriptService:WaitForChild("StatsM
 local MissionManager = require(ModuleScriptServerScriptService:WaitForChild("MissionManager"))
 local CollisionUtil = require(ServerScriptService.ModuleScript:WaitForChild("CollisionUtil"))
 
+-- Ragdoll Force Constants
+local RAGDOLL_FORCE_MULTIPLIER = 1.25 -- Force = Damage * this value (reduced for subtle effect)
+local RAGDOLL_UPWARD_COMPONENT = 1 -- Add slight upward force for better ragdoll effect
+
+-- Helper function to store hit direction for ragdoll
+local function storeHitForRagdoll(hitModel, hitDirection, damage)
+	if not hitModel or not hitModel:FindFirstChild("IsZombie") then return end
+
+	-- Store normalized direction
+	local normalizedDir = hitDirection.Unit
+	-- Add slight upward component for more dramatic ragdoll
+	local adjustedDir = (normalizedDir + Vector3.new(0, RAGDOLL_UPWARD_COMPONENT, 0)).Unit
+
+	hitModel:SetAttribute("LastHitDirection", adjustedDir)
+	hitModel:SetAttribute("LastHitForce", damage * RAGDOLL_FORCE_MULTIPLIER)
+end
+
 local ShootEvent = RemoteEvents:WaitForChild("ShootEvent")
 local ReloadEvent = RemoteEvents:WaitForChild("ReloadEvent")
 local AmmoUpdateEvent = RemoteEvents:WaitForChild("AmmoUpdateEvent")
@@ -419,6 +436,9 @@ ShootEvent.OnServerEvent:Connect(function(player, tool, cameraDirection, isAimin
 						end
 					end
 
+					-- Store hit direction for ragdoll (using pellet direction)
+					storeHitForRagdoll(hitModel, pelletDir, damage)
+
 					local finalDamage = applyDamageAndStats(player, targetHumanoid, hitModel, damage, isHeadshotPellet, weaponName)
 					if finalDamage and finalDamage > 0 then
 						-- Logika Poin & Misi per Pellet
@@ -519,6 +539,9 @@ ShootEvent.OnServerEvent:Connect(function(player, tool, cameraDirection, isAimin
 						end
 					end
 				end
+
+				-- Store hit direction for ragdoll
+				storeHitForRagdoll(hitModel, direction, damage)
 
 				HitmarkerEvent:FireClient(player, isHeadshot)
 				local finalDamage = applyDamageAndStats(player, targetHumanoid, hitModel, damage, isHeadshot, weaponName)

@@ -34,6 +34,7 @@ local ShieldModule = require(ModuleScriptServerScriptService:WaitForChild("Shiel
 local SkillModule = require(ModuleScriptServerScriptService:WaitForChild("SkillModule"))
 local MissionManager = require(ModuleScriptServerScriptService:WaitForChild("MissionManager"))
 local GlobalMissionManager = require(ModuleScriptServerScriptService:WaitForChild("GlobeMissionManager"))
+local RagdollModule = require(ModuleScriptServerScriptService:WaitForChild("RagdollModule"))
 
 local BossTimerEvent = RemoteEvents:WaitForChild("BossTimerEvent")
 local GameOverEvent = RemoteEvents:WaitForChild("GameOverEvent")
@@ -116,6 +117,9 @@ function ZombieModule.SpawnZombie(spawnPoint, typeName, playerCount, difficulty,
 		humanoid.MaxHealth = (cfg.MaxHealth or humanoid.MaxHealth) * diffSettings.HealthMultiplier
 		humanoid.Health = humanoid.MaxHealth
 		humanoid.WalkSpeed = cfg.WalkSpeed or humanoid.WalkSpeed
+
+		-- Pre-configure for instant ragdoll (no delay on death)
+		humanoid.BreakJointsOnDeath = false
 
 		-- Terapkan pengganda kecepatan jika ini adalah Gelombang Cepat
 		if waveModifiers.isFast then
@@ -362,6 +366,9 @@ function ZombieModule.SpawnZombie(spawnPoint, typeName, playerCount, difficulty,
 	local function handleDeath(killedByPlayer)
 		if isDead then return end
 		isDead = true
+
+		-- Apply ragdoll effect
+		RagdollModule.Rig(zombie)
 
 		-- 1. Stop Boss Timer (Always)
 		if zombie:FindFirstChild("IsBoss") then
