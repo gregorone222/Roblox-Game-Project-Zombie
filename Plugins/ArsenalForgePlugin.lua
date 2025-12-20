@@ -44,7 +44,7 @@ local Theme = {
 	Text = Color3.fromRGB(250, 250, 249),
 	TextMuted = Color3.fromRGB(168, 162, 158),
 	Border = Color3.fromRGB(68, 64, 60),
-	
+
 	CategoryColors = {
 		Pistol = Color3.fromRGB(156, 163, 175),
 		SMG = Color3.fromRGB(251, 191, 36),
@@ -117,10 +117,10 @@ local function parseWeaponModule()
 		warn("[ArsenalForge] WeaponModule not found!")
 		return false, "WeaponModule not found in ReplicatedStorage/ModuleScript/"
 	end
-	
+
 	weaponData = {}
 	local source = script.Source
-	
+
 	local weaponsBlock = source:match("WeaponModule%.Weapons%s*=%s*(%b{})")
 	if not weaponsBlock then
 		warn("[ArsenalForge] Could not find WeaponModule.Weapons table")
@@ -142,7 +142,7 @@ local function parseWeaponModule()
 			Spread = tonumber(block:match("Spread%s*=%s*([%d%.]+)")) or 0,
 			Pellets = tonumber(block:match("Pellets%s*=%s*(%d+)")) or 1,
 		}
-		
+
 		local upgradeBlock = block:match("UpgradeConfig%s*=%s*(%b{})")
 		if upgradeBlock then
 			data.BaseCost = tonumber(upgradeBlock:match("BaseCost%s*=%s*(%d+)")) or 100
@@ -159,10 +159,10 @@ local function parseWeaponModule()
 			data.AmmoPerLevel = 0
 			data.MaxLevel = 10
 		end
-		
+
 		table.insert(weaponData, data)
 	end
-	
+
 	table.sort(weaponData, function(a, b) return a.Name < b.Name end)
 	print("[ArsenalForge] Parsed " .. #weaponData .. " weapons.")
 	return true
@@ -197,17 +197,17 @@ local function testWeapon(weaponName)
 		warn("[ArsenalForge] You must activate 'Play' mode to test weapons!")
 		return
 	end
-	
+
 	local plr = Players.LocalPlayer
 	if not plr or not plr.Character then return end
-	
+
 	local TEST_Y = 500
 	local testRoom = workspace:FindFirstChild("TestRoom")
 	if not testRoom then
 		testRoom = Instance.new("Folder")
 		testRoom.Name = "TestRoom"
 		testRoom.Parent = workspace
-		
+
 		local floor = Instance.new("Part")
 		floor.Name = "Floor"
 		floor.Size = Vector3.new(100, 1, 100)
@@ -216,21 +216,21 @@ local function testWeapon(weaponName)
 		floor.BrickColor = BrickColor.new("Dark stone grey")
 		floor.Material = Enum.Material.Concrete
 		floor.Parent = testRoom
-		
+
 		local light = Instance.new("PointLight")
 		light.Range = 60
 		light.Brightness = 2
 		light.Parent = floor
-		
+
 		local dummy = Instance.new("Model")
 		dummy.Name = "Target Dummy"
 		dummy.Parent = testRoom
-		
+
 		local hum = Instance.new("Humanoid")
 		hum.MaxHealth = 100
 		hum.Health = 100
 		hum.Parent = dummy
-		
+
 		local torso = Instance.new("Part")
 		torso.Name = "HumanoidRootPart"
 		torso.Size = Vector3.new(2, 2, 1)
@@ -238,7 +238,7 @@ local function testWeapon(weaponName)
 		torso.Anchored = true
 		torso.BrickColor = BrickColor.new("Bright red")
 		torso.Parent = dummy
-		
+
 		local head = Instance.new("Part")
 		head.Name = "Head"
 		head.Size = Vector3.new(1, 1, 1)
@@ -247,9 +247,9 @@ local function testWeapon(weaponName)
 		head.BrickColor = BrickColor.new("Bright yellow")
 		head.Parent = dummy
 	end
-	
+
 	plr.Character:PivotTo(CFrame.new(0, TEST_Y + 5, 0))
-	
+
 	local tool = nil
 	for _, child in ipairs(ReplicatedStorage:GetDescendants()) do
 		if child:IsA("Tool") and child.Name == weaponName then
@@ -257,7 +257,7 @@ local function testWeapon(weaponName)
 			break
 		end
 	end
-	
+
 	if tool then
 		local clone = tool:Clone()
 		clone.Parent = plr.Backpack
@@ -277,15 +277,15 @@ local function applyChangesToSource(statusLabel)
 		end
 		return false
 	end
-	
+
 	ChangeHistoryService:SetWaypoint("Pre-ArsenalForge Edit")
-	
+
 	local source = script.Source
 	local totalReplaced = 0
-	
+
 	for _, weapon in ipairs(weaponData) do
 		local safeName = escape(weapon.Name)
-		
+
 		for _, col in ipairs(STAT_COLUMNS) do
 			local val = weapon[col.Key]
 			if val then
@@ -299,7 +299,7 @@ local function applyChangesToSource(statusLabel)
 				end
 			end
 		end
-		
+
 		-- Also update UpgradeConfig values
 		local upgradeKeys = {"BaseCost", "CostMultiplier", "DamagePerLevel", "MaxLevel"}
 		for _, key in ipairs(upgradeKeys) do
@@ -316,7 +316,7 @@ local function applyChangesToSource(statusLabel)
 			end
 		end
 	end
-	
+
 	if totalReplaced > 0 then
 		script.Source = source
 		ChangeHistoryService:SetWaypoint("ArsenalForge: Updated " .. totalReplaced .. " values")
@@ -337,13 +337,13 @@ end
 -- ==================== UI CREATION ====================
 local function createUI(errorMsg)
 	if mainFrame then mainFrame:Destroy() end
-	
+
 	mainFrame = Instance.new("Frame")
 	mainFrame.Name = "MainFrame"
 	mainFrame.Size = UDim2.new(1, 0, 1, 0)
 	mainFrame.BackgroundColor3 = Theme.Background
 	mainFrame.Parent = widget
-	
+
 	-- Error State
 	if errorMsg then
 		local errLabel = Instance.new("TextLabel")
@@ -358,21 +358,21 @@ local function createUI(errorMsg)
 		errLabel.Parent = mainFrame
 		return
 	end
-	
+
 	-- Header
 	local header = Instance.new("Frame")
 	header.Size = UDim2.new(1, 0, 0, 55)
 	header.BackgroundColor3 = Theme.Surface
 	header.BorderSizePixel = 0
 	header.Parent = mainFrame
-	
+
 	local headerAccent = Instance.new("Frame")
 	headerAccent.Size = UDim2.new(1, 0, 0, 3)
 	headerAccent.Position = UDim2.new(0, 0, 1, -3)
 	headerAccent.BackgroundColor3 = Theme.Accent
 	headerAccent.BorderSizePixel = 0
 	headerAccent.Parent = header
-	
+
 	local title = Instance.new("TextLabel")
 	title.Size = UDim2.new(0.5, 0, 0, 28)
 	title.Position = UDim2.new(0, 15, 0, 8)
@@ -383,7 +383,7 @@ local function createUI(errorMsg)
 	title.Font = Enum.Font.GothamBold
 	title.TextXAlignment = Enum.TextXAlignment.Left
 	title.Parent = header
-	
+
 	local subtitle = Instance.new("TextLabel")
 	subtitle.Size = UDim2.new(0.5, 0, 0, 16)
 	subtitle.Position = UDim2.new(0, 15, 0, 33)
@@ -394,19 +394,19 @@ local function createUI(errorMsg)
 	subtitle.Font = Enum.Font.Gotham
 	subtitle.TextXAlignment = Enum.TextXAlignment.Left
 	subtitle.Parent = header
-	
+
 	-- Tab Buttons in header
 	local tabFrame = Instance.new("Frame")
 	tabFrame.Size = UDim2.new(0, 280, 0, 36)
 	tabFrame.Position = UDim2.new(1, -290, 0, 10)
 	tabFrame.BackgroundTransparency = 1
 	tabFrame.Parent = header
-	
+
 	local tabLayout = Instance.new("UIListLayout")
 	tabLayout.FillDirection = Enum.FillDirection.Horizontal
 	tabLayout.Padding = UDim.new(0, 8)
 	tabLayout.Parent = tabFrame
-	
+
 	local forgeTabBtn = Instance.new("TextButton")
 	forgeTabBtn.Size = UDim2.new(0, 130, 1, 0)
 	forgeTabBtn.BackgroundColor3 = currentTab == "forge" and Theme.Accent or Theme.SurfaceHover
@@ -416,7 +416,7 @@ local function createUI(errorMsg)
 	forgeTabBtn.Font = Enum.Font.GothamBold
 	forgeTabBtn.Parent = tabFrame
 	createCorner(forgeTabBtn, 6)
-	
+
 	local sheetTabBtn = Instance.new("TextButton")
 	sheetTabBtn.Size = UDim2.new(0, 130, 1, 0)
 	sheetTabBtn.BackgroundColor3 = currentTab == "spreadsheet" and Theme.Accent or Theme.SurfaceHover
@@ -426,7 +426,7 @@ local function createUI(errorMsg)
 	sheetTabBtn.Font = Enum.Font.GothamBold
 	sheetTabBtn.Parent = tabFrame
 	createCorner(sheetTabBtn, 6)
-	
+
 	-- Content containers
 	local forgeContent = Instance.new("Frame")
 	forgeContent.Name = "ForgeContent"
@@ -435,7 +435,7 @@ local function createUI(errorMsg)
 	forgeContent.BackgroundTransparency = 1
 	forgeContent.Visible = currentTab == "forge"
 	forgeContent.Parent = mainFrame
-	
+
 	local sheetContent = Instance.new("Frame")
 	sheetContent.Name = "SheetContent"
 	sheetContent.Size = UDim2.new(1, 0, 1, -55)
@@ -443,7 +443,7 @@ local function createUI(errorMsg)
 	sheetContent.BackgroundTransparency = 1
 	sheetContent.Visible = currentTab == "spreadsheet"
 	sheetContent.Parent = mainFrame
-	
+
 	-- ==================== FORGE VIEW (Original ArsenalForge UI) ====================
 	local sidebar = Instance.new("ScrollingFrame")
 	sidebar.Size = UDim2.new(0, 180, 1, -10)
@@ -456,28 +456,28 @@ local function createUI(errorMsg)
 	sidebar.Parent = forgeContent
 	createCorner(sidebar, 10)
 	createStroke(sidebar, Theme.Border, 1)
-	
+
 	local sidebarLayout = Instance.new("UIListLayout")
 	sidebarLayout.Padding = UDim.new(0, 4)
 	sidebarLayout.Parent = sidebar
-	
+
 	local sidebarPadding = Instance.new("UIPadding")
 	sidebarPadding.PaddingTop = UDim.new(0, 8)
 	sidebarPadding.PaddingBottom = UDim.new(0, 8)
 	sidebarPadding.PaddingLeft = UDim.new(0, 6)
 	sidebarPadding.PaddingRight = UDim.new(0, 6)
 	sidebarPadding.Parent = sidebar
-	
+
 	local forgeDetailArea = Instance.new("Frame")
 	forgeDetailArea.Size = UDim2.new(1, -200, 1, -10)
 	forgeDetailArea.Position = UDim2.new(0, 195, 0, 5)
 	forgeDetailArea.BackgroundTransparency = 1
 	forgeDetailArea.Parent = forgeContent
-	
+
 	local detailLayout = Instance.new("UIListLayout")
 	detailLayout.Padding = UDim.new(0, 10)
 	detailLayout.Parent = forgeDetailArea
-	
+
 	local placeholderLabel = Instance.new("TextLabel")
 	placeholderLabel.Name = "Placeholder"
 	placeholderLabel.Size = UDim2.new(1, 0, 0, 100)
@@ -487,21 +487,21 @@ local function createUI(errorMsg)
 	placeholderLabel.TextSize = 16
 	placeholderLabel.Font = Enum.Font.Gotham
 	placeholderLabel.Parent = forgeDetailArea
-	
+
 	-- Function to build weapon detail panel
 	local function buildWeaponDetailPanel(weapon)
 		selectedWeapon = weapon
 		for _, child in ipairs(forgeDetailArea:GetChildren()) do
 			if not child:IsA("UIListLayout") then child:Destroy() end
 		end
-		
+
 		-- Header
 		local weaponHeader = Instance.new("Frame")
 		weaponHeader.Size = UDim2.new(1, 0, 0, 50)
 		weaponHeader.BackgroundColor3 = Theme.Surface
 		weaponHeader.Parent = forgeDetailArea
 		createCorner(weaponHeader, 10)
-		
+
 		local weaponTitle = Instance.new("TextLabel")
 		weaponTitle.Size = UDim2.new(0.6, 0, 0, 28)
 		weaponTitle.Position = UDim2.new(0, 12, 0, 6)
@@ -512,7 +512,7 @@ local function createUI(errorMsg)
 		weaponTitle.Font = Enum.Font.GothamBold
 		weaponTitle.TextXAlignment = Enum.TextXAlignment.Left
 		weaponTitle.Parent = weaponHeader
-		
+
 		local weaponCat = Instance.new("TextLabel")
 		weaponCat.Size = UDim2.new(0.4, 0, 0, 16)
 		weaponCat.Position = UDim2.new(0, 12, 0, 30)
@@ -523,7 +523,7 @@ local function createUI(errorMsg)
 		weaponCat.Font = Enum.Font.Gotham
 		weaponCat.TextXAlignment = Enum.TextXAlignment.Left
 		weaponCat.Parent = weaponHeader
-		
+
 		-- Test Button in header
 		local testBtn = Instance.new("TextButton")
 		testBtn.Size = UDim2.new(0, 80, 0, 30)
@@ -536,25 +536,25 @@ local function createUI(errorMsg)
 		testBtn.Parent = weaponHeader
 		createCorner(testBtn, 6)
 		tweenHover(testBtn, Color3.fromRGB(80, 150, 255), Theme.Simulation)
-		
+
 		testBtn.MouseButton1Click:Connect(function()
 			testWeapon(weapon.Name)
 		end)
-		
+
 		-- Combat Panel
 		local combatPanel = Instance.new("Frame")
 		combatPanel.Size = UDim2.new(1, 0, 0, 140)
 		combatPanel.BackgroundColor3 = Theme.Surface
 		combatPanel.Parent = forgeDetailArea
 		createCorner(combatPanel, 10)
-		
+
 		local combatBar = Instance.new("Frame")
 		combatBar.Size = UDim2.new(0, 4, 1, -16)
 		combatBar.Position = UDim2.new(0, 8, 0, 8)
 		combatBar.BackgroundColor3 = Theme.Combat
 		combatBar.Parent = combatPanel
 		createCorner(combatBar, 2)
-		
+
 		local combatTitle = Instance.new("TextLabel")
 		combatTitle.Size = UDim2.new(0.5, 0, 0, 22)
 		combatTitle.Position = UDim2.new(0, 20, 0, 8)
@@ -565,7 +565,7 @@ local function createUI(errorMsg)
 		combatTitle.Font = Enum.Font.GothamBold
 		combatTitle.TextXAlignment = Enum.TextXAlignment.Left
 		combatTitle.Parent = combatPanel
-		
+
 		local dpsLabel = Instance.new("TextLabel")
 		dpsLabel.Size = UDim2.new(0.5, 0, 0, 30)
 		dpsLabel.Position = UDim2.new(0.5, 0, 0, 8)
@@ -576,14 +576,14 @@ local function createUI(errorMsg)
 		dpsLabel.Font = Enum.Font.GothamBold
 		dpsLabel.TextXAlignment = Enum.TextXAlignment.Right
 		dpsLabel.Parent = combatPanel
-		
+
 		local function createStatInput(parent, label, value, yPos, xOffset, onChange)
 			local container = Instance.new("Frame")
 			container.Size = UDim2.new(0.45, 0, 0, 35)
 			container.Position = UDim2.new(xOffset, 10, 0, yPos)
 			container.BackgroundTransparency = 1
 			container.Parent = parent
-			
+
 			local lbl = Instance.new("TextLabel")
 			lbl.Size = UDim2.new(1, 0, 0, 14)
 			lbl.BackgroundTransparency = 1
@@ -593,7 +593,7 @@ local function createUI(errorMsg)
 			lbl.Font = Enum.Font.Gotham
 			lbl.TextXAlignment = Enum.TextXAlignment.Left
 			lbl.Parent = container
-			
+
 			local input = Instance.new("TextBox")
 			input.Size = UDim2.new(1, 0, 0, 22)
 			input.Position = UDim2.new(0, 0, 0, 14)
@@ -605,7 +605,7 @@ local function createUI(errorMsg)
 			input.Parent = container
 			createCorner(input, 5)
 			createStroke(input, Theme.Border, 1)
-			
+
 			input.FocusLost:Connect(function()
 				local val = tonumber(input.Text)
 				if val then
@@ -615,26 +615,26 @@ local function createUI(errorMsg)
 			end)
 			return input
 		end
-		
+
 		createStatInput(combatPanel, "Damage", weapon.Damage, 38, 0, function(v) weapon.Damage = v end)
 		createStatInput(combatPanel, "Fire Rate (s)", weapon.FireRate, 38, 0.5, function(v) weapon.FireRate = v end)
 		createStatInput(combatPanel, "Max Ammo", weapon.MaxAmmo, 78, 0, function(v) weapon.MaxAmmo = v end)
 		createStatInput(combatPanel, "Reload Time (s)", weapon.ReloadTime, 78, 0.5, function(v) weapon.ReloadTime = v end)
-		
+
 		-- Economy Panel
 		local economyPanel = Instance.new("Frame")
 		economyPanel.Size = UDim2.new(1, 0, 0, 140)
 		economyPanel.BackgroundColor3 = Theme.Surface
 		economyPanel.Parent = forgeDetailArea
 		createCorner(economyPanel, 10)
-		
+
 		local economyBar = Instance.new("Frame")
 		economyBar.Size = UDim2.new(0, 4, 1, -16)
 		economyBar.Position = UDim2.new(0, 8, 0, 8)
 		economyBar.BackgroundColor3 = Theme.Economy
 		economyBar.Parent = economyPanel
 		createCorner(economyBar, 2)
-		
+
 		local economyTitle = Instance.new("TextLabel")
 		economyTitle.Size = UDim2.new(0.5, 0, 0, 22)
 		economyTitle.Position = UDim2.new(0, 20, 0, 8)
@@ -645,7 +645,7 @@ local function createUI(errorMsg)
 		economyTitle.Font = Enum.Font.GothamBold
 		economyTitle.TextXAlignment = Enum.TextXAlignment.Left
 		economyTitle.Parent = economyPanel
-		
+
 		local totalCostLabel = Instance.new("TextLabel")
 		totalCostLabel.Size = UDim2.new(0.5, 0, 0, 30)
 		totalCostLabel.Position = UDim2.new(0.5, 0, 0, 8)
@@ -656,7 +656,7 @@ local function createUI(errorMsg)
 		totalCostLabel.Font = Enum.Font.GothamBold
 		totalCostLabel.TextXAlignment = Enum.TextXAlignment.Right
 		totalCostLabel.Parent = economyPanel
-		
+
 		createStatInput(economyPanel, "Base Cost", weapon.BaseCost, 38, 0, function(v) 
 			weapon.BaseCost = v 
 			totalCostLabel.Text = "Max: $" .. calculateTotalCostToMax(weapon)
@@ -670,13 +670,13 @@ local function createUI(errorMsg)
 			weapon.MaxLevel = v 
 			totalCostLabel.Text = "Max: $" .. calculateTotalCostToMax(weapon)
 		end)
-		
+
 		-- Action Bar
 		local actionBar = Instance.new("Frame")
 		actionBar.Size = UDim2.new(1, 0, 0, 50)
 		actionBar.BackgroundTransparency = 1
 		actionBar.Parent = forgeDetailArea
-		
+
 		local applyBtn = Instance.new("TextButton")
 		applyBtn.Size = UDim2.new(0.5, 0, 0, 40)
 		applyBtn.Position = UDim2.new(0.25, 0, 0, 5)
@@ -688,7 +688,7 @@ local function createUI(errorMsg)
 		applyBtn.Parent = actionBar
 		createCorner(applyBtn, 10)
 		tweenHover(applyBtn, Theme.AccentHover, Theme.Accent)
-		
+
 		local statusLabel = Instance.new("TextLabel")
 		statusLabel.Size = UDim2.new(1, 0, 0, 20)
 		statusLabel.Position = UDim2.new(0, 0, 0, 50)
@@ -698,12 +698,12 @@ local function createUI(errorMsg)
 		statusLabel.TextSize = 12
 		statusLabel.Font = Enum.Font.Gotham
 		statusLabel.Parent = actionBar
-		
+
 		applyBtn.MouseButton1Click:Connect(function()
 			applyChangesToSource(statusLabel)
 		end)
 	end
-	
+
 	-- Create weapon buttons in sidebar
 	for _, weapon in ipairs(weaponData) do
 		local btn = Instance.new("TextButton")
@@ -712,14 +712,14 @@ local function createUI(errorMsg)
 		btn.Text = ""
 		btn.Parent = sidebar
 		createCorner(btn, 6)
-		
+
 		local catBar = Instance.new("Frame")
 		catBar.Size = UDim2.new(0, 4, 1, -8)
 		catBar.Position = UDim2.new(0, 4, 0, 4)
 		catBar.BackgroundColor3 = Theme.CategoryColors[weapon.Category] or Theme.Accent
 		catBar.Parent = btn
 		createCorner(catBar, 2)
-		
+
 		local nameLabel = Instance.new("TextLabel")
 		nameLabel.Size = UDim2.new(1, -20, 0, 20)
 		nameLabel.Position = UDim2.new(0, 14, 0, 4)
@@ -730,7 +730,7 @@ local function createUI(errorMsg)
 		nameLabel.Font = Enum.Font.GothamBold
 		nameLabel.TextXAlignment = Enum.TextXAlignment.Left
 		nameLabel.Parent = btn
-		
+
 		local catLabel = Instance.new("TextLabel")
 		catLabel.Size = UDim2.new(1, -20, 0, 14)
 		catLabel.Position = UDim2.new(0, 14, 0, 22)
@@ -741,14 +741,14 @@ local function createUI(errorMsg)
 		catLabel.Font = Enum.Font.Gotham
 		catLabel.TextXAlignment = Enum.TextXAlignment.Left
 		catLabel.Parent = btn
-		
+
 		tweenHover(btn, Theme.Accent, Theme.SurfaceHover)
-		
+
 		btn.MouseButton1Click:Connect(function()
 			buildWeaponDetailPanel(weapon)
 		end)
 	end
-	
+
 	-- ==================== SPREADSHEET VIEW ====================
 	local sheetHeader = Instance.new("Frame")
 	sheetHeader.Size = UDim2.new(1, -20, 0, 35)
@@ -756,7 +756,7 @@ local function createUI(errorMsg)
 	sheetHeader.BackgroundColor3 = Theme.Surface
 	sheetHeader.Parent = sheetContent
 	createCorner(sheetHeader, 6)
-	
+
 	-- Header columns
 	local nameHeader = Instance.new("TextLabel")
 	nameHeader.Size = UDim2.new(0, 120, 1, 0)
@@ -768,7 +768,7 @@ local function createUI(errorMsg)
 	nameHeader.Font = Enum.Font.GothamBold
 	nameHeader.TextXAlignment = Enum.TextXAlignment.Left
 	nameHeader.Parent = sheetHeader
-	
+
 	local headerX = 125
 	for _, col in ipairs(STAT_COLUMNS) do
 		local h = Instance.new("TextLabel")
@@ -782,7 +782,7 @@ local function createUI(errorMsg)
 		h.Parent = sheetHeader
 		headerX = headerX + col.Width + 4
 	end
-	
+
 	local actionHeader = Instance.new("TextLabel")
 	actionHeader.Size = UDim2.new(0, 60, 1, 0)
 	actionHeader.Position = UDim2.new(0, headerX, 0, 0)
@@ -792,7 +792,7 @@ local function createUI(errorMsg)
 	actionHeader.TextSize = 10
 	actionHeader.Font = Enum.Font.GothamBold
 	actionHeader.Parent = sheetHeader
-	
+
 	-- Grid
 	local sheetGrid = Instance.new("ScrollingFrame")
 	sheetGrid.Size = UDim2.new(1, -20, 1, -100)
@@ -803,24 +803,24 @@ local function createUI(errorMsg)
 	sheetGrid.AutomaticCanvasSize = Enum.AutomaticSize.XY
 	sheetGrid.Parent = sheetContent
 	createCorner(sheetGrid, 10)
-	
+
 	local gridLayout = Instance.new("UIListLayout")
 	gridLayout.Padding = UDim.new(0, 2)
 	gridLayout.Parent = sheetGrid
-	
+
 	local gridPadding = Instance.new("UIPadding")
 	gridPadding.PaddingTop = UDim.new(0, 5)
 	gridPadding.PaddingLeft = UDim.new(0, 5)
 	gridPadding.PaddingRight = UDim.new(0, 5)
 	gridPadding.Parent = sheetGrid
-	
+
 	for _, weapon in ipairs(weaponData) do
 		local row = Instance.new("Frame")
 		row.Size = UDim2.new(1, -10, 0, 30)
 		row.BackgroundColor3 = Theme.SurfaceHover
 		row.Parent = sheetGrid
 		createCorner(row, 4)
-		
+
 		local nameLabel = Instance.new("TextLabel")
 		nameLabel.Size = UDim2.new(0, 115, 1, 0)
 		nameLabel.Position = UDim2.new(0, 5, 0, 0)
@@ -832,7 +832,7 @@ local function createUI(errorMsg)
 		nameLabel.TextXAlignment = Enum.TextXAlignment.Left
 		nameLabel.TextTruncate = Enum.TextTruncate.AtEnd
 		nameLabel.Parent = row
-		
+
 		local colX = 120
 		for _, col in ipairs(STAT_COLUMNS) do
 			local box = Instance.new("TextBox")
@@ -845,7 +845,7 @@ local function createUI(errorMsg)
 			box.Font = Enum.Font.Gotham
 			box.Parent = row
 			createCorner(box, 3)
-			
+
 			box.FocusLost:Connect(function()
 				local n = tonumber(box.Text)
 				if n then
@@ -854,10 +854,10 @@ local function createUI(errorMsg)
 					box.Text = tostring(weapon[col.Key] or 0)
 				end
 			end)
-			
+
 			colX = colX + col.Width + 4
 		end
-		
+
 		local testBtn = Instance.new("TextButton")
 		testBtn.Size = UDim2.new(0, 50, 0, 22)
 		testBtn.Position = UDim2.new(0, colX, 0, 4)
@@ -868,19 +868,19 @@ local function createUI(errorMsg)
 		testBtn.Font = Enum.Font.GothamBold
 		testBtn.Parent = row
 		createCorner(testBtn, 4)
-		
+
 		testBtn.MouseButton1Click:Connect(function()
 			testWeapon(weapon.Name)
 		end)
 	end
-	
+
 	-- Spreadsheet action bar
 	local sheetActionBar = Instance.new("Frame")
 	sheetActionBar.Size = UDim2.new(1, -20, 0, 45)
 	sheetActionBar.Position = UDim2.new(0, 10, 1, -50)
 	sheetActionBar.BackgroundTransparency = 1
 	sheetActionBar.Parent = sheetContent
-	
+
 	local sheetApplyBtn = Instance.new("TextButton")
 	sheetApplyBtn.Size = UDim2.new(0, 160, 0, 38)
 	sheetApplyBtn.Position = UDim2.new(0.5, -80, 0, 0)
@@ -892,7 +892,7 @@ local function createUI(errorMsg)
 	sheetApplyBtn.Parent = sheetActionBar
 	createCorner(sheetApplyBtn, 8)
 	tweenHover(sheetApplyBtn, Theme.AccentHover, Theme.Accent)
-	
+
 	local sheetStatus = Instance.new("TextLabel")
 	sheetStatus.Size = UDim2.new(0, 200, 0, 38)
 	sheetStatus.Position = UDim2.new(0.5, 90, 0, 0)
@@ -903,11 +903,11 @@ local function createUI(errorMsg)
 	sheetStatus.Font = Enum.Font.Gotham
 	sheetStatus.TextXAlignment = Enum.TextXAlignment.Left
 	sheetStatus.Parent = sheetActionBar
-	
+
 	sheetApplyBtn.MouseButton1Click:Connect(function()
 		applyChangesToSource(sheetStatus)
 	end)
-	
+
 	-- Tab switching logic
 	local function switchTab(tab)
 		currentTab = tab
@@ -916,7 +916,7 @@ local function createUI(errorMsg)
 		forgeTabBtn.BackgroundColor3 = tab == "forge" and Theme.Accent or Theme.SurfaceHover
 		sheetTabBtn.BackgroundColor3 = tab == "spreadsheet" and Theme.Accent or Theme.SurfaceHover
 	end
-	
+
 	forgeTabBtn.MouseButton1Click:Connect(function() switchTab("forge") end)
 	sheetTabBtn.MouseButton1Click:Connect(function() switchTab("spreadsheet") end)
 end
@@ -939,3 +939,4 @@ toggleButton.Click:Connect(function()
 end)
 
 print("[Arsenal Forge] Unified Plugin Loaded! ⚒️")
+	
