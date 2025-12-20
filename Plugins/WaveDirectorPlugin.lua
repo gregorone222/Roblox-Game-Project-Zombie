@@ -137,12 +137,23 @@ local function parseZombieConfig()
 		local minWave = tonumber(block:match("MinWave%s*=%s*(%d+)")) or 0
 		local chance = tonumber(block:match("Chance%s*=%s*([%d%.]+)")) or 0
 		
+		-- Parse stats for Zombie Editor
+		local maxHealth = tonumber(block:match("MaxHealth%s*=%s*(%d+)")) or 100
+		local walkSpeed = tonumber(block:match("WalkSpeed%s*=%s*([%d%.]+)")) or 10
+		local attackDamage = tonumber(block:match("AttackDamage%s*=%s*(%d+)")) or 10
+		local attackCooldown = tonumber(block:match("AttackCooldown%s*=%s*([%d%.]+)")) or 1.5
+		
 		-- Only add if it has Chance or MinWave (i.e., it's a spawnable type)
 		if chance > 0 or minWave > 0 then
 			table.insert(zombieData, {
 				TypeName = typeName,
 				MinWave = minWave,
 				Chance = chance,
+				-- Zombie Stats
+				MaxHealth = maxHealth,
+				WalkSpeed = walkSpeed,
+				AttackDamage = attackDamage,
+				AttackCooldown = attackCooldown,
 			})
 		end
 	end
@@ -193,6 +204,26 @@ local function applyChanges(statusLabel)
 		-- Replace MinWave
 		modified = modified:gsub(chancePattern, function(block)
 			return block:gsub("(MinWave%s*=%s*)%d+", "%1" .. tostring(data.MinWave))
+		end)
+		
+		-- Replace MaxHealth
+		modified = modified:gsub(chancePattern, function(block)
+			return block:gsub("(MaxHealth%s*=%s*)%d+", "%1" .. tostring(data.MaxHealth))
+		end)
+		
+		-- Replace WalkSpeed
+		modified = modified:gsub(chancePattern, function(block)
+			return block:gsub("(WalkSpeed%s*=%s*)[%d%.]+", "%1" .. string.format("%.1f", data.WalkSpeed))
+		end)
+		
+		-- Replace AttackDamage
+		modified = modified:gsub(chancePattern, function(block)
+			return block:gsub("(AttackDamage%s*=%s*)%d+", "%1" .. tostring(data.AttackDamage))
+		end)
+		
+		-- Replace AttackCooldown
+		modified = modified:gsub(chancePattern, function(block)
+			return block:gsub("(AttackCooldown%s*=%s*)[%d%.]+", "%1" .. string.format("%.1f", data.AttackCooldown))
 		end)
 	end
 	
@@ -489,6 +520,137 @@ local function createUI()
 				zombieData[i].Chance = rel
 				chanceValue.Text = string.format("%.0f%%", rel * 100)
 			end
+		end)
+		
+		-- Edit Stats Button
+		local editBtn = Instance.new("TextButton")
+		editBtn.Size = UDim2.new(0, 60, 0, 24)
+		editBtn.Position = UDim2.new(1, -70, 0, 8)
+		editBtn.BackgroundColor3 = Theme.Accent
+		editBtn.Text = "✏️ Edit"
+		editBtn.TextColor3 = Theme.Text
+		editBtn.TextSize = 11
+		editBtn.Font = Enum.Font.GothamBold
+		editBtn.Parent = card
+		createCorner(editBtn, 6)
+		tweenHover(editBtn, Theme.AccentHover, Theme.Accent)
+		
+		editBtn.MouseButton1Click:Connect(function()
+			-- Create Modal Overlay
+			local overlay = Instance.new("Frame")
+			overlay.Name = "ModalOverlay"
+			overlay.Size = UDim2.new(1, 0, 1, 0)
+			overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+			overlay.BackgroundTransparency = 0.5
+			overlay.ZIndex = 100
+			overlay.Parent = mainFrame
+			
+			local modal = Instance.new("Frame")
+			modal.Name = "StatModal"
+			modal.Size = UDim2.new(0, 320, 0, 320)
+			modal.Position = UDim2.new(0.5, -160, 0.5, -160)
+			modal.BackgroundColor3 = Theme.Surface
+			modal.ZIndex = 101
+			modal.Parent = overlay
+			createCorner(modal, 12)
+			createStroke(modal, Theme.Accent, 2)
+			
+			-- Modal Header
+			local modalTitle = Instance.new("TextLabel")
+			modalTitle.Size = UDim2.new(1, 0, 0, 40)
+			modalTitle.BackgroundColor3 = Theme.Accent
+			modalTitle.Text = "🧟 Edit: " .. data.TypeName
+			modalTitle.TextColor3 = Theme.Text
+			modalTitle.TextSize = 16
+			modalTitle.Font = Enum.Font.GothamBold
+			modalTitle.ZIndex = 102
+			modalTitle.Parent = modal
+			createCorner(modalTitle, 12)
+			
+			-- Input Fields
+			local function createStatRow(labelText, value, yPos, onChange)
+				local lbl = Instance.new("TextLabel")
+				lbl.Size = UDim2.new(0.5, -10, 0, 30)
+				lbl.Position = UDim2.new(0, 15, 0, yPos)
+				lbl.BackgroundTransparency = 1
+				lbl.Text = labelText
+				lbl.TextColor3 = Theme.TextMuted
+				lbl.TextSize = 12
+				lbl.Font = Enum.Font.Gotham
+				lbl.TextXAlignment = Enum.TextXAlignment.Left
+				lbl.ZIndex = 102
+				lbl.Parent = modal
+				
+				local input = Instance.new("TextBox")
+				input.Size = UDim2.new(0.4, 0, 0, 28)
+				input.Position = UDim2.new(0.55, 0, 0, yPos + 1)
+				input.BackgroundColor3 = Theme.Background
+				input.Text = tostring(value)
+				input.TextColor3 = Theme.Text
+				input.TextSize = 13
+				input.Font = Enum.Font.GothamBold
+				input.ZIndex = 102
+				input.Parent = modal
+				createCorner(input, 6)
+				createStroke(input, Theme.Border, 1)
+				
+				input.FocusLost:Connect(function()
+					local v = tonumber(input.Text)
+					if v then onChange(v) end
+				end)
+				
+				return input
+			end
+			
+			local hpInput = createStatRow("❤️ Max Health", data.MaxHealth, 55, function(v) zombieData[i].MaxHealth = math.floor(v) end)
+			local speedInput = createStatRow("⚡ Walk Speed", data.WalkSpeed, 95, function(v) zombieData[i].WalkSpeed = v end)
+			local dmgInput = createStatRow("⚔️ Attack Damage", data.AttackDamage, 135, function(v) zombieData[i].AttackDamage = math.floor(v) end)
+			local cdInput = createStatRow("⏱️ Attack Cooldown", data.AttackCooldown, 175, function(v) zombieData[i].AttackCooldown = v end)
+			
+			-- Buttons
+			local cancelBtn = Instance.new("TextButton")
+			cancelBtn.Size = UDim2.new(0.4, 0, 0, 35)
+			cancelBtn.Position = UDim2.new(0.05, 0, 0, 230)
+			cancelBtn.BackgroundColor3 = Theme.Danger
+			cancelBtn.Text = "Cancel"
+			cancelBtn.TextColor3 = Theme.Text
+			cancelBtn.TextSize = 13
+			cancelBtn.Font = Enum.Font.GothamBold
+			cancelBtn.ZIndex = 102
+			cancelBtn.Parent = modal
+			createCorner(cancelBtn, 8)
+			
+			local confirmBtn = Instance.new("TextButton")
+			confirmBtn.Size = UDim2.new(0.4, 0, 0, 35)
+			confirmBtn.Position = UDim2.new(0.55, 0, 0, 230)
+			confirmBtn.BackgroundColor3 = Theme.Success
+			confirmBtn.Text = "Confirm"
+			confirmBtn.TextColor3 = Theme.Background
+			confirmBtn.TextSize = 13
+			confirmBtn.Font = Enum.Font.GothamBold
+			confirmBtn.ZIndex = 102
+			confirmBtn.Parent = modal
+			createCorner(confirmBtn, 8)
+			
+			local noteLabel = Instance.new("TextLabel")
+			noteLabel.Size = UDim2.new(1, -20, 0, 30)
+			noteLabel.Position = UDim2.new(0, 10, 0, 275)
+			noteLabel.BackgroundTransparency = 1
+			noteLabel.Text = "Click 'Apply Changes' to save"
+			noteLabel.TextColor3 = Theme.TextMuted
+			noteLabel.TextSize = 10
+			noteLabel.Font = Enum.Font.Gotham
+			noteLabel.ZIndex = 102
+			noteLabel.Parent = modal
+			
+			cancelBtn.MouseButton1Click:Connect(function()
+				overlay:Destroy()
+			end)
+			
+			confirmBtn.MouseButton1Click:Connect(function()
+				-- Values already updated via FocusLost
+				overlay:Destroy()
+			end)
 		end)
 	end
 	
