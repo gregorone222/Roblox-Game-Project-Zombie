@@ -131,3 +131,22 @@ Gunakan `ZIndexBehavior` = **Sibling** (Default).
 *   **11 - 50:** Main Content (Buttons, Text, Images).
 *   **100+:** Overlays (Popups, Tooltips, Modals).
 *   **1000+:** Global Effects (Screen Flash, Loading Screen).
+
+## 10. 📱 Mobile Testing & Layout Guidelines
+
+### Collision Prevention
+Untuk menghindari elemen yang saling menimpa:
+*   **"Safe Padding" Rule:** Setiap elemen teks **WAJIB** memiliki margin minimal **5% (Scale 0.05)** dari tepi kontainernya.
+*   **Anchor-Aware Sizing:** Jika ada 2 elemen di baris yang sama (Header + Close Btn), kurangi lebar elemen utama (contoh: `0.85` bukan `1.0`).
+*   **Separator Lines:** Elemen teks **TIDAK BOLEH** memiliki posisi Y yang melewati garis pembatas visual. Tempatkan teks **di bawah** garis (contoh: Garis di Y `0.3`, Teks mulai di Y `0.35`).
+
+### Mobile Testing Checklist
+Sebelum commit, **WAJIB** test dengan Device Emulator (Roblox Studio):
+1.  **iPhone SE (Small):** Apakah teks terbaca? Tombol cukup besar?
+2.  **iPad Pro (Tablet):** Apakah layout seimbang? Tidak terlalu kecil?
+3.  **Samsung Galaxy (Android Landscape):** Apakah ada overlap/tabrakan?
+
+### Text Size Mobile Rule
+*   **Header:** MaxTextSize `32` (Bukan 48) untuk mobile.
+*   **Body/Desc:** MaxTextSize `20` (Bukan 24) untuk mobile.
+*   **Button:** MaxTextSize `24` agar tombol dengan teks panjang ("NOT ENOUGH") tidak overflow.

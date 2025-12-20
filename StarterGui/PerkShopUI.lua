@@ -101,6 +101,15 @@ local function addStroke(parent, color, thickness)
 	return stroke
 end
 
+-- Rule Compliant: Add UITextSizeConstraint to TextScaled elements
+local function addTextConstraint(parent, minSize, maxSize)
+	local constraint = Instance.new("UITextSizeConstraint")
+	constraint.MinTextSize = minSize or 14
+	constraint.MaxTextSize = maxSize or 48
+	constraint.Parent = parent
+	return constraint
+end
+
 local function addBolts(parent)
 	local corners = {
 		UDim2.new(0, 5, 0, 5),
@@ -165,16 +174,24 @@ local function createUI()
 		Parent = playerGui,
 		IgnoreGuiInset = false,
 		Enabled = false,
-		ResetOnSpawn = false
+		ResetOnSpawn = false,
+		ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	})
+	
+	-- ROBUST COMPACT DETECTION
+	local camera = workspace.CurrentCamera
+	local viewport = camera.ViewportSize
+	local isCompact = (viewport.X < 1024) or (viewport.Y < 600) or UserInputService.TouchEnabled
+	
+	print("PerkShopUI: UI Created. Viewport:", viewport, "Compact Mode:", isCompact, "TouchEnabled:", UserInputService.TouchEnabled) -- DETAIL DEBUG
 
 	-- Initialize Blur Effect
 	local camera = workspace.CurrentCamera
 	blurEffect = create("BlurEffect", {Parent = camera, Size = 0, Enabled = false})
 
-	-- Background Mesh (Chainlink Fence)
+	-- Background Mesh (Chainlink Fence) - ZIndex: Background Layer
 	local fence = create("ImageLabel", {
-		Name = "Fence",
+		Name = "img_Fence",
 		Size = UDim2.new(1, 0, 1, 0),
 		Image = "rbxassetid://6522339596", -- Wire mesh texture
 		ImageColor3 = Color3.new(0,0,0),
@@ -183,17 +200,19 @@ local function createUI()
 		TileSize = UDim2.new(0, 64, 0, 64),
 		BackgroundTransparency = 0.5,
 		BackgroundColor3 = Color3.new(0,0,0),
+		ZIndex = 1, -- Background
 		Parent = screenGui
 	})
 
-	-- Main Frame (Wooden Board)
+	-- Main Frame (Wooden Board) - ZIndex: Content Layer
 	mainFrame = create("Frame", {
-		Name = "MainFrame",
+		Name = "fr_Main",
 		Size = UDim2.new(0.7, 0, 0.7, 0), -- Converted to Scale (70% screen)
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.new(0.5, 0, 0.5, 0),
 		BackgroundColor3 = THEME.WOOD_DARK,
 		BorderSizePixel = 0,
+		ZIndex = 10, -- Content Base
 		Parent = screenGui
 	})
 	addStroke(mainFrame, THEME.WOOD_LIGHT, 6)
@@ -208,13 +227,14 @@ local function createUI()
 		aspect.AspectRatio = 1.6 -- Wider on mobile landscape
 	end
 
-	-- Header (Canvas Banner)
+	-- Header (Canvas Banner) - ZIndex: Content Layer
 	local header = create("Frame", {
-		Name = "Header",
+		Name = "fr_Header",
 		Size = UDim2.new(1, 20, 0, 80),
 		Position = UDim2.new(0, -10, 0, -20),
 		BackgroundColor3 = THEME.CANVAS,
 		Rotation = -1,
+		ZIndex = 15,
 		Parent = mainFrame
 	})
 	addBolts(header)
@@ -232,42 +252,58 @@ local function createUI()
 		Parent = header
 	})
 
-	create("TextLabel", {
+	-- DYNAMIC VARIABLES FOR COMPACT MODE
+	local titleWidth = isCompact and 0.60 or 0.85 -- Even narrower (60%)
+	local titleMaxSize = isCompact and 24 or 48
+	local detailTitleMaxSize = isCompact and 24 or 36
+	local btnMaxSize = isCompact and 20 or 28
+
+	local lbl_Title = create("TextLabel", {
+		Name = "lbl_Title",
 		Text = "SURVIVOR SUPPLY",
-		Size = UDim2.new(1, 0, 0.8, 0),
-		Position = UDim2.new(0,0,0.1,0),
+		Size = UDim2.new(titleWidth, 0, 0.8, 0), -- Dynamic Width
+		Position = UDim2.new(0.05, 0, 0.1, 0),
 		BackgroundTransparency = 1,
 		Font = THEME.FONT_HEAVY,
-		TextScaled = true, -- Rule Compliant
+		TextScaled = true,
 		TextColor3 = THEME.TEXT_DARK,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		ZIndex = 16,
 		Parent = header
 	})
+	addTextConstraint(lbl_Title, 14, titleMaxSize) -- Dynamic MaxSize
 
-	-- Close Button
-	local closeBtn = create("TextButton", {
+	-- Close Button - ZIndex: Overlay (Pinned to Right)
+	local btn_Close = create("TextButton", {
+		Name = "btn_Close",
 		Text = "CLOSE",
-		Size = UDim2.new(0.1, 0, 0.08, 0), -- Scale
-		Position = UDim2.new(0.92, 0, 0, 0),
+		Size = UDim2.new(0.12, 0, 0.1, 0), -- Slightly larger touch target
+		AnchorPoint = Vector2.new(1, 0), -- Pin Right
+		Position = UDim2.new(0.98, 0, 0, 0), -- 2% margin from right
 		BackgroundColor3 = THEME.ACCENT_ORANGE,
 		TextColor3 = THEME.TEXT_LIGHT,
 		Font = THEME.FONT_HEAVY,
 		TextScaled = true,
 		Rotation = 5,
+		ZIndex = 100,
 		Parent = mainFrame
 	})
-	addBolts(closeBtn)
-	closeBtn.MouseButton1Click:Connect(closeShop)
+	addBolts(btn_Close)
+	addTextConstraint(btn_Close, 12, 24)
+	btn_Close.MouseButton1Click:Connect(closeShop)
 
-	-- Points Counter (Wooden Tag)
-	local pointsTape = create("Frame", {
-		Size = UDim2.new(0.25, 0, 0.06, 0), -- Scale
+	-- Points Counter (Wooden Tag) - ZIndex: Content
+	local fr_Points = create("Frame", {
+		Name = "fr_Points",
+		Size = UDim2.new(0.25, 0, 0.06, 0),
 		Position = UDim2.new(0.02, 0, 0.1, 0),
 		BackgroundColor3 = THEME.WOOD_LIGHT,
 		Rotation = 2,
+		ZIndex = 20,
 		Parent = mainFrame
 	})
-	create("TextLabel", {
-		Name = "Value",
+	local lbl_Points = create("TextLabel", {
+		Name = "lbl_Points",
 		Text = "POINTS: 0",
 		Size = UDim2.new(0.9,0,0.8,0),
 		Position = UDim2.new(0.05,0,0.1,0),
@@ -275,12 +311,14 @@ local function createUI()
 		Font = THEME.FONT_HANDWRITTEN,
 		TextScaled = true,
 		TextColor3 = THEME.TEXT_DARK,
-		Parent = pointsTape
+		ZIndex = 21,
+		Parent = fr_Points
 	})
+	addTextConstraint(lbl_Points, 12, 28)
 
-	-- Left: Grid of Supply Cards
+	-- Left: Grid of Supply Cards - ZIndex: Content
 	plateGrid = create("ScrollingFrame", {
-		Name = "Grid",
+		Name = "sc_Grid",
 		Size = UDim2.new(0.6, 0, 0.8, 0),
 		Position = UDim2.new(0, 20, 0.18, 0),
 		BackgroundTransparency = 1,
@@ -289,6 +327,7 @@ local function createUI()
 		ScrollBarImageColor3 = THEME.WOOD_LIGHT,
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		CanvasSize = UDim2.new(0,0,0,0),
+		ZIndex = 15,
 		Parent = mainFrame
 	})
 	create("UIGridLayout", {
@@ -298,12 +337,13 @@ local function createUI()
 		Parent = plateGrid
 	})
 
-	-- Right: Detail Card (Canvas)
+	-- Right: Detail Card (Canvas) - ZIndex: Content
 	detailPlate = create("Frame", {
-		Name = "DetailPlate",
+		Name = "fr_Detail",
 		Size = UDim2.new(0.35, 0, 0.8, 0),
 		Position = UDim2.new(0.63, 0, 0.15, 0),
 		BackgroundColor3 = THEME.CANVAS,
+		ZIndex = 15,
 		Parent = mainFrame
 	})
 	addStroke(detailPlate, THEME.WOOD_LIGHT, 4)
@@ -318,22 +358,25 @@ local function createUI()
 	})
 
 	-- Detail Content
-	local dTitle = create("TextLabel", {
-		Name = "Title",
+	local lbl_DetailTitle = create("TextLabel", {
+		Name = "lbl_Title",
 		Text = "SELECT UPGRADE",
-		Size = UDim2.new(1, 0, 0.15, 0),
+		Size = UDim2.new(0.9, 0, 0.15, 0),
+		Position = UDim2.new(0.05, 0, 0, 0),
 		BackgroundTransparency = 1,
 		Font = THEME.FONT_HEAVY,
 		TextScaled = true,
 		TextColor3 = THEME.TEXT_DARK,
+		ZIndex = 16,
 		Parent = detailPlate
 	})
+	addTextConstraint(lbl_DetailTitle, 14, detailTitleMaxSize) -- Dynamic MaxSize
 
-	local dDesc = create("TextLabel", {
-		Name = "Desc",
+	local lbl_DetailDesc = create("TextLabel", {
+		Name = "lbl_Desc",
 		Text = "Pick an upgrade to boost your survival.",
-		Size = UDim2.new(0.9, 0, 0.45, 0),
-		Position = UDim2.new(0.05, 0, 0.25, 0),
+		Size = UDim2.new(0.9, 0, 0.35, 0), -- Reduced height slightly
+		Position = UDim2.new(0.05, 0, 0.35, 0), -- Moved BELOW weld line (was 0.25)
 		BackgroundTransparency = 1,
 		Font = THEME.FONT_HANDWRITTEN,
 		TextScaled = true,
@@ -341,11 +384,13 @@ local function createUI()
 		TextWrapped = true,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextYAlignment = Enum.TextYAlignment.Top,
+		ZIndex = 16,
 		Parent = detailPlate
 	})
+	addTextConstraint(lbl_DetailDesc, 10, 20) -- Smaller text for mobile
 
-	local dCost = create("TextLabel", {
-		Name = "Cost",
+	local lbl_DetailCost = create("TextLabel", {
+		Name = "lbl_Cost",
 		Text = "COST: 0",
 		Size = UDim2.new(0.9, 0, 0.1, 0),
 		Position = UDim2.new(0.05, 0, 0.72, 0),
@@ -354,11 +399,13 @@ local function createUI()
 		TextScaled = true,
 		TextColor3 = THEME.ACCENT_ORANGE,
 		TextXAlignment = Enum.TextXAlignment.Right,
+		ZIndex = 16,
 		Parent = detailPlate
 	})
+	addTextConstraint(lbl_DetailCost, 12, 28)
 
-	local actionBtn = create("TextButton", {
-		Name = "ActionBtn",
+	local btn_Action = create("TextButton", {
+		Name = "btn_Action",
 		Text = "GET",
 		Size = UDim2.new(0.8, 0, 0.12, 0),
 		Position = UDim2.new(0.1, 0, 0.85, 0),
@@ -366,10 +413,12 @@ local function createUI()
 		TextColor3 = THEME.TEXT_DARK,
 		Font = THEME.FONT_HEAVY,
 		TextScaled = true,
+		ZIndex = 20,
 		Parent = detailPlate
 	})
-	addBolts(actionBtn)
-	actionBtn.MouseButton1Click:Connect(attemptPurchase)
+	addBolts(btn_Action)
+	addTextConstraint(btn_Action, 12, btnMaxSize) -- Dynamic MaxSize
+	btn_Action.MouseButton1Click:Connect(attemptPurchase)
 end
 
 function buildShop()
@@ -450,11 +499,11 @@ function selectPerk(index)
 
 	-- Update Detail
 	local detail = detailPlate
-	detail.Title.Text = vis.Name
-	detail.Desc.Text = config.Description or "No schematics found."
-	detail.Cost.Text = "COST: " .. formatNumber(cost)
+	detail.lbl_Title.Text = vis.Name
+	detail.lbl_Desc.Text = config.Description or "No schematics found."
+	detail.lbl_Cost.Text = "COST: " .. formatNumber(cost)
 
-	local btn = detail.ActionBtn
+	local btn = detail.btn_Action
 	if isOwned then
 		btn.Text = "OWNED"
 		btn.BackgroundColor3 = THEME.WOOD_DARK
@@ -489,13 +538,10 @@ end
 
 function updateState()
 	if mainFrame then
-		-- Update Points Tape
-		-- Find PointsTape via children (since we didn't name it explicitly in CreateUI, referencing by order or scanning is tricky if not named)
-		-- Let's assume we can find it by text child
-		for _, c in ipairs(mainFrame:GetChildren()) do
-			if c:FindFirstChild("Value") then
-				c.Value.Text = "POINTS: " .. formatNumber(currentPlayerPoints)
-			end
+		-- Update Points Display (Rule compliant naming: fr_Points.lbl_Points)
+		local pointsFrame = mainFrame:FindFirstChild("fr_Points")
+		if pointsFrame and pointsFrame:FindFirstChild("lbl_Points") then
+			pointsFrame.lbl_Points.Text = "POINTS: " .. formatNumber(currentPlayerPoints)
 		end
 	end
 
@@ -529,7 +575,7 @@ end
 function attemptPurchase()
 	if not selectedPerkIndex or not perkList[selectedPerkIndex] then return end
 	local item = perkList[selectedPerkIndex]
-	local btn = detailPlate.ActionBtn
+	local btn = detailPlate.btn_Action
 
 	if btn.Text == "EQUIPPED" or btn.Text == "NO SCRAP" then return end
 
