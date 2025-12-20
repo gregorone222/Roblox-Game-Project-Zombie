@@ -18,7 +18,7 @@ local RemoteFunctions = ReplicatedStorage.RemoteFunctions
 local ModuleScriptReplicatedStorage = ReplicatedStorage:WaitForChild("ModuleScript")
 
 local WeaponModule = require(ModuleScriptReplicatedStorage:WaitForChild("WeaponModule"))
-local ProximityUIHandler = require(ModuleScriptReplicatedStorage:WaitForChild("ProximityUIHandler"))
+
 
 local openReplaceUI = RemoteEvents:WaitForChild("OpenReplaceUI")
 local replaceChoiceEv = RemoteEvents:WaitForChild("ReplaceChoice")
@@ -27,6 +27,7 @@ local getCostRF = RemoteFunctions:WaitForChild("GetRandomWeaponCost")
 
 local isUIOpen = false
 local pendingReplaceData = nil -- Stores data from server if inventory is full
+local randomPrompt = nil -- Forward declaration for prompt reference
 
 -- Theme Constants
 local COLORS = {
@@ -804,6 +805,9 @@ local function startDistanceCheck(part)
 						end
 					end
 					isUIOpen = false
+					
+					-- Re-enable prompt
+					if randomPrompt then randomPrompt.Enabled = true end
 				end
 			end
 		end
@@ -872,20 +876,36 @@ local randomPart = workspace:WaitForChild("Random", 5)
 local promptHandler = nil
 
 if randomPart then
-	promptHandler = ProximityUIHandler.Register({
-		name = "RandomWeaponShop",
-		partName = "Random",
-		parent = workspace,
-		searchRecursive = true,
-		onToggle = function(isOpen)
-			if isOpen then
-				purchaseRandomWeapon()
-				if promptHandler then promptHandler:SetOpen(false) end
-			end
-		end
-	})
+	randomPrompt = randomPart:FindFirstChildWhichIsA("ProximityPrompt", true)
+	if not randomPrompt then
+		-- Create if missing, attaching to randomPart or a sub-part if needed
+		-- The original code used searchRecursive, so let's try to find it again or create on Attachment
+		local attach = randomPart:FindFirstChild("Attachment")
+		local target = attach or randomPart
+		
+		randomPrompt = Instance.new("ProximityPrompt")
+		randomPrompt.Name = "RandomPrompt" -- Matches the cost updater logic below
+		randomPrompt.ObjectText = "Mystery Cache"
+		randomPrompt.ActionText = "Buy"
+		randomPrompt.Parent = target
+	end
 
-	-- Cost Updater (Floating Text)
+	randomPrompt.Triggered:Connect(function()
+		purchaseRandomWeapon()
+		-- We allow purchaseRandomWeapon to handle UI open/close
+		-- But we should disable prompt temporarily to prevent spam
+		randomPrompt.Enabled = false
+		task.wait(1)
+		-- Re-enable logic is actually handled by 'isOpen' toggle in previous handler
+		-- Here we just re-enable it after a short delay or when UI closes?
+		-- The previous logic: promptHandler:SetOpen(false) when isOpen=true
+		-- which implies prompt HIDDEN when UI OPEN.
+		-- purchaseRandomWeapon calls showSpinUI -> isUIOpen = true
+	end)
+end
+
+-- Cost Updater (Floating Text)
+if randomPart then
 	task.spawn(function()
 		local attachment = randomPart:WaitForChild("Attachment", 10)
 		if attachment then

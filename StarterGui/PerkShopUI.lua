@@ -16,7 +16,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 local RemoteEvents = ReplicatedStorage:WaitForChild("RemoteEvents")
 local RemoteFunctions = ReplicatedStorage:WaitForChild("RemoteFunctions")
-local ProximityUIHandler = require(ReplicatedStorage.ModuleScript:WaitForChild("ProximityUIHandler"))
+
 
 local openEv = RemoteEvents:WaitForChild("OpenPerkShop")
 local perkUpdateEv = RemoteEvents:WaitForChild("PerkUpdate")
@@ -129,7 +129,7 @@ local function addBolts(parent)
 end
 
 local function formatNumber(n)
-	return tostring(n):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "")
+	return tostring(n):reverse():gsub("%d%d%d", "%0,"):reverse():gsub("^,", "")
 end
 
 local function hideCoreGuiOnMobile()
@@ -610,15 +610,17 @@ function closeShop()
 end
 
 if perksPart then
-	ProximityUIHandler.Register({
-		name = "PerkShop",
-		partName = "Perks",
-		parent = workspace,
-		searchRecursive = true,
-		onToggle = function(isOpen)
-			requestOpenEvent:FireServer()
-		end
-	})
+	local prompt = perksPart:FindFirstChildWhichIsA("ProximityPrompt")
+	if not prompt then
+		prompt = Instance.new("ProximityPrompt")
+		prompt.ObjectText = "Perk Shop"
+		prompt.ActionText = "Trade" 
+		prompt.Parent = perksPart
+	end
+
+	prompt.Triggered:Connect(function()
+		requestOpenEvent:FireServer()
+	end)
 end
 
 return {}

@@ -22,6 +22,7 @@ local ProximityUIHandler = require(ModuleScriptReplicatedStorage:WaitForChild("P
 
 local proximityHandler -- Forward declaration
 
+
 local upgradeEvent = RemoteEvents:WaitForChild("UpgradeUIOpen")
 local confirmUpgradeEvent = RemoteEvents:WaitForChild("ConfirmUpgrade")
 
