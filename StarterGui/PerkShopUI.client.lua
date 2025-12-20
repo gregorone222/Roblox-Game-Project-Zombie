@@ -1,7 +1,7 @@
 -- PerkShopUI.lua (LocalScript)
 -- Path: StarterGui/PerkShopUI.lua
 -- Script Place: ACT 1: Village
--- Theme: Wasteland Workshop (Scrap Metal, Rust, Industrial, Mad Max)
+-- Theme: Survivor Camp (Makeshift, Warm, Cozy Apocalypse)
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
@@ -43,32 +43,31 @@ local ownedPerksCache = {}
 local currentPlayerPoints = 0
 local blurEffect = nil
 
--- THEME: WASTELAND WORKSHOP
+-- THEME: SURVIVOR CAMP (Warm, Makeshift, Cozy Apocalypse)
 local THEME = {
-	METAL_DARK = Color3.fromRGB(40, 40, 45),    -- Gunmetal
-	METAL_LIGHT = Color3.fromRGB(100, 100, 105),-- Steel
-	RUST_BASE = Color3.fromRGB(100, 50, 30),    -- Deep Rust
-	RUST_LIGHT = Color3.fromRGB(160, 80, 40),   -- Fresh Rust
+	WOOD_DARK = Color3.fromRGB(101, 67, 33),    -- Dark Wood
+	WOOD_LIGHT = Color3.fromRGB(160, 120, 80),  -- Light Wood
+	CANVAS = Color3.fromRGB(205, 190, 160),     -- Tent Canvas
+	FABRIC_GREEN = Color3.fromRGB(85, 107, 47), -- Olive Drab
 
-	PAINT_YELLOW = Color3.fromRGB(220, 180, 20),-- Caution Yellow
-	PAINT_RED = Color3.fromRGB(180, 40, 40),    -- Danger Red
+	ACCENT_YELLOW = Color3.fromRGB(255, 200, 50),-- Lantern Yellow
+	ACCENT_ORANGE = Color3.fromRGB(255, 140, 0), -- Sunset Orange
 
-	TEXT_STAMP = Color3.fromRGB(20, 10, 10),    -- Stamped Black
-	TEXT_CHALK = Color3.fromRGB(220, 220, 220), -- Chalk White
+	TEXT_DARK = Color3.fromRGB(50, 40, 30),     -- Ink Brown
+	TEXT_LIGHT = Color3.fromRGB(250, 245, 230), -- Cream White
 
-	FONT_HEAVY = Enum.Font.Bangers,         -- Big Impact
-	FONT_TECH = Enum.Font.Sarpanch,         -- Industrial
-	FONT_SCRIBBLE = Enum.Font.PermanentMarker, -- Notes
+	FONT_HEAVY = Enum.Font.FredokaOne,          -- Friendly Bold (Valid)
+	FONT_BODY = Enum.Font.GothamMedium,         -- Clean (Valid)
+	FONT_HANDWRITTEN = Enum.Font.PatrickHand,   -- Handwritten (Valid Replacement for Caveat)
 }
 
 local PERK_VISUALS = {
-	HPPlus = { Icon = "🛡️", Name = "ARMOR PLATING", Metal = "Iron" },
-	StaminaPlus = { Icon = "⚙️", Name = "TURBO GEARS", Metal = "Aluminum" },
-	ReloadPlus = { Icon = "🔧", Name = "QUICK FEED", Metal = "Steel" },
-	RevivePlus = { Icon = "🔋", Name = "JUMP STARTER", Metal = "Copper" },
-	RateBoost = { Icon = "🔥", Name = "NITRO INJECTOR", Metal = "Chrome" },
-	Medic = { Icon = "🩹", Name = "PATCH KIT", Metal = "Tin" },
-	ExplosiveRounds = { Icon = "🧨", Name = "BOOM POWDER", Metal = "Lead" },
+	HPPlus = { Icon = "❤️", Name = "IRON WILL" },
+	StaminaPlus = { Icon = "🏃", Name = "SECOND WIND" },
+	ReloadPlus = { Icon = "✋", Name = "DEXTERITY" },
+	RevivePlus = { Icon = "🤝", Name = "HUMANITY" },
+	RateBoost = { Icon = "🔥", Name = "ADRENALINE" },
+	Medic = { Icon = "💚", Name = "FIELD MEDIC" },
 }
 
 -- UI Objects
@@ -186,28 +185,34 @@ local function createUI()
 		Parent = screenGui
 	})
 
-	-- Main Frame (Heavy Steel Door)
+	-- Main Frame (Wooden Board)
 	mainFrame = create("Frame", {
 		Name = "MainFrame",
-		Size = UDim2.new(0, 950, 0, 650),
+		Size = UDim2.new(0.7, 0, 0.7, 0), -- Converted to Scale (70% screen)
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.new(0.5, 0, 0.5, 0),
-		BackgroundColor3 = THEME.METAL_DARK,
+		BackgroundColor3 = THEME.WOOD_DARK,
 		BorderSizePixel = 0,
 		Parent = screenGui
 	})
-	addStroke(mainFrame, THEME.RUST_BASE, 6)
+	addStroke(mainFrame, THEME.WOOD_LIGHT, 6)
+	
+	-- Aspect Ratio Constraint to keep it board-like
+	local aspect = Instance.new("UIAspectRatioConstraint")
+	aspect.AspectRatio = 1.4 -- Approx 950/650
+	aspect.Parent = mainFrame
 
 	if isMobile then
-		mainFrame.Size = UDim2.new(0.98, 0, 0.95, 0)
+		mainFrame.Size = UDim2.new(0.95, 0, 0.9, 0)
+		aspect.AspectRatio = 1.6 -- Wider on mobile landscape
 	end
 
-	-- Header Plate
+	-- Header (Canvas Banner)
 	local header = create("Frame", {
 		Name = "Header",
 		Size = UDim2.new(1, 20, 0, 80),
 		Position = UDim2.new(0, -10, 0, -20),
-		BackgroundColor3 = THEME.PAINT_YELLOW,
+		BackgroundColor3 = THEME.CANVAS,
 		Rotation = -1,
 		Parent = mainFrame
 	})
@@ -222,55 +227,57 @@ local function createUI()
 		ImageColor3 = Color3.new(0,0,0),
 		ImageTransparency = 0.8,
 		ScaleType = Enum.ScaleType.Tile,
-		TileSize = UDim2.new(0, 40, 0, 80),
+		TileSize = UDim2.new(0.05, 0, 1, 0), -- Scale tile
 		Parent = header
 	})
 
 	create("TextLabel", {
-		Text = "THE SCRAP YARD",
-		Size = UDim2.new(1, 0, 1, 0),
+		Text = "SURVIVOR SUPPLY",
+		Size = UDim2.new(1, 0, 0.8, 0),
+		Position = UDim2.new(0,0,0.1,0),
 		BackgroundTransparency = 1,
 		Font = THEME.FONT_HEAVY,
-		TextSize = 48,
-		TextColor3 = THEME.TEXT_STAMP,
+		TextScaled = true, -- Rule Compliant
+		TextColor3 = THEME.TEXT_DARK,
 		Parent = header
 	})
 
-	-- Close Lever (Button)
+	-- Close Button
 	local closeBtn = create("TextButton", {
-		Text = "EXIT",
-		Size = UDim2.new(0, 80, 0, 50),
-		Position = UDim2.new(1, -70, 0, 0),
-		BackgroundColor3 = THEME.PAINT_RED,
-		TextColor3 = THEME.TEXT_CHALK,
+		Text = "CLOSE",
+		Size = UDim2.new(0.1, 0, 0.08, 0), -- Scale
+		Position = UDim2.new(0.92, 0, 0, 0),
+		BackgroundColor3 = THEME.ACCENT_ORANGE,
+		TextColor3 = THEME.TEXT_LIGHT,
 		Font = THEME.FONT_HEAVY,
-		TextSize = 24,
+		TextScaled = true,
 		Rotation = 5,
 		Parent = mainFrame
 	})
 	addBolts(closeBtn)
 	closeBtn.MouseButton1Click:Connect(closeShop)
 
-	-- Points Counter (Duct Tape)
+	-- Points Counter (Wooden Tag)
 	local pointsTape = create("Frame", {
-		Size = UDim2.new(0, 200, 0, 40),
-		Position = UDim2.new(0, 20, 0, 70),
-		BackgroundColor3 = Color3.fromRGB(180, 180, 180),
+		Size = UDim2.new(0.25, 0, 0.06, 0), -- Scale
+		Position = UDim2.new(0.02, 0, 0.1, 0),
+		BackgroundColor3 = THEME.WOOD_LIGHT,
 		Rotation = 2,
 		Parent = mainFrame
 	})
 	create("TextLabel", {
 		Name = "Value",
-		Text = "SCRAP: 0",
-		Size = UDim2.new(1,0,1,0),
+		Text = "POINTS: 0",
+		Size = UDim2.new(0.9,0,0.8,0),
+		Position = UDim2.new(0.05,0,0.1,0),
 		BackgroundTransparency = 1,
-		Font = THEME.FONT_SCRIBBLE,
-		TextSize = 24,
-		TextColor3 = Color3.new(0,0,0),
+		Font = THEME.FONT_HANDWRITTEN,
+		TextScaled = true,
+		TextColor3 = THEME.TEXT_DARK,
 		Parent = pointsTape
 	})
 
-	-- Left: Grid of Metal Plates
+	-- Left: Grid of Supply Cards
 	plateGrid = create("ScrollingFrame", {
 		Name = "Grid",
 		Size = UDim2.new(0.6, 0, 0.8, 0),
@@ -278,7 +285,7 @@ local function createUI()
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		ScrollBarThickness = 8,
-		ScrollBarImageColor3 = THEME.RUST_LIGHT,
+		ScrollBarImageColor3 = THEME.WOOD_LIGHT,
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		CanvasSize = UDim2.new(0,0,0,0),
 		Parent = mainFrame
@@ -290,15 +297,15 @@ local function createUI()
 		Parent = plateGrid
 	})
 
-	-- Right: Detail Plate (Welded)
+	-- Right: Detail Card (Canvas)
 	detailPlate = create("Frame", {
 		Name = "DetailPlate",
 		Size = UDim2.new(0.35, 0, 0.8, 0),
 		Position = UDim2.new(0.63, 0, 0.15, 0),
-		BackgroundColor3 = THEME.METAL_LIGHT,
+		BackgroundColor3 = THEME.CANVAS,
 		Parent = mainFrame
 	})
-	addStroke(detailPlate, THEME.RUST_BASE, 4)
+	addStroke(detailPlate, THEME.WOOD_LIGHT, 4)
 	addBolts(detailPlate)
 
 	-- Welds visual
@@ -312,24 +319,24 @@ local function createUI()
 	-- Detail Content
 	local dTitle = create("TextLabel", {
 		Name = "Title",
-		Text = "SELECT MOD",
-		Size = UDim2.new(1, 0, 0.2, 0),
+		Text = "SELECT UPGRADE",
+		Size = UDim2.new(1, 0, 0.15, 0),
 		BackgroundTransparency = 1,
-		Font = THEME.FONT_TECH,
-		TextSize = 28,
-		TextColor3 = THEME.TEXT_STAMP,
+		Font = THEME.FONT_HEAVY,
+		TextScaled = true,
+		TextColor3 = THEME.TEXT_DARK,
 		Parent = detailPlate
 	})
 
 	local dDesc = create("TextLabel", {
 		Name = "Desc",
-		Text = "Choose an upgrade to weld onto your gear.",
-		Size = UDim2.new(0.9, 0, 0.4, 0),
-		Position = UDim2.new(0.05, 0, 0.35, 0),
+		Text = "Pick an upgrade to boost your survival.",
+		Size = UDim2.new(0.9, 0, 0.45, 0),
+		Position = UDim2.new(0.05, 0, 0.25, 0),
 		BackgroundTransparency = 1,
-		Font = THEME.FONT_SCRIBBLE,
-		TextSize = 20,
-		TextColor3 = Color3.new(0,0,0),
+		Font = THEME.FONT_HANDWRITTEN,
+		TextScaled = true,
+		TextColor3 = THEME.TEXT_DARK,
 		TextWrapped = true,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextYAlignment = Enum.TextYAlignment.Top,
@@ -340,24 +347,24 @@ local function createUI()
 		Name = "Cost",
 		Text = "COST: 0",
 		Size = UDim2.new(0.9, 0, 0.1, 0),
-		Position = UDim2.new(0.05, 0, 0.75, 0),
+		Position = UDim2.new(0.05, 0, 0.72, 0),
 		BackgroundTransparency = 1,
 		Font = THEME.FONT_HEAVY,
-		TextSize = 24,
-		TextColor3 = THEME.RUST_BASE,
+		TextScaled = true,
+		TextColor3 = THEME.ACCENT_ORANGE,
 		TextXAlignment = Enum.TextXAlignment.Right,
 		Parent = detailPlate
 	})
 
 	local actionBtn = create("TextButton", {
 		Name = "ActionBtn",
-		Text = "FORGE",
+		Text = "GET",
 		Size = UDim2.new(0.8, 0, 0.12, 0),
 		Position = UDim2.new(0.1, 0, 0.85, 0),
-		BackgroundColor3 = THEME.PAINT_YELLOW,
-		TextColor3 = THEME.TEXT_STAMP,
+		BackgroundColor3 = THEME.ACCENT_YELLOW,
+		TextColor3 = THEME.TEXT_DARK,
 		Font = THEME.FONT_HEAVY,
-		TextSize = 24,
+		TextScaled = true,
 		Parent = detailPlate
 	})
 	addBolts(actionBtn)
@@ -367,8 +374,8 @@ end
 function buildShop()
 	plateGrid:ClearAllChildren()
 	create("UIGridLayout", {
-		CellSize = UDim2.new(0, 160, 0, 140),
-		CellPadding = UDim2.new(0, 15, 0, 15),
+		CellSize = UDim2.new(0.3, 0, 0.25, 0), -- Scale cells
+		CellPadding = UDim2.new(0.02, 0, 0.02, 0),
 		HorizontalAlignment = Enum.HorizontalAlignment.Left,
 		Parent = plateGrid
 	})
@@ -381,14 +388,14 @@ function buildShop()
 
 	for i, item in ipairs(perkList) do
 		local key = item.Key
-		local vis = PERK_VISUALS[key] or { Icon = "?", Name = key, Metal = "Scrap" }
+		local vis = PERK_VISUALS[key] or { Icon = "?", Name = key }
 		local cost = item.Data.Cost or 0
 		if hasActiveDiscount then cost = math.floor(cost / 2) end
 
 		local plate = create("TextButton", {
 			Name = key,
 			Text = "",
-			BackgroundColor3 = THEME.METAL_LIGHT,
+			BackgroundColor3 = THEME.CANVAS,
 			LayoutOrder = i,
 			Parent = plateGrid
 		})
@@ -400,19 +407,19 @@ function buildShop()
 			Text = vis.Icon,
 			Size = UDim2.new(1, 0, 0.6, 0),
 			BackgroundTransparency = 1,
-			TextSize = 50,
+			TextScaled = true,
 			Parent = plate
 		})
 
-		-- Name (Stamped)
+		-- Name (Label)
 		create("TextLabel", {
 			Text = vis.Name,
-			Size = UDim2.new(1, -10, 0.3, 0),
-			Position = UDim2.new(0, 5, 0.6, 0),
+			Size = UDim2.new(1, -10, 0.25, 0),
+			Position = UDim2.new(0, 5, 0.65, 0),
 			BackgroundTransparency = 1,
 			Font = THEME.FONT_HEAVY,
-			TextColor3 = THEME.TEXT_STAMP,
-			TextSize = 16,
+			TextColor3 = THEME.TEXT_DARK,
+			TextScaled = true, -- Rule Compliant
 			TextWrapped = true,
 			Parent = plate
 		})
@@ -448,19 +455,19 @@ function selectPerk(index)
 
 	local btn = detail.ActionBtn
 	if isOwned then
-		btn.Text = "EQUIPPED"
-		btn.BackgroundColor3 = THEME.METAL_DARK
-		btn.TextColor3 = THEME.TEXT_CHALK
+		btn.Text = "OWNED"
+		btn.BackgroundColor3 = THEME.WOOD_DARK
+		btn.TextColor3 = THEME.TEXT_LIGHT
 		btn.Active = false
 	else
 		if canAfford then
-			btn.Text = "FORGE"
-			btn.BackgroundColor3 = THEME.PAINT_YELLOW
-			btn.TextColor3 = THEME.TEXT_STAMP
+			btn.Text = "GET"
+			btn.BackgroundColor3 = THEME.ACCENT_YELLOW
+			btn.TextColor3 = THEME.TEXT_DARK
 		else
-			btn.Text = "NO SCRAP"
-			btn.BackgroundColor3 = THEME.RUST_BASE
-			btn.TextColor3 = THEME.TEXT_CHALK
+			btn.Text = "NOT ENOUGH"
+			btn.BackgroundColor3 = THEME.FABRIC_GREEN
+			btn.TextColor3 = THEME.TEXT_LIGHT
 		end
 		btn.Active = true
 	end
@@ -468,11 +475,11 @@ function selectPerk(index)
 	-- Highlight
 	for i, perk in ipairs(perkList) do
 		if i == index then
-			perk.Button.BackgroundColor3 = Color3.fromRGB(200, 200, 200) -- Shiny
-			perk.Button.UIStroke.Color = THEME.PAINT_YELLOW
+			perk.Button.BackgroundColor3 = THEME.ACCENT_YELLOW -- Selected
+			perk.Button.UIStroke.Color = THEME.ACCENT_ORANGE
 			perk.Button.UIStroke.Thickness = 3
 		else
-			perk.Button.BackgroundColor3 = THEME.METAL_LIGHT
+			perk.Button.BackgroundColor3 = THEME.CANVAS
 			perk.Button.UIStroke.Color = Color3.new(0,0,0)
 			perk.Button.UIStroke.Thickness = 2
 		end
@@ -486,7 +493,7 @@ function updateState()
 		-- Let's assume we can find it by text child
 		for _, c in ipairs(mainFrame:GetChildren()) do
 			if c:FindFirstChild("Value") then
-				c.Value.Text = "SCRAP: " .. formatNumber(currentPlayerPoints)
+				c.Value.Text = "POINTS: " .. formatNumber(currentPlayerPoints)
 			end
 		end
 	end
@@ -500,16 +507,17 @@ function updateState()
 		local key = item.Key
 		local isOwned = table.find(ownedPerksCache, key) ~= nil
 		if isOwned then
-			item.Button.BackgroundColor3 = THEME.METAL_DARK -- Darker
-			-- Add "Rust" overlay if not present
-			if not item.Button:FindFirstChild("RustOverlay") then
-				local rust = create("ImageLabel", {
-					Name = "RustOverlay",
+			item.Button.BackgroundColor3 = THEME.WOOD_DARK -- Darker
+			-- Add checkmark overlay if not present
+			if not item.Button:FindFirstChild("OwnedOverlay") then
+				local owned = create("TextLabel", {
+					Name = "OwnedOverlay",
 					Size = UDim2.new(1,0,1,0),
-					BackgroundTransparency = 1,
-					Image = "rbxassetid://133292723", -- Rust/Dirt
-					ImageColor3 = THEME.RUST_BASE,
-					ImageTransparency = 0.5,
+					BackgroundTransparency = 0.7,
+					BackgroundColor3 = THEME.FABRIC_GREEN,
+					Text = "✓",
+					TextSize = 50,
+					TextColor3 = THEME.TEXT_LIGHT,
 					Parent = item.Button
 				})
 			end
@@ -588,7 +596,8 @@ RunService.RenderStepped:Connect(function()
 	if screenGui and screenGui.Enabled then
 		local char = player.Character
 		if char and char:FindFirstChild("HumanoidRootPart") and perksPart then
-			if (char.HumanoidRootPart.Position - perksPart.Position).Magnitude > 15 then
+			local targetPos = perksPart:IsA("Model") and perksPart:GetPivot().Position or perksPart.Position
+			if (char.HumanoidRootPart.Position - targetPos).Magnitude > 15 then
 				closeShop()
 			end
 		end

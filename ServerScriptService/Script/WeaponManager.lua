@@ -133,28 +133,7 @@ local function applyDamageAndStats(player, targetHumanoid, hitModel, damage, isH
 	return finalDamage
 end
 
-local function handleExplosion(player, position, hitModel)
-	local explosion = Instance.new("Explosion")
-	explosion.Position = position
-	explosion.BlastRadius = 8
-	explosion.BlastPressure = 0
-	explosion.DestroyJointRadiusPercent = 0
-	explosion.Parent = workspace
 
-	local zombiesInRadius = workspace:GetPartBoundsInRadius(explosion.Position, explosion.BlastRadius)
-	for _, part in ipairs(zombiesInRadius) do
-		local nearbyModel = part:FindFirstAncestorOfClass("Model")
-		if nearbyModel and nearbyModel:FindFirstChild("IsZombie") and nearbyModel ~= hitModel then
-			local nearbyHumanoid = nearbyModel:FindFirstChild("Humanoid")
-			if nearbyHumanoid and nearbyHumanoid.Health > 0 then
-				nearbyHumanoid:TakeDamage(25)
-				PointsSystem.AddDamage(player, 25)
-				CoinsManager.AddCoins(player, 25)
-				DamageDisplayEvent:FireAllClients(25, nearbyModel, false)
-			end
-		end
-	end
-end
 
 local function ensureToolHasId(tool)
 	if not tool then return nil end
@@ -351,14 +330,6 @@ ShootEvent.OnServerEvent:Connect(function(player, tool, cameraDirection, isAimin
 	local hasBodyshot = false
 	local explosionTriggered = false -- Flag untuk memastikan hanya satu ledakan per tembakan
 
-	-- Cek peluang ledakan SEKALI per tembakan
-	local shouldExplode = false
-	if player.Character and player.Character:GetAttribute("ExplosiveRoundsBoost") then
-		if math.random() <= 0.1 then -- 10% chance
-			shouldExplode = true
-		end
-	end
-
 	local currentLevel = tool:GetAttribute("UpgradeLevel") or 0
 	local baseRecoil = weaponStats.Recoil or 1
 	-- Recoil reduction: 0.1 per level
@@ -469,10 +440,7 @@ ShootEvent.OnServerEvent:Connect(function(player, tool, cameraDirection, isAimin
 							end
 						end
 
-						if shouldExplode and not explosionTriggered then
-							explosionTriggered = true
-							handleExplosion(player, res.Position, hitModel)
-						end
+
 					end
 				end
 			end
@@ -562,9 +530,7 @@ ShootEvent.OnServerEvent:Connect(function(player, tool, cameraDirection, isAimin
 					})
 				end
 
-				if finalDamage and finalDamage > 0 and shouldExplode then
-					handleExplosion(player, result.Position, hitModel)
-				end
+
 			end
 		end
 	end

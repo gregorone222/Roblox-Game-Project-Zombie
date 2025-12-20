@@ -7,8 +7,17 @@ Panduan narasi, profil karakter, dan plot cerita episodik.
 ### Alexander (The Handler)
 *   **Posisi:** Lobi (Command Center).
 *   **Peran:** Guide & Narator.
-*   **Persona:** Profesional, militeristik, memendam rasa bersalah. Kemungkinan mantan ilmuwan yang terlibat dalam insiden awal.
-*   **Tujuan:** Memusnahkan "The Alchemist" dan menghentikan penyebaran Void.
+*   **Persona:** Profesional namun rapuh. Seorang ayah yang kehilangan segalanya dalam insiden awal.
+*   **Voice Lines:** Tenang, tetapi retak saat membahas topik "keluarga" atau "masa lalu".
+*   **Tujuan:** Menebus dosa masa lalu dan mencegah anak-anak lain mengalami nasib yang sama. "Jangan biarkan mereka merebut masa depanmu."
+
+## 🎭 Tone of Narrative
+Meskipun visualnya kartun/stylized, cerita harus **EMOSIONAL & MELANKOLIS**.
+*   **Kontras:** Warna dunia cerah, tapi catatannya (Notes) menceritakan kehilangan dan perpisahan.
+*   **Environmental Storytelling:** Boneka beruang yang ditinggalkan, meja makan yang belum selesai, surat terakhir.
+*   **Inspirasi:** *Adventure Time* (Simon/Petrikov arc) atau *Gravity Falls* (Weirdmageddon). Kartun di luar, berat di dalam.
+
+## 📖 Episodic Campaign
 
 ## 📖 Episodic Campaign
 

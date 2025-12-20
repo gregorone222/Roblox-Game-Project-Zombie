@@ -2,6 +2,18 @@
 
 Daftar lengkap modul antarmuka pengguna, dikelompokkan berdasarkan fungsinya.
 
+## 🎨 Visual Design Guidelines
+*   **Theme:** Makeshift Survivor Camp (Stylized Post-Apocalypse).
+*   **Color Palette:**
+    *   **Primary:** Warm Brown / Forest Green / Sunset Orange.
+    *   **Accent:** Bright Yellow / Soft Cyan (untuk highlight/tombol).
+    *   **Alert:** Soft Red / Orange (Hindari warna darah gelap).
+*   **Shape Language:**
+    *   Rounded Corners (8-12px, organic feel).
+    *   Tekstur kayu/kain sebagai background (subtle, bukan realistis).
+    *   Elemen "hand-drawn" atau "sticker" untuk ikon.
+*   **Forbidden:** Hologram, neon grid, chrome, elemen sci-fi (lihat `Rule.md`).
+
 ## 📊 Heads-Up Display (HUD)
 Elemen yang selalu aktif di layar gameplay.
 

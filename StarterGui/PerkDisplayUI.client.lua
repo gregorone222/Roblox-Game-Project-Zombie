@@ -18,52 +18,47 @@ local perkUpdateEv = RemoteEvents:WaitForChild("PerkUpdate")
 
 local PerkConfig = {
 	HPPlus = {
-		Name = "JUGGERNAUT VITALITY",
-		Description = "Meningkatkan Max Health sebesar 30%.",
-		Color = Color3.fromRGB(239, 68, 68), -- Red-500
-		Icon = "??" 
+		Name = "IRON WILL",
+		Description = "Strong will increases Max Health by 30%.",
+		Color = Color3.fromRGB(139, 90, 43), -- Warm Brown
+		Icon = "❤️" 
 	},
 	StaminaPlus = {
-		Name = "ADRENALINE RUSH",
-		Description = "Meningkatkan Max Stamina sebesar 30%.",
-		Color = Color3.fromRGB(234, 179, 8), -- Yellow-500
-		Icon = "?"
+		Name = "SECOND WIND",
+		Description = "Second wind increases Max Stamina by 30%.",
+		Color = Color3.fromRGB(234, 179, 8), -- Golden Yellow
+		Icon = "🏃"
 	},
 	ReloadPlus = {
-		Name = "SPEED LOADER",
-		Description = "Waktu Reload 30% lebih cepat.",
-		Color = Color3.fromRGB(59, 130, 246), -- Blue-500
-		Icon = "??"
+		Name = "DEXTERITY",
+		Description = "Trained hands Reload 30% faster.",
+		Color = Color3.fromRGB(34, 139, 34), -- Forest Green
+		Icon = "✋"
 	},
 	RevivePlus = {
-		Name = "QUICK REVIVE",
-		Description = "Waktu Revive rekan tim 50% lebih cepat.",
-		Color = Color3.fromRGB(34, 211, 238), -- Cyan-400
-		Icon = "??"
+		Name = "HUMANITY",
+		Description = "Sense of humanity speeds up Ally Revive by 50%.",
+		Color = Color3.fromRGB(64, 224, 208), -- Turquoise
+		Icon = "🤝"
 	},
 	RateBoost = {
-		Name = "RAPID FIRE",
-		Description = "Kecepatan tembak (Fire Rate) meningkat 30%.",
-		Color = Color3.fromRGB(249, 115, 22), -- Orange-500
-		Icon = "??"
+		Name = "ADRENALINE",
+		Description = "Adrenaline boosts Fire Rate by 30%.",
+		Color = Color3.fromRGB(255, 140, 0), -- Sunset Orange
+		Icon = "🔥"
 	},
 	Medic = {
 		Name = "FIELD MEDIC",
-		Description = "Rekan yang di-revive mendapatkan 30% HP ekstra.",
-		Color = Color3.fromRGB(74, 222, 128), -- Green-400
-		Icon = "??"
+		Description = "First aid grants 30% HP upon revive.",
+		Color = Color3.fromRGB(50, 205, 50), -- Lime Green
+		Icon = "💚"
 	},
-	ExplosiveRounds = {
-		Name = "EXPLOSIVE ROUNDS",
-		Description = "10% peluang tembakan meledak (Splash Damage).",
-		Color = Color3.fromRGB(168, 85, 247), -- Purple-500
-		Icon = "??"
-	},
+
 	Default = {
 		Name = "UNKNOWN PERK",
-		Description = "Perk ini belum teridentifikasi.",
+		Description = "This perk has not been identified.",
 		Color = Color3.fromRGB(148, 163, 184), -- Slate-400
-		Icon = "?"
+		Icon = "❓"
 	}
 }
 
@@ -83,11 +78,14 @@ screenGui.Parent = gui
 
 local container = Instance.new("Frame")
 container.Name = "PerkContainer"
-container.Size = UDim2.new(0, 60, 0, 0)
+container.Size = UDim2.new(0.05, 0, 0.5, 0) -- Scale height
 container.Position = UDim2.new(0, 24, 0.5, 0)
 container.AnchorPoint = Vector2.new(0, 0.5)
 container.BackgroundTransparency = 1
 container.Parent = screenGui
+
+-- Aspect Ratio for container items could be enforced if needed
+-- For now we rely on UIListLayout stacking them.
 
 local listLayout = Instance.new("UIListLayout")
 listLayout.SortOrder = Enum.SortOrder.LayoutOrder
@@ -204,7 +202,17 @@ local function CreatePerkEntry(perkName)
 	-- 1. The Card Frame
 	local frame = Instance.new("Frame")
 	frame.Name = "Perk_" .. perkName
-	frame.Size = UDim2.new(0, 64, 0, 40) -- w-16 (~64px), h-10 (~40px)
+	-- Use Scale for size. Assuming the container handles layout, we want it to be wide and some height.
+	-- Actually, since container width is 0.05 (5% screen width), we can use Scale 1, and AspectRatio.
+	frame.Size = UDim2.new(1, 0, 0.6, 0) -- This might be too relative. Let's use specific scale relative to height.
+	-- Better approach: Size relative to screen height? No, container.
+	-- Let's stick to a Scale size.
+	frame.Size = UDim2.new(1.2, 0, 0.08, 0) -- Wider than container, 8% screen height approx
+	
+	-- Constraint to keep it pill shaped not stretched weirdly
+	local aspect = Instance.new("UIAspectRatioConstraint")
+	aspect.AspectRatio = 1.6 -- 64/40 = 1.6
+	aspect.Parent = frame
 	frame.BackgroundColor3 = Color3.fromRGB(15, 23, 42) -- Slate-900
 	frame.BackgroundTransparency = 0.4 -- Glass feel
 	frame.BorderSizePixel = 0
@@ -257,8 +265,10 @@ local function CreatePerkEntry(perkName)
 	local icon = Instance.new("TextLabel")
 	icon.Text = config.Icon
 	icon.Font = Enum.Font.Gotham
-	icon.TextSize = 20
-	icon.Size = UDim2.new(1, 0, 1, 0)
+	icon.TextScaled = true -- Rule compliant
+	icon.Size = UDim2.new(0.8, 0, 0.8, 0)
+	icon.AnchorPoint = Vector2.new(0.5, 0.5)
+	icon.Position = UDim2.new(0.5, 0, 0.5, 0)
 	icon.BackgroundTransparency = 1
 	icon.TextColor3 = Color3.fromRGB(255, 255, 255) -- Icon itself is colored in CSS? 
 	-- CSS: text-red-400.

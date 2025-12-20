@@ -6,33 +6,35 @@ local PerkConfig = {}
 
 PerkConfig.Perks = {
 	HPPlus = {
-		Description = "Increases maximum health 30%",
-		Icon = "??"
+		DisplayName = "Iron Will",
+		Description = "Strong will increases Max Health by 30%.",
+		Icon = "❤️"
 	},
 	StaminaPlus = {
-		Description = "Increases maximum stamina 30%",
-		Icon = "?"
+		DisplayName = "Second Wind",
+		Description = "Second wind increases Max Stamina by 30%.",
+		Icon = "🏃"
 	},
 	ReloadPlus = {
-		Description = "Reload time 30% faster",
-		Icon = "??"
+		DisplayName = "Dexterity",
+		Description = "Trained hands Reload 30% faster.",
+		Icon = "✋"
 	},
 	RevivePlus = {
-		Description = "Revive time 50% faster",
-		Icon = "??"
+		DisplayName = "Humanity",
+		Description = "Sense of humanity speeds up Ally Revive by 50%.",
+		Icon = "🤝"
 	},
 	RateBoost = {
-		Description = "Fire rate 30% faster",
-		Icon = "??"
+		DisplayName = "Adrenaline",
+		Description = "Adrenaline boosts Fire Rate by 30%.",
+		Icon = "🔥"
 	},
 	Medic = {
-		Description = "Saat menghidupkan kembali teman, teman tersebut akan hidup dengan 30% HP (naik dari 10%).",
-		Icon = "?"
+		DisplayName = "Field Medic",
+		Description = "First aid grants 30% HP upon revive.",
+		Icon = "💚"
 	},
-	ExplosiveRounds = {
-		Description = "Setiap tembakan memiliki peluang 10% untuk menghasilkan ledakan kecil saat mengenai musuh, memberikan splash damage ke zombie di sekitarnya.",
-		Icon = "??"
-	}
 }
 
 return PerkConfig

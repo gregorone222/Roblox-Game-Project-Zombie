@@ -13,25 +13,24 @@ Sistem senjata dikelola oleh `WeaponManager`.
     *   **Sniper:** L115A1, DSR, Barrett-M82.
     *   **LMG:** RPD, PKP, M249, Minigun.
 *   **Akuisisi:**
-    *   *Mystery Box (Gacha):* Mendapatkan senjata acak dari Vending Machine.
+    *   *Mystery Box (Gacha):* Mendapatkan senjata acak dari **Digital Fabricator** (Holo-Box).
     *   *Starting Weapon:* Senjata awal saat spawn.
 *   **Upgrade System:**
-    *   **Upgrade Vending Machine:** Meningkatkan Level senjata (Level 1 - 10).
+    *   **Weapon Mod Station:** Meningkatkan Level senjata (Level 1 - 10).
     *   **Efek:** Meningkatkan Damage dan Kapasitas Ammo secara bertahap.
     *   **Biaya:** Meningkat eksponensial setiap level.
 
-## 🥤 Perks (Buffs)
-Minuman kaleng yang memberikan pasif permanen (selama hidup).
+## 🥤 Perks (Power-Ups)
+**Holographic Data Chips** yang memberikan upgrade permanen. Dibeli melalui Holo-Pad / Tablet Menu.
 
-| Nama Perk | Efek |
-| :--- | :--- |
-| **HP Plus** | Meningkatkan Max Health +30%. |
-| **Stamina Plus** | Meningkatkan Max Stamina +30%. |
-| **Reload Plus** | Reload speed +30% lebih cepat. |
-| **Fast Hands** | Fire Rate +30% lebih cepat (`RateBoost`). |
-| **Revive Plus** | Revive teman 50% lebih cepat. |
-| **Medic** | Teman yang di-revive bangun dengan 30% HP (bukan 10%). |
-| **Explosive Rounds** | 10% peluang peluru meledak (Splash Damage). |
+| ID Program | Nama Display | Efek |
+| :--- | :--- | :--- |
+| **HP Plus** | **Iron Will** ❤️ | Meningkatkan Max Health +30%. |
+| **Stamina Plus** | **Second Wind** 🏃 | Meningkatkan Max Stamina +30%. |
+| **Reload Plus** | **Dexterity** ✋ | Reload speed +30% lebih cepat. |
+| **Fast Hands** | **Adrenaline** 🔥 | Fire Rate +30% lebih cepat. |
+| **Revive Plus** | **Humanity** 🤝 | Revive teman 50% lebih cepat. |
+| **Medic** | **Field Medic** 💚 | Teman yang di-revive bangun dengan 30% HP. |
 
 ## 🔮 Skills & Elements
 Kemampuan aktif pemain yang bisa dikustomisasi.

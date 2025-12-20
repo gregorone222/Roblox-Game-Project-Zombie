@@ -36,7 +36,7 @@ local PerkCosts = {
 	ReloadPlus = 4000,
 	-- Jenjang Elit
 	RateBoost = 6000,
-	ExplosiveRounds = 6000
+
 }
 
 local function isPlayerNearPerkMachine(player)
@@ -46,8 +46,15 @@ local function isPlayerNearPerkMachine(player)
 	local char = player.Character
 	if not char or not char:FindFirstChild("HumanoidRootPart") then return false end
 
-	local dist = (char.HumanoidRootPart.Position - perkPart.Position).Magnitude
-	return dist <= 10
+	local targetPos
+	if perkPart:IsA("Model") then
+		targetPos = perkPart:GetPivot().Position
+	else
+		targetPos = perkPart.Position
+	end
+
+	local dist = (char.HumanoidRootPart.Position - targetPos).Magnitude
+	return dist <= 15 -- Increased range slightly for larger models
 end
 
 function grantPerk(player, perkName)
@@ -91,7 +98,7 @@ function clearPlayerPerks(player)
 			character:SetAttribute("ReloadBoost", nil)
 			character:SetAttribute("ReviveBoost", nil)
 			character:SetAttribute("MedicBoost", nil)
-			character:SetAttribute("ExplosiveRoundsBoost", nil)
+
 
 			local humanoid = character:FindFirstChild("Humanoid")
 			if humanoid then
@@ -169,7 +176,7 @@ function applyPerkEffects(player)
 	character:SetAttribute("ReloadBoost", nil)
 	character:SetAttribute("ReviveBoost", nil)
 	character:SetAttribute("MedicBoost", nil)
-	character:SetAttribute("ExplosiveRoundsBoost", nil)
+
 	humanoid.MaxHealth = 100
 
 	-- Terapkan efek perk berdasarkan yang dimiliki
@@ -186,8 +193,7 @@ function applyPerkEffects(player)
 			character:SetAttribute("RateBoost", true)
 		elseif perkName == "Medic" then
 			character:SetAttribute("MedicBoost", true)
-		elseif perkName == "ExplosiveRounds" then
-			character:SetAttribute("ExplosiveRoundsBoost", true)
+
 		end
 	end
 

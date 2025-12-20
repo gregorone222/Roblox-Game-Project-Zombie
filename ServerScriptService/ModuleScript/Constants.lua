@@ -68,7 +68,7 @@ Constants.Attributes = {
 	CUSTOM_MAX_AMMO = "CustomMaxAmmo",
 	CUSTOM_RESERVE_AMMO = "CustomReserveAmmo",
 	AMMO_LISTENER_ATTACHED = "_AmmoListenerAttached",
-	EXPLOSIVE_ROUNDS_BOOST = "ExplosiveRoundsBoost",
+
 	IS_SPRINTING = "IsSprinting",
 	STAMINA_BOOST = "StaminaBoost",
 	REVIVE_BOOST = "ReviveBoost",
