@@ -299,7 +299,7 @@ local GlobalDS = DataStoreService:GetDataStore("GlobalDSv1", ENVIRONMENT)
 function DataStoreManager:UpdateLeaderboard(leaderboardName, key, value)
 	local success, err = pcall(function()
 		local orderedDataStore = DataStoreService:GetOrderedDataStore(leaderboardName, ENVIRONMENT)
-		orderedDataStore:SetAsync(tostring(key), tonumber(value))
+		orderedDataStore:SetAsync(tostring(key), math.floor(tonumber(value) or 0))
 	end)
 	if not success then
 		warn("[DataStoreManager] Failed to update leaderboard '" .. leaderboardName .. "': " .. tostring(err))
