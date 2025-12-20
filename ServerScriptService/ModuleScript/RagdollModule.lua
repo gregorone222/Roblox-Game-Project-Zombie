@@ -88,7 +88,10 @@ function RagdollModule.Rig(character)
 				
 				-- Enable limits for realistic joint behavior
 				socket.LimitsEnabled = true
+				socket.UpperAngle = 45 -- Restrict cone angle to 45 degrees
 				socket.TwistLimitsEnabled = true
+				socket.TwistLowerAngle = -45 -- Restrict twist to +-45 degrees
+				socket.TwistUpperAngle = 45
 			end
 			
 			-- Destroy the original motor
@@ -96,11 +99,19 @@ function RagdollModule.Rig(character)
 		end
 	end
 	
-	-- Enable collision on body parts
+	-- Enable collision and set high friction on body parts
+	local ragdollPhysics = PhysicalProperties.new(
+		0.7,  -- Density (standard body)
+		1,    -- Friction (maximum - stops sliding)
+		0,    -- Elasticity (no bounce)
+		1,    -- FrictionWeight
+		0     -- ElasticityWeight
+	)
 	for _, name in pairs(COLLIDE_PARTS) do
 		local part = character:FindFirstChild(name)
 		if part and part:IsA("BasePart") then
 			part.CanCollide = true
+			part.CustomPhysicalProperties = ragdollPhysics
 		end
 	end
 	
