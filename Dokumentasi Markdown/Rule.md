@@ -10,6 +10,22 @@ Aturan baku pengembangan untuk menjaga kualitas kode dan konsistensi UI.
     *   Cek `TouchEnabled`.
     *   Perbesar tombol pada layar mobile (Safe Padding minimal 15%).
 *   **Immersive Menus:** Terapkan `BlurEffect` kamera saat membuka menu full-screen.
+*   **Safety & Visibility:**
+    *   **IgnoreGuiInset:** Set `false` agar UI tidak tertutup TopBar Roblox.
+    *   **Focus Mode:** Sembunyikan Backpack/Hotbar (`SetCoreGuiEnabled`) saat membuka UI Full-Screen (Shop, Inventory).
+
+### 📐 Standard UI Dimensions (Presets)
+Gunakan preset Scale berikut berdasarkan orientasi desain UI:
+
+1.  **WIDE UI (Landscape Oriented)**
+    *   *Contoh:* Shop, Dashboard, Map Voting.
+    *   **Size:** `UDim2.new(0.7, 0, 0.7, 0)` (70% Lebar, 70% Tinggi).
+    *   *Tampilan:* Luas, grid horizontal.
+
+2.  **TALL UI (Portrait Oriented)**
+    *   *Contoh:* Inventory List, Character Stats, Card Detail.
+    *   **Size:** `UDim2.new(0.45, 0, 0.85, 0)` (45% Lebar, 85% Tinggi).
+    *   *Tampilan:* Ramping, list vertikal, mirip menu mobile.
 
 ## 2. Code Structure
 *   **Modular:** Gunakan `ModuleScript` di `ServerScriptService` untuk logika.
@@ -61,7 +77,57 @@ Dokumentasi masalah teknis yang sering muncul dan solusinya:
     *   *Caveat/Handwritten* -> Gunakan `Enum.Font.PatrickHand` atau `Enum.Font.IndieFlower`.
     *   *Bold/Rounded* -> Gunakan `Enum.Font.FredokaOne`.
 
-### C. Position Error on Models
-*   **Gejala:** `perkPart.Position` is not a valid member of Model.
-*   **Penyebab:** Mencoba mengakses properti `.Position` langsung pada sebuah **Model** (yang tidak memilikinya), bukan **Part**.
-*   **Solusi:** Gunakan metode universal: `instance:GetPivot().Position`. Ini aman digunakan baik untuk Part maupun Model.
+### 📐 Standard UI Dimensions (The Golden Metrics)
+
+#### 1. Safe Zone (Area Aman)
+Jangan gunakan layar penuh. Layar HP memiliki notch dan TV memiliki overscan.
+*   **Max Size:** `Scale 0.9` (90% Layar).
+*   **Margin:** Minimal **5%** (Scale 0.05) dari setiap sisi.
+*   **Contoh Shop UI:** `Size = UDim2.new(0.9, 0, 0.9, 0)` dengan `AnchorPoint = 0.5, 0.5`.
+
+#### 2. Touch Target Size (Jempol Friendly)
+Agar tombol mudah ditekan di layar sentuh:
+*   **Minimum:** 44x44 pixels.
+*   **Ideal Game:** 60x60 pixels ke atas.
+*   **Padding:** Beri jarak minimal 10px antar tombol.
+
+#### 3. Aspect Ratio Presets (Konsistensi Bentuk)
+Gunakan `UIAspectRatioConstraint` agar bentuk tidak gepeng.
+*   **Landscape Window (Shop/Map):** Rasio **16:9** (~1.77) atau **4:3** (~1.33).
+*   **Portrait Card (Item Info):** Rasio **2:3** (~0.66).
+*   **Square Icon:** Rasio **1:1** (1.00).
+
+## 8. 📝 Typography & Assets Standards
+
+### Text & Readable Sizing
+Agar teks terbaca di semua device (termasuk HP kecil):
+*   **Minimum Ukuran:** 20px (setara).
+*   **TextScaled:** **WAJIB** digunakan untuk label utama, tapi **WAJIB** dipasangkan dengan `UITextSizeConstraint`.
+    *   *MinTextSize:* 14
+    *   *MaxTextSize:* 48 (Agar tidak raksasa di TV).
+*   **Font Hierarchy:**
+    *   *Header:* FredokaOne (Kuat, Tebal).
+    *   *Body:* GothamMedium/SemiBold (Jelas).
+
+### Image Optimization (Memory Management)
+Jangan membebani memori HP pemain (Crash risk).
+*   **Max Resolution:** 1024x1024 (Roblox auto-downscale).
+*   **Icon Size:** Cukup **128x128** atau **256x256** px. Jangan upload 4K untuk icon kecil.
+*   **Background Panel:** Cukup **512x512** dengan 9-Slice Slicing.
+*   **Format:** Gunakan PNG untuk transparansi bersih.
+
+## 9. 🏗️ Structure & Architecture
+
+### Naming Conventions
+Agar script mudah dibaca, gunakan prefix:
+*   `btn_Name` (Button) -> `btn_Buy`
+*   `lbl_Name` (Text/ImageLabel) -> `lbl_Title`
+*   `fr_Name` (Frame) -> `fr_Container`
+*   `sc_Name` (ScrollingFrame) -> `sc_List`
+
+### Layering Strategy (ZIndex)
+Gunakan `ZIndexBehavior` = **Sibling** (Default).
+*   **0 - 10:** Backgrounds, Panels, Shadows.
+*   **11 - 50:** Main Content (Buttons, Text, Images).
+*   **100+:** Overlays (Popups, Tooltips, Modals).
+*   **1000+:** Global Effects (Screen Flash, Loading Screen).

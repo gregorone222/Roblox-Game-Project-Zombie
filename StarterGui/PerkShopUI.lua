@@ -131,8 +131,8 @@ local function formatNumber(n)
 	return tostring(n):reverse():gsub("%d%d%d", "%0,"):reverse():gsub("^,", "")
 end
 
-local function hideCoreGuiOnMobile()
-	if not isMobile then return end
+local function hideCoreGui()
+	-- Rule Compliant: Hide Backpack on ALL platforms for Focus Mode
 	if not hasStoredCoreGuiStates then
 		originalCoreGuiStates.Backpack = game.StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Backpack)
 		originalCoreGuiStates.Health = game.StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Health)
@@ -144,8 +144,9 @@ local function hideCoreGuiOnMobile()
 	game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
 end
 
-local function restoreCoreGuiOnMobile()
-	if not isMobile or not hasStoredCoreGuiStates then return end
+local function restoreCoreGui()
+	-- Rule Compliant: Restore Backpack on ALL platforms
+	if not hasStoredCoreGuiStates then return end
 	game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, originalCoreGuiStates.Backpack)
 	game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health, originalCoreGuiStates.Health)
 	game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, originalCoreGuiStates.PlayerList)
@@ -563,7 +564,7 @@ openEv.OnClientEvent:Connect(function(config, hasDiscount)
 		TweenService:Create(blurEffect, TweenInfo.new(0.5), {Size = 15}):Play()
 	end
 
-	hideCoreGuiOnMobile()
+	hideCoreGui()
 
 	if player:FindFirstChild("leaderstats") and player.leaderstats:FindFirstChild("BP") then
 		currentPlayerPoints = player.leaderstats.BP.Value
@@ -614,7 +615,7 @@ function closeShop()
 			task.delay(0.5, function() blurEffect.Enabled = false end)
 		end
 	end
-	restoreCoreGuiOnMobile()
+	restoreCoreGui()
 	closeShopEvent:FireServer()
 end
 
