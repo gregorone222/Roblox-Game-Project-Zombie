@@ -1,66 +1,152 @@
 -- PerkDisplayUI.lua (LocalScript)
 -- Path: StarterGui/PerkDisplayUI.lua
 -- Script Place: ACT 1: Village & Lobby
+-- Theme: Survivor Camp (Vibrant Scavenger - Fortnite/Overwatch Style)
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 local gui = player:WaitForChild("PlayerGui")
-local RemoteEvents = game.ReplicatedStorage:WaitForChild("RemoteEvents")
+local RemoteEvents = ReplicatedStorage:WaitForChild("RemoteEvents")
 local perkUpdateEv = RemoteEvents:WaitForChild("PerkUpdate")
 
 -- ============================================================================
--- CONFIGURATION
+-- THEME: VIBRANT SCAVENGER (Fortnite/Overwatch Style)
+-- ============================================================================
+
+local THEME = {
+	-- Primary Materials
+	WOOD_DARK = Color3.fromRGB(101, 67, 33),     -- Dark Wood Plank
+	WOOD_LIGHT = Color3.fromRGB(160, 120, 80),   -- Light Wood
+	CANVAS = Color3.fromRGB(205, 190, 160),      -- Beige Canvas/Tape
+	METAL = Color3.fromRGB(120, 120, 130),       -- Clean Metal Plate
+
+	-- Accent Colors (Vibrant)
+	ACCENT_ORANGE = Color3.fromRGB(255, 140, 0),  -- Sunset Orange
+	ACCENT_YELLOW = Color3.fromRGB(255, 200, 50), -- Caution Tape Yellow
+	ACCENT_GREEN = Color3.fromRGB(100, 200, 80),  -- Lime Green
+	ACCENT_RED = Color3.fromRGB(230, 80, 80),     -- Vibrant Red
+	ACCENT_CYAN = Color3.fromRGB(80, 200, 220),   -- Turquoise
+
+	-- Text
+	TEXT_DARK = Color3.fromRGB(50, 40, 30),       -- Ink Brown
+	TEXT_LIGHT = Color3.fromRGB(255, 255, 255),   -- Pure White
+
+	-- Fonts (Rule Compliant)
+	FONT_HEAVY = Enum.Font.FredokaOne,            -- Chunky Cartoony
+	FONT_BODY = Enum.Font.GothamBold,             -- Clean Bold
+}
+
+-- ============================================================================
+-- PERK CONFIGURATION
 -- ============================================================================
 
 local PerkConfig = {
 	HPPlus = {
 		Name = "IRON WILL",
 		Description = "Strong will increases Max Health by 30%.",
-		Color = Color3.fromRGB(139, 90, 43), -- Warm Brown
-		Icon = "❤️" 
+		Color = THEME.ACCENT_RED,
+		Icon = "❤️",
+		Material = "wood"
 	},
 	StaminaPlus = {
 		Name = "SECOND WIND",
 		Description = "Second wind increases Max Stamina by 30%.",
-		Color = Color3.fromRGB(234, 179, 8), -- Golden Yellow
-		Icon = "🏃"
+		Color = THEME.ACCENT_YELLOW,
+		Icon = "🏃",
+		Material = "metal"
 	},
 	ReloadPlus = {
 		Name = "DEXTERITY",
 		Description = "Trained hands Reload 30% faster.",
-		Color = Color3.fromRGB(34, 139, 34), -- Forest Green
-		Icon = "✋"
+		Color = THEME.ACCENT_GREEN,
+		Icon = "✋",
+		Material = "canvas"
 	},
 	RevivePlus = {
 		Name = "HUMANITY",
 		Description = "Sense of humanity speeds up Ally Revive by 50%.",
-		Color = Color3.fromRGB(64, 224, 208), -- Turquoise
-		Icon = "🤝"
+		Color = THEME.ACCENT_CYAN,
+		Icon = "🤝",
+		Material = "wood"
 	},
 	RateBoost = {
 		Name = "ADRENALINE",
 		Description = "Adrenaline boosts Fire Rate by 30%.",
-		Color = Color3.fromRGB(255, 140, 0), -- Sunset Orange
-		Icon = "🔥"
+		Color = THEME.ACCENT_ORANGE,
+		Icon = "🔥",
+		Material = "metal"
 	},
 	Medic = {
 		Name = "FIELD MEDIC",
 		Description = "First aid grants 30% HP upon revive.",
-		Color = Color3.fromRGB(50, 205, 50), -- Lime Green
-		Icon = "💚"
+		Color = THEME.ACCENT_GREEN,
+		Icon = "💚",
+		Material = "canvas"
 	},
-
 	Default = {
-		Name = "UNKNOWN PERK",
+		Name = "UNKNOWN",
 		Description = "This perk has not been identified.",
-		Color = Color3.fromRGB(148, 163, 184), -- Slate-400
-		Icon = "❓"
+		Color = THEME.METAL,
+		Icon = "❓",
+		Material = "metal"
 	}
 }
+
+-- ============================================================================
+-- HELPER FUNCTIONS
+-- ============================================================================
+
+local function create(className, properties)
+	local instance = Instance.new(className)
+	for k, v in pairs(properties) do
+		instance[k] = v
+	end
+	return instance
+end
+
+local function addCorner(parent, radius)
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, radius)
+	corner.Parent = parent
+	return corner
+end
+
+local function addStroke(parent, color, thickness)
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = color or Color3.new(0,0,0)
+	stroke.Thickness = thickness or 2
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	stroke.Parent = parent
+	return stroke
+end
+
+local function addTextConstraint(parent, minSize, maxSize)
+	local constraint = Instance.new("UITextSizeConstraint")
+	constraint.MinTextSize = minSize or 10
+	constraint.MaxTextSize = maxSize or 24
+	constraint.Parent = parent
+	return constraint
+end
+
+local function GetConfig(perkName)
+	return PerkConfig[perkName] or PerkConfig.Default
+end
+
+local function GetMaterialColor(material)
+	if material == "wood" then
+		return THEME.WOOD_DARK
+	elseif material == "canvas" then
+		return THEME.CANVAS
+	elseif material == "metal" then
+		return THEME.METAL
+	end
+	return THEME.WOOD_DARK
+end
 
 -- ============================================================================
 -- UI SETUP
@@ -69,269 +155,244 @@ local PerkConfig = {
 local existingGui = gui:FindFirstChild("PerkDisplayUI")
 if existingGui then existingGui:Destroy() end
 
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "PerkDisplayUI"
-screenGui.ResetOnSpawn = true
-screenGui.IgnoreGuiInset = true
-screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-screenGui.Parent = gui
+local screenGui = create("ScreenGui", {
+	Name = "PerkDisplayUI",
+	ResetOnSpawn = true,
+	IgnoreGuiInset = false,
+	ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+	Parent = gui
+})
 
-local container = Instance.new("Frame")
-container.Name = "PerkContainer"
-container.Size = UDim2.new(0.05, 0, 0.5, 0) -- Scale height
-container.Position = UDim2.new(0, 24, 0.5, 0)
-container.AnchorPoint = Vector2.new(0, 0.5)
-container.BackgroundTransparency = 1
-container.Parent = screenGui
+-- Mobile Detection
+local isMobile = UserInputService.TouchEnabled
 
--- Aspect Ratio for container items could be enforced if needed
--- For now we rely on UIListLayout stacking them.
+-- Container (Left Side)
+local container = create("Frame", {
+	Name = "fr_PerkContainer",
+	Size = UDim2.new(0.08, 0, 0.4, 0), -- Scale: 8% width, 40% height
+	Position = UDim2.new(0.01, 0, 0.5, 0), -- 1% from left, centered vertically
+	AnchorPoint = Vector2.new(0, 0.5),
+	BackgroundTransparency = 1,
+	Parent = screenGui
+})
 
-local listLayout = Instance.new("UIListLayout")
-listLayout.SortOrder = Enum.SortOrder.LayoutOrder
-listLayout.Padding = UDim.new(0, 12)
-listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-listLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-listLayout.Parent = container
+local listLayout = create("UIListLayout", {
+	SortOrder = Enum.SortOrder.LayoutOrder,
+	Padding = UDim.new(0.05, 0), -- Scale padding
+	HorizontalAlignment = Enum.HorizontalAlignment.Left,
+	VerticalAlignment = Enum.VerticalAlignment.Center,
+	Parent = container
+})
 
 local activePerkFrames = {}
 
 -- ============================================================================
--- HELPER FUNCTIONS
+-- CREATE PERK ENTRY (Vibrant Scavenger Style)
 -- ============================================================================
 
-local function GetConfig(perkName)
-	return PerkConfig[perkName] or PerkConfig.Default
-end
-
 local function CreateTooltip(parent, config)
-	-- Tooltip Container
-	local tooltip = Instance.new("Frame")
-	tooltip.Name = "Tooltip"
-	tooltip.Size = UDim2.new(0, 220, 0, 0) -- Height automatic
-	tooltip.AutomaticSize = Enum.AutomaticSize.Y
-	tooltip.Position = UDim2.new(1, 16, 0.5, 0) -- To the right
-	tooltip.AnchorPoint = Vector2.new(0, 0.5)
-	tooltip.BackgroundColor3 = Color3.fromRGB(30, 41, 59) -- Slate-800 (matches CSS bg-slate-800)
-	tooltip.BorderSizePixel = 0
-	tooltip.Visible = false
-	tooltip.ZIndex = 20
-	tooltip.Parent = parent
-
-	-- Border Stroke
-	local stroke = Instance.new("UIStroke")
-	stroke.Color = Color3.fromRGB(71, 85, 105) -- Slate-600
-	stroke.Thickness = 1
-	stroke.Parent = tooltip
-
-	-- Corner
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 8)
-	corner.Parent = tooltip
+	-- Tooltip (Wooden Sign Style)
+	local tooltip = create("Frame", {
+		Name = "Tooltip",
+		Size = UDim2.new(0, 200, 0, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		Position = UDim2.new(1, 12, 0.5, 0),
+		AnchorPoint = Vector2.new(0, 0.5),
+		BackgroundColor3 = THEME.WOOD_LIGHT,
+		BorderSizePixel = 0,
+		Visible = false,
+		ZIndex = 50,
+		Parent = parent
+	})
+	addCorner(tooltip, 8)
+	addStroke(tooltip, THEME.WOOD_DARK, 3)
 
 	-- Padding
-	local padding = Instance.new("UIPadding")
-	padding.PaddingTop = UDim.new(0, 12)
-	padding.PaddingBottom = UDim.new(0, 12)
-	padding.PaddingLeft = UDim.new(0, 12)
-	padding.PaddingRight = UDim.new(0, 12)
-	padding.Parent = tooltip
+	create("UIPadding", {
+		PaddingTop = UDim.new(0, 10),
+		PaddingBottom = UDim.new(0, 10),
+		PaddingLeft = UDim.new(0, 10),
+		PaddingRight = UDim.new(0, 10),
+		Parent = tooltip
+	})
 
-	-- List Layout for Text
-	local layout = Instance.new("UIListLayout")
-	layout.SortOrder = Enum.SortOrder.LayoutOrder
-	layout.Padding = UDim.new(0, 4)
-	layout.Parent = tooltip
+	-- Layout
+	create("UIListLayout", {
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Padding = UDim.new(0, 6),
+		Parent = tooltip
+	})
 
 	-- Title
-	local title = Instance.new("TextLabel")
-	title.Name = "Title"
-	title.Text = config.Name
-	title.Font = Enum.Font.GothamBold -- Uppercase bold
-	title.TextSize = 14
-	title.TextColor3 = Color3.fromRGB(255, 255, 255)
-	title.BackgroundTransparency = 1
-	title.Size = UDim2.new(1, 0, 0, 18)
-	title.TextXAlignment = Enum.TextXAlignment.Left
-	title.LayoutOrder = 1
-	title.Parent = tooltip
+	local title = create("TextLabel", {
+		Name = "lbl_Title",
+		Text = config.Name,
+		Font = THEME.FONT_HEAVY,
+		TextScaled = true,
+		TextColor3 = THEME.TEXT_DARK,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, 22),
+		TextXAlignment = Enum.TextXAlignment.Left,
+		LayoutOrder = 1,
+		ZIndex = 51,
+		Parent = tooltip
+	})
+	addTextConstraint(title, 12, 20)
+
+	-- Accent Line
+	local line = create("Frame", {
+		Name = "AccentLine",
+		Size = UDim2.new(1, 0, 0, 3),
+		BackgroundColor3 = config.Color,
+		BorderSizePixel = 0,
+		LayoutOrder = 2,
+		ZIndex = 51,
+		Parent = tooltip
+	})
+	addCorner(line, 2)
 
 	-- Description
-	local desc = Instance.new("TextLabel")
-	desc.Name = "Description"
-	desc.Text = config.Description
-	desc.Font = Enum.Font.Gotham
-	desc.TextSize = 12
-	desc.TextColor3 = Color3.fromRGB(148, 163, 184) -- Slate-400
-	desc.BackgroundTransparency = 1
-	desc.Size = UDim2.new(1, 0, 0, 0)
-	desc.AutomaticSize = Enum.AutomaticSize.Y
-	desc.TextWrapped = true
-	desc.TextXAlignment = Enum.TextXAlignment.Left
-	desc.LayoutOrder = 2
-	desc.Parent = tooltip
-
-	-- Gradient Line
-	local line = Instance.new("Frame")
-	line.Name = "Line"
-	line.Size = UDim2.new(1, 0, 0, 2)
-	line.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	line.BorderSizePixel = 0
-	line.LayoutOrder = 4 -- After spacer
-	line.Parent = tooltip
-
-	local grad = Instance.new("UIGradient")
-	grad.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, config.Color),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 41, 59)) -- Fade to BG color
+	local desc = create("TextLabel", {
+		Name = "lbl_Desc",
+		Text = config.Description,
+		Font = THEME.FONT_BODY,
+		TextScaled = true,
+		TextColor3 = THEME.TEXT_DARK,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		TextWrapped = true,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		LayoutOrder = 3,
+		ZIndex = 51,
+		Parent = tooltip
 	})
-	grad.Parent = line
-
-	local spacer = Instance.new("Frame")
-	spacer.Size = UDim2.new(1,0,0,4)
-	spacer.BackgroundTransparency = 1
-	spacer.LayoutOrder = 3
-	spacer.Parent = tooltip
+	addTextConstraint(desc, 10, 14)
 
 	return tooltip
 end
 
 local function CreatePerkEntry(perkName)
 	local config = GetConfig(perkName)
+	local materialColor = GetMaterialColor(config.Material)
 
-	-- 1. The Card Frame
-	local frame = Instance.new("Frame")
-	frame.Name = "Perk_" .. perkName
-	-- Use Scale for size. Assuming the container handles layout, we want it to be wide and some height.
-	-- Actually, since container width is 0.05 (5% screen width), we can use Scale 1, and AspectRatio.
-	frame.Size = UDim2.new(1, 0, 0.6, 0) -- This might be too relative. Let's use specific scale relative to height.
-	-- Better approach: Size relative to screen height? No, container.
-	-- Let's stick to a Scale size.
-	frame.Size = UDim2.new(1.2, 0, 0.08, 0) -- Wider than container, 8% screen height approx
-	
-	-- Constraint to keep it pill shaped not stretched weirdly
-	local aspect = Instance.new("UIAspectRatioConstraint")
-	aspect.AspectRatio = 1.6 -- 64/40 = 1.6
-	aspect.Parent = frame
-	frame.BackgroundColor3 = Color3.fromRGB(15, 23, 42) -- Slate-900
-	frame.BackgroundTransparency = 0.4 -- Glass feel
-	frame.BorderSizePixel = 0
-	-- Rounded Right corners mainly
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 8) 
-	corner.Parent = frame
+	-- Card Frame (Chunky Rounded)
+	local frame = create("Frame", {
+		Name = "Perk_" .. perkName,
+		Size = UDim2.new(1, 0, 0.2, 0), -- 20% of container height
+		BackgroundColor3 = materialColor,
+		BorderSizePixel = 0,
+		ZIndex = 10
+	})
+	addCorner(frame, 12) -- Chunky rounded
+	addStroke(frame, THEME.WOOD_DARK, 3)
 
-	-- 2. Subtle Global Border (White/Slate, low opacity)
-	local border = Instance.new("UIStroke")
-	border.Color = Color3.fromRGB(255, 255, 255)
-	border.Transparency = 0.9
-	border.Thickness = 1
-	border.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-	border.Parent = frame
+	-- Aspect Ratio to keep it square-ish
+	local aspect = create("UIAspectRatioConstraint", {
+		AspectRatio = 1.2, -- Slightly wider than tall
+		Parent = frame
+	})
 
-	-- 3. Left Accent Bar (The "Glow" indicator)
-	local accent = Instance.new("Frame")
-	accent.Name = "Accent"
-	accent.Size = UDim2.new(0, 3, 1, -8) -- 3px wide, slightly padded vertically? CSS says border-left.
-	-- Actually CSS says: border-left: 3px solid [color].
-	-- To mimic border-left on a rounded object in Roblox, we place a Frame on the left.
-	accent.Size = UDim2.new(0, 3, 1, 0)
-	accent.Position = UDim2.new(0, 0, 0, 0)
-	accent.BackgroundColor3 = config.Color
-	accent.BorderSizePixel = 0
-	accent.ZIndex = 2
-	accent.Parent = frame
+	-- Accent Bar (Left Side - Colored Stripe)
+	local accent = create("Frame", {
+		Name = "AccentBar",
+		Size = UDim2.new(0.08, 0, 0.8, 0), -- 8% width, 80% height
+		Position = UDim2.new(0.05, 0, 0.5, 0),
+		AnchorPoint = Vector2.new(0, 0.5),
+		BackgroundColor3 = config.Color,
+		BorderSizePixel = 0,
+		ZIndex = 11,
+		Parent = frame
+	})
+	addCorner(accent, 4)
 
-	-- Fix accent rounding: We want it to follow the left corners.
-	local accentCorner = Instance.new("UICorner")
-	accentCorner.CornerRadius = UDim.new(0, 8)
-	accentCorner.Parent = accent
+	-- Icon Container
+	local iconContainer = create("Frame", {
+		Name = "IconContainer",
+		Size = UDim2.new(0.7, 0, 0.8, 0),
+		Position = UDim2.new(0.5, 0, 0.5, 0),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		BackgroundTransparency = 1,
+		ZIndex = 12,
+		Parent = frame
+	})
 
-	-- Cover the right side of the accent so it looks like a straight line? 
-	-- No, let's just leave it rounded, it looks like a pill cap.
-
-	-- 4. Inner Glow (Box Shadow) - REMOVED per user request
-	-- local glow = Instance.new("ImageLabel")
-	-- glow.Name = "Glow"
-	-- ...
-
-	-- 5. Icon (Centered)
-	local iconContainer = Instance.new("Frame")
-	iconContainer.Size = UDim2.new(1, 0, 1, 0)
-	iconContainer.BackgroundTransparency = 1
-	iconContainer.ZIndex = 5
-	iconContainer.Parent = frame
-
-	local icon = Instance.new("TextLabel")
-	icon.Text = config.Icon
-	icon.Font = Enum.Font.Gotham
-	icon.TextScaled = true -- Rule compliant
-	icon.Size = UDim2.new(0.8, 0, 0.8, 0)
-	icon.AnchorPoint = Vector2.new(0.5, 0.5)
-	icon.Position = UDim2.new(0.5, 0, 0.5, 0)
-	icon.BackgroundTransparency = 1
-	icon.TextColor3 = Color3.fromRGB(255, 255, 255) -- Icon itself is colored in CSS? 
-	-- CSS: text-red-400.
-	icon.TextColor3 = config.Color -- Use the perk color for the icon
-	-- Add drop shadow to icon
-	local textStroke = Instance.new("UIStroke")
-	textStroke.Thickness = 1.5 -- Subtle outline
-	textStroke.Color = config.Color
-	textStroke.Transparency = 0.8
-	textStroke.Parent = icon
-	icon.Parent = iconContainer
+	-- Icon (Emoji - Centered)
+	local icon = create("TextLabel", {
+		Name = "lbl_Icon",
+		Text = config.Icon,
+		Font = Enum.Font.Gotham,
+		TextScaled = true,
+		Size = UDim2.new(1, 0, 1, 0),
+		BackgroundTransparency = 1,
+		TextColor3 = THEME.TEXT_LIGHT,
+		ZIndex = 13,
+		Parent = iconContainer
+	})
 
 	-- Tooltip
 	local tooltip = CreateTooltip(frame, config)
 
-	-- Float Animation
-	local floatTweenInfo = TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
-	local floatTween = TweenService:Create(iconContainer, floatTweenInfo, {Position = UDim2.new(0, 0, 0, -2)})
+	-- =========================================
+	-- ANIMATIONS
+	-- =========================================
+
+	-- Float Animation (Gentle Up-Down)
+	local floatTweenInfo = TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+	local floatTween = TweenService:Create(iconContainer, floatTweenInfo, {
+		Position = UDim2.new(0.5, 0, 0.45, 0) -- Slight up
+	})
 	floatTween:Play()
 
 	-- Hover Logic
 	frame.MouseEnter:Connect(function()
 		tooltip.Visible = true
-		tooltip.BackgroundTransparency = 1
-		for _, c in pairs(tooltip:GetDescendants()) do
-			if c:IsA("TextLabel") then c.TextTransparency = 1 end
-			if c:IsA("UIStroke") then c.Transparency = 1 end
-			-- Line
-			if c:IsA("Frame") and c.Name == "Line" then c.BackgroundTransparency = 1 end
-		end
-
-		-- Fade In
-		local tInfo = TweenInfo.new(0.2)
-		TweenService:Create(tooltip, tInfo, {BackgroundTransparency = 0}):Play()
-		for _, c in pairs(tooltip:GetDescendants()) do
-			if c:IsA("TextLabel") then TweenService:Create(c, tInfo, {TextTransparency = 0}):Play() end
-			if c:IsA("UIStroke") then TweenService:Create(c, tInfo, {Transparency = 0}):Play() end
-			if c:IsA("Frame") and c.Name == "Line" then TweenService:Create(c, tInfo, {BackgroundTransparency = 0}):Play() end
-		end
-
-		-- Card Expand/Bounce
-		TweenService:Create(frame, TweenInfo.new(0.3, Enum.EasingStyle.Back), {Size = UDim2.new(0, 70, 0, 40)}):Play()
+		-- Scale Up
+		TweenService:Create(frame, TweenInfo.new(0.2, Enum.EasingStyle.Back), {
+			Size = UDim2.new(1.1, 0, 0.22, 0)
+		}):Play()
+		-- Brighten Accent
+		TweenService:Create(accent, TweenInfo.new(0.2), {
+			BackgroundColor3 = Color3.new(
+				math.min(config.Color.R * 1.3, 1),
+				math.min(config.Color.G * 1.3, 1),
+				math.min(config.Color.B * 1.3, 1)
+			)
+		}):Play()
 	end)
 
 	frame.MouseLeave:Connect(function()
-		tooltip.Visible = false -- Snap off or fade out? Snap off for responsiveness is fine, or quick fade
-		-- Card Reset
-		TweenService:Create(frame, TweenInfo.new(0.3, Enum.EasingStyle.Back), {Size = UDim2.new(0, 64, 0, 40)}):Play()
+		tooltip.Visible = false
+		-- Scale Back
+		TweenService:Create(frame, TweenInfo.new(0.2, Enum.EasingStyle.Back), {
+			Size = UDim2.new(1, 0, 0.2, 0)
+		}):Play()
+		-- Reset Accent
+		TweenService:Create(accent, TweenInfo.new(0.2), {
+			BackgroundColor3 = config.Color
+		}):Play()
 	end)
 
-	-- Entry Animation
-	frame.Position = UDim2.new(0, -30, 0, 0)
+	-- Entry Animation (Slide In from Left)
+	frame.Position = UDim2.new(-0.5, 0, 0, 0)
 	frame.BackgroundTransparency = 1
-	icon.TextTransparency = 1
 	accent.BackgroundTransparency = 1
+	icon.TextTransparency = 1
 
-	local entryInfo = TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-	TweenService:Create(frame, entryInfo, {BackgroundTransparency = 0.4}):Play()
-	TweenService:Create(icon, entryInfo, {TextTransparency = 0}):Play()
+	local entryInfo = TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	TweenService:Create(frame, entryInfo, {
+		Position = UDim2.new(0, 0, 0, 0),
+		BackgroundTransparency = 0
+	}):Play()
 	TweenService:Create(accent, entryInfo, {BackgroundTransparency = 0}):Play()
+	TweenService:Create(icon, entryInfo, {TextTransparency = 0}):Play()
 
 	return frame
 end
+
+-- ============================================================================
+-- UPDATE PERKS
+-- ============================================================================
 
 local function UpdatePerks(perkList)
 	local currentPerks = {}
@@ -339,11 +400,13 @@ local function UpdatePerks(perkList)
 		currentPerks[name] = false
 	end
 
-	for _, perkName in ipairs(perkList) do
+	for i, perkName in ipairs(perkList) do
 		if activePerkFrames[perkName] then
 			currentPerks[perkName] = true
+			activePerkFrames[perkName].LayoutOrder = i
 		else
 			local newFrame = CreatePerkEntry(perkName)
+			newFrame.LayoutOrder = i
 			newFrame.Parent = container
 			activePerkFrames[perkName] = newFrame
 			currentPerks[perkName] = true
@@ -354,16 +417,30 @@ local function UpdatePerks(perkList)
 		if not kept then
 			local frame = activePerkFrames[name]
 			if frame then
-				TweenService:Create(frame, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
-				task.delay(0.3, function() frame:Destroy() end)
+				-- Exit Animation
+				local exitInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+				TweenService:Create(frame, exitInfo, {
+					Position = UDim2.new(-0.5, 0, 0, 0),
+					BackgroundTransparency = 1
+				}):Play()
+				task.delay(0.3, function()
+					if frame then frame:Destroy() end
+				end)
 			end
 			activePerkFrames[name] = nil
 		end
 	end
 end
 
+-- ============================================================================
+-- EVENTS
+-- ============================================================================
+
 perkUpdateEv.OnClientEvent:Connect(function(perks)
 	UpdatePerks(perks or {})
 end)
 
+-- Initial empty state
 UpdatePerks({})
+
+return {}

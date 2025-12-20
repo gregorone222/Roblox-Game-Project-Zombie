@@ -20,6 +20,7 @@ Daftar fitur yang sering menyebabkan error jika salah penggunaan.
 *   **String Concatenation:** Error jika nilai `nil` -> *Solusi:* `tostring(val)`.
 *   **Math Safety:** `math.max(nil, 5)` error -> *Solusi:* `tonumber(input) or 0`.
 *   **Remote Security:** Jangan percaya input client mentah-mentah. Validasi tipe data di server.
+*   **Variable Shadowing:** Mendifinisikan ulang variabel global/upvalue dengan `local` di dalam scope sempit. -> *Efek:* Variabel asli tetap `nil` atau tidak terupdate. -> *Contoh Error:* `attempt to index nil with 'ClearAllChildren'`.
 
 ## 🔄 Deprecated Modules
 *   **`ProximityUIHandler`:** Dihapus. Gunakan event `ProximityPrompt` standar direct connection.

@@ -42,6 +42,7 @@ local perkList = {}
 local ownedPerksCache = {}
 local currentPlayerPoints = 0
 local blurEffect = nil
+local isLayoutCompact = false -- New state for layout mode
 
 -- THEME: SURVIVOR CAMP (Warm, Makeshift, Cozy Apocalypse)
 local THEME = {
@@ -181,7 +182,8 @@ local function createUI()
 	-- ROBUST COMPACT DETECTION
 	local camera = workspace.CurrentCamera
 	local viewport = camera.ViewportSize
-	local isCompact = (viewport.X < 1024) or (viewport.Y < 600) or UserInputService.TouchEnabled
+	isLayoutCompact = (viewport.X < 1024) or (viewport.Y < 600) or UserInputService.TouchEnabled
+	local isCompact = isLayoutCompact
 	
 	print("PerkShopUI: UI Created. Viewport:", viewport, "Compact Mode:", isCompact, "TouchEnabled:", UserInputService.TouchEnabled) -- DETAIL DEBUG
 
@@ -222,15 +224,18 @@ local function createUI()
 	aspect.AspectRatio = 1.4 -- Approx 950/650
 	aspect.Parent = mainFrame
 
-	if isMobile then
+	if isCompact then
 		mainFrame.Size = UDim2.new(0.95, 0, 0.9, 0)
-		aspect.AspectRatio = 1.6 -- Wider on mobile landscape
+		aspect.AspectRatio = 1.8 -- Wider on mobile landscape (was 1.6, increased to fit 2 columns better)
 	end
 
 	-- Header (Canvas Banner) - ZIndex: Content Layer
+	local headerHeight = isCompact and 0.15 or 0 -- Scale height for mobile (15% of frame)
+	local headerSize = isCompact and UDim2.new(1, 20, headerHeight, 0) or UDim2.new(1, 20, 0, 80)
+	
 	local header = create("Frame", {
 		Name = "fr_Header",
-		Size = UDim2.new(1, 20, 0, 80),
+		Size = headerSize,
 		Position = UDim2.new(0, -10, 0, -20),
 		BackgroundColor3 = THEME.CANVAS,
 		Rotation = -1,
@@ -288,39 +293,20 @@ local function createUI()
 		ZIndex = 100,
 		Parent = mainFrame
 	})
-	addBolts(btn_Close)
+	-- addBolts(btn_Close) -- Removed to prevent text obstruction
 	addTextConstraint(btn_Close, 12, 24)
 	btn_Close.MouseButton1Click:Connect(closeShop)
 
-	-- Points Counter (Wooden Tag) - ZIndex: Content
-	local fr_Points = create("Frame", {
-		Name = "fr_Points",
-		Size = UDim2.new(0.25, 0, 0.06, 0),
-		Position = UDim2.new(0.02, 0, 0.1, 0),
-		BackgroundColor3 = THEME.WOOD_LIGHT,
-		Rotation = 2,
-		ZIndex = 20,
-		Parent = mainFrame
-	})
-	local lbl_Points = create("TextLabel", {
-		Name = "lbl_Points",
-		Text = "POINTS: 0",
-		Size = UDim2.new(0.9,0,0.8,0),
-		Position = UDim2.new(0.05,0,0.1,0),
-		BackgroundTransparency = 1,
-		Font = THEME.FONT_HANDWRITTEN,
-		TextScaled = true,
-		TextColor3 = THEME.TEXT_DARK,
-		ZIndex = 21,
-		Parent = fr_Points
-	})
-	addTextConstraint(lbl_Points, 12, 28)
+	-- Points Counter REMOVED per user request (Step 113)
+	-- local pointsSize = isCompact and UDim2.new(0.3, 0, 0.08, 0) or UDim2.new(0.25, 0, 0.06, 0)
+	-- local fr_Points = create("Frame", ...)
 
 	-- Left: Grid of Supply Cards - ZIndex: Content
+	local gridYInfo = isCompact and 0.28 or 0.18 -- Push grid down on mobile
 	plateGrid = create("ScrollingFrame", {
 		Name = "sc_Grid",
 		Size = UDim2.new(0.6, 0, 0.8, 0),
-		Position = UDim2.new(0, 20, 0.18, 0),
+		Position = UDim2.new(0, 20, gridYInfo, 0),
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		ScrollBarThickness = 8,
@@ -423,8 +409,12 @@ end
 
 function buildShop()
 	plateGrid:ClearAllChildren()
+	
+	-- Mobile: 2 Columns, Desktop: 3 Columns
+	local cellSize = isLayoutCompact and UDim2.new(0.45, 0, 0.28, 0) or UDim2.new(0.3, 0, 0.25, 0)
+	
 	create("UIGridLayout", {
-		CellSize = UDim2.new(0.3, 0, 0.25, 0), -- Scale cells
+		CellSize = cellSize, -- Dynamic Scale
 		CellPadding = UDim2.new(0.02, 0, 0.02, 0),
 		HorizontalAlignment = Enum.HorizontalAlignment.Left,
 		Parent = plateGrid
