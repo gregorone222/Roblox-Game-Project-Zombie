@@ -1,6 +1,6 @@
 --[[
     AnalyticsLoader
-    Path: ServerScriptService/Script/AnalyticsLoader.server.lua
+    Path: ServerScriptService/Script/AnalyticsLoader.lua
     
     This script automatically initializes the LocalAnalytics module when the server starts.
     It ensures the error logger is active BEFORE other scripts run or crash.
