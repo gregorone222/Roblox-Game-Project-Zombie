@@ -20,29 +20,19 @@ Kami menolak desain "Brainrot" (slot machine mechanics, meaningless grinding, se
 
 ## 📚 Daftar Dokumentasi
 
-### 🔹 Core & Maps
-*   **[Place.md](Place.md):** Detail Map (Lobby & Village), Layout, dan Tema.
-*   **[Fitur.md](Fitur.md):** Gameplay Loop, Mode, dan Ringkasan Sistem.
-*   **[STORY.md](STORY.md):** Naskah cerita, Dialog, dan Plot Campaign.
+### 📖 Dokumentasi Utama
+Semua dokumentasi lengkap mengenai Gameplay, Technical, Story, dan Rules telah digabungkan menjadi satu file master:
+*   **[Full_Documentation.md](Full_Documentation.md)**
 
-### 🔹 Systems & Mechanics
-*   **[Entities.md](Entities.md):** Data Musuh (Zombie/Boss) dan NPC.
-*   **[Items.md](Items.md):** Senjata, Perks, Skill, dan Shop.
-*   **[UI.md](UI.md):** Struktur Antarmuka (HUD, Menu, Alerts).
-*   **[Controls.md](Controls.md):** Mapping Input (PC & Mobile).
-
-### 🔹 Technical & Ops
-*   **[Technical.md](Technical.md):** Arsitektur Script, DataStore Schema, Networking.
-*   **[Configuration.md](Configuration.md):** Panduan Game Balancing (Config).
-*   **[Admin.md](Admin.md):** Protokol Keamanan Data & Perintah Admin.
-
-### 🔹 Environment & Graphics
-*   **[Lighting.md](Lighting.md):** Sistem Pencahayaan Dinamis (Dark Wave, Blood Moon).
-*   **[Environment.md](Environment.md):** Atmosfer, Fog, VFX, dan Audio.
-
-### 🔹 Guidelines & Troubleshooting
-*   **[Rule.md](Rule.md):** Standar Pengembangan (UI Scale, Code Style).
-*   **[Error.md](Error.md):** Log Error Umum & Batasan Teknis (Constraints).
+### 🛠️ Workflows & Guides
+Panduan praktis untuk sistem pengembangan:
+*   **[📂 Workflows/](Workflows/)**
+    *   [Auto Debugging (Console to File)](Workflows/Automated_Debugging.md)
+    *   [Live Config Tuner](Workflows/Live_Config_Tuner.md)
+    *   [AI NPC Integration](Workflows/AI_NPC_Workflow.md)
+    *   [Phone Companion App](Workflows/Phone_Companion_App.md)
+    *   [Procedural 3D Generator](Workflows/Procedural_3D_Generator.md)
+    *   [Guide: Implementasi Debug System](Workflows/Local_Debug_Guide.md)
 
 ---
 
