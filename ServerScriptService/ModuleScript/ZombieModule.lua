@@ -25,6 +25,7 @@ local Boss2VFXModule = require(ZombieVFX:WaitForChild("Boss2VFXModule"))
 local Boss3VFXModule = require(ZombieVFX:WaitForChild("Boss3VFXModule"))
 local Boss1TimeoutVFX = require(ZombieVFX:WaitForChild("Boss1TimeoutVFX"))
 local ZombieConfig = require(ModuleScriptReplicatedStorage:WaitForChild("ZombieConfig"))
+
 local SkillConfig = require(ModuleScriptReplicatedStorage:WaitForChild("SkillConfig"))
 local GameConfig = require(ModuleScriptServerScriptService:WaitForChild("GameConfig"))
 local ElementModule = require(ModuleScriptServerScriptService:WaitForChild("ElementConfigModule"))
@@ -109,8 +110,11 @@ function ZombieModule.SpawnZombie(spawnPoint, typeName, playerCount, difficulty,
 	local humanoid = zombie:FindFirstChild("Humanoid")
 	-- apply base or type config
 	local cfg = ZombieConfig.BaseZombie
+	
+
 	if typeName and ZombieConfig.Types[typeName] then
 		cfg = ZombieConfig.Types[typeName]
+		
 	end
 
 	if humanoid then
