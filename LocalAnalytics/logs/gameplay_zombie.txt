@@ -670,3 +670,75 @@ Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
 Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
 
 ----------------------------------
+[2025-12-21T20:27:56.516Z] [Console Log] ServerScriptService.WaveDirectorPlugin:11: attempt to index nil with 'CreateToolbar'
+Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
+
+----------------------------------
+[2025-12-21T20:27:56.528Z] [Console Log] ServerScriptService.LootBalancerPlugin:9: attempt to index nil with 'CreateToolbar'
+Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
+
+----------------------------------
+[2025-12-21T20:27:56.529Z] [Console Log] ServerScriptService.ArsenalForgePlugin:13: attempt to index nil with 'CreateToolbar'
+Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
+
+----------------------------------
+[2025-12-21T20:27:56.591Z] [Console Log] ServerScriptService.ViewmodelEditorPlugin:10: attempt to index nil with 'CreateToolbar'
+Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
+
+----------------------------------
+[2025-12-21T20:27:56.591Z] [Console Log] ServerScriptService.Easy:13: attempt to index nil with 'CreateToolbar'
+Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
+
+----------------------------------
+[2025-12-21T20:27:56.592Z] [Console Log] ServerScriptService.UnifiedShopEditorPlugin:17: attempt to index nil with 'CreateToolbar'
+Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
+
+----------------------------------
+[2025-12-21T20:37:36.337Z] [Console Log] ServerScriptService.ArsenalForgePlugin:13: attempt to index nil with 'CreateToolbar'
+Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
+
+----------------------------------
+[2025-12-21T20:37:36.343Z] [Console Log] ServerScriptService.ViewmodelEditorPlugin:10: attempt to index nil with 'CreateToolbar'
+Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
+
+----------------------------------
+[2025-12-21T20:37:36.342Z] [Console Log] ServerScriptService.LootBalancerPlugin:9: attempt to index nil with 'CreateToolbar'
+Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
+
+----------------------------------
+[2025-12-21T20:37:36.344Z] [Console Log] ServerScriptService.WaveDirectorPlugin:11: attempt to index nil with 'CreateToolbar'
+Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
+
+----------------------------------
+[2025-12-21T20:37:36.347Z] [Console Log] ServerScriptService.Easy:13: attempt to index nil with 'CreateToolbar'
+Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
+
+----------------------------------
+[2025-12-21T20:37:36.346Z] [Console Log] ServerScriptService.UnifiedShopEditorPlugin:17: attempt to index nil with 'CreateToolbar'
+Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
+
+----------------------------------
+[2025-12-21T20:38:02.092Z] [Console Log] ServerScriptService.ArsenalForgePlugin:13: attempt to index nil with 'CreateToolbar'
+Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
+
+----------------------------------
+[2025-12-21T20:38:02.097Z] [Console Log] ServerScriptService.UnifiedShopEditorPlugin:17: attempt to index nil with 'CreateToolbar'
+Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
+
+----------------------------------
+[2025-12-21T20:38:02.098Z] [Console Log] ServerScriptService.Easy:13: attempt to index nil with 'CreateToolbar'
+Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
+
+----------------------------------
+[2025-12-21T20:38:02.103Z] [Console Log] ServerScriptService.ViewmodelEditorPlugin:10: attempt to index nil with 'CreateToolbar'
+Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
+
+----------------------------------
+[2025-12-21T20:38:02.104Z] [Console Log] ServerScriptService.LootBalancerPlugin:9: attempt to index nil with 'CreateToolbar'
+Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
+
+----------------------------------
+[2025-12-21T20:38:02.122Z] [Console Log] ServerScriptService.WaveDirectorPlugin:11: attempt to index nil with 'CreateToolbar'
+Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
+
+----------------------------------
