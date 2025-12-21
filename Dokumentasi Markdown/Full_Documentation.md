@@ -784,3 +784,49 @@ Elemen yang selalu aktif di layar gameplay.
 
 ---
 
+# File: UI_Design_System.md
+
+# 🎨 UI Development Standards
+
+Aturan pengembangan User Interface untuk menjaga konsistensi visual "Makeshift Survivor Camp" dan performa game.
+
+## 1. Strategi Aset Modular
+Jangan menggunakan satu gambar penuh (Full Image) untuk UI. Pecah desain menjadi komponen terpisah agar re-usable dan hemat memori.
+
+*   **🤖 Peran AI (Generator):** AI akan men-generate aset secara **terpotong-potong (modular)** sesuai kebutuhan (misal: "Panel Kayu", "Tombol Merah"), bukan mendesain seluruh layar sekaligus.
+*   **✅ Modular (Benar):**
+    *   `Frame_Kayu_A.png`
+    *   `Tombol_Merah_B.png`
+    *   `Ikon_Senjata_C.png`
+    *   *(Disusun kembali menggunakan ScreenGui di Roblox Studio)*
+*   **❌ Full Image (Salah):**
+    *   `Shop_Menu_Full_Design.png` (Teks dan tombol menyatu sulit diedit/diterjemahkan).
+
+## 2. Persiapan Aset (Pre-Processing)
+*   **Background Removal:**
+    *   Raw assets dari AI mungkin memiliki **background solid (Hitam/Putih/Abu)** untuk memudahkan seleksi.
+    *   Gunakan tool Magic Cut (Photopea) atau Remove.bg untuk menghapusnya sebelum upload.
+    *   Hasil akhir **WAJIB** transparan (.PNG).
+*   **Resolusi:**
+    *   **Elemen Besar (Panel Utama):** Gunakan **1024x1024 px** untuk ketajaman maksimal.
+    *   **Elemen Kecil (Tombol/Ikon):** Gunakan **500x500 px** (sudah cukup tajam untuk UI scale).
+*   **Format:** Simpan sebagai **.PNG** untuk transparansi lossless.
+
+## 3. Efek Engine-Native vs Baked-In
+Manfaatkan fitur rendering engine Roblox daripada menempelkan efek mati pada gambar.
+
+*   **✅ Gunakan Roblox Engine untuk:**
+    *   **Glow/Neon:** Gunakan `ImageLabel` dengan `Color3` cerah atau `UIStroke` + `Transparency` gradient.
+    *   **Stroke/Outline:** Gunakan `UIStroke` component.
+    *   **Bayangan:** Gunakan `ImageLabel` (slice scale) hitam transparan di belakang layer.
+    *   **Teks:** Gunakan `TextLabel` dengan font game.
+*   **❌ Jangan di-Bake di Gambar:**
+    *   Teks (Sulit diubah isinya nanti).
+    *   Glow statis (Sulit di-animasikan/kedip).
+
+## 4. Tipografi & Font
+Gunakan font standar proyek untuk semua teks UI agar konsisten.
+*   **Font Utama:** `Luckiest Guy` (Judul, Header).
+*   **Font Sekunder:** `Fredoka One` atau `Gotham` (Deskripsi, Stats).
+
+

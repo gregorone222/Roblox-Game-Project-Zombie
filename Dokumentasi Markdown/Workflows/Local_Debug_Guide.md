@@ -104,8 +104,8 @@ local LocalAnalytics = {}
 local SERVER_URL = "http://localhost:3000/log-error" 
 
 -- KONFIGURASI NAMA LOG DI SINI
--- Ubah ini menjadi "Log_A", "Gameplay_Log", dll sesuai kebutuhan agen Anda
-local SESSION_LOG_NAME = "Log_A"
+-- Ubah ini menjadi "gameplay_zombie" (Standar Proyek ini)
+local SESSION_LOG_NAME = "gameplay_zombie"
 
 function LocalAnalytics.Init()
     print("🔋 Local Analytics: Terhubung ke " .. SERVER_URL .. " (File: " .. SESSION_LOG_NAME .. ".txt)")
@@ -155,12 +155,35 @@ print("🛡️ Analytics Loader Aktif")
 1. **Nyalakan Server:** `cd LocalAnalytics && node server.js`
 2. **Aktifkan HTTP:** Game Settings → Security → ✅ Allow HTTP Requests
 3. **Play Test** di Roblox Studio
-4. **Monitoring:** Error muncul di terminal & tersimpan di `LocalAnalytics/logs/error_log_YYYY-MM-DD.txt`
-5. **Laporkan ke Agen:** _"Cek log error terakhir dan perbaiki scriptnya."_
+4. **Monitoring:** Error muncul di terminal & tersimpan di `LocalAnalytics/logs/gameplay_zombie.txt`
+5. **Laporkan ke Agen:** _"Cek log gameplay_zombie.txt dan perbaiki scriptnya."_
 
 ---
 
-## 🛡️ Batasan & Keamanan
+## � Sinkronisasi Multi-Agen (Folder Sync)
+
+Jika Anda bekerja dengan **Agen AI Lain** yang berjalan di Workspace berbeda (misal: `D:\Dokumen\Web\Plugin`), Anda perlu membuat **Jembatan Folder (Symlink)** agar agen tersebut bisa melihat log tanpa copy-paste.
+
+### Cara Membuat Jembatan (PowerShell):
+Jalankan perintah ini DI SINI (di folder proyek utama) untuk membuat shortcut di folder agen lain:
+
+```powershell
+New-Item -ItemType Junction -Path "PATH_TO_OTHER_AGENT_WORKSPACE\LocalLogs" -Target "PATH_TO_THIS_PROJECT\LocalAnalytics\logs"
+```
+
+**Contoh yang sudah diterapkan:**
+- **Target Logs:** `d:\Dokumen\Web\Plugin\LocalLogs`
+- **Target Docs:** `d:\Dokumen\Web\Plugin\docs\Local_Debug_Guide.md`
+- **Sumber:** `d:\Dokumen\Web\Roblox-Game-Project-Zombie\Dokumentasi Markdown\Workflows\Local_Debug_Guide.md`
+
+**⚠️ PERINGATAN:**
+Symlink adalah **pintu langsung**, bukan copy.
+- Jika Agen 2 menghapus file di `LocalLogs`, file ASLI di sini juga **TERHAPUS**.
+- Jangan hapus file sembarangan.
+
+---
+
+## �🛡️ Batasan & Keamanan
 
 | Kondisi | Hasil |
 |---------|-------|
@@ -174,3 +197,4 @@ print("🛡️ Analytics Loader Aktif")
 
 - **Error tidak muncul?** Pastikan `node server.js` jalan
 - **Syntax Error tidak tertangkap?** Pastikan `AnalyticsLoader.server.lua` ada di ServerScriptService
+- **Cek Status Server:** Jalankan `curl http://localhost:3000/` di terminal. Jika server hidup, akan muncul balasan: *"Roblox Local Analytics Server Running"*.

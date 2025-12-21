@@ -9,7 +9,7 @@ local HttpService = game:GetService("HttpService")
 local LogService = game:GetService("LogService")
 
 local LocalAnalytics = {}
-local SESSION_LOG_NAME = "game_play_zeombie"
+local SESSION_LOG_NAME = "gameplay_zombie"
 local SERVER_URL = "http://localhost:3000/log-error" 
 
 function LocalAnalytics.Init()
@@ -29,7 +29,8 @@ function LocalAnalytics.Init()
                 scriptName = "Console Log", -- LogService often doesn't give source script easily for syntax errors
                 message = message,
                 stackTrace = debug.traceback(), -- Traceback might be empty for syntax errors
-                timestamp = os.time()
+                timestamp = os.time(),
+                logName = SESSION_LOG_NAME
             }
             
             -- Send HTTP Request

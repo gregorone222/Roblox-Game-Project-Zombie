@@ -419,72 +419,85 @@ end
 local function spawnLocalFlash(part)
 	if not part then return end
 
-	-- Create flash part
-	local flash = Instance.new("Part")
-	flash.Name = "LocalMuzzleFlash"
-	flash.Size = Vector3.new(0.5, 0.5, 0.5)
-	flash.Shape = Enum.PartType.Ball
-	flash.Material = Enum.Material.Neon
-	flash.Color = Color3.fromRGB(255, 100, 0)
-	flash.Transparency = 1
-	flash.Anchored = false -- Must be false to move with gun
-	flash.CanCollide = false
-	flash.CFrame = part.CFrame
-	
-	-- Weld to part (CRITICAL: Moving with gun)
-	local weld = Instance.new("WeldConstraint")
-	weld.Part0 = part
-	weld.Part1 = flash
-	weld.Parent = flash
-	flash.Parent = workspace -- Or camera, but workspace is fine for local
+	-- DIRECT ATTACHMENT (ZERO LATENCY)
+	-- Instead of creating a new part and welding (which causes physics delay),
+	-- we parent the effects directly to the Muzzle part.
 
-	-- Create fire effect
-	local fire = Instance.new("Fire")
-	fire.Heat = 25
-	fire.Size = 0.01
-	fire.Parent = flash
+	-- Create Particle Emitter (Stylized)
+	local emitter = Instance.new("ParticleEmitter")
+	emitter.Name = "FlashShape"
+	emitter.Texture = "rbxassetid://133346747446843" -- Stylized Star Shape
+	-- LightEmission=1 makes black transparent and colors glow (Additive)
+	emitter.LightEmission = 1 
+	emitter.LightInfluence = 0
+	
+	-- Dynamics (Punchy & Short)
+	emitter.Lifetime = NumberRange.new(0.05, 0.08)
+	emitter.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0),    
+		NumberSequenceKeypoint.new(1, 1)     
+	})
+	-- Size: Micro/Mini (0.18 -> 0.43)
+	emitter.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.18), 
+		NumberSequenceKeypoint.new(1, 0.43)
+	})
+	emitter.Rotation = NumberRange.new(0, 360)
+	emitter.Speed = NumberRange.new(0) 
+	emitter.Rate = 0 -- Manual Emit
+	emitter.Parent = part -- DIRECT PARENT
 
 	-- Create point light
 	local light = Instance.new("PointLight")
-	light.Brightness = 5
-	light.Range = 15
-	light.Color = Color3.fromRGB(255, 100, 0)
-	light.Parent = flash
+	light.Brightness = 8
+	light.Range = 12
+	light.Color = Color3.fromRGB(255, 180, 50)
+	light.Parent = part -- DIRECT PARENT
 
-	Debris:AddItem(flash, 0.06)
+	emitter:Emit(1)
+
+	-- Cleanup components only
+	Debris:AddItem(emitter, 0.1)
+	Debris:AddItem(light, 0.1)
 end
 
 local function spawnLocalTracer(startPos, endPos, startPart)
 	local tracerPart = Instance.new("Part")
-	tracerPart.Name = "LocalTracer"
+	tracerPart.Name = "StylizedLocalTracer"
 	tracerPart.Size = Vector3.new(0.1, 0.1, 0.1)
 	tracerPart.Transparency = 1
 	tracerPart.CanCollide = false
-	tracerPart.Anchored = true -- Tracer container is anchored, beam endpoints handle movement
+	tracerPart.Anchored = true 
 	tracerPart.CFrame = CFrame.new(startPos, endPos)
 	tracerPart.Parent = workspace
 
 	local beam = Instance.new("Beam")
 	beam.FaceCamera = true
-	beam.Color = ColorSequence.new(Color3.fromRGB(255, 200, 50))
-	beam.Width0 = 0.1
-	beam.Width1 = 0.1
-	beam.Brightness = 5
-	beam.LightEmission = 0.8
+	-- Gold/Orange Core Color
+	beam.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 200)), -- Bright Head
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 170, 0))   -- Trails off to orange
+	})
+	beam.Width0 = 0.12 -- Slightly thicker
+	beam.Width1 = 0.12
+	beam.Brightness = 8 -- Very Bright for Bloom
+	beam.LightEmission = 1 -- Additive Blending
 	beam.LightInfluence = 0
-	beam.Texture = "rbxassetid://446111271"
-	beam.TextureSpeed = 10
+	beam.Texture = "rbxassetid://130004939944902" -- Stylized Tracer Asset
+	beam.TextureSpeed = 0 -- FIX: Stop looping to prevent "Double Bullet" look
+	
+	-- Mode = Stretch
+	beam.TextureMode = Enum.TextureMode.Stretch 
+
+	local distance = (startPos - endPos).Magnitude
+	beam.TextureLength = distance 
 
 	-- ATTACHMENT LOGIC FOR MOVING GUN
 	local att0 = Instance.new("Attachment")
 	if startPart then
-		-- Attach to moving gun part
 		att0.Parent = startPart
-		-- StartPos is world position, need local offset if we want perfect alignment?
-		-- Actually, easier: assume startPart is the Muzzle, so offset is 0
 		att0.Position = Vector3.new(0,0,0) 
 	else
-		-- Fallback to static point
 		att0.Parent = tracerPart
 		att0.WorldPosition = startPos
 	end
@@ -495,22 +508,18 @@ local function spawnLocalTracer(startPos, endPos, startPart)
 
 	beam.Attachment0 = att0
 	beam.Attachment1 = att1
-	
-	local distance = (startPos - endPos).Magnitude
-	beam.TextureLength = distance / 2
 	beam.Parent = tracerPart
 
-	-- Fade cepat
-	local tween = TweenService:Create(beam, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+	-- Fast Fade (Zip effect)
+	local tween = TweenService:Create(beam, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 		Width0 = 0,
-		Width1 = 0,
-		Brightness = 0
+		Width1 = 0
 	})
 	tween:Play()
 
-	Debris:AddItem(tracerPart, 0.3)
+	Debris:AddItem(tracerPart, 0.2)
 	if startPart then
-		Debris:AddItem(att0, 0.3) -- Clean up attachment on gun
+		Debris:AddItem(att0, 0.2) 
 	end
 end
 

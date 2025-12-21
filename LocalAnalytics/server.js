@@ -38,9 +38,18 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === 'POST' && req.url === '/log-error') {
         const body = await getBody(req);
-        const { scriptName, message, stackTrace } = body;
-        const date = new Date().toISOString().split('T')[0];
-        const logFile = path.join(logsDir, `error_log_${date}.txt`);
+        const { scriptName, message, stackTrace, logName } = body;
+
+        let fileName = "";
+        if (logName) {
+            const safeName = logName.replace(/[^a-zA-Z0-9_\-]/g, '');
+            fileName = `${safeName}.txt`;
+        } else {
+            const date = new Date().toISOString().split('T')[0];
+            fileName = `error_log_${date}.txt`;
+        }
+
+        const logFile = path.join(logsDir, fileName);
 
         const logEntry = `[${new Date().toISOString()}] [${scriptName || 'Unknown'}] ${message}\nStack: ${stackTrace}\n----------------------------------\n`;
 
@@ -51,7 +60,7 @@ const server = http.createServer(async (req, res) => {
                 res.end("Error writing log");
                 return;
             }
-            console.log(`🚨 Error Logged from Roblox: ${message}`);
+            console.log(`🚨 Error Logged from Roblox [${fileName}]: ${message}`);
             res.writeHead(200);
             res.end("Logged");
         });

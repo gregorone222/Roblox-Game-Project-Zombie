@@ -32,6 +32,8 @@ Panduan praktis untuk sistem pengembangan:
     *   [AI NPC Integration](Workflows/AI_NPC_Workflow.md)
     *   [Phone Companion App](Workflows/Phone_Companion_App.md)
     *   [Procedural 3D Generator](Workflows/Procedural_3D_Generator.md)
+    *   [UI Development Workflow (AI-Assisted)](Workflows/UI_Development_Workflow.md)
+    *   [VFX Development Workflow](Workflows/VFX_Development_Workflow.md)
     *   [Guide: Implementasi Debug System](Workflows/Local_Debug_Guide.md)
 
 ---
