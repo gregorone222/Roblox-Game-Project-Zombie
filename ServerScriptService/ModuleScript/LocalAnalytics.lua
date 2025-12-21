@@ -9,6 +9,7 @@ local HttpService = game:GetService("HttpService")
 local LogService = game:GetService("LogService")
 
 local LocalAnalytics = {}
+local SESSION_LOG_NAME = "game_play_zeombie"
 local SERVER_URL = "http://localhost:3000/log-error" 
 
 function LocalAnalytics.Init()
