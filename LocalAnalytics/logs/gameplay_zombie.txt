@@ -742,3 +742,51 @@ Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
 Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
 
 ----------------------------------
+[2025-12-21T20:49:06.770Z] [Console Log] ServerScriptService.ArsenalForgePlugin:13: attempt to index nil with 'CreateToolbar'
+Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
+
+----------------------------------
+[2025-12-21T20:49:06.785Z] [Console Log] ServerScriptService.UnifiedShopEditorPlugin:17: attempt to index nil with 'CreateToolbar'
+Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
+
+----------------------------------
+[2025-12-21T20:49:06.787Z] [Console Log] ServerScriptService.Easy:13: attempt to index nil with 'CreateToolbar'
+Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
+
+----------------------------------
+[2025-12-21T20:49:06.801Z] [Console Log] ServerScriptService.WaveDirectorPlugin:11: attempt to index nil with 'CreateToolbar'
+Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
+
+----------------------------------
+[2025-12-21T20:49:06.802Z] [Console Log] ServerScriptService.LootBalancerPlugin:9: attempt to index nil with 'CreateToolbar'
+Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
+
+----------------------------------
+[2025-12-21T20:49:06.802Z] [Console Log] ServerScriptService.ViewmodelEditorPlugin:10: attempt to index nil with 'CreateToolbar'
+Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
+
+----------------------------------
+[2025-12-21T20:51:06.842Z] [Console Log] ServerScriptService.LootBalancerPlugin:9: attempt to index nil with 'CreateToolbar'
+Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
+
+----------------------------------
+[2025-12-21T20:51:06.856Z] [Console Log] ServerScriptService.UnifiedShopEditorPlugin:17: attempt to index nil with 'CreateToolbar'
+Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
+
+----------------------------------
+[2025-12-21T20:51:06.858Z] [Console Log] ServerScriptService.WaveDirectorPlugin:11: attempt to index nil with 'CreateToolbar'
+Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
+
+----------------------------------
+[2025-12-21T20:51:06.858Z] [Console Log] ServerScriptService.ViewmodelEditorPlugin:10: attempt to index nil with 'CreateToolbar'
+Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
+
+----------------------------------
+[2025-12-21T20:51:06.859Z] [Console Log] ServerScriptService.Easy:13: attempt to index nil with 'CreateToolbar'
+Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
+
+----------------------------------
+[2025-12-21T20:51:06.860Z] [Console Log] ServerScriptService.ArsenalForgePlugin:13: attempt to index nil with 'CreateToolbar'
+Stack: ServerScriptService.ModuleScript.LocalAnalytics:31
+
+----------------------------------

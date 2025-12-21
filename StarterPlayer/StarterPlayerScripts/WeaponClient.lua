@@ -430,9 +430,9 @@ local function spawnLocalFlash(part)
 	-- LightEmission=1 makes black transparent and colors glow (Additive)
 	emitter.LightEmission = 1 
 	emitter.LightInfluence = 0
-	
+
 	-- Dynamics (Punchy & Short)
-	emitter.Lifetime = NumberRange.new(0.05, 0.08)
+	emitter.Lifetime = NumberRange.new(0.02, 0.03)
 	emitter.Transparency = NumberSequence.new({
 		NumberSequenceKeypoint.new(0, 0),    
 		NumberSequenceKeypoint.new(1, 1)     
@@ -485,7 +485,7 @@ local function spawnLocalTracer(startPos, endPos, startPart)
 	beam.LightInfluence = 0
 	beam.Texture = "rbxassetid://130004939944902" -- Stylized Tracer Asset
 	beam.TextureSpeed = 0 -- FIX: Stop looping to prevent "Double Bullet" look
-	
+
 	-- Mode = Stretch
 	beam.TextureMode = Enum.TextureMode.Stretch 
 
@@ -525,12 +525,12 @@ end
 
 local function getMuzzlePosition()
 	-- Returns: Position (Vector3), Part (Instance or nil)
-	
+
 	-- Priority 1: Viewmodel Muzzle (first person)
 	if viewmodel and viewmodel.viewmodelMuzzle then
 		return viewmodel.viewmodelMuzzle.CFrame.Position, viewmodel.viewmodelMuzzle
 	end
-	
+
 	-- Priority 2: Tool Muzzle (fallback/third person)
 	if currentWeapon then
 		local muzzlePart = currentWeapon:FindFirstChild("Muzzle")
@@ -538,13 +538,13 @@ local function getMuzzlePosition()
 			return muzzlePart.CFrame.Position, muzzlePart
 		end
 	end
-	
+
 	-- Priority 3: Handle + offset (legacy fallback)
 	local handle = viewmodel and viewmodel.viewmodelHandle or (currentWeapon and currentWeapon:FindFirstChild("Handle"))
 	if handle and weaponStats then
 		return handle.CFrame:PointToWorldSpace(weaponStats.TracerOffset or Vector3.new(0, 0, 0)), handle
 	end
-	
+
 	return Vector3.new(0, 0, 0), nil
 end
 
@@ -564,17 +564,17 @@ local function fireFromCenterOnce()
 	-- Get muzzle position and part for local effects
 	local startPos, muzzlePart = getMuzzlePosition()
 	local hitPosition = ray.Origin + ray.Direction * 1000
-	
+
 	-- Spawn LOCAL Effects (Zero Latency)
 	if muzzlePart then
 		spawnLocalFlash(muzzlePart)
 		spawnLocalTracer(startPos, hitPosition, muzzlePart)
 	end
-	
+
 	-- Replicate to server (for others)
 	-- Note: We send the 'startPos' as before, but updated handlers might use it differently
 	TracerEvent:FireServer(startPos, hitPosition, weaponName)
-	
+
 	local handle = viewmodel and viewmodel.viewmodelHandle or currentWeapon:FindFirstChild("Handle")
 	if handle then
 		MuzzleFlashEvent:FireServer(handle, weaponName)
@@ -758,16 +758,16 @@ local function onStepped(dt)
 		-- Get muzzle position and part for local effects
 		local startPos, muzzlePart = getMuzzlePosition()
 		local hitPosition = mouse.Hit.Position
-		
+
 		-- Spawn LOCAL Effects (Zero Latency)
 		if muzzlePart then
 			spawnLocalFlash(muzzlePart)
 			spawnLocalTracer(startPos, hitPosition, muzzlePart)
 		end
-		
+
 		-- Replicate to server
 		TracerEvent:FireServer(startPos, hitPosition, weaponName)
-		
+
 		local handle = viewmodel and viewmodel.viewmodelHandle or currentWeapon:FindFirstChild("Handle")
 		if handle then
 			MuzzleFlashEvent:FireServer(handle, weaponName)
