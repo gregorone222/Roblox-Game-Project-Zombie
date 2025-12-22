@@ -12,12 +12,20 @@ Dokumen ini menjelaskan alur kerja standar (Standard Operating Procedure) untuk 
 ---
 
 ## 1. Conceptualization (The "Why")
-Sebelum membuat partikel, jawab pertanyaan ini:
-*   **Context:** Apakah ini efek lingkungan (Ambient) atau efek aksi (Impact)?
-*   **Emotion:**
-    *   *Environment:* Harus terasa **Bittersweet/Sepi**. Gunakan warna lembut (Ungu/Pink senja), gerakan lambat.
-    *   *Combat:* Harus **Visceral/Kasar**. Darah, ledakan, api. Gerakan cepat dan tajam.
-*   **Reference:** Lihat `Full_Documentation.md` bagian "Visual Effects".
+Sebelum membuat partikel, pahami Pillar Visual proyek ini. Jangan membuat efek generik!
+
+### Visual Pillars & References
+1.  **Environment: "Ethereal & Bittersweet"**
+    *   *Main Reference:* **Fortnite Save The World** (Post-apocalyptic namun colorful/hopeful).
+    *   *Vibe:* Sunset, Twilight, Golden Hour.
+    *   *Palette:* Warna lembut (Ungu/Pink senja), Kabut bercahaya (Volumetric).
+    *   *Feeling:* **Nostalgia**. Dunia ini terasa seperti kenangan masa kecil yang sepi.
+
+2.  **Combat: "Visceral & Punchy"**
+    *   *Main Reference:* **Overwatch** (Terutama karakter Junkrat/Pharah).
+    *   *Vibe:* Ledakan kartun, Bentuk tajam (Sharp Shapes).
+    *   *Technique:* **Cleaner is Better**. Hindari noise/detail berlebih. Gunakan bentuk solid yang mudah dibaca mata.
+    *   *Feeling:* **Satisfying**. Impact harus terasa "berat" namun cepat hilang.
 
 ## 2. Asset Generation (Texture Creation)
 VFX yang bagus dimulai dari tekstur yang bagus.
@@ -60,7 +68,28 @@ function VFXManager:PlayEffect(effectName, position, normal)
 end
 ```
 
-## 5. Performance Tuning (Mobile First)
+## 5. Hitscan Weapon VFX Standards (New)
+Standar khusus untuk senjata api (Hitscan) guna memastikan responsivitas dan akurasi visual.
+
+### A. Zero Latency Muzzle Flash
+*   **Teknik:** Jangan weld part baru. Langsung **Parent** `ParticleEmitter` & `PointLight` ke part `Muzzle` senjata.
+*   **Alasan:** Menghindari "Physics Drag" (efek tertinggal) saat player bergerak cepat/strafing.
+*   **Client Implementation:** `WeaponClient` (Local) & `MuzzleFlashClient` (Network).
+
+### B. Stylized Bullet Tracer
+*   **Asset:** Beam dengan solid core & tapered tail (e.g., `rbxassetid://130004939944902`).
+*   **Visual:** Warna Emas ke Oranye, `LightEmission = 1`, `TextureSpeed = 0` (Solid, no looping).
+*   **Accuracy (WYSIWYG):**
+    *   Gunakan **Client-Authoritative Spread**. Client menghitung acakan (spread), menggambar tracer ke sana, lalu mengirim *arah itu* ke server.
+    *   Tracer visual harus selalu berakhir tepat di mana Bullethole muncul.
+
+### C. Stylized Bullethole
+*   **Teknik:** **Sticker Part**.
+*   **Cara:** Spawn Part tipis transparan, tempel `Decal` di sisi depannya.
+*   **Orientation:** `CFrame.lookAt(pos, pos + normal)`.
+*   **Visual:** Gunakan tekstur "Spiderweb Crack" kontras tinggi (e.g., `rbxassetid://94614436519456`). Jangan gunakan puing fisika (Debris Parts) untuk performa.
+
+## 6. Performance Tuning (Mobile First)
 VFX adalah penyebab lag #1 di Mobile.
 *   **Limit Rate:** Jangan spam partikel. Gunakan `Emit()` manual daripada `Rate` tinggi yang berjalan terus.
 *   **Short Lifetime:** Partikel combat (darah/impact) maksimal 1-2 detik.

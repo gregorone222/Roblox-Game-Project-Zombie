@@ -46,6 +46,8 @@ local ReloadEvent = RemoteEvents:WaitForChild("ReloadEvent")
 local AmmoUpdateEvent = RemoteEvents:WaitForChild("AmmoUpdateEvent")
 local HitmarkerEvent = RemoteEvents:WaitForChild("HitmarkerEvent")
 local BulletholeEvent = RemoteEvents:WaitForChild("BulletholeEvent")
+local ExplosionEvent = RemoteEvents:FindFirstChild("ExplosionEvent") or Instance.new("RemoteEvent", RemoteEvents)
+ExplosionEvent.Name = "ExplosionEvent"
 local DamageDisplayEvent = ReplicatedStorage.RemoteEvents:FindFirstChild("DamageDisplayEvent") or Instance.new("RemoteEvent", ReplicatedStorage.RemoteEvents)
 DamageDisplayEvent.Name = "DamageDisplayEvent"
 
@@ -240,13 +242,14 @@ ShootEvent.OnServerEvent:Connect(function(player, tool, cameraDirection, isAimin
 	playerAmmo[player] = playerAmmo[player] or {}
 	playerReserveAmmo[player] = playerReserveAmmo[player] or {}
 	if playerAmmo[player][id] == nil then
+		print("DEBUG: Init ammo for " .. weaponName .. " | ID: " .. tostring(id))
 		playerAmmo[player][id] = weaponStats.MaxAmmo
 		playerReserveAmmo[player][id] = weaponStats.ReserveAmmo
 	end
 
 	-- ===== Server-side fire-rate gate =====
-	-- Jangan izinkan menembak kalau masih dalam jeda fire rate atau sedang reload
 	if player.Character and player.Character:GetAttribute("IsReloading") then
+		print("DEBUG: Shoot blocked - IsReloading")
 		return
 	end
 
@@ -254,14 +257,10 @@ ShootEvent.OnServerEvent:Connect(function(player, tool, cameraDirection, isAimin
 
 	local now = tick()
 	local cooldown = weaponStats.FireRate
-	-- Hormati buff RateBoost jika ada (sesuai logika client)
-	if player.Character and player.Character:GetAttribute("RateBoost") then
-		cooldown = cooldown * 0.7
-	end
-
+	
 	local last = lastFireTime[player][id] or 0
 	if (now - last) < cooldown then
-		-- Belum waktunya nembak lagi ? tolak
+		-- print("DEBUG: Shoot blocked - Cooldown") -- Spammy
 		return
 	end
 
@@ -269,7 +268,9 @@ ShootEvent.OnServerEvent:Connect(function(player, tool, cameraDirection, isAimin
 	lastFireTime[player][id] = now
 	-- ===== End gate =====
 
+	print("DEBUG: Ammo check for " .. weaponName .. ": " .. tostring(playerAmmo[player][id]))
 	if playerAmmo[player][id] <= 0 then
+		print("DEBUG: Shoot blocked - No Ammo")
 		return
 	end
 
@@ -442,9 +443,25 @@ ShootEvent.OnServerEvent:Connect(function(player, tool, cameraDirection, isAimin
 
 
 					end
+				
+				-- DESTUCTIBLE COVER LOGIC FOR PELLETS
+				elseif hitModel and hitModel:GetAttribute("Destructible") then
+					local ObjectDamagedEvent = ReplicatedStorage.BindableEvents:FindFirstChild("ObjectDamaged")
+					if ObjectDamagedEvent then
+						-- Calculate base damage for prop
+						local instanceLevel = tool:GetAttribute("UpgradeLevel") or 0
+						local base = weaponStats.Damage or 10
+						local cfg = weaponStats.UpgradeConfig
+						local damage = base
+						if cfg then
+							damage = base + (cfg.DamagePerLevel * instanceLevel)
+						end
+						
+						ObjectDamagedEvent:Fire(hitModel, damage, res.Position)
+					end
+				end
 				end
 			end
-		end
 	else
 		local baseSpread = isAiming and weaponStats.ADS_Spread or weaponStats.Spread
 		local spread = baseSpread * spreadMultiplier
@@ -466,74 +483,104 @@ ShootEvent.OnServerEvent:Connect(function(player, tool, cameraDirection, isAimin
 			if not isZombie then
 				BulletholeEvent:FireClient(player, result.Position, result.Normal)
 			end
+			
+			-- Handle Explosion VFX
+			if weaponStats.ExplosionRadius and weaponStats.ExplosionRadius > 0 then
+				ExplosionEvent:FireAllClients(result.Position, weaponStats.ExplosionRadius)
+			end
 
 			if hitModel and hitModel:FindFirstChild("Humanoid") then
-				local targetHumanoid = hitModel:FindFirstChild("Humanoid")
-				local instanceLevel = tool:GetAttribute("UpgradeLevel") or 0
-				local base = weaponStats.Damage or 0
-				local cfg = weaponStats.UpgradeConfig
-				local damage = base
-				if cfg then
-					damage = base + (cfg.DamagePerLevel * instanceLevel)
-				end
-				local isHeadshot = false
-
-				if hitModel:FindFirstChild("IsZombie") and targetHumanoid.Health > 0 then
-					local skillData = SkillModule.GetSkillData(player)
-					if hitPart.Name == "Head" or hitPart.Parent and hitPart.Parent.Name == "Head" then
-						local headshotLevel = skillData.Skills.HeadshotDamage or 0
-						local headshotBonus = headshotLevel * (SkillConfig.HeadshotDamage.DamagePerLevel or 1)
-						damage = (damage * weaponStats.HeadshotMultiplier) + headshotBonus
-						isHeadshot = true
+					local targetHumanoid = hitModel:FindFirstChild("Humanoid")
+					local instanceLevel = tool:GetAttribute("UpgradeLevel") or 0
+					local base = weaponStats.Damage or 0
+					local cfg = weaponStats.UpgradeConfig
+					local damage = base
+					if cfg then
+						damage = base + (cfg.DamagePerLevel * instanceLevel)
 					end
-					if hitModel:FindFirstChild("IsBoss") then
-						local bossDamageLevel = skillData.Skills.DamageBoss or 0
-						local bossDamageBonus = bossDamageLevel * (SkillConfig.DamageBoss.DamagePerLevel or 0)
-						damage = damage + bossDamageBonus
-					end
+					
+					local isHeadshot = false
+					local isZombie = hitModel:FindFirstChild("IsZombie")
+					local isBoss = hitModel:FindFirstChild("IsBoss")
 
-					-- Apply weapon specialist damage
-					if weaponName ~= "Minigun" then
-						local category = weaponStats.Category
-						if category then
-							local categoryKey = string.gsub(category, " ", "")
-							if SkillConfig.WeaponSpecialist.Categories[categoryKey] and skillData.Skills.WeaponSpecialist then
-								local specialistLevel = skillData.Skills.WeaponSpecialist[categoryKey] or 0
-								if specialistLevel > 0 then
-									local specialistBonus = specialistLevel * (SkillConfig.WeaponSpecialist.DamagePerLevel or 1)
-									damage = damage + specialistBonus
+					if isZombie and targetHumanoid.Health > 0 then
+						local skillData = SkillModule.GetSkillData(player)
+						if hitPart.Name == "Head" or hitPart.Parent and hitPart.Parent.Name == "Head" then
+							local headshotLevel = skillData.Skills.HeadshotDamage or 0
+							local headshotBonus = headshotLevel * (SkillConfig.HeadshotDamage.DamagePerLevel or 1)
+							damage = (damage * weaponStats.HeadshotMultiplier) + headshotBonus
+							isHeadshot = true
+						end
+						
+						if isBoss then
+							local bossDamageLevel = skillData.Skills.DamageBoss or 0
+							local bossDamageBonus = bossDamageLevel * (SkillConfig.DamageBoss.DamagePerLevel or 0)
+							damage = damage + bossDamageBonus
+						end
+
+						-- Apply weapon specialist damage
+						if weaponName ~= "Minigun" then
+							local category = weaponStats.Category
+							if category then
+								local categoryKey = string.gsub(category, " ", "")
+								if SkillConfig.WeaponSpecialist.Categories[categoryKey] and skillData.Skills.WeaponSpecialist then
+									local specialistLevel = skillData.Skills.WeaponSpecialist[categoryKey] or 0
+									if specialistLevel > 0 then
+										local specialistBonus = specialistLevel * (SkillConfig.WeaponSpecialist.DamagePerLevel or 1)
+										damage = damage + specialistBonus
+									end
 								end
 							end
 						end
 					end
-				end
 
-				-- Store hit direction for ragdoll
-				storeHitForRagdoll(hitModel, direction, damage)
+					-- Store hit direction for ragdoll
+					storeHitForRagdoll(hitModel, direction, damage)
 
-				HitmarkerEvent:FireClient(player, isHeadshot)
-				local finalDamage = applyDamageAndStats(player, targetHumanoid, hitModel, damage, isHeadshot, weaponName)
+					HitmarkerEvent:FireClient(player, isHeadshot)
+					
+					-- SINGLE POINT OF DAMAGE APPLICATION
+					local finalDamage = applyDamageAndStats(player, targetHumanoid, hitModel, damage, isHeadshot, weaponName)
 
-				-- Berikan poin berdasarkan damage jika target bukan immune
-				if finalDamage and finalDamage > 0 and not hitModel:GetAttribute("Immune") then
-					local bpMultiplier = GameConfig.Economy and GameConfig.Economy.BP_Per_Damage_Multiplier or 0
-					PointsSystem.AddPoints(player, math.floor(finalDamage * bpMultiplier))
-				end
+					-- Berikan poin berdasarkan damage jika target bukan immune
+					if finalDamage and finalDamage > 0 and isZombie and not hitModel:GetAttribute("Immune") then
+						local bpMultiplier = GameConfig.Economy and GameConfig.Economy.BP_Per_Damage_Multiplier or 0
+						PointsSystem.AddPoints(player, math.floor(finalDamage * bpMultiplier))
+					end
 
-				-- Update Misi untuk non-shotgun
-				if MissionManager and finalDamage and finalDamage > 0 then
-					local eventType = isHeadshot and "HEADSHOT" or "HIT"
-					MissionManager:UpdateMissionProgress(player, {
-						eventType = eventType,
-						amount = 1,
-						weaponType = weaponStats.Category
-					})
+					-- Update Misi
+					if MissionManager and finalDamage and finalDamage > 0 then
+						local eventType = isHeadshot and "HEADSHOT" or "HIT"
+						MissionManager:UpdateMissionProgress(player, {
+							eventType = eventType,
+							amount = 1,
+							weaponType = weaponStats.Category
+						})
+					end
+
+				-- DESTUCTIBLE COVER LOGIC (No Humanoid)
+				elseif hitModel and hitModel:GetAttribute("Destructible") then
+					local ObjectDamagedEvent = ReplicatedStorage.BindableEvents:FindFirstChild("ObjectDamaged")
+					if ObjectDamagedEvent then
+						-- Calculate base damage for prop
+						local instanceLevel = tool:GetAttribute("UpgradeLevel") or 0
+						local base = weaponStats.Damage or 10
+						local cfg = weaponStats.UpgradeConfig
+						local damage = base
+						if cfg then
+							damage = base + (cfg.DamagePerLevel * instanceLevel)
+						end
+						
+						ObjectDamagedEvent:Fire(hitModel, damage, result.Position)
+						
+						-- Optional: Hitmarker for props?
+						HitmarkerEvent:FireClient(player, false) 
+					end
 				end
 
 
 			end
 		end
-	end
 end)
 
 ReloadEvent.OnServerEvent:Connect(function(player, tool)
@@ -637,6 +684,8 @@ game.Players.PlayerAdded:Connect(function(player)
 		end
 		char.ChildAdded:Connect(function(child)
 			if child:IsA("Tool") then
+				task.wait(0.1) -- Beri waktu agar replikasi equip selesai di client
+				print("DEBUG: Tool equipped, syncing ammo for " .. child.Name)
 				setupToolAmmoForPlayer(player, child)
 			end
 		end)

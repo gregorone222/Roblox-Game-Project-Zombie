@@ -363,12 +363,13 @@ function LobbyBuilder.Build()
 	end
 
 	-- 2. LIGHTING & ATMOSPHERE
-	Lighting.ClockTime = 0
-	Lighting.Brightness = 0
-	Lighting.Ambient = Color3.fromRGB(20, 20, 25) -- Very Dark
-	Lighting.OutdoorAmbient = Color3.fromRGB(10, 10, 15)
-	Lighting.FogColor = Color3.fromRGB(15, 15, 20)
-	Lighting.FogEnd = 150 -- Close fog for claustrophobia
+	-- Configured via LightingManager
+	-- Lighting.ClockTime = 0
+	-- Lighting.Brightness = 0
+	-- Lighting.Ambient = Color3.fromRGB(20, 20, 25) -- Very Dark
+	-- Lighting.OutdoorAmbient = Color3.fromRGB(10, 10, 15)
+	-- Lighting.FogColor = Color3.fromRGB(15, 15, 20)
+	-- Lighting.FogEnd = 150 -- Close fog for claustrophobia
 
 	-- Campfire (Center) - WARMTH
 	local firePos = Vector3.new(0, PLATFORM_HEIGHT + 0.5, 30)

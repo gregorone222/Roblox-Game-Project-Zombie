@@ -87,7 +87,43 @@ local function buildHouse(cframe, parent)
 
 	-- Furniture / Debris inside
 	if math.random() > 0.3 then
-		createPart("Table", Vector3.new(4, 2, 4), cframe * CFrame.new(0, 2, 0) * CFrame.Angles(math.random(), math.random(), math.random()), house, COLORS.WoodDark, Enum.Material.Wood)
+		local table = createPart("Table", Vector3.new(4, 2, 4), cframe * CFrame.new(0, 2, 0) * CFrame.Angles(math.random(), math.random(), math.random()), house, COLORS.WoodDark, Enum.Material.Wood)
+		-- Tag as Destructible
+		local baseModel = Instance.new("Model")
+		baseModel.Name = "DestructibleTable"
+		baseModel.Parent = house
+		table.Parent = baseModel
+		
+		baseModel:SetAttribute("Destructible", true)
+		baseModel:SetAttribute("Health", 100)
+		baseModel:SetAttribute("Health", 100)
+		baseModel:SetAttribute("MaxHealth", 100)
+	end
+
+	-- Chairs (More common)
+	if math.random() > 0.3 then
+		local numChairs = math.random(1, 2)
+		for k = 1, numChairs do
+			local offset = Vector3.new(math.random(-3,3), 1, math.random(-3,3))
+			local chairCFrame = cframe * CFrame.new(offset) * CFrame.Angles(0, math.random()*math.pi*2, 0)
+			
+			local chairModel = Instance.new("Model")
+			chairModel.Name = "DestructibleChair"
+			chairModel.Parent = house
+			chairModel:SetAttribute("Destructible", true)
+			chairModel:SetAttribute("Health", 50) -- Weaker than table
+			chairModel:SetAttribute("MaxHealth", 50)
+
+			-- Seat
+			createPart("Seat", Vector3.new(2, 0.2, 2), chairCFrame * CFrame.new(0, 1, 0), chairModel, COLORS.WoodLight, Enum.Material.Wood)
+			-- Back
+			createPart("Back", Vector3.new(2, 2, 0.2), chairCFrame * CFrame.new(0, 2, 1), chairModel, COLORS.WoodLight, Enum.Material.Wood)
+			-- Legs
+			createPart("Leg1", Vector3.new(0.2, 1, 0.2), chairCFrame * CFrame.new(0.9, 0.5, 0.9), chairModel, COLORS.WoodDark, Enum.Material.Wood)
+			createPart("Leg2", Vector3.new(0.2, 1, 0.2), chairCFrame * CFrame.new(-0.9, 0.5, 0.9), chairModel, COLORS.WoodDark, Enum.Material.Wood)
+			createPart("Leg3", Vector3.new(0.2, 1, 0.2), chairCFrame * CFrame.new(0.9, 0.5, -0.9), chairModel, COLORS.WoodDark, Enum.Material.Wood)
+			createPart("Leg4", Vector3.new(0.2, 1, 0.2), chairCFrame * CFrame.new(-0.9, 0.5, -0.9), chairModel, COLORS.WoodDark, Enum.Material.Wood)
+		end
 	end
 
 	-- Spawn Point for Scavenge (Hint)
@@ -208,13 +244,14 @@ function MapBuilder.Build()
 	end
 
 	-- 5. LIGHTING (Atmosphere)
-	Lighting.ClockTime = 0 -- Midnight
-	Lighting.Brightness = 0.5
-	Lighting.Ambient = COLORS.Fog
-	Lighting.OutdoorAmbient = COLORS.Fog
-	Lighting.FogColor = COLORS.Fog
-	Lighting.FogStart = 10
-	Lighting.FogEnd = 150 -- Thick fog
+	-- Configured via LightingManager
+	-- Lighting.ClockTime = 0 -- Midnight
+	-- Lighting.Brightness = 0.5
+	-- Lighting.Ambient = COLORS.Fog
+	-- Lighting.OutdoorAmbient = COLORS.Fog
+	-- Lighting.FogColor = COLORS.Fog
+	-- Lighting.FogStart = 10
+	-- Lighting.FogEnd = 150 -- Thick fog
 
 	-- Street Lamps (Sparse)
 	for i = 1, 4 do

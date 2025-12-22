@@ -135,6 +135,15 @@ local CancelStartVoteEvent = RemoteEvents:WaitForChild(Constants.Events.CANCEL_S
 local GameOverEvent = RemoteEvents:WaitForChild(Constants.Events.GAME_OVER) -- Defined here to ensure visibility
 
 local ZombieDiedEvent = BindableEvents:WaitForChild(Constants.Events.ZOMBIE_DIED)
+local LightingManager = require(ModuleScriptServerScriptService:WaitForChild("LightingManager"))
+
+-- Initialize Lighting immediately
+LightingManager.Init()
+
+local Lighting = game:GetService("Lighting")
+-- Simpan nilai default lighting untuk dipulihkan nanti (Use LightingManager Base)
+local defaultLightingSettings = LightingManager.BaseSettings
+
 local ReportDamageEvent = BindableEvents:FindFirstChild(Constants.Events.REPORT_DAMAGE) or Instance.new("BindableEvent", BindableEvents)
 ReportDamageEvent.Name = Constants.Events.REPORT_DAMAGE
 
@@ -153,16 +162,6 @@ local initialPlayerCount = 0
 local readyPlayers = {}
 local waveDamageTracker = {}
 
-local Lighting = game:GetService("Lighting")
--- Simpan nilai default lighting untuk dipulihkan nanti
-local defaultLightingSettings = {
-	Brightness = Lighting.Brightness,
-	ClockTime = Lighting.ClockTime,
-	Ambient = Lighting.Ambient,
-	OutdoorAmbient = Lighting.OutdoorAmbient
-}
-
-
 ReportDamageEvent.Event:Connect(function(player, damageAmount)
 	if not gameStarted or not player or not damageAmount then return end
 
@@ -174,35 +173,14 @@ ReportDamageEvent.Event:Connect(function(player, damageAmount)
 end)
 
 -- >>> TRANSISI LIGHTING ANTAR-WAVE <<<
-local TweenService = game:GetService("TweenService")
-
 local function tweenLightingTo(targetSettings, duration)
-	duration = duration or GameConfig.Lighting.TransitionDuration
-	-- Siapkan goal dari settings table
-	local goal = {
-		Brightness = targetSettings.Brightness,
-		ClockTime = targetSettings.ClockTime,
-		Ambient = targetSettings.Ambient,
-		OutdoorAmbient = targetSettings.OutdoorAmbient
-	}
-
-	-- Cek apakah ClockTime perlu "memutar" ke depan
-	if goal.ClockTime < Lighting.ClockTime then
-		goal.ClockTime = goal.ClockTime + 24 -- Tambah 24 jam agar tween berjalan maju
-	end
-
-	-- Tween halus (Sine InOut)
-	local info = TweenInfo.new(duration, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-	TweenService:Create(Lighting, info, goal):Play()
+	LightingManager.ApplySettings(targetSettings, duration)
 end
 -- <<< END TRANSISI LIGHTING >>>
 
 -- Fungsi untuk memulihkan lighting ke kondisi awal
 local function restoreLighting()
-	Lighting.Brightness = defaultLightingSettings.Brightness
-	Lighting.ClockTime = defaultLightingSettings.ClockTime
-	Lighting.Ambient = defaultLightingSettings.Ambient
-	Lighting.OutdoorAmbient = defaultLightingSettings.OutdoorAmbient
+	LightingManager.ApplySettings(LightingManager.BaseSettings, 1)
 end
 
 local function ApplyChamsToZombies()
@@ -425,13 +403,13 @@ local function startGameLoop()
 						RemoteEvents.SpecialWaveAlertEvent:FireAllClients("Blood Moon")
 						print("Blood Moon wave! Transitioning to dark then to blood.")
 						task.spawn(function()
-							tweenLightingTo(GameConfig.Lighting.DarkSettings, GameConfig.Lighting.TransitionDuration / 2)
+						tweenLightingTo(LightingManager.DarkSettings, GameConfig.Lighting.TransitionDuration / 2)
 							task.wait(GameConfig.Lighting.TransitionDuration / 2)
-							tweenLightingTo(GameConfig.Lighting.BloodSettings, GameConfig.Lighting.TransitionDuration / 2)
+							tweenLightingTo(LightingManager.BloodSettings, GameConfig.Lighting.TransitionDuration / 2)
 						end)
 					else
 						print("Dark wave! Transitioning to dark.")
-						tweenLightingTo(GameConfig.Lighting.DarkSettings, GameConfig.Lighting.TransitionDuration)
+						tweenLightingTo(LightingManager.DarkSettings, GameConfig.Lighting.TransitionDuration)
 					end
 				end
 
