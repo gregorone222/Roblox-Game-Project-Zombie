@@ -31,6 +31,9 @@ WeaponModule.Weapons = {
 			Reload = "Weapons.Pistol.Reload",
 			Empty = "Weapons.Empty"
 		},
+		Animations = {
+			Idle = "rbxassetid://88770091398413"
+		},
 		UpgradeConfig = {
 			BaseCost = 150,
 			CostMultiplier = 1.5,

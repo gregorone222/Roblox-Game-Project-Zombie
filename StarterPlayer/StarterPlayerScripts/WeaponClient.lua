@@ -63,6 +63,7 @@ local currentAmmo = 0
 local isAiming = false
 local isGameOver = false
 local isKnocked = false
+local currentIdleTrack = nil -- Track animasi idle saat ini
 
 -- Audio suppression variables
 local suppressGunshotSounds = false
@@ -146,6 +147,12 @@ local function cleanupWeapon()
 	if currentReloadSound then
 		currentReloadSound:Stop()
 		currentReloadSound = nil
+	end
+
+	-- Hentikan animasi idle jika ada
+	if currentIdleTrack then
+		currentIdleTrack:Stop(0.2)
+		currentIdleTrack = nil
 	end
 
 	-- Remove any weapon-related modifiers
@@ -302,6 +309,22 @@ local function setupWeapon(tool)
 			applySkinClient()
 		end
 	end))
+
+	-- SETUP ANIMATIONS
+	if weaponStats.Animations and weaponStats.Animations.Idle then
+		local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
+		if humanoid then
+			local animator = humanoid:FindFirstChild("Animator") or humanoid:WaitForChild("Animator", 5)
+			if animator then
+				local anim = Instance.new("Animation")
+				anim.AnimationId = weaponStats.Animations.Idle
+				currentIdleTrack = animator:LoadAnimation(anim)
+				currentIdleTrack.Priority = Enum.AnimationPriority.Action -- Override default tool animation
+				currentIdleTrack.Looped = true
+				currentIdleTrack:Play(0.2)
+			end
+		end
+	end
 end
 
 -- Input Handling
