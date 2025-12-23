@@ -221,6 +221,8 @@ if player.Character then
 	onCharacterAdded(player.Character)
 end
 
-RunService.RenderStepped:Connect(onRenderStepped)
+-- Use BindToRenderStep with priority > Camera to prevent transparency flicker
+-- This ensures our code runs AFTER Roblox's default character scripts
+RunService:BindToRenderStep("TrueFPSUpdate", Enum.RenderPriority.Camera.Value + 1, onRenderStepped)
 
 print("[TrueFPSController] Initialized - Distance-based hiding active")
