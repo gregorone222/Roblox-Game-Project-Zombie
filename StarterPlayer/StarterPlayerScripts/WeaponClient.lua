@@ -64,6 +64,7 @@ local isAiming = false
 local isGameOver = false
 local isKnocked = false
 local currentIdleTrack = nil -- Track animasi idle saat ini
+local currentRunTrack = nil -- Track animasi lari saat ini
 
 -- Audio suppression variables
 local suppressGunshotSounds = false
@@ -153,6 +154,12 @@ local function cleanupWeapon()
 	if currentIdleTrack then
 		currentIdleTrack:Stop(0.2)
 		currentIdleTrack = nil
+	end
+
+	-- Hentikan animasi lari jika ada
+	if currentRunTrack then
+		currentRunTrack:Stop(0.2)
+		currentRunTrack = nil
 	end
 
 	-- Remove any weapon-related modifiers
@@ -310,18 +317,64 @@ local function setupWeapon(tool)
 		end
 	end))
 
+
+
+	-- HELPER: Play Animation Function
+	local function playTrack(track, fade)
+		if track then track:Play(fade) end
+	end
+	
+	local function stopTrack(track, fade)
+		if track and track.IsPlaying then track:Stop(fade) end
+	end
+
 	-- SETUP ANIMATIONS
-	if weaponStats.Animations and weaponStats.Animations.Idle then
+	if weaponStats.Animations then
 		local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
 		if humanoid then
 			local animator = humanoid:FindFirstChild("Animator") or humanoid:WaitForChild("Animator", 5)
 			if animator then
-				local anim = Instance.new("Animation")
-				anim.AnimationId = weaponStats.Animations.Idle
-				currentIdleTrack = animator:LoadAnimation(anim)
-				currentIdleTrack.Priority = Enum.AnimationPriority.Action -- Override default tool animation
-				currentIdleTrack.Looped = true
-				currentIdleTrack:Play(0.2)
+				-- Load Idle
+				if weaponStats.Animations.Idle then
+					local anim = Instance.new("Animation")
+					anim.AnimationId = weaponStats.Animations.Idle
+					currentIdleTrack = animator:LoadAnimation(anim)
+					currentIdleTrack.Priority = Enum.AnimationPriority.Action
+					currentIdleTrack.Looped = true
+				end
+
+				-- Load Run
+				if weaponStats.Animations.Run then
+					local anim = Instance.new("Animation")
+					anim.AnimationId = weaponStats.Animations.Run
+					currentRunTrack = animator:LoadAnimation(anim)
+					currentRunTrack.Priority = Enum.AnimationPriority.Action
+					currentRunTrack.Looped = true
+				end
+
+				-- Initial Play
+				local isSprinting = player.Character:GetAttribute("IsSprinting")
+				if isSprinting and currentRunTrack then
+					playTrack(currentRunTrack, 0.2)
+				elseif currentIdleTrack then
+					playTrack(currentIdleTrack, 0.2)
+				end
+
+				-- Listen for Sprint Changes
+				table.insert(connections, player.Character.AttributeChanged:Connect(function(attr)
+					if attr == "IsSprinting" then
+						local sprinting = player.Character:GetAttribute("IsSprinting")
+						if sprinting and currentRunTrack then
+							stopTrack(currentIdleTrack, 0.2)
+							playTrack(currentRunTrack, 0.2)
+						else
+							stopTrack(currentRunTrack, 0.2)
+							if currentIdleTrack and not reloading then -- Don't play idle if reloading (handled by other logic ideally, but for now safe)
+								playTrack(currentIdleTrack, 0.2)
+							end
+						end
+					end
+				end))
 			end
 		end
 	end

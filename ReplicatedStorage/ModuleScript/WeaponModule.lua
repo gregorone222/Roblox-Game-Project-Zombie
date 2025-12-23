@@ -32,7 +32,8 @@ WeaponModule.Weapons = {
 			Empty = "Weapons.Empty"
 		},
 		Animations = {
-			Idle = "rbxassetid://88770091398413"
+			Idle = "rbxassetid://88770091398413",
+			Run = "rbxassetid://110673281003404"
 		},
 		UpgradeConfig = {
 			BaseCost = 150,
