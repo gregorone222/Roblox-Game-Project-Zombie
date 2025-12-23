@@ -64,7 +64,10 @@ local isAiming = false
 local isGameOver = false
 local isKnocked = false
 local currentIdleTrack = nil -- Track animasi idle saat ini
+local currentIdleTrack = nil -- Track animasi idle saat ini
 local currentRunTrack = nil -- Track animasi lari saat ini
+local currentADSTrack = nil -- Track animasi ADS saat ini
+local currentReloadTrack = nil -- Track animasi reload saat ini
 
 -- Audio suppression variables
 local suppressGunshotSounds = false
@@ -162,6 +165,12 @@ local function cleanupWeapon()
 		currentRunTrack = nil
 	end
 
+	-- Hentikan animasi ADS jika ada
+	if currentADSTrack then
+		currentADSTrack:Stop(0.2)
+		currentADSTrack = nil
+	end
+
 	-- Remove any weapon-related modifiers
 	UpdateWalkSpeedModifierEvent:FireServer("aim", false)
 	UpdateWalkSpeedModifierEvent:FireServer("reload", false)
@@ -202,6 +211,18 @@ local function transitionToHip()
 	local tweenInfo = TweenInfo.new(adsTransitionTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 	adsTween = TweenService:Create(currentWeapon, tweenInfo, {Grip = defaultGrip})
 	adsTween:Play()
+
+	-- ANIMATION TRANSITION: ADS -> Hip
+	if currentADSTrack then
+		currentADSTrack:Stop(0.2)
+	end
+	
+	local isSprinting = player.Character and player.Character:GetAttribute("IsSprinting")
+	if isSprinting and currentRunTrack then
+		currentRunTrack:Play(0.2)
+	elseif currentIdleTrack and not reloading then
+		currentIdleTrack:Play(0.2)
+	end
 end
 
 local function transitionToADS()
@@ -234,6 +255,14 @@ local function transitionToADS()
 	local tweenInfo = TweenInfo.new(adsTransitionTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 	adsTween = TweenService:Create(currentWeapon, tweenInfo, {Grip = targetCFrame})
 	adsTween:Play()
+
+	-- ANIMATION TRANSITION: Hip -> ADS
+	if currentRunTrack then currentRunTrack:Stop(0.2) end
+	if currentIdleTrack then currentIdleTrack:Stop(0.2) end
+	
+	if currentADSTrack then
+		currentADSTrack:Play(0.2)
+	end
 end
 
 local function _computeFireRate()
@@ -352,6 +381,15 @@ local function setupWeapon(tool)
 					currentRunTrack.Looped = true
 				end
 
+				-- Load ADS
+				if weaponStats.Animations.ADS then
+					local anim = Instance.new("Animation")
+					anim.AnimationId = weaponStats.Animations.ADS
+					currentADSTrack = animator:LoadAnimation(anim)
+					currentADSTrack.Priority = Enum.AnimationPriority.Action
+					currentADSTrack.Looped = true
+				end
+
 				-- Initial Play
 				local isSprinting = player.Character:GetAttribute("IsSprinting")
 				if isSprinting and currentRunTrack then
@@ -364,12 +402,17 @@ local function setupWeapon(tool)
 				table.insert(connections, player.Character.AttributeChanged:Connect(function(attr)
 					if attr == "IsSprinting" then
 						local sprinting = player.Character:GetAttribute("IsSprinting")
-						if sprinting and currentRunTrack then
+						if sprinting and currentRunTrack and not isAiming then -- Only play run if not aiming
 							stopTrack(currentIdleTrack, 0.2)
 							playTrack(currentRunTrack, 0.2)
-						else
+						elseif not sprinting then
 							stopTrack(currentRunTrack, 0.2)
-							if currentIdleTrack and not reloading then -- Don't play idle if reloading (handled by other logic ideally, but for now safe)
+							if isAiming and currentADSTrack then
+								-- If aiming, ensuring ADS is playing is handled by aim logic, 
+								-- but if we just stopped sprinting while aiming, ADS should technically stay/resume.
+								-- However, usually sprint cancels aim or vice versa. 
+								-- Assuming sprint stops aim is handled elsewhere.
+							elseif currentIdleTrack and not reloading then 
 								playTrack(currentIdleTrack, 0.2)
 							end
 						end

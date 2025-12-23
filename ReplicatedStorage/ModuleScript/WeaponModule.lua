@@ -33,7 +33,8 @@ WeaponModule.Weapons = {
 		},
 		Animations = {
 			Idle = "rbxassetid://88770091398413",
-			Run = "rbxassetid://110673281003404"
+			Run = "rbxassetid://110673281003404",
+			ADS = "rbxassetid://96179279485775"
 		},
 		UpgradeConfig = {
 			BaseCost = 150,
