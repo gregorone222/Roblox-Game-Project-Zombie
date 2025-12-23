@@ -47,7 +47,12 @@ ZombieConfig.Types = {
 		AttackCooldown = 2.5,
 		Chance = 0.10,
 		AttackRange = 5, -- Ditambahkan
-		MinWave = 9 -- Ditambahkan: mulai muncul di wave 9
+		MinWave = 9, -- Ditambahkan: mulai muncul di wave 9
+		AttackAnimations = {
+			"rbxassetid://90804907609507",
+			"rbxassetid://90804907609507",
+			"rbxassetid://97183708364401",
+		},
 	},
 	Boss = {
 		Name = "Plague Titan",
