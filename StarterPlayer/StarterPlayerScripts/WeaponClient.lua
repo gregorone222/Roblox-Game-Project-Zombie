@@ -18,7 +18,8 @@ local ModuleScriptReplicatedStorage = ReplicatedStorage:WaitForChild("ModuleScri
 
 -- Modules
 local WeaponModule = require(ModuleScriptReplicatedStorage:WaitForChild("WeaponModule"))
-local ViewmodelModule = require(ModuleScriptReplicatedStorage:WaitForChild("ViewmodelModule"))
+-- [HYBRID FPS] Use HybridViewmodel for arms + weapon
+local HybridViewmodel = require(ModuleScriptReplicatedStorage:WaitForChild("HybridViewmodel"))
 local AudioManager = require(ModuleScriptReplicatedStorage:WaitForChild("AudioManager"))
 
 -- Remote Events
@@ -54,6 +55,7 @@ requestReloadEvent.Name = "RequestReloadEvent"
 local currentWeapon = nil
 local weaponName = nil
 local weaponStats = nil
+-- [TRUE FPS] viewmodel no longer used
 local viewmodel = nil
 
 local canShoot = true
@@ -175,6 +177,7 @@ local function cleanupWeapon()
 	UpdateWalkSpeedModifierEvent:FireServer("aim", false)
 	UpdateWalkSpeedModifierEvent:FireServer("reload", false)
 
+	-- [HYBRID FPS] Cleanup viewmodel
 	if viewmodel then
 		viewmodel:destroyViewmodel()
 		viewmodel = nil
@@ -206,11 +209,12 @@ local function stopFovTween()
 end
 
 local function transitionToHip()
-	stopAdsTween()
-	if not defaultGrip or not currentWeapon then return end
-	local tweenInfo = TweenInfo.new(adsTransitionTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-	adsTween = TweenService:Create(currentWeapon, tweenInfo, {Grip = defaultGrip})
-	adsTween:Play()
+	-- [TRUE FPS] Grip tween disabled - ADS handled by animation only
+	-- stopAdsTween()
+	-- if not defaultGrip or not currentWeapon then return end
+	-- local tweenInfo = TweenInfo.new(adsTransitionTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	-- adsTween = TweenService:Create(currentWeapon, tweenInfo, {Grip = defaultGrip})
+	-- adsTween:Play()
 
 	-- ANIMATION TRANSITION: ADS -> Hip
 	if currentADSTrack then
@@ -227,34 +231,29 @@ end
 
 local function transitionToADS()
 	if not weaponStats or not currentWeapon then return end
-	stopAdsTween()
-
-	local adsPosition, adsRotation
-
-	-- Dapatkan nama skin dari atribut tool, dengan fallback ke Use_Skin lalu ke Default Skin.
-	local equippedSkinName = currentWeapon:GetAttribute("EquippedSkin") or weaponStats.Use_Skin or "Default Skin"
-	local skin = weaponStats.Skins[equippedSkinName] or weaponStats.Skins["Default Skin"]
-
-	if skin then
-		if UserInputService.TouchEnabled and skin.ADS_Position_Mobile then
-			adsPosition = skin.ADS_Position_Mobile
-			adsRotation = skin.ADS_Rotation_Mobile or skin.ADS_Rotation
-		else
-			adsPosition = skin.ADS_Position
-			adsRotation = skin.ADS_Rotation
-		end
-	end
-
-	if not adsPosition then return end
-
-	local targetCFrame = CFrame.new(adsPosition)
-	if adsRotation then
-		targetCFrame = targetCFrame * CFrame.Angles(math.rad(adsRotation.X), math.rad(adsRotation.Y), math.rad(adsRotation.Z))
-	end
-
-	local tweenInfo = TweenInfo.new(adsTransitionTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-	adsTween = TweenService:Create(currentWeapon, tweenInfo, {Grip = targetCFrame})
-	adsTween:Play()
+	
+	-- [TRUE FPS] Grip tween disabled - ADS handled by animation only
+	-- stopAdsTween()
+	-- local adsPosition, adsRotation
+	-- local equippedSkinName = currentWeapon:GetAttribute("EquippedSkin") or weaponStats.Use_Skin or "Default Skin"
+	-- local skin = weaponStats.Skins[equippedSkinName] or weaponStats.Skins["Default Skin"]
+	-- if skin then
+	-- 	if UserInputService.TouchEnabled and skin.ADS_Position_Mobile then
+	-- 		adsPosition = skin.ADS_Position_Mobile
+	-- 		adsRotation = skin.ADS_Rotation_Mobile or skin.ADS_Rotation
+	-- 	else
+	-- 		adsPosition = skin.ADS_Position
+	-- 		adsRotation = skin.ADS_Rotation
+	-- 	end
+	-- end
+	-- if not adsPosition then return end
+	-- local targetCFrame = CFrame.new(adsPosition)
+	-- if adsRotation then
+	-- 	targetCFrame = targetCFrame * CFrame.Angles(math.rad(adsRotation.X), math.rad(adsRotation.Y), math.rad(adsRotation.Z))
+	-- end
+	-- local tweenInfo = TweenInfo.new(adsTransitionTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	-- adsTween = TweenService:Create(currentWeapon, tweenInfo, {Grip = targetCFrame})
+	-- adsTween:Play()
 
 	-- ANIMATION TRANSITION: Hip -> ADS
 	if currentRunTrack then currentRunTrack:Stop(0.2) end
@@ -300,7 +299,8 @@ local function setupWeapon(tool)
 	tool:SetAttribute("IsAiming", false)
 	currentAmmo = tool:GetAttribute("Ammo") or weaponStats.MaxAmmo
 
-	viewmodel = ViewmodelModule.new(tool, player, weaponName, WeaponModule)
+	-- [HYBRID FPS] Create viewmodel with arms
+	viewmodel = HybridViewmodel.new(tool, player, weaponName, WeaponModule)
 	viewmodel:createViewmodel()
 
 	local function applySkinClient()
@@ -325,9 +325,10 @@ local function setupWeapon(tool)
 		end
 
 		setMesh(tool:FindFirstChild("Handle"))
-		if viewmodel.viewmodelHandle then
-			setMesh(viewmodel.viewmodelHandle)
-		end
+		-- [TRUE FPS] No viewmodel handle to skin
+		-- if viewmodel and viewmodel.viewmodelHandle then
+		-- 	setMesh(viewmodel.viewmodelHandle)
+		-- end
 	end
 	applySkinClient()
 
@@ -394,8 +395,18 @@ local function setupWeapon(tool)
 				local isSprinting = player.Character:GetAttribute("IsSprinting")
 				if isSprinting and currentRunTrack then
 					playTrack(currentRunTrack, 0.2)
+					-- Viewmodel Run (if exists, else Idle)
+					if viewmodel and weaponStats.Animations.Run then
+						viewmodel:playAnimation(weaponStats.Animations.Run, true)
+					elseif viewmodel and weaponStats.Animations.Idle then
+						viewmodel:playAnimation(weaponStats.Animations.Idle, true)
+					end
 				elseif currentIdleTrack then
 					playTrack(currentIdleTrack, 0.2)
+					-- Viewmodel Idle
+					if viewmodel and weaponStats.Animations.Idle then
+						viewmodel:playAnimation(weaponStats.Animations.Idle, true)
+					end
 				end
 
 				-- Listen for Sprint Changes
@@ -405,8 +416,23 @@ local function setupWeapon(tool)
 						if sprinting and currentRunTrack and not isAiming then -- Only play run if not aiming
 							stopTrack(currentIdleTrack, 0.2)
 							playTrack(currentRunTrack, 0.2)
+							-- Viewmodel Run
+							if viewmodel and weaponStats.Animations.Run then
+								viewmodel:playAnimation(weaponStats.Animations.Run, true)
+							elseif viewmodel then
+								-- If no run anim, keep idle or stop? Usually keep idle but maybe bob increases
+								-- For now, fallback to idle if no run anim
+								if weaponStats.Animations.Idle then
+									viewmodel:playAnimation(weaponStats.Animations.Idle, true)
+								end
+							end
 						elseif not sprinting then
 							stopTrack(currentRunTrack, 0.2)
+							-- Viewmodel Stop Run (Back to Idle)
+							if viewmodel and weaponStats.Animations.Idle then
+								viewmodel:playAnimation(weaponStats.Animations.Idle, true)
+							end
+							
 							if isAiming and currentADSTrack then
 								-- If aiming, ensuring ADS is playing is handled by aim logic, 
 								-- but if we just stopped sprinting while aiming, ADS should technically stay/resume.
@@ -492,13 +518,19 @@ local function onInputEnded(input, gpe)
 			transitionToHip()
 			UpdateWalkSpeedModifierEvent:FireServer("aim", false)
 
-			-- Langsung lepas kunci kamera, jangan tween FOV lagi
+			-- [TRUE FPS FIX] Restore FOV back to original
+			stopFovTween()
+			fovTween = TweenService:Create(camera, TweenInfo.new(adsTransitionTime), {FieldOfView = originalFoV})
+			fovTween:Play()
+
+			-- Lepas kunci kamera
 			if player.Character then
 				player.Character:SetAttribute("CameraLock", false)
 			end
 		end
 	end
 end
+
 
 local function onButton1Down()
 	if currentWeapon and not reloading and not isKnocked then
@@ -644,24 +676,27 @@ end
 
 local function getMuzzlePosition()
 	-- Returns: Position (Vector3), Part (Instance or nil)
-
-	-- Priority 1: Viewmodel Muzzle (first person)
-	if viewmodel and viewmodel.viewmodelMuzzle then
-		return viewmodel.viewmodelMuzzle.CFrame.Position, viewmodel.viewmodelMuzzle
+	
+	-- Priority 0: Viewmodel Muzzle (Hybrid FPS)
+	if viewmodel then
+		local vmMuzzle = viewmodel:getMuzzle()
+		if vmMuzzle then
+			return vmMuzzle.CFrame.Position, vmMuzzle
+		end
 	end
 
-	-- Priority 2: Tool Muzzle (fallback/third person)
+	-- Priority 1: Tool Muzzle part (True FPS fallback)
 	if currentWeapon then
 		local muzzlePart = currentWeapon:FindFirstChild("Muzzle")
 		if muzzlePart and muzzlePart:IsA("BasePart") then
 			return muzzlePart.CFrame.Position, muzzlePart
 		end
-	end
-
-	-- Priority 3: Handle + offset (legacy fallback)
-	local handle = viewmodel and viewmodel.viewmodelHandle or (currentWeapon and currentWeapon:FindFirstChild("Handle"))
-	if handle and weaponStats then
-		return handle.CFrame:PointToWorldSpace(weaponStats.TracerOffset or Vector3.new(0, 0, 0)), handle
+		
+		-- Priority 2: Handle + offset (legacy fallback)
+		local handle = currentWeapon:FindFirstChild("Handle")
+		if handle and weaponStats then
+			return handle.CFrame:PointToWorldSpace(weaponStats.TracerOffset or Vector3.new(0, 0, 0)), handle
+		end
 	end
 
 	return Vector3.new(0, 0, 0), nil
@@ -678,7 +713,8 @@ local function fireFromCenterOnce()
 
 	ShootEvent:FireServer(currentWeapon, cameraDirection, isAiming)
 	currentAmmo = currentAmmo - 1
-	if viewmodel then viewmodel:applyVisualRecoil() end
+	-- [TRUE FPS] Visual recoil now handled by camera shake in onStepped
+	-- if viewmodel then viewmodel:applyVisualRecoil() end
 
 	-- Get muzzle position and part for local effects
 	local startPos, muzzlePart = getMuzzlePosition()
@@ -694,7 +730,7 @@ local function fireFromCenterOnce()
 	-- Note: We send the 'startPos' as before, but updated handlers might use it differently
 	TracerEvent:FireServer(startPos, hitPosition, weaponName)
 
-	local handle = viewmodel and viewmodel.viewmodelHandle or currentWeapon:FindFirstChild("Handle")
+	local handle = currentWeapon:FindFirstChild("Handle")
 	if handle then
 		MuzzleFlashEvent:FireServer(handle, weaponName)
 	end
@@ -844,6 +880,7 @@ end
 
 -- Game Loop
 local function onRenderStepped(dt)
+	-- [HYBRID FPS] Update viewmodel position
 	if viewmodel then
 		viewmodel:updateViewmodel(dt, isAiming)
 	end
@@ -872,7 +909,13 @@ local function onStepped(dt)
 		local cameraDirection = camera.CFrame.LookVector
 		ShootEvent:FireServer(currentWeapon, cameraDirection, isAiming)
 		currentAmmo = currentAmmo - 1
-		if viewmodel then viewmodel:applyVisualRecoil() end
+	-- [TRUE FPS] Visual recoil handled by camera shake below
+	-- if viewmodel then viewmodel:applyVisualRecoil() end
+	
+		-- Viewmodel Fire Animation
+		if viewmodel and weaponStats.Animations and weaponStats.Animations.Fire then
+			viewmodel:playAnimation(weaponStats.Animations.Fire, false, Enum.AnimationPriority.Action4)
+		end
 
 		-- Get muzzle position and part for local effects
 		local startPos, muzzlePart = getMuzzlePosition()
@@ -941,10 +984,21 @@ AmmoUpdateEvent.OnClientEvent:Connect(function(updatedWeaponName, ammo, reserveA
 		end
 		transitionToHip()
 		UpdateWalkSpeedModifierEvent:FireServer("aim", false)
+		
+		-- [TRUE FPS FIX] Restore FOV when ammo runs out during ADS
+		stopFovTween()
+		fovTween = TweenService:Create(camera, TweenInfo.new(adsTransitionTime), {FieldOfView = originalFoV})
+		fovTween:Play()
 	end
+
 
 	if isReloadingFromServer then
 		if not currentReloadSound then
+			-- Viewmodel Reload Animation
+			if viewmodel and weaponStats.Animations.Reload then
+				viewmodel:playAnimation(weaponStats.Animations.Reload, false)
+			end
+
 			currentReloadSound = AudioManager.createSound(weaponStats.Sounds.Reload, currentWeapon)
 			if currentReloadSound then
 				currentReloadSound:Play()
@@ -956,7 +1010,13 @@ AmmoUpdateEvent.OnClientEvent:Connect(function(updatedWeaponName, ammo, reserveA
 			currentReloadSound:Stop()
 			currentReloadSound = nil
 		end
+		
 		reloading = false
+		-- Viewmodel Reload Finished (Back to Idle)
+		if viewmodel and weaponStats.Animations.Idle then
+			viewmodel:playAnimation(weaponStats.Animations.Idle, true)
+		end
+		
 		if player.Character then player.Character:SetAttribute("IsReloading", false) end
 
 		UpdateWalkSpeedModifierEvent:FireServer("reload", false)

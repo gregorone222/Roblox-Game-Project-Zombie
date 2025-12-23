@@ -165,7 +165,10 @@ local function CameraUpdt(dt)
 	end
 end
 
-RunServ:BindToRenderStep("CamEffect", Enum.RenderPriority.Camera.Value, CameraUpdt)
+-- [TRUE FPS] Dynamic camera effects disabled
+-- The view bobbing, FOV dynamics, and camera sway were interfering with True FPS.
+-- Uncomment the line below to re-enable.
+-- RunServ:BindToRenderStep("CamEffect", Enum.RenderPriority.Camera.Value, CameraUpdt)
 
 local function reset() : ()
 	LocalPlr.CameraMode = Enum.CameraMode.Classic
@@ -173,3 +176,5 @@ local function reset() : ()
 end
 
 --hum.Died:Once(reset)
+
+print("[CameraEffects] Dynamic camera disabled for True FPS compatibility")

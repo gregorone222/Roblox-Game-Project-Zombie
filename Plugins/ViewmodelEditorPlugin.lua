@@ -40,6 +40,8 @@ local isADSPreview = false
 local isMobilePreview = false
 local showHitmarker = false
 local hitmarkerGui = nil
+local currentWeaponAnimations = nil
+local currentAnimTrack = nil
 
 -- Mobile Aspect Ratio Overlay
 local mobileOverlayGui = nil
@@ -74,6 +76,7 @@ local adsMobileRotX, adsMobileRotY, adsMobileRotZ = 0, 0, 0
 
 -- UI Creation
 local function createUI()
+	local statusLabel -- Forward declaration for anim logic
 	-- Main ScrollingFrame
 	local scrollFrame = Instance.new("ScrollingFrame")
 	scrollFrame.Name = "MainScroll"
@@ -238,6 +241,121 @@ scrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	end
 
 	-- Slider Helper
+	-- Animation Section
+	createSectionHeader("🎬 Animations", scrollFrame, 5)
+	
+	local animFrame = Instance.new("Frame")
+	animFrame.Size = UDim2.new(1, 0, 0, 35)
+	animFrame.BackgroundTransparency = 1
+	animFrame.LayoutOrder = 6
+	animFrame.Parent = scrollFrame
+	
+	local animLayout = Instance.new("UIListLayout")
+	animLayout.FillDirection = Enum.FillDirection.Horizontal
+	animLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	animLayout.Padding = UDim.new(0, 5)
+	animLayout.Parent = animFrame
+	
+	local function playPreviewAnim(animKey)
+		print("[ViewmodelEditor] playPreviewAnim called with key:", animKey)
+		
+		if currentAnimTrack then
+			currentAnimTrack:Stop()
+			currentAnimTrack = nil
+		end
+		
+		if animKey == "Stop" then 
+			if statusLabel then statusLabel.Text = "Stopped Animation" end
+			return 
+		end
+		
+		if not previewModel then 
+			print("[ViewmodelEditor] ERROR: previewModel is nil")
+			if statusLabel then statusLabel.Text = "No preview model!" end
+			return 
+		end
+		
+		if not currentWeaponAnimations then 
+			print("[ViewmodelEditor] ERROR: currentWeaponAnimations is nil")
+			if statusLabel then statusLabel.Text = "Select weapon first!" end
+			return 
+		end
+		
+		local animId = (animKey == "Aim") and currentWeaponAnimations.ADS or currentWeaponAnimations[animKey]
+		print("[ViewmodelEditor] Animation ID for", animKey, ":", animId)
+		
+		if not animId then
+			if statusLabel then statusLabel.Text = "No " .. animKey .. " animation!" end
+			return
+		end
+		
+		-- Find Controller
+		local animController = previewModel:FindFirstChildOfClass("AnimationController")
+		if not animController then
+			local hum = previewModel:FindFirstChildOfClass("Humanoid")
+			if hum then 
+				animController = hum
+				print("[ViewmodelEditor] Using Humanoid as controller")
+			end
+		end
+		
+		if not animController then
+			animController = Instance.new("AnimationController")
+			animController.Parent = previewModel
+			print("[ViewmodelEditor] Created new AnimationController")
+		end
+		
+		local animator = animController:FindFirstChildOfClass("Animator")
+		if not animator then
+			animator = Instance.new("Animator")
+			animator.Parent = animController
+			print("[ViewmodelEditor] Created new Animator")
+		end
+		
+		local anim = Instance.new("Animation")
+		anim.AnimationId = animId
+		
+		-- Stop any existing tracks on this animator too
+		for _, t in pairs(animator:GetPlayingAnimationTracks()) do t:Stop() end
+		
+		local success, track = pcall(function()
+			return animator:LoadAnimation(anim)
+		end)
+		
+		if not success then
+			print("[ViewmodelEditor] ERROR loading animation:", track)
+			if statusLabel then statusLabel.Text = "Error: " .. tostring(track) end
+			return
+		end
+		
+		track.Looped = true
+		track:Play()
+		currentAnimTrack = track
+		print("[ViewmodelEditor] Animation playing!")
+		if statusLabel then statusLabel.Text = "Playing: " .. animKey end
+	end
+	
+	local function createAnimBtn(text, key)
+		local btn = Instance.new("TextButton")
+		btn.Size = UDim2.new(0, 55, 0, 28)
+		btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+		btn.Text = text
+		btn.TextColor3 = Color3.new(1, 1, 1)
+		btn.Font = Enum.Font.GothamMedium
+		btn.TextSize = 10
+		btn.Parent = animFrame
+		Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+		
+		btn.MouseButton1Click:Connect(function()
+			playPreviewAnim(key)
+		end)
+	end
+	
+	createAnimBtn("Idle", "Idle")
+	createAnimBtn("Run", "Run")
+	createAnimBtn("Aim", "Aim") 
+	createAnimBtn("Stop", "Stop")
+
 	local function getAllWeaponNames()
 		local names = {}
 		local mod = game.ReplicatedStorage:FindFirstChild("ModuleScript")
@@ -563,7 +681,7 @@ scrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	copyButton.Parent = scrollFrame
 	Instance.new("UICorner", copyButton).CornerRadius = UDim.new(0, 6)
 
-	local statusLabel = Instance.new("TextLabel")
+	statusLabel = Instance.new("TextLabel")
 	statusLabel.Name = "StatusLabel"
 	statusLabel.Size = UDim2.new(1, 0, 0, 40)
 	statusLabel.BackgroundTransparency = 1
@@ -809,6 +927,7 @@ local function cleanupPreview()
 		renderConnection:Disconnect()
 		renderConnection = nil
 	end
+	currentAnimTrack = nil -- Clear anim track reference
 end
 
 local function createPreview(tool)
@@ -816,39 +935,97 @@ local function createPreview(tool)
 	
 	if not tool or not tool:IsA("Tool") then return end
 	
-	local handle = tool:FindFirstChild("Handle")
-	if not handle then return end
+	-- 1. Try to find ViewmodelBase
+	local viewmodelBase = game.ReplicatedStorage:FindFirstChild("Assets")
+	if viewmodelBase then viewmodelBase = viewmodelBase:FindFirstChild("Viewmodel") end
+	if viewmodelBase then viewmodelBase = viewmodelBase:FindFirstChild("ViewmodelBase") end
 	
-	previewModel = tool:Clone()
-	previewModel.Name = "ViewmodelPreview"
-	
-	local previewHandle = previewModel:FindFirstChild("Handle")
-	
+	-- 2. Setup Preview Model
+	if viewmodelBase then
+		-- HYBRID MODE: Clone Arms
+		previewModel = viewmodelBase:Clone()
+		previewModel.Name = "ViewmodelPreview"
+		
+		-- Clone Weapon
+		local weaponClone = tool:Clone()
+		weaponClone.Parent = previewModel
+		
+		local rightHand = previewModel:FindFirstChild("RightHand")
+		local handle = weaponClone:FindFirstChild("Handle")
+		
+		if rightHand and handle then
+			-- Weld Weapon to Hand
+			local weld = Instance.new("WeldConstraint")
+			weld.Part0 = rightHand
+			weld.Part1 = handle
+			weld.Parent = handle
+			
+			-- Position Handle at Hand (approximate reset)
+			-- Ideally we match RightGripAttachment if exists
+			local gripAtt = rightHand:FindFirstChild("RightGripAttachment")
+			if gripAtt then
+				handle.CFrame = gripAtt.WorldCFrame
+			else
+				handle.CFrame = rightHand.CFrame
+			end
+		end
+		
+		-- Cleanup Weapon Scripts/Physics
+		for _, desc in pairs(weaponClone:GetDescendants()) do
+			if desc:IsA("BasePart") then
+				desc.CanCollide = false
+				desc.CastShadow = false
+				desc.Anchored = false
+			elseif desc:IsA("Script") or desc:IsA("LocalScript") or desc:IsA("Sound") then
+				desc:Destroy()
+			end
+		end
+	else
+		-- LEGACY MODE: Just Weapon
+		previewModel = tool:Clone()
+		previewModel.Name = "ViewmodelPreview"
+	end
+
+	-- 3. Cleanup ViewmodelBase Physics
 	for _, desc in pairs(previewModel:GetDescendants()) do
 		if desc:IsA("BasePart") then
 			desc.CanCollide = false
 			desc.CastShadow = false
-			if desc == previewHandle then
-				desc.Anchored = true
-			else
-				desc.Anchored = false
-			end
+			desc.Anchored = false -- Root will be anchored later or controlled by CF
 		elseif desc:IsA("Script") or desc:IsA("LocalScript") or desc:IsA("Sound") then
 			desc:Destroy()
 		end
 	end
 	
+	-- Anchor Root for control
+	local root = previewModel:FindFirstChild("HumanoidRootPart") or previewModel:FindFirstChild("Handle")
+	if root then root.Anchored = true end
+	
 	previewModel.Parent = workspace.CurrentCamera
 	
+	-- [DEBUG] Print rig structure
+	print("[ViewmodelEditor] === RIG DIAGNOSTIC ===")
+	local motor6dCount = 0
+	for _, desc in pairs(previewModel:GetDescendants()) do
+		if desc:IsA("Motor6D") then
+			motor6dCount = motor6dCount + 1
+			print("[ViewmodelEditor] Motor6D:", desc.Name, "| Part0:", desc.Part0 and desc.Part0.Name or "nil", "| Part1:", desc.Part1 and desc.Part1.Name or "nil")
+		end
+	end
+	print("[ViewmodelEditor] Total Motor6D found:", motor6dCount)
+	if motor6dCount == 0 then
+		print("[ViewmodelEditor] WARNING: No Motor6D found! Animations will NOT work on this rig.")
+		print("[ViewmodelEditor] ViewmodelBase must be a proper R15 rig with Motor6D joints.")
+	end
+	print("[ViewmodelEditor] === END DIAGNOSTIC ===")
+	
+	-- 4. Render Loop
 	renderConnection = RunService.RenderStepped:Connect(function()
 		if not previewModel or not previewModel.Parent then return end
 		
-		local ph = previewModel:FindFirstChild("Handle")
-		if not ph then return end
+		local mobileOffset = if isMobilePreview then CFrame.new(0,0,0) else CFrame.new(0,0,0)
 		
-		local camera = workspace.CurrentCamera
 		local offset, rotation
-		
 		if isADSPreview then
 			if isMobilePreview then
 				offset = CFrame.new(adsMobileX, adsMobileY, adsMobileZ)
@@ -862,9 +1039,16 @@ local function createPreview(tool)
 			rotation = CFrame.Angles(math.rad(rotX), math.rad(rotY), math.rad(rotZ))
 		end
 		
-		ph.CFrame = camera.CFrame * offset * rotation
+		-- Apply to RootPart (Hybrid) or Handle (Legacy)
+		local mainPart = previewModel:FindFirstChild("HumanoidRootPart") or previewModel:FindFirstChild("Handle")
+		
+		if mainPart then
+			mainPart.CFrame = workspace.CurrentCamera.CFrame * offset * rotation
+		end
 	end)
 end
+
+
 
 -- Selection handling
 local function onSelectionChanged()
@@ -890,6 +1074,9 @@ local function onSelectionChanged()
 			
 			if success and result and result.Weapons and result.Weapons[currentWeaponName] then
 				local stats = result.Weapons[currentWeaponName]
+				
+				-- Capture Animations
+				currentWeaponAnimations = stats.Animations
 				
 				-- Load Viewmodel
 				if stats.ViewmodelPosition then
@@ -1290,6 +1477,37 @@ plugin.Unloading:Connect(function()
 		hitmarkerGui:Destroy()
 	end
 	cleanupMobileOverlay()
+end)
+
+-- [NEW] Live Edit Loop for HybridViewmodel
+RunService.RenderStepped:Connect(function()
+	if not isActive then return end
+	
+	-- Try to find live viewmodel in camera
+	local cam = workspace.CurrentCamera
+	if not cam then return end
+	
+	local vm = cam:FindFirstChild("HybridViewmodel")
+	
+	if vm then
+		-- Sync Editor Values to Attributes
+		-- HybridViewmodel will read these attributes to override its position
+		
+		vm:SetAttribute("Editor_HipPos", Vector3.new(posX, posY, posZ))
+		vm:SetAttribute("Editor_HipRot", Vector3.new(rotX, rotY, rotZ))
+		
+		if isMobilePreview then
+			vm:SetAttribute("Editor_AdsPos", Vector3.new(adsMobileX, adsMobileY, adsMobileZ))
+			vm:SetAttribute("Editor_AdsRot", Vector3.new(adsMobileRotX, adsMobileRotY, adsMobileRotZ))
+		else
+			vm:SetAttribute("Editor_AdsPos", Vector3.new(adsX, adsY, adsZ))
+			vm:SetAttribute("Editor_AdsRot", Vector3.new(adsRotX, adsRotY, adsRotZ))
+		end
+		
+		-- Optional: Force ADS state from plugin toggle
+		-- vm:SetAttribute("Editor_ForceADS", isADSPreview) 
+		-- (For now we let game logic handle ADS state, unless we want to debug specific pose)
+	end
 end)
 
 print("[Viewmodel Editor] Plugin loaded with ADS support & FOV Preview!")

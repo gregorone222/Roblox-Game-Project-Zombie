@@ -32,7 +32,7 @@ WeaponModule.Weapons = {
 			Empty = "Weapons.Empty"
 		},
 		Animations = {
-			Idle = "rbxassetid://88770091398413",
+			Idle = "rbxassetid://97580554547053",
 			Run = "rbxassetid://110673281003404",
 			ADS = "rbxassetid://96179279485775"
 		},
