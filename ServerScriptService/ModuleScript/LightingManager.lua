@@ -6,7 +6,7 @@ local LightingManager = {}
 local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
 
--- 1. VISUALA PILLAR: ETHEREAL / BITTERSWEET (SUNSET)
+-- 1. VISUAL PILLAR: ETHEREAL / BITTERSWEET (SUNSET)
 LightingManager.BaseSettings = {
 	ClockTime = 17.5, -- 17:30 (Sunset/Golden Hour)
 	Brightness = 2,
@@ -35,6 +35,55 @@ LightingManager.BloodSettings = {
 	FogColor = Color3.fromRGB(50, 10, 10),
 	FogStart = 0,
 	FogEnd = 200
+}
+
+-- === NEW: Time-of-Day Presets for Progressive Day Cycle ===
+LightingManager.TimePresets = {
+	-- Early Morning (6-8 AM) - Sunrise, warm and misty
+	Morning = {
+		Brightness = 1.5,
+		Ambient = Color3.fromRGB(120, 100, 80),
+		OutdoorAmbient = Color3.fromRGB(140, 120, 100),
+		FogColor = Color3.fromRGB(200, 180, 160), -- Warm morning mist
+		FogStart = 20,
+		FogEnd = 400
+	},
+	-- Midday (10-14) - Bright and clear
+	Midday = {
+		Brightness = 3,
+		Ambient = Color3.fromRGB(150, 150, 160),
+		OutdoorAmbient = Color3.fromRGB(180, 180, 190),
+		FogColor = Color3.fromRGB(220, 230, 240), -- Light blue haze
+		FogStart = 100,
+		FogEnd = 600
+	},
+	-- Afternoon (14-17) - Warm, longer shadows
+	Afternoon = {
+		Brightness = 2.5,
+		Ambient = Color3.fromRGB(130, 110, 90),
+		OutdoorAmbient = Color3.fromRGB(160, 140, 110),
+		FogColor = Color3.fromRGB(200, 180, 150), -- Warm afternoon
+		FogStart = 50,
+		FogEnd = 450
+	},
+	-- Golden Hour (17-18) - Beautiful victory atmosphere
+	GoldenHour = {
+		Brightness = 2,
+		Ambient = Color3.fromRGB(150, 100, 80),
+		OutdoorAmbient = Color3.fromRGB(180, 130, 100),
+		FogColor = Color3.fromRGB(220, 160, 120), -- Golden mist
+		FogStart = 30,
+		FogEnd = 350
+	},
+	-- Victory (Wave 50 complete) - Extra beautiful
+	Victory = {
+		Brightness = 2.5,
+		Ambient = Color3.fromRGB(180, 120, 90),
+		OutdoorAmbient = Color3.fromRGB(200, 150, 110),
+		FogColor = Color3.fromRGB(240, 180, 140), -- Warm golden glow
+		FogStart = 20,
+		FogEnd = 300
+	}
 }
 
 -- Ensure Atmosphere and ColorCorrection exist
@@ -115,6 +164,87 @@ function LightingManager.ApplySettings(settings, duration)
 			TweenService:Create(atm, tweenInfo, {Color = settings.FogColor}):Play()
 		end
 	end
+end
+
+-- === NEW: Progressive Day Cycle Functions ===
+
+-- Get the appropriate preset based on clock time
+function LightingManager.GetPresetForTime(clockTime)
+	if clockTime < 8 then
+		return LightingManager.TimePresets.Morning
+	elseif clockTime < 12 then
+		return LightingManager.TimePresets.Midday
+	elseif clockTime < 16 then
+		return LightingManager.TimePresets.Afternoon
+	else
+		return LightingManager.TimePresets.GoldenHour
+	end
+end
+
+-- Calculate time of day based on wave number
+function LightingManager.CalculateTimeForWave(waveNum, startTime, endTime, totalWaves)
+	startTime = startTime or 6
+	endTime = endTime or 18
+	totalWaves = totalWaves or 50
+	
+	local progress = math.clamp((waveNum - 1) / (totalWaves - 1), 0, 1)
+	return startTime + (progress * (endTime - startTime))
+end
+
+-- Set time of day with smooth transition
+function LightingManager.SetTimeOfDay(clockTime, duration)
+	duration = duration or 10
+	
+	-- Get appropriate preset for this time
+	local preset = LightingManager.GetPresetForTime(clockTime)
+	
+	-- Create settings with the exact clock time and preset values
+	local settings = {
+		ClockTime = clockTime,
+		Brightness = preset.Brightness,
+		Ambient = preset.Ambient,
+		OutdoorAmbient = preset.OutdoorAmbient,
+		FogColor = preset.FogColor,
+		FogStart = preset.FogStart,
+		FogEnd = preset.FogEnd
+	}
+	
+	LightingManager.ApplySettings(settings, duration)
+	print(string.format("LightingManager: Time set to %.1f (Duration: %.1fs)", clockTime, duration))
+end
+
+-- Special victory lighting with enhanced effects
+function LightingManager.ApplyVictoryLighting(duration)
+	duration = duration or 5
+	
+	local victory = LightingManager.TimePresets.Victory
+	local settings = {
+		ClockTime = 18,
+		Brightness = victory.Brightness,
+		Ambient = victory.Ambient,
+		OutdoorAmbient = victory.OutdoorAmbient,
+		FogColor = victory.FogColor,
+		FogStart = victory.FogStart,
+		FogEnd = victory.FogEnd
+	}
+	
+	LightingManager.ApplySettings(settings, duration)
+	
+	-- Enhance sun rays for victory
+	local sunrays = Lighting:FindFirstChild("SunRays")
+	if sunrays then
+		local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Sine)
+		TweenService:Create(sunrays, tweenInfo, {Intensity = 0.3, Spread = 1}):Play()
+	end
+	
+	-- Enhance bloom for victory
+	local bloom = Lighting:FindFirstChild("Bloom")
+	if bloom then
+		local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Sine)
+		TweenService:Create(bloom, tweenInfo, {Intensity = 0.6, Size = 32}):Play()
+	end
+	
+	print("LightingManager: Victory lighting applied! ✨")
 end
 
 return LightingManager

@@ -24,18 +24,27 @@ local config = {
 		BossKillBonus = 5000,
 	},
 
-	-- Pengaturan Gelombang Gelap (Dark Wave)
+	-- Pengaturan Gelombang Gelap (Dark Wave) - DISABLED
 	DarkWave = {
-		-- Gelombang gelap terjadi setiap kelipatan dari nilai ini (misal, 2 berarti di gelombang 2, 4, 6, ...)
-		Interval = 2,
+		-- Set to 0 to disable (replaced by progressive day cycle)
+		Interval = 0,
 	},
 
-	-- Pengaturan Bulan Darah (Blood Moon)
+	-- Pengaturan Bulan Darah (Blood Moon) - DISABLED
 	BloodMoon = {
-		-- Peluang terjadinya Blood Moon pada gelombang gelap (0.3 = 30%)
-		Chance = 0.05,
-		-- Pengganda jumlah zombie yang muncul saat Blood Moon (1.5 = 50% lebih banyak)
-		SpawnMultiplier = 1.5,
+		-- Set to 0 to disable (replaced by progressive day cycle)
+		Chance = 0,
+		SpawnMultiplier = 1.5, -- Keep for potential future use
+	},
+
+	-- === NEW: Progressive Day Cycle ===
+	-- Misi dimulai pagi hari dan berakhir saat golden hour
+	DayCycle = {
+		Enabled = true,
+		StartTime = 6,    -- 6 AM (sunrise) at wave 1
+		EndTime = 18,     -- 6 PM (golden hour) at wave 50
+		TotalWaves = 50,  -- Total waves for full cycle
+		TransitionDuration = 15, -- Seconds to transition between wave times
 	},
 
 	-- Pengaturan Gelombang Spesial Baru

@@ -172,6 +172,56 @@ ReportDamageEvent.Event:Connect(function(player, damageAmount)
 	waveDamageTracker[userId] += damageAmount
 end)
 
+-- === ADMIN COMMAND LISTENERS ===
+-- Listen for admin commands from AdminCommands.lua
+
+local function killAllZombiesAdmin()
+	for _, model in ipairs(workspace:GetChildren()) do
+		if model:IsA("Model") and model:FindFirstChild(Constants.Attributes.IS_ZOMBIE) then
+			local humanoid = model:FindFirstChildOfClass("Humanoid")
+			if humanoid then
+				humanoid.Health = 0
+			end
+		end
+	end
+end
+
+-- AdminSetWave event
+local adminSetWaveEvent = BindableEvents:FindFirstChild("AdminSetWave")
+if not adminSetWaveEvent then
+	adminSetWaveEvent = Instance.new("BindableEvent")
+	adminSetWaveEvent.Name = "AdminSetWave"
+	adminSetWaveEvent.Parent = BindableEvents
+end
+
+adminSetWaveEvent.Event:Connect(function(targetWave)
+	if not gameStarted then
+		warn("AdminSetWave: Game not started")
+		return
+	end
+	
+	targetWave = math.clamp(targetWave, 1, 50)
+	killAllZombiesAdmin()
+	wave = targetWave - 1
+	zombiesKilled = zombiesToSpawn
+	print("Admin: Wave set to " .. targetWave)
+end)
+
+-- AdminSkipWave event
+local adminSkipWaveEvent = BindableEvents:FindFirstChild("AdminSkipWave")
+if not adminSkipWaveEvent then
+	adminSkipWaveEvent = Instance.new("BindableEvent")
+	adminSkipWaveEvent.Name = "AdminSkipWave"
+	adminSkipWaveEvent.Parent = BindableEvents
+end
+
+adminSkipWaveEvent.Event:Connect(function()
+	if not gameStarted then return end
+	killAllZombiesAdmin()
+	zombiesKilled = zombiesToSpawn
+	print("Admin: Skipped to next wave")
+end)
+
 -- >>> TRANSISI LIGHTING ANTAR-WAVE <<<
 local function tweenLightingTo(targetSettings, duration)
 	LightingManager.ApplySettings(targetSettings, duration)
@@ -386,53 +436,42 @@ local function startGameLoop()
 			print("Wave " .. wave .. " dimulai! Jumlah Pemain: " .. activePlayers)
 			WaveUpdateEvent:FireAllClients(wave, activePlayers)
 
+			-- === PROGRESSIVE DAY CYCLE ===
+			if GameConfig.DayCycle and GameConfig.DayCycle.Enabled then
+				local clockTime = LightingManager.CalculateTimeForWave(
+					wave,
+					GameConfig.DayCycle.StartTime,
+					GameConfig.DayCycle.EndTime,
+					GameConfig.DayCycle.TotalWaves
+				)
+				LightingManager.SetTimeOfDay(clockTime, GameConfig.DayCycle.TransitionDuration)
+			end
+
 			local waveModifiers = {}
-			local isDarkWave, isBloodMoonWave = false, false
 
 			-- Cek dulu apakah ini boss wave
 			local isBossWave, bossType = SpawnerModule.IsBossWave(wave, gameMode, difficulty)
 
 			-- Hanya jalankan logika special wave jika BUKAN boss wave
+			-- NOTE: DarkWave and BloodMoon are DISABLED (replaced by progressive day cycle)
 			if not isBossWave then
 				local isSpecialEventTriggered = false
-				if GameConfig.DarkWave.Interval > 0 and (wave % GameConfig.DarkWave.Interval == 0) then
-					isDarkWave = true
-					if math.random() < GameConfig.BloodMoon.Chance then
-						isBloodMoonWave = true
-						isSpecialEventTriggered = true
-						RemoteEvents.SpecialWaveAlertEvent:FireAllClients("Blood Moon")
-						print("Blood Moon wave! Transitioning to dark then to blood.")
-						task.spawn(function()
-						tweenLightingTo(LightingManager.DarkSettings, GameConfig.Lighting.TransitionDuration / 2)
-							task.wait(GameConfig.Lighting.TransitionDuration / 2)
-							tweenLightingTo(LightingManager.BloodSettings, GameConfig.Lighting.TransitionDuration / 2)
-						end)
-					else
-						print("Dark wave! Transitioning to dark.")
-						tweenLightingTo(LightingManager.DarkSettings, GameConfig.Lighting.TransitionDuration)
-					end
-				end
-
-				if not isSpecialEventTriggered then
-					local rand = math.random()
-					if rand < GameConfig.FastWave.Chance then
-						waveModifiers.isFast = true
-						RemoteEvents.SpecialWaveAlertEvent:FireAllClients("Fast Wave")
-						print("Fast Wave!")
-					elseif rand < (GameConfig.FastWave.Chance + GameConfig.SpecialWave.Chance) then
-						waveModifiers.isSpecial = true
-						RemoteEvents.SpecialWaveAlertEvent:FireAllClients("Special Wave")
-						print("Special Wave!")
-					end
+				
+				-- Only check FastWave and SpecialWave now
+				local rand = math.random()
+				if rand < GameConfig.FastWave.Chance then
+					waveModifiers.isFast = true
+					RemoteEvents.SpecialWaveAlertEvent:FireAllClients("Fast Wave")
+					print("Fast Wave!")
+				elseif rand < (GameConfig.FastWave.Chance + GameConfig.SpecialWave.Chance) then
+					waveModifiers.isSpecial = true
+					RemoteEvents.SpecialWaveAlertEvent:FireAllClients("Special Wave")
+					print("Special Wave!")
 				end
 			end
 
 			zombiesToSpawn = wave * GameConfig.Wave.ZombiesPerWavePerPlayer * initialPlayerCount
 			updatePlayerCount()
-
-			if isBloodMoonWave then
-				zombiesToSpawn = math.floor(zombiesToSpawn * GameConfig.BloodMoon.SpawnMultiplier)
-			end
 
 			zombiesKilled = 0
 			chamsApplied = false
@@ -549,7 +588,11 @@ local function startGameLoop()
 			-- <<< KONDISI KEMENANGAN (HANYA UNTUK MODE STORY) >>>
 			if gameMode == Constants.Strings.GAME_MODE_STORY then
 				if wave == 50 then
-					print("Wave 50 selesai! Misi selesai.")
+					print("Wave 50 selesai! Blighted Alchemist defeated! Mission Complete!")
+					
+					-- Apply beautiful golden hour victory lighting
+					LightingManager.ApplyVictoryLighting(5)
+					
 					local missionCompleteEvent = ReplicatedStorage.RemoteEvents:FindFirstChild(Constants.Events.MISSION_COMPLETE)
 					if missionCompleteEvent then
 						missionCompleteEvent:FireAllClients()
@@ -586,9 +629,8 @@ local function startGameLoop()
 				-- BuildingManager.restoreBuildings() -- Deprecated
 			end
 
-			if isBloodMoonWave or isDarkWave then
-				print("Special wave finished. Restoring lighting.")
-			end
+			-- NOTE: DarkWave/BloodMoon lighting restoration removed
+			-- Day cycle is now progressive and doesn't need restoration
 
 			for _, player in ipairs(game.Players:GetPlayers()) do
 				if player.Character then
@@ -680,10 +722,8 @@ local function startGameLoop()
 				end
 			end
 
-			local nextWave = wave + 1
-			local nextIsDark = GameConfig.DarkWave.Interval > 0 and (nextWave % GameConfig.DarkWave.Interval == 0)
-			local targetSettings = nextIsDark and GameConfig.Lighting.DarkSettings or defaultLightingSettings
-			tweenLightingTo(targetSettings, GameConfig.Lighting.TransitionDuration)
+			-- NOTE: DarkWave prediction removed - day cycle is now continuous
+			-- No need to predict or transition to dark settings
 
 			for count = 10, 1, -1 do
 				if (myToken ~= runToken) or (not gameStarted) then break end
@@ -817,10 +857,8 @@ OpenStartUIEvent.OnServerEvent:Connect(function(_player)
 				if readyPlayers[plr.UserId] then ready += 1 end
 			end
 			if ready < total then
-				readyPlayers = {}
-				StartVoteCanceledEvent:FireAllClients()
-				ReadyCountEvent:FireAllClients(0, total)
 			end
-		end
 	end)
 end)
+
+-- Admin commands are now handled by AdminCommands.server.lua
