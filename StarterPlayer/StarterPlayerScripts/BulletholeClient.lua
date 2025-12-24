@@ -11,7 +11,11 @@ local function createBullethole(position, normal)
 	-- This avoids Z-fighting and ensures it works on MeshParts without UV issues
 	local holePart = Instance.new("Part")
 	holePart.Name = "StylizedBullethole"
-	holePart.Size = Vector3.new(0.6, 0.6, 0.05) -- Thin plate
+	
+	-- NEW: Random size variation (0.4 to 0.8 studs - not too excessive)
+	local randomScale = 0.4 + (math.random() * 0.4) -- Range: 0.4 to 0.8
+	holePart.Size = Vector3.new(randomScale, randomScale, 0.05) -- Thin plate with random size
+	
 	holePart.Transparency = 1
 	holePart.CanCollide = false
 	holePart.Anchored = true -- Static impact for now (Network doesn't send hitPart)
@@ -20,7 +24,12 @@ local function createBullethole(position, normal)
 	-- Orient part to face the normal
 	-- CFrame.lookAt makes the Front face point to 'target'. 
 	-- We want the Front face (where Decal is) to face OUT form the wall (Normal).
-	holePart.CFrame = CFrame.lookAt(position + (normal * 0.05), position + normal)
+	local baseCFrame = CFrame.lookAt(position + (normal * 0.05), position + normal)
+	
+	-- NEW: Random rotation around the normal axis (0 to 360 degrees)
+	local randomRotation = math.rad(math.random(0, 360))
+	holePart.CFrame = baseCFrame * CFrame.Angles(0, 0, randomRotation)
+	
 	holePart.Parent = workspace
 
 	-- 2. Create Decal

@@ -355,9 +355,10 @@ ShootEvent.OnServerEvent:Connect(function(player, tool, cameraDirection, isAimin
 			if res and res.Instance then
 				local hitPart = res.Instance
 				local hitModel = hitPart:FindFirstAncestorOfClass("Model")
-				-- hanya buat bullethole kalau yang kena bukan zombie
+				-- hanya buat bullethole kalau yang kena bukan zombie atau player
 				local isZombie = hitModel and hitModel:FindFirstChild("IsZombie")
-				if not isZombie then
+				local isPlayer = hitModel and game.Players:GetPlayerFromCharacter(hitModel)
+				if not isZombie and not isPlayer then
 					BulletholeEvent:FireClient(player, res.Position, res.Normal)
 				end
 
@@ -476,9 +477,10 @@ ShootEvent.OnServerEvent:Connect(function(player, tool, cameraDirection, isAimin
 		if result and result.Instance then
 			local hitPart = result.Instance
 			local hitModel = hitPart:FindFirstAncestorOfClass("Model")
-			-- hanya buat bullethole kalau yang kena bukan zombie
+			-- hanya buat bullethole kalau yang kena bukan zombie atau player
 			local isZombie = hitModel and hitModel:FindFirstChild("IsZombie")
-			if not isZombie then
+			local isPlayer = hitModel and game.Players:GetPlayerFromCharacter(hitModel)
+			if not isZombie and not isPlayer then
 				BulletholeEvent:FireClient(player, result.Position, result.Normal)
 			end
 

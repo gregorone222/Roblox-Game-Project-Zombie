@@ -9,6 +9,7 @@ HybridViewmodel.__index = HybridViewmodel
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
 -- Get ViewmodelBase template
 local ViewmodelBase = ReplicatedStorage:WaitForChild("Assets"):WaitForChild("Viewmodel"):WaitForChild("ViewmodelBase")
@@ -46,8 +47,26 @@ function HybridViewmodel.new(tool, player, weaponName, weaponModule)
 	local weaponStats = self.WeaponModule.Weapons[self.weaponName] or {}
 	self.weaponStats = weaponStats
 	self.swayIntensity = weaponStats.SwayIntensity or 0.5
+	self.swaySmoothing = weaponStats.SwaySmoothing or 10
 	self.bobIntensity = weaponStats.BobIntensity or 0.3
+	self.bobSmoothing = weaponStats.BobSmoothing or 10
 	self.bobFrequency = weaponStats.BobFrequency or 8
+	
+	-- NEW: Breath effect (merged from ViewmodelModule)
+	self.breathTime = 0
+	self.breathIntensity = weaponStats.BreathIntensity or 0.1
+	self.breathSpeed = weaponStats.BreathSpeed or 2
+	
+	-- NEW: Visual recoil (merged from ViewmodelModule)
+	self.currentVisualRecoil = 0
+	self.targetVisualRecoil = 0
+	self.visualRecoilIntensity = weaponStats.VisualRecoilIntensity or 0.5
+	self.visualRecoilKick = weaponStats.VisualRecoilKick or 0.3
+	self.visualRecoilRecovery = weaponStats.VisualRecoilRecovery or 5
+	
+	-- NEW: Enhanced bob smoothing (merged from ViewmodelModule)
+	self.currentBob = Vector3.new()
+	self.targetBob = Vector3.new()
 	
 	-- Per-animation positions (from new Animations structure)
 	self.animPositions = {}
@@ -252,28 +271,47 @@ function HybridViewmodel:updateViewmodel(dt, isAiming)
 	
 	local rx, ry, rz = cameraDelta:ToOrientation()
 	self.targetSway = CFrame.Angles(ry * swayAmount * 0.5, -rx * swayAmount, rx * swayAmount * 0.2)
-	self.currentSway = self.currentSway:Lerp(self.targetSway, dt * 10)
+	self.currentSway = self.currentSway:Lerp(self.targetSway, dt * self.swaySmoothing)
 	
-	-- Calculate bob from movement
+	-- Calculate bob from movement (ENHANCED from ViewmodelModule)
 	local char = self.player.Character
-	local bobOffset = CFrame.new()
+	local bobVector = Vector3.new()
 	if char then
 		local hrp = char:FindFirstChild("HumanoidRootPart")
 		local humanoid = char:FindFirstChild("Humanoid")
 		if hrp and humanoid then
-			local speed = hrp.AssemblyLinearVelocity.Magnitude
+			local velocity = hrp.AssemblyLinearVelocity
+			local speed = Vector3.new(velocity.X, 0, velocity.Z).Magnitude
 			local maxSpeed = humanoid.WalkSpeed
-			if speed > 1 and maxSpeed > 0 then
-				local bobAmount = self.bobIntensity * (speed / maxSpeed)
-				if self.isAiming then bobAmount = bobAmount * 0.3 end
+			
+			if speed > 0.1 and maxSpeed > 0 then
+				local intensity = self.bobIntensity * (speed / maxSpeed)
+				if self.isAiming then intensity = intensity * 0.3 end
 				
-				self.bobTime = self.bobTime + dt * self.bobFrequency * (speed / maxSpeed)
-				local bobX = math.sin(self.bobTime * 0.5) * bobAmount * 0.05
-				local bobY = math.sin(self.bobTime) * bobAmount * 0.08
-				bobOffset = CFrame.new(bobX, bobY, 0)
+				self.bobTime = self.bobTime + dt * (speed / maxSpeed) * self.bobFrequency
+				
+				local bobX = math.sin(self.bobTime * 0.5) * intensity * 0.1
+				local bobY = math.sin(self.bobTime) * intensity * 0.2
+				local bobZ = math.cos(self.bobTime * 0.5) * intensity * 0.05
+				
+				bobVector = Vector3.new(bobX, bobY, bobZ)
+			else
+				self.bobTime = 0
 			end
 		end
 	end
+	self.targetBob = bobVector
+	self.currentBob = self.currentBob:Lerp(self.targetBob, dt * self.bobSmoothing)
+	
+	-- Calculate breath effect (NEW from ViewmodelModule)
+	self.breathTime = self.breathTime + dt * self.breathSpeed
+	local breathOffset = math.sin(self.breathTime) * self.breathIntensity * 0.1
+	if self.isAiming then breathOffset = breathOffset * 0.3 end
+	local breathVector = Vector3.new(0, breathOffset, 0)
+	
+	-- Update visual recoil (NEW from ViewmodelModule)
+	self.currentVisualRecoil = self.currentVisualRecoil + (self.targetVisualRecoil - self.currentVisualRecoil) * dt * self.visualRecoilRecovery
+	self.targetVisualRecoil = self.targetVisualRecoil * (1 - dt * self.visualRecoilRecovery)
 	
 	-- Calculate final position
 	-- Determine target animation state based on current conditions
@@ -335,7 +373,13 @@ function HybridViewmodel:updateViewmodel(dt, isAiming)
 		math.rad(currentRot.Z)
 	)
 	
-	local finalCFrame = self.camera.CFrame * basePosition * baseRotation * self.currentSway * bobOffset
+	-- Final CFrame with all effects (ENHANCED with breath and visual recoil)
+	local finalCFrame = self.camera.CFrame 
+		* basePosition 
+		* baseRotation 
+		* self.currentSway 
+		* CFrame.new(self.currentBob + breathVector)
+		* CFrame.new(0, 0, -self.currentVisualRecoil)
 	
 	rootPart.CFrame = finalCFrame
 end
@@ -345,9 +389,23 @@ function HybridViewmodel:getMuzzle()
 end
 
 function HybridViewmodel:applyVisualRecoil()
-	-- Simple recoil kick - can be expanded
-	if not self.viewmodel then return end
-	-- Recoil is now handled by camera shake in WeaponClient
+	-- Kick the viewmodel back on fire (ACTIVATED from ViewmodelModule)
+	self.targetVisualRecoil = self.targetVisualRecoil + self.visualRecoilKick
+end
+
+-- NEW: Get ADS position based on skin and platform (from ViewmodelModule)
+function HybridViewmodel:getADSPosition()
+	local skinName = self.tool:GetAttribute("EquippedSkin") or self.tool:GetAttribute("Use_Skin") or "Default Skin"
+	
+	if self.weaponStats.Skins and self.weaponStats.Skins[skinName] then
+		local skin = self.weaponStats.Skins[skinName]
+		if UserInputService.TouchEnabled and skin.ADS_Position_Mobile then
+			return skin.ADS_Position_Mobile, skin.ADS_Rotation_Mobile or skin.ADS_Rotation
+		else
+			return skin.ADS_Position, skin.ADS_Rotation
+		end
+	end
+	return nil, nil
 end
 
 -- Set animation state manually (for external control)
