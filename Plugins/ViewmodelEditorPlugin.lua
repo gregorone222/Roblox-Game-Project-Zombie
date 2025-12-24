@@ -5,6 +5,7 @@
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local RunService = game:GetService("RunService")
 local Selection = game:GetService("Selection")
+local CoreGui = game:GetService("CoreGui")
 
 -- Plugin Setup
 local toolbar = plugin:CreateToolbar("Viewmodel Editor")
@@ -36,12 +37,25 @@ local currentSkinName = "Default Skin"
 local currentTool = nil
 local previewModel = nil
 local renderConnection = nil
-local isADSPreview = false
+local selectedAnimState = "Idle" -- Current animation being edited (Idle, Run, ADS, Reload)
 local isMobilePreview = false
 local showHitmarker = false
 local hitmarkerGui = nil
 local currentWeaponAnimations = nil
 local currentAnimTrack = nil
+
+-- Handles for visual positioning
+local showHandles = false
+local moveHandles = nil
+local rotateHandles = nil
+local handlesPart = nil -- Invisible part for handles to attach
+
+-- ViewportFrame Preview
+local viewportFrame = nil
+local viewportCamera = nil
+local viewportModel = nil
+local viewportAnimator = nil
+local viewportAnimTrack = nil
 
 -- Mobile Aspect Ratio Overlay
 local mobileOverlayGui = nil
@@ -54,25 +68,17 @@ local DEVICE_RATIOS = {
 	["4:3"] = 4/3,  -- Tablet
 }
 
--- Values
+-- Animation list for selector
+local ANIM_STATES = {"Idle", "Run", "ADS", "Reload"}
+local currentAnimIndex = 1
+
+-- Values (single set for current animation)
 local posX, posY, posZ = 1.5, -1, -2.5
 local rotX, rotY, rotZ = 0, 0, 0
-
-local adsX, adsY, adsZ = 0.15, -0.37, -1
-local adsRotX, adsRotY, adsRotZ = 0, 0, 0
-
-local adsMobileX, adsMobileY, adsMobileZ = 0.15, -0.37, -1
-local adsMobileRotX, adsMobileRotY, adsMobileRotZ = 0, 0, 0
 
 -- Presets
 local PRESETS_KEY = "ViewmodelEditor_Presets"
 local presets = plugin:GetSetting(PRESETS_KEY) or {}
-
--- Values
-local adsRotX, adsRotY, adsRotZ = 0, 0, 0
-
-local adsMobileX, adsMobileY, adsMobileZ = 0.15, -0.37, -1
-local adsMobileRotX, adsMobileRotY, adsMobileRotZ = 0, 0, 0
 
 -- UI Creation
 local function createUI()
@@ -144,8 +150,92 @@ scrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	selectedLabel.Font = Enum.Font.GothamMedium
 	selectedLabel.LayoutOrder = 2
 	selectedLabel.Parent = scrollFrame
-
-	-- Toggle Buttons Frame
+	
+	-- ViewportFrame Preview Container
+	local viewportContainer = Instance.new("Frame")
+	viewportContainer.Name = "ViewportContainer"
+	viewportContainer.Size = UDim2.new(1, -10, 0, 220)
+	viewportContainer.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+	viewportContainer.LayoutOrder = 2.5
+	viewportContainer.Parent = scrollFrame
+	Instance.new("UICorner", viewportContainer).CornerRadius = UDim.new(0, 6)
+	
+	local viewportHeader = Instance.new("TextLabel")
+	viewportHeader.Size = UDim2.new(1, 0, 0, 20)
+	viewportHeader.BackgroundTransparency = 1
+	viewportHeader.Text = "🔍 First-Person Preview"
+	viewportHeader.TextColor3 = Color3.fromRGB(180, 180, 180)
+	viewportHeader.TextSize = 11
+	viewportHeader.Font = Enum.Font.GothamMedium
+	viewportHeader.Parent = viewportContainer
+	
+	local vpFrame = Instance.new("ViewportFrame")
+	vpFrame.Name = "ViewportPreview"
+	vpFrame.Size = UDim2.new(1, -10, 1, -25)
+	vpFrame.Position = UDim2.new(0, 5, 0, 22)
+	vpFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+	vpFrame.BorderSizePixel = 0
+	vpFrame.Ambient = Color3.fromRGB(150, 150, 150)
+	vpFrame.LightColor = Color3.fromRGB(255, 255, 255)
+	vpFrame.LightDirection = Vector3.new(-1, -1, -1)
+	vpFrame.Parent = viewportContainer
+	Instance.new("UICorner", vpFrame).CornerRadius = UDim.new(0, 4)
+	
+	-- Add WorldModel for animation support (required for Motor6D animations!)
+	local vpWorldModel = Instance.new("WorldModel")
+	vpWorldModel.Name = "WorldModel"
+	vpWorldModel.Parent = vpFrame
+	
+	-- Add Crosshair to Viewport
+	local crosshairContainer = Instance.new("Frame")
+	crosshairContainer.Name = "Crosshair"
+	crosshairContainer.Size = UDim2.new(1, 0, 1, 0)
+	crosshairContainer.BackgroundTransparency = 1
+	crosshairContainer.Parent = vpFrame
+	
+	local crosshairColor = Color3.new(1, 1, 1)
+	local lineThickness = 2
+	local lineLength = 12
+	local gap = 5
+	
+	-- Top line
+	local topLine = Instance.new("Frame")
+	topLine.Size = UDim2.new(0, lineThickness, 0, lineLength)
+	topLine.Position = UDim2.new(0.5, -1, 0.5, -lineLength - gap)
+	topLine.BackgroundColor3 = crosshairColor
+	topLine.BorderSizePixel = 0
+	topLine.Parent = crosshairContainer
+	
+	-- Bottom line
+	local bottomLine = Instance.new("Frame")
+	bottomLine.Size = UDim2.new(0, lineThickness, 0, lineLength)
+	bottomLine.Position = UDim2.new(0.5, -1, 0.5, gap)
+	bottomLine.BackgroundColor3 = crosshairColor
+	bottomLine.BorderSizePixel = 0
+	bottomLine.Parent = crosshairContainer
+	
+	-- Left line
+	local leftLine = Instance.new("Frame")
+	leftLine.Size = UDim2.new(0, lineLength, 0, lineThickness)
+	leftLine.Position = UDim2.new(0.5, -lineLength - gap, 0.5, -1)
+	leftLine.BackgroundColor3 = crosshairColor
+	leftLine.BorderSizePixel = 0
+	leftLine.Parent = crosshairContainer
+	
+	-- Right line
+	local rightLine = Instance.new("Frame")
+	rightLine.Size = UDim2.new(0, lineLength, 0, lineThickness)
+	rightLine.Position = UDim2.new(0.5, gap, 0.5, -1)
+	rightLine.BackgroundColor3 = crosshairColor
+	rightLine.BorderSizePixel = 0
+	rightLine.Parent = crosshairContainer
+	
+	-- Create camera for viewport
+	local vpCamera = Instance.new("Camera")
+	vpCamera.FieldOfView = 70
+	vpCamera.CFrame = CFrame.new(0, 0, 0)
+	vpCamera.Parent = vpFrame
+	vpFrame.CurrentCamera = vpCamera
 	local toggleFrame = Instance.new("Frame")
 	toggleFrame.Size = UDim2.new(1, 0, 0, 35)
 	toggleFrame.BackgroundTransparency = 1
@@ -158,16 +248,17 @@ scrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	toggleLayout.Padding = UDim.new(0, 10)
 	toggleLayout.Parent = toggleFrame
 
-	local adsToggle = Instance.new("TextButton")
-	adsToggle.Name = "ADSToggle"
-	adsToggle.Size = UDim2.new(0, 100, 0, 30)
-	adsToggle.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-	adsToggle.Text = "Preview: HIP"
-	adsToggle.TextColor3 = Color3.new(1, 1, 1)
-	adsToggle.TextSize = 11
-	adsToggle.Font = Enum.Font.GothamMedium
-	adsToggle.Parent = toggleFrame
-	Instance.new("UICorner", adsToggle).CornerRadius = UDim.new(0, 4)
+	-- Animation Selector (replaces ADS Toggle)
+	local animSelector = Instance.new("TextButton")
+	animSelector.Name = "AnimSelector"
+	animSelector.Size = UDim2.new(0, 100, 0, 30)
+	animSelector.BackgroundColor3 = Color3.fromRGB(70, 100, 150)
+	animSelector.Text = "Anim: Idle"
+	animSelector.TextColor3 = Color3.new(1, 1, 1)
+	animSelector.TextSize = 11
+	animSelector.Font = Enum.Font.GothamMedium
+	animSelector.Parent = toggleFrame
+	Instance.new("UICorner", animSelector).CornerRadius = UDim.new(0, 4)
 
 	local mobileToggle = Instance.new("TextButton")
 	mobileToggle.Name = "MobileToggle"
@@ -190,6 +281,18 @@ scrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	hitmarkerToggle.Font = Enum.Font.GothamMedium
 	hitmarkerToggle.Parent = toggleFrame
 	Instance.new("UICorner", hitmarkerToggle).CornerRadius = UDim.new(0, 4)
+	
+	-- Handles Toggle Button
+	local handlesToggle = Instance.new("TextButton")
+	handlesToggle.Name = "HandlesToggle"
+	handlesToggle.Size = UDim2.new(0, 70, 0, 30)
+	handlesToggle.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+	handlesToggle.Text = "📐 Handles"
+	handlesToggle.TextColor3 = Color3.new(1, 1, 1)
+	handlesToggle.TextSize = 10
+	handlesToggle.Font = Enum.Font.GothamMedium
+	handlesToggle.Parent = toggleFrame
+	Instance.new("UICorner", handlesToggle).CornerRadius = UDim.new(0, 4)
 
 	-- Device Ratio Frame (Second Row)
 	local deviceFrame = Instance.new("Frame")
@@ -269,9 +372,9 @@ scrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 			return 
 		end
 		
-		if not previewModel then 
-			print("[ViewmodelEditor] ERROR: previewModel is nil")
-			if statusLabel then statusLabel.Text = "No preview model!" end
+		if not viewportModel then 
+			print("[ViewmodelEditor] ERROR: viewportModel is nil")
+			if statusLabel then statusLabel.Text = "No preview model! Select a weapon." end
 			return 
 		end
 		
@@ -281,7 +384,16 @@ scrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 			return 
 		end
 		
-		local animId = (animKey == "Aim") and currentWeaponAnimations.ADS or currentWeaponAnimations[animKey]
+		local animData = (animKey == "Aim") and currentWeaponAnimations.ADS or currentWeaponAnimations[animKey]
+		
+		-- Extract animation ID from new per-animation structure (table with Id) or legacy format (string)
+		local animId
+		if type(animData) == "table" then
+			animId = animData.Id
+		elseif type(animData) == "string" then
+			animId = animData
+		end
+		
 		print("[ViewmodelEditor] Animation ID for", animKey, ":", animId)
 		
 		if not animId then
@@ -289,37 +401,47 @@ scrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 			return
 		end
 		
-		-- Find Controller
-		local animController = previewModel:FindFirstChildOfClass("AnimationController")
-		if not animController then
-			local hum = previewModel:FindFirstChildOfClass("Humanoid")
-			if hum then 
-				animController = hum
-				print("[ViewmodelEditor] Using Humanoid as controller")
+		-- Use viewport animator
+		if not viewportAnimator then
+			local animController = viewportModel:FindFirstChildOfClass("AnimationController")
+			if animController then
+				viewportAnimator = animController:FindFirstChildOfClass("Animator")
+				if not viewportAnimator then
+					viewportAnimator = Instance.new("Animator")
+					viewportAnimator.Parent = animController
+				end
 			end
 		end
 		
-		if not animController then
-			animController = Instance.new("AnimationController")
-			animController.Parent = previewModel
-			print("[ViewmodelEditor] Created new AnimationController")
+		if not viewportAnimator then
+			print("[ViewmodelEditor] ERROR: No animator available")
+			return
 		end
 		
-		local animator = animController:FindFirstChildOfClass("Animator")
-		if not animator then
-			animator = Instance.new("Animator")
-			animator.Parent = animController
-			print("[ViewmodelEditor] Created new Animator")
-		end
-		
+		-- Create Animation object
 		local anim = Instance.new("Animation")
 		anim.AnimationId = animId
 		
-		-- Stop any existing tracks on this animator too
-		for _, t in pairs(animator:GetPlayingAnimationTracks()) do t:Stop() end
+		-- Preload animation asset (important for Edit Mode!)
+		if statusLabel then statusLabel.Text = "Preloading animation..." end
+		local ContentProvider = game:GetService("ContentProvider")
+		local preloadSuccess, preloadErr = pcall(function()
+			ContentProvider:PreloadAsync({anim})
+		end)
+		if not preloadSuccess then
+			print("[ViewmodelEditor] Preload warning:", preloadErr)
+		else
+			print("[ViewmodelEditor] Animation preloaded successfully")
+		end
 		
+		-- Stop any existing tracks on this animator
+		for _, t in pairs(viewportAnimator:GetPlayingAnimationTracks()) do 
+			t:Stop() 
+		end
+		
+		-- Load and play animation
 		local success, track = pcall(function()
-			return animator:LoadAnimation(anim)
+			return viewportAnimator:LoadAnimation(anim)
 		end)
 		
 		if not success then
@@ -328,11 +450,34 @@ scrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 			return
 		end
 		
+		-- Debug: Check track validity
+		print("[ViewmodelEditor] Animation Track loaded successfully")
+		print("[ViewmodelEditor] Track.Length:", track.Length)
+		
+		-- If track length is 0, it might mean the rig doesn't match the animation
+		if track.Length == 0 then
+			print("[ViewmodelEditor] ============================================")
+			print("[ViewmodelEditor] WARNING: Track.Length is 0!")
+			print("[ViewmodelEditor] Possible causes:")
+			print("  1. Animation bone names don't match rig bone names")
+			print("  2. Animation was made for R15 but rig is custom arms-only")
+			print("  3. Animation asset not accessible (ownership/permissions)")
+			print("  4. Running in Edit Mode - try Play Solo instead")
+			print("[ViewmodelEditor] ============================================")
+			print("[ViewmodelEditor] TIP: Try running Play Solo (F5) and test animation")
+			print("[ViewmodelEditor] in-game instead of in Edit Mode plugin.")
+			if statusLabel then 
+				statusLabel.Text = "⚠️ Anim may not work in Edit Mode. Try Play Solo (F5)" 
+			end
+		end
+		
 		track.Looped = true
 		track:Play()
 		currentAnimTrack = track
 		print("[ViewmodelEditor] Animation playing!")
-		if statusLabel then statusLabel.Text = "Playing: " .. animKey end
+		if track.Length > 0 then
+			if statusLabel then statusLabel.Text = "Playing: " .. animKey .. " (Length: " .. string.format("%.2f", track.Length) .. "s)" end
+		end
 	end
 	
 	local function createAnimBtn(text, key)
@@ -569,27 +714,8 @@ scrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	local rotYSlider = createSliderGroup("RotY", "Y (deg)", -180, 180, rotY, 1, function(v) rotY = v end, scrollFrame, 22)
 	local rotZSlider = createSliderGroup("RotZ", "Z (deg)", -180, 180, rotZ, 1, function(v) rotZ = v end, scrollFrame, 23)
 
-	-- ===== ADS DESKTOP SECTION =====
-	createSectionHeader("🎯 ADS Position (Desktop)", scrollFrame, 30)
-	local adsXSlider = createSliderGroup("AdsX", "X", -2, 2, adsX, 0.001, function(v) adsX = v end, scrollFrame, 31)
-	local adsYSlider = createSliderGroup("AdsY", "Y", -2, 2, adsY, 0.001, function(v) adsY = v end, scrollFrame, 32)
-	local adsZSlider = createSliderGroup("AdsZ", "Z", -5, 0, adsZ, 0.001, function(v) adsZ = v end, scrollFrame, 33)
-
-	createSectionHeader("🔄 ADS Rotation (Desktop)", scrollFrame, 40)
-	local adsRotXSlider = createSliderGroup("AdsRotX", "X (deg)", -45, 45, adsRotX, 1, function(v) adsRotX = v end, scrollFrame, 41)
-	local adsRotYSlider = createSliderGroup("AdsRotY", "Y (deg)", -45, 45, adsRotY, 1, function(v) adsRotY = v end, scrollFrame, 42)
-	local adsRotZSlider = createSliderGroup("AdsRotZ", "Z (deg)", -45, 45, adsRotZ, 1, function(v) adsRotZ = v end, scrollFrame, 43)
-
-	-- ===== ADS MOBILE SECTION =====
-	createSectionHeader("📱 ADS Position (Mobile)", scrollFrame, 50)
-	local adsMobileXSlider = createSliderGroup("AdsMobileX", "X", -2, 2, adsMobileX, 0.001, function(v) adsMobileX = v end, scrollFrame, 51)
-	local adsMobileYSlider = createSliderGroup("AdsMobileY", "Y", -2, 2, adsMobileY, 0.001, function(v) adsMobileY = v end, scrollFrame, 52)
-	local adsMobileZSlider = createSliderGroup("AdsMobileZ", "Z", -5, 0, adsMobileZ, 0.001, function(v) adsMobileZ = v end, scrollFrame, 53)
-
-	createSectionHeader("🔄 ADS Rotation (Mobile)", scrollFrame, 60)
-	local adsMobileRotXSlider = createSliderGroup("AdsMobileRotX", "X (deg)", -45, 45, adsMobileRotX, 1, function(v) adsMobileRotX = v end, scrollFrame, 61)
-	local adsMobileRotYSlider = createSliderGroup("AdsMobileRotY", "Y (deg)", -45, 45, adsMobileRotY, 1, function(v) adsMobileRotY = v end, scrollFrame, 62)
-	local adsMobileRotZSlider = createSliderGroup("AdsMobileRotZ", "Z (deg)", -45, 45, adsMobileRotZ, 1, function(v) adsMobileRotZ = v end, scrollFrame, 63)
+	-- ADS sliders REMOVED - positions are now per-animation
+	-- Use Animation Selector to switch between animation positions
 
 	-- ===== BUTTONS =====
 	createSectionHeader("💾 Presets", scrollFrame, 70)
@@ -700,21 +826,20 @@ scrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 		PresetsList = presetsList,
 		PresetNameInput = nameInput,
 		SavePresetButton = saveButton,
-		ADSToggle = adsToggle,
+		AnimSelector = animSelector,
 		MobileToggle = mobileToggle,
 		ApplyButton = applyButton,
 		CopyButton = copyButton,
-		-- Viewmodel
+		-- Viewmodel Position/Rotation (now per-animation)
 		PosX = posXSlider, PosY = posYSlider, PosZ = posZSlider,
 		RotX = rotXSlider, RotY = rotYSlider, RotZ = rotZSlider,
-		-- ADS Desktop
-		AdsX = adsXSlider, AdsY = adsYSlider, AdsZ = adsZSlider,
-		AdsRotX = adsRotXSlider, AdsRotY = adsRotYSlider, AdsRotZ = adsRotZSlider,
-		-- ADS Mobile
-		AdsMobileX = adsMobileXSlider, AdsMobileY = adsMobileYSlider, AdsMobileZ = adsMobileZSlider,
-		AdsMobileRotX = adsMobileRotXSlider, AdsMobileRotY = adsMobileRotYSlider, AdsMobileRotZ = adsMobileRotZSlider,
 		HitmarkerToggle = hitmarkerToggle,
+		HandlesToggle = handlesToggle,
 		TargetSelector = targetSelector,
+		-- ViewportFrame Preview
+		ViewportFrame = vpFrame,
+		ViewportCamera = vpCamera,
+		ViewportWorldModel = vpWorldModel, -- For animation support
 		-- Mobile Overlay
 		DeviceButtons = deviceButtons,
 		UpdateDeviceButtons = updateDeviceButtons
@@ -723,11 +848,360 @@ end
 
 local ui = createUI()
 
--- Toggle Handlers
-ui.ADSToggle.MouseButton1Click:Connect(function()
-	isADSPreview = not isADSPreview
-	ui.ADSToggle.Text = isADSPreview and "Preview: ADS" or "Preview: HIP"
-	ui.ADSToggle.BackgroundColor3 = isADSPreview and Color3.fromRGB(0, 150, 80) or Color3.fromRGB(80, 80, 80)
+-- ViewportFrame Model Functions
+local function clearViewportModel()
+	if viewportAnimTrack then
+		viewportAnimTrack:Stop()
+		viewportAnimTrack = nil
+	end
+	if viewportModel then
+		viewportModel:Destroy()
+		viewportModel = nil
+	end
+	viewportAnimator = nil
+end
+
+local function updateViewportPosition()
+	if not viewportModel then return end
+	
+	local offset = CFrame.new(posX, posY, posZ)
+	local rotation = CFrame.Angles(math.rad(rotX), math.rad(rotY), math.rad(rotZ))
+	
+	-- Position model in front of camera
+	local targetCFrame = CFrame.new(0, 0, 0) * offset * rotation
+	if viewportModel.PrimaryPart then
+		viewportModel:PivotTo(targetCFrame)
+	end
+end
+
+-- Workspace Rig System (for 3D editing)
+local workspaceRig = nil
+local cameraRefPart = nil
+local workspaceHandles = nil
+local workspaceArcHandles = nil
+
+local function clearWorkspaceRig()
+	if workspaceHandles then workspaceHandles:Destroy(); workspaceHandles = nil end
+	if workspaceArcHandles then workspaceArcHandles:Destroy(); workspaceArcHandles = nil end
+	if workspaceRig then workspaceRig:Destroy(); workspaceRig = nil end
+	if cameraRefPart then cameraRefPart:Destroy(); cameraRefPart = nil end
+end
+
+local function loadWorkspaceRig(tool)
+	clearWorkspaceRig()
+	clearViewportModel()
+	
+	if not tool then return end
+	
+	-- Find ViewmodelBase
+	local viewmodelBase = game.ReplicatedStorage:FindFirstChild("Assets")
+	if viewmodelBase then viewmodelBase = viewmodelBase:FindFirstChild("Viewmodel") end
+	if viewmodelBase then viewmodelBase = viewmodelBase:FindFirstChild("ViewmodelBase") end
+	
+	if not viewmodelBase then
+		print("[ViewmodelEditor] ViewmodelBase not found!")
+		return
+	end
+	
+	-- Create Camera Reference Part (represents player eye)
+	-- Spawn at current Studio camera position
+	local studioCamera = workspace.CurrentCamera
+	local spawnCFrame = CFrame.new(0, 5, 0) -- Default fallback
+	if studioCamera then
+		spawnCFrame = studioCamera.CFrame
+	end
+	
+	cameraRefPart = Instance.new("Part")
+	cameraRefPart.Name = "CameraRefPoint"
+	cameraRefPart.Size = Vector3.new(0.5, 0.5, 0.5)
+	cameraRefPart.Transparency = 0.5
+	cameraRefPart.BrickColor = BrickColor.new("Bright green")
+	cameraRefPart.Anchored = true
+	cameraRefPart.CanCollide = false
+	cameraRefPart.CFrame = spawnCFrame
+	cameraRefPart.Parent = workspace
+	
+	-- Add label
+	local bb = Instance.new("BillboardGui")
+	bb.Size = UDim2.new(0, 100, 0, 30)
+	bb.StudsOffset = Vector3.new(0, 1, 0)
+	bb.AlwaysOnTop = true
+	bb.Parent = cameraRefPart
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1, 0, 1, 0)
+	label.BackgroundTransparency = 1
+	label.Text = "👁 Camera"
+	label.TextColor3 = Color3.new(1, 1, 1)
+	label.TextStrokeTransparency = 0
+	label.Font = Enum.Font.GothamBold
+	label.TextSize = 14
+	label.Parent = bb
+	
+	-- Clone viewmodel rig into workspace
+	workspaceRig = viewmodelBase:Clone()
+	workspaceRig.Name = "ViewmodelEditorRig"
+	
+	-- Clone weapon and attach
+	local weaponClone = tool:Clone()
+	weaponClone.Parent = workspaceRig
+	
+	local rightHand = workspaceRig:FindFirstChild("RightHand")
+	local handle = weaponClone:FindFirstChild("Handle")
+	
+	if rightHand and handle then
+		local weld = Instance.new("WeldConstraint")
+		weld.Part0 = rightHand
+		weld.Part1 = handle
+		weld.Parent = handle
+		
+		local gripAtt = rightHand:FindFirstChild("RightGripAttachment")
+		if gripAtt then
+			handle.CFrame = gripAtt.WorldCFrame
+		else
+			handle.CFrame = rightHand.CFrame
+		end
+	end
+	
+	-- Setup rig (remove scripts)
+	for _, desc in pairs(workspaceRig:GetDescendants()) do
+		if desc:IsA("BasePart") then
+			desc.CanCollide = false
+			desc.CastShadow = true
+			desc.Anchored = false
+		elseif desc:IsA("Script") or desc:IsA("LocalScript") or desc:IsA("Sound") then
+			desc:Destroy()
+		end
+	end
+	
+	-- Destroy humanoid, use AnimationController
+	local humanoid = workspaceRig:FindFirstChildOfClass("Humanoid")
+	if humanoid then humanoid:Destroy() end
+	
+	local animController = workspaceRig:FindFirstChildOfClass("AnimationController")
+	if not animController then
+		animController = Instance.new("AnimationController")
+		animController.Parent = workspaceRig
+	end
+	
+	viewportAnimator = animController:FindFirstChildOfClass("Animator")
+	if not viewportAnimator then
+		viewportAnimator = Instance.new("Animator")
+		viewportAnimator.Parent = animController
+	end
+	
+	-- Set primary part and anchor root
+	local root = workspaceRig:FindFirstChild("HumanoidRootPart") or workspaceRig:FindFirstChild("Handle")
+	if root then
+		workspaceRig.PrimaryPart = root
+		root.Anchored = true
+	end
+	
+	-- Position rig relative to camera ref
+	local offset = CFrame.new(posX, posY, posZ)
+	local rotation = CFrame.Angles(math.rad(rotX), math.rad(rotY), math.rad(rotZ))
+	workspaceRig:PivotTo(cameraRefPart.CFrame * offset * rotation)
+	workspaceRig.Parent = workspace
+	
+	-- Create Handles attached to rig
+	workspaceHandles = Instance.new("Handles")
+	workspaceHandles.Adornee = root
+	workspaceHandles.Color3 = Color3.fromRGB(100, 200, 255)
+	workspaceHandles.Style = Enum.HandlesStyle.Movement
+	workspaceHandles.Parent = CoreGui
+	
+	-- Handle drag
+	local isDragging = false
+	local startCFrame = nil
+	
+	workspaceHandles.MouseButton1Down:Connect(function()
+		isDragging = true
+		startCFrame = workspaceRig:GetPivot()
+	end)
+	
+	workspaceHandles.MouseDrag:Connect(function(face, distance)
+		if not isDragging or not workspaceRig.PrimaryPart then return end
+		
+		local delta = Vector3.new(0, 0, 0)
+		if face == Enum.NormalId.Right then delta = Vector3.new(distance, 0, 0)
+		elseif face == Enum.NormalId.Left then delta = Vector3.new(-distance, 0, 0)
+		elseif face == Enum.NormalId.Top then delta = Vector3.new(0, distance, 0)
+		elseif face == Enum.NormalId.Bottom then delta = Vector3.new(0, -distance, 0)
+		elseif face == Enum.NormalId.Front then delta = Vector3.new(0, 0, -distance)
+		elseif face == Enum.NormalId.Back then delta = Vector3.new(0, 0, distance)
+		end
+		
+		-- Calculate new position relative to camera ref
+		local newCFrame = startCFrame * CFrame.new(delta)
+		workspaceRig:PivotTo(newCFrame)
+		
+		-- Update position variables from relative offset
+		local relCFrame = cameraRefPart.CFrame:ToObjectSpace(newCFrame)
+		posX, posY, posZ = relCFrame.Position.X, relCFrame.Position.Y, relCFrame.Position.Z
+		ui.PosX.SetValue(posX); ui.PosY.SetValue(posY); ui.PosZ.SetValue(posZ)
+	end)
+	
+	workspaceHandles.MouseButton1Up:Connect(function()
+		isDragging = false
+	end)
+	
+	-- Create ArcHandles for rotation
+	workspaceArcHandles = Instance.new("ArcHandles")
+	workspaceArcHandles.Adornee = root
+	workspaceArcHandles.Color3 = Color3.fromRGB(255, 150, 100)
+	workspaceArcHandles.Parent = CoreGui
+	
+	local rotDragging = false
+	local startRotCFrame = nil
+	
+	workspaceArcHandles.MouseButton1Down:Connect(function()
+		rotDragging = true
+		startRotCFrame = workspaceRig:GetPivot()
+	end)
+	
+	workspaceArcHandles.MouseDrag:Connect(function(axis, relativeAngle)
+		if not rotDragging or not workspaceRig.PrimaryPart then return end
+		
+		local angleDeg = math.deg(relativeAngle)
+		local rotCFrame
+		
+		if axis == Enum.Axis.X then
+			rotCFrame = startRotCFrame * CFrame.Angles(relativeAngle, 0, 0)
+			rotX = angleDeg
+		elseif axis == Enum.Axis.Y then
+			rotCFrame = startRotCFrame * CFrame.Angles(0, relativeAngle, 0)
+			rotY = angleDeg
+		elseif axis == Enum.Axis.Z then
+			rotCFrame = startRotCFrame * CFrame.Angles(0, 0, relativeAngle)
+			rotZ = angleDeg
+		end
+		
+		if rotCFrame then
+			workspaceRig:PivotTo(rotCFrame)
+		end
+		
+		ui.RotX.SetValue(rotX); ui.RotY.SetValue(rotY); ui.RotZ.SetValue(rotZ)
+	end)
+	
+	workspaceArcHandles.MouseButton1Up:Connect(function()
+		rotDragging = false
+	end)
+	
+	-- Also clone to ViewportFrame for FPS preview
+	viewportModel = workspaceRig:Clone()
+	viewportModel.Name = "FPSPreviewModel"
+	
+	-- REMOVE Animator/AnimationController from Viewport Model
+	-- We are manually syncing Motor6D transforms from workspace rig
+	-- An inactive Animator will reset transforms to default, fighting our manual sync!
+	for _, desc in pairs(viewportModel:GetDescendants()) do
+		if desc:IsA("Animator") or desc:IsA("AnimationController") then
+			desc:Destroy()
+		end
+	end
+	
+	-- Set root anchored
+	local vpRoot = viewportModel:FindFirstChild("HumanoidRootPart")
+	if vpRoot then
+		vpRoot.Anchored = true
+		viewportModel.PrimaryPart = vpRoot
+	end
+	
+	-- Parent to WorldModel for animation support (not directly to ViewportFrame!)
+	viewportModel.Parent = ui.ViewportWorldModel
+	
+	-- Position viewport model
+	updateViewportPosition()
+	
+	print("[ViewmodelEditor] Workspace rig and FPS preview loaded!")
+	print("[ViewmodelEditor] Use handles in 3D viewport to position, see preview in plugin!")
+end
+
+local function loadViewportModel(tool)
+	-- Now just calls loadWorkspaceRig
+	loadWorkspaceRig(tool)
+end
+
+local function playViewportAnimation(animId)
+	-- Play on workspace rig, sync loop will copy to viewport
+	if not viewportAnimator or not animId then return end
+	
+	if viewportAnimTrack then
+		viewportAnimTrack:Stop()
+		viewportAnimTrack = nil
+	end
+	
+	local anim = Instance.new("Animation")
+	anim.AnimationId = animId
+	
+	-- We use the animator we captured from workspaceRig
+	local success, track = pcall(function()
+		return viewportAnimator:LoadAnimation(anim)
+	end)
+	
+	if success and track then
+		track.Looped = true
+		track:Play()
+		viewportAnimTrack = track
+	end
+end
+
+-- Helper function to load position from current animation
+local function loadAnimationPosition()
+	if not currentWeaponAnimations then return end
+	
+	local animData = currentWeaponAnimations[selectedAnimState]
+	if type(animData) == "table" and animData.Position then
+		posX, posY, posZ = animData.Position.X, animData.Position.Y, animData.Position.Z
+		ui.PosX.SetValue(posX); ui.PosY.SetValue(posY); ui.PosZ.SetValue(posZ)
+		
+		if animData.Rotation then
+			rotX, rotY, rotZ = animData.Rotation.X, animData.Rotation.Y, animData.Rotation.Z
+			ui.RotX.SetValue(rotX); ui.RotY.SetValue(rotY); ui.RotZ.SetValue(rotZ)
+		end
+	end
+	
+	-- Play the animation
+	if currentAnimTrack then currentAnimTrack:Stop(); currentAnimTrack = nil end
+	if previewModel then
+		local animId = type(animData) == "table" and animData.Id or animData
+		if animId then
+			local animController = previewModel:FindFirstChildOfClass("AnimationController")
+			if animController then
+				local animator = animController:FindFirstChildOfClass("Animator")
+				if animator then
+					local anim = Instance.new("Animation")
+					anim.AnimationId = animId
+					local success, track = pcall(function()
+						return animator:LoadAnimation(anim)
+					end)
+					if success and track then
+						track.Looped = true
+						track:Play()
+						currentAnimTrack = track
+					end
+				end
+			end
+		end
+	end
+	
+	ui.StatusLabel.Text = "Editing: " .. selectedAnimState
+end
+
+-- Animation Selector - cycle through animations
+ui.AnimSelector.MouseButton1Click:Connect(function()
+	currentAnimIndex = currentAnimIndex + 1
+	if currentAnimIndex > #ANIM_STATES then currentAnimIndex = 1 end
+	selectedAnimState = ANIM_STATES[currentAnimIndex]
+	ui.AnimSelector.Text = "Anim: " .. selectedAnimState
+	loadAnimationPosition()
+	
+	-- Play animation in viewport
+	if currentWeaponAnimations and currentWeaponAnimations[selectedAnimState] then
+		local animId = type(currentWeaponAnimations[selectedAnimState]) == "table" 
+			and currentWeaponAnimations[selectedAnimState].Id 
+			or currentWeaponAnimations[selectedAnimState]
+		playViewportAnimation(animId)
+	end
 end)
 
 -- Mobile Overlay Functions (defined before use)
@@ -916,18 +1390,205 @@ ui.HitmarkerToggle.MouseButton1Click:Connect(function()
 	end
 end)
 
-
--- Preview Functions
-local function cleanupPreview()
-	if previewModel then
-		previewModel:Destroy()
-		previewModel = nil
+-- Handles Functions for Visual Positioning
+local function destroyHandles()
+	if moveHandles then
+		moveHandles:Destroy()
+		moveHandles = nil
 	end
+	if rotateHandles then
+		rotateHandles:Destroy()
+		rotateHandles = nil
+	end
+	if handlesPart then
+		handlesPart:Destroy()
+		handlesPart = nil
+	end
+end
+
+local function createHandles()
+	destroyHandles()
+	
+	local camera = workspace.CurrentCamera
+	if not camera then return end
+	
+	-- Create invisible part for handles to attach to
+	handlesPart = Instance.new("Part")
+	handlesPart.Name = "ViewmodelHandlesPart"
+	handlesPart.Size = Vector3.new(0.5, 0.5, 0.5)
+	handlesPart.Transparency = 0.8
+	handlesPart.Anchored = true
+	handlesPart.CanCollide = false
+	handlesPart.Parent = camera
+	
+	-- Position it at current viewmodel offset
+	local offset = CFrame.new(posX, posY, posZ)
+	handlesPart.CFrame = camera.CFrame * offset
+	
+	-- Create Move Handles (Arrows for X, Y, Z)
+	moveHandles = Instance.new("Handles")
+	moveHandles.Adornee = handlesPart
+	moveHandles.Color3 = Color3.fromRGB(100, 200, 255)
+	moveHandles.Style = Enum.HandlesStyle.Movement
+	moveHandles.Parent = CoreGui
+	
+	-- Handle Move Drag
+	local isDragging = false
+	local dragStart = nil
+	local startPos = nil
+	
+	moveHandles.MouseButton1Down:Connect(function(face)
+		isDragging = true
+		dragStart = handlesPart.CFrame
+		startPos = Vector3.new(posX, posY, posZ)
+	end)
+	
+	moveHandles.MouseDrag:Connect(function(face, distance)
+		if not isDragging then return end
+		
+		-- Calculate new position based on face and distance
+		local delta = Vector3.new(0, 0, 0)
+		if face == Enum.NormalId.Right then
+			delta = Vector3.new(distance, 0, 0)
+		elseif face == Enum.NormalId.Left then
+			delta = Vector3.new(-distance, 0, 0)
+		elseif face == Enum.NormalId.Top then
+			delta = Vector3.new(0, distance, 0)
+		elseif face == Enum.NormalId.Bottom then
+			delta = Vector3.new(0, -distance, 0)
+		elseif face == Enum.NormalId.Front then
+			delta = Vector3.new(0, 0, -distance)
+		elseif face == Enum.NormalId.Back then
+			delta = Vector3.new(0, 0, distance)
+		end
+		
+		-- Update position values
+		posX = startPos.X + delta.X
+		posY = startPos.Y + delta.Y
+		posZ = startPos.Z + delta.Z
+		
+		-- Update sliders
+		ui.PosX.SetValue(posX)
+		ui.PosY.SetValue(posY)
+		ui.PosZ.SetValue(posZ)
+		
+		-- Update handles part position
+		handlesPart.CFrame = camera.CFrame * CFrame.new(posX, posY, posZ)
+	end)
+	
+	moveHandles.MouseButton1Up:Connect(function()
+		isDragging = false
+	end)
+	
+	-- Create Rotate Handles (Arcs)
+	rotateHandles = Instance.new("ArcHandles")
+	rotateHandles.Adornee = handlesPart
+	rotateHandles.Color3 = Color3.fromRGB(255, 150, 100)
+	rotateHandles.Parent = CoreGui
+	
+	local rotDragging = false
+	local startRot = nil
+	
+	rotateHandles.MouseButton1Down:Connect(function(axis)
+		rotDragging = true
+		startRot = Vector3.new(rotX, rotY, rotZ)
+	end)
+	
+	rotateHandles.MouseDrag:Connect(function(axis, relativeAngle, deltaRadius)
+		if not rotDragging then return end
+		
+		local angleDeg = math.deg(relativeAngle)
+		
+		if axis == Enum.Axis.X then
+			rotX = startRot.X + angleDeg
+		elseif axis == Enum.Axis.Y then
+			rotY = startRot.Y + angleDeg
+		elseif axis == Enum.Axis.Z then
+			rotZ = startRot.Z + angleDeg
+		end
+		
+		-- Update sliders
+		ui.RotX.SetValue(rotX)
+		ui.RotY.SetValue(rotY)
+		ui.RotZ.SetValue(rotZ)
+		
+		-- Update handles part rotation
+		handlesPart.CFrame = camera.CFrame * CFrame.new(posX, posY, posZ) * CFrame.Angles(math.rad(rotX), math.rad(rotY), math.rad(rotZ))
+	end)
+	
+	rotateHandles.MouseButton1Up:Connect(function()
+		rotDragging = false
+	end)
+	
+	print("[ViewmodelEditor] Handles created - drag to adjust position/rotation!")
+end
+
+-- Handles Toggle Handler
+ui.HandlesToggle.MouseButton1Click:Connect(function()
+	showHandles = not showHandles
+	
+	if showHandles then
+		ui.HandlesToggle.BackgroundColor3 = Color3.fromRGB(100, 180, 100)
+		ui.HandlesToggle.Text = "📐 ON"
+		createHandles()
+	else
+		ui.HandlesToggle.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+		ui.HandlesToggle.Text = "📐 Handles"
+		destroyHandles()
+	end
+end)
+
+-- Helper to sync animation poses from Workspace Rig to Viewport Rig
+local function syncViewportAnimation()
+	if not workspaceRig or not viewportModel then return end
+	
+	-- Sync every Motor6D transform
+	for _, desc in pairs(workspaceRig:GetDescendants()) do
+		if desc:IsA("Motor6D") then
+			local viewportMotor = viewportModel:FindFirstChild(desc.Name, true)
+			if viewportMotor and viewportMotor:IsA("Motor6D") then
+				viewportMotor.Transform = desc.Transform
+			end
+		end
+	end
+end
+
+-- Update handles position every frame when active
+RunService.RenderStepped:Connect(function()
+	if showHandles and handlesPart then
+		local camera = workspace.CurrentCamera
+		if camera then
+			handlesPart.CFrame = camera.CFrame * CFrame.new(posX, posY, posZ) * CFrame.Angles(math.rad(rotX), math.rad(rotY), math.rad(rotZ))
+		end
+	end
+	
+	-- Update viewport preview position
+	updateViewportPosition()
+	
+	-- Sync animation pose manually (guaranteed to work)
+	syncViewportAnimation()
+end)
+-- Find game viewmodel from camera (created by HybridViewmodel)
+local function findGameViewmodel()
+	local camera = workspace.CurrentCamera
+	if not camera then return nil end
+	
+	for _, child in pairs(camera:GetChildren()) do
+		if child:GetAttribute("IsHybridViewmodel") or child.Name == "HybridViewmodel" or child.Name == "FirstPersonViewmodel" then
+			return child
+		end
+	end
+	return nil
+end
+
+local function cleanupPreview()
+	-- Don't destroy the game viewmodel, just disconnect render connection
 	if renderConnection then
 		renderConnection:Disconnect()
 		renderConnection = nil
 	end
-	currentAnimTrack = nil -- Clear anim track reference
+	currentAnimTrack = nil
+	previewModel = nil -- Just clear reference, don't destroy
 end
 
 local function createPreview(tool)
@@ -935,116 +1596,28 @@ local function createPreview(tool)
 	
 	if not tool or not tool:IsA("Tool") then return end
 	
-	-- 1. Try to find ViewmodelBase
-	local viewmodelBase = game.ReplicatedStorage:FindFirstChild("Assets")
-	if viewmodelBase then viewmodelBase = viewmodelBase:FindFirstChild("Viewmodel") end
-	if viewmodelBase then viewmodelBase = viewmodelBase:FindFirstChild("ViewmodelBase") end
+	-- Find existing game viewmodel (created by HybridViewmodel)
+	previewModel = findGameViewmodel()
 	
-	-- 2. Setup Preview Model
-	if viewmodelBase then
-		-- HYBRID MODE: Clone Arms
-		previewModel = viewmodelBase:Clone()
-		previewModel.Name = "ViewmodelPreview"
-		
-		-- Clone Weapon
-		local weaponClone = tool:Clone()
-		weaponClone.Parent = previewModel
-		
-		local rightHand = previewModel:FindFirstChild("RightHand")
-		local handle = weaponClone:FindFirstChild("Handle")
-		
-		if rightHand and handle then
-			-- Weld Weapon to Hand
-			local weld = Instance.new("WeldConstraint")
-			weld.Part0 = rightHand
-			weld.Part1 = handle
-			weld.Parent = handle
-			
-			-- Position Handle at Hand (approximate reset)
-			-- Ideally we match RightGripAttachment if exists
-			local gripAtt = rightHand:FindFirstChild("RightGripAttachment")
-			if gripAtt then
-				handle.CFrame = gripAtt.WorldCFrame
-			else
-				handle.CFrame = rightHand.CFrame
-			end
-		end
-		
-		-- Cleanup Weapon Scripts/Physics
-		for _, desc in pairs(weaponClone:GetDescendants()) do
-			if desc:IsA("BasePart") then
-				desc.CanCollide = false
-				desc.CastShadow = false
-				desc.Anchored = false
-			elseif desc:IsA("Script") or desc:IsA("LocalScript") or desc:IsA("Sound") then
-				desc:Destroy()
-			end
-		end
-	else
-		-- LEGACY MODE: Just Weapon
-		previewModel = tool:Clone()
-		previewModel.Name = "ViewmodelPreview"
-	end
-
-	-- 3. Cleanup ViewmodelBase Physics
-	for _, desc in pairs(previewModel:GetDescendants()) do
-		if desc:IsA("BasePart") then
-			desc.CanCollide = false
-			desc.CastShadow = false
-			desc.Anchored = false -- Root will be anchored later or controlled by CF
-		elseif desc:IsA("Script") or desc:IsA("LocalScript") or desc:IsA("Sound") then
-			desc:Destroy()
-		end
+	if not previewModel then
+		print("[ViewmodelEditor] No game viewmodel found. Make sure you're in Play mode with weapon equipped.")
+		return
 	end
 	
-	-- Anchor Root for control
-	local root = previewModel:FindFirstChild("HumanoidRootPart") or previewModel:FindFirstChild("Handle")
-	if root then root.Anchored = true end
+	print("[ViewmodelEditor] Using game viewmodel:", previewModel.Name)
 	
-	previewModel.Parent = workspace.CurrentCamera
-	
-	-- [DEBUG] Print rig structure
-	print("[ViewmodelEditor] === RIG DIAGNOSTIC ===")
-	local motor6dCount = 0
-	for _, desc in pairs(previewModel:GetDescendants()) do
-		if desc:IsA("Motor6D") then
-			motor6dCount = motor6dCount + 1
-			print("[ViewmodelEditor] Motor6D:", desc.Name, "| Part0:", desc.Part0 and desc.Part0.Name or "nil", "| Part1:", desc.Part1 and desc.Part1.Name or "nil")
-		end
-	end
-	print("[ViewmodelEditor] Total Motor6D found:", motor6dCount)
-	if motor6dCount == 0 then
-		print("[ViewmodelEditor] WARNING: No Motor6D found! Animations will NOT work on this rig.")
-		print("[ViewmodelEditor] ViewmodelBase must be a proper R15 rig with Motor6D joints.")
-	end
-	print("[ViewmodelEditor] === END DIAGNOSTIC ===")
-	
-	-- 4. Render Loop
+	-- Render Loop - Apply position/rotation from sliders to game viewmodel
 	renderConnection = RunService.RenderStepped:Connect(function()
-		if not previewModel or not previewModel.Parent then return end
-		
-		local mobileOffset = if isMobilePreview then CFrame.new(0,0,0) else CFrame.new(0,0,0)
-		
-		local offset, rotation
-		if isADSPreview then
-			if isMobilePreview then
-				offset = CFrame.new(adsMobileX, adsMobileY, adsMobileZ)
-				rotation = CFrame.Angles(math.rad(adsMobileRotX), math.rad(adsMobileRotY), math.rad(adsMobileRotZ))
-			else
-				offset = CFrame.new(adsX, adsY, adsZ)
-				rotation = CFrame.Angles(math.rad(adsRotX), math.rad(adsRotY), math.rad(adsRotZ))
-			end
-		else
-			offset = CFrame.new(posX, posY, posZ)
-			rotation = CFrame.Angles(math.rad(rotX), math.rad(rotY), math.rad(rotZ))
+		if not previewModel or not previewModel.Parent then 
+			previewModel = findGameViewmodel() -- Try to re-find if lost
+			return 
 		end
 		
-		-- Apply to RootPart (Hybrid) or Handle (Legacy)
-		local mainPart = previewModel:FindFirstChild("HumanoidRootPart") or previewModel:FindFirstChild("Handle")
-		
-		if mainPart then
-			mainPart.CFrame = workspace.CurrentCamera.CFrame * offset * rotation
-		end
+		-- Set Editor attributes on the game viewmodel
+		-- HybridViewmodel will read these and use them to override position
+		previewModel:SetAttribute("Editor_AnimPos", Vector3.new(posX, posY, posZ))
+		previewModel:SetAttribute("Editor_AnimRot", Vector3.new(rotX, rotY, rotZ))
+		previewModel:SetAttribute("Editor_AnimState", selectedAnimState)
 	end)
 end
 
@@ -1075,39 +1648,26 @@ local function onSelectionChanged()
 			if success and result and result.Weapons and result.Weapons[currentWeaponName] then
 				local stats = result.Weapons[currentWeaponName]
 				
-				-- Capture Animations
+				-- Capture Animations (new per-animation format)
 				currentWeaponAnimations = stats.Animations
 				
-				-- Load Viewmodel
-				if stats.ViewmodelPosition then
-					posX, posY, posZ = stats.ViewmodelPosition.X, stats.ViewmodelPosition.Y, stats.ViewmodelPosition.Z
-					ui.PosX.SetValue(posX); ui.PosY.SetValue(posY); ui.PosZ.SetValue(posZ)
-				end
-				if stats.ViewmodelRotation then
-					rotX, rotY, rotZ = stats.ViewmodelRotation.X, stats.ViewmodelRotation.Y, stats.ViewmodelRotation.Z
-					ui.RotX.SetValue(rotX); ui.RotY.SetValue(rotY); ui.RotZ.SetValue(rotZ)
-				end
+				-- Load position for current selected animation state
+				loadAnimationPosition()
 				
-				-- Load ADS from Default Skin
-				currentSkinName = stats.Use_Skin or "Default Skin"
-				if stats.Skins and stats.Skins[currentSkinName] then
-					local skin = stats.Skins[currentSkinName]
-					if skin.ADS_Position then
-						adsX, adsY, adsZ = skin.ADS_Position.X, skin.ADS_Position.Y, skin.ADS_Position.Z
-						ui.AdsX.SetValue(adsX); ui.AdsY.SetValue(adsY); ui.AdsZ.SetValue(adsZ)
-					end
-					if skin.ADS_Rotation then
-						adsRotX, adsRotY, adsRotZ = skin.ADS_Rotation.X, skin.ADS_Rotation.Y, skin.ADS_Rotation.Z
-						ui.AdsRotX.SetValue(adsRotX); ui.AdsRotY.SetValue(adsRotY); ui.AdsRotZ.SetValue(adsRotZ)
-					end
-					if skin.ADS_Position_Mobile then
-						adsMobileX, adsMobileY, adsMobileZ = skin.ADS_Position_Mobile.X, skin.ADS_Position_Mobile.Y, skin.ADS_Position_Mobile.Z
-						ui.AdsMobileX.SetValue(adsMobileX); ui.AdsMobileY.SetValue(adsMobileY); ui.AdsMobileZ.SetValue(adsMobileZ)
-					end
-					if skin.ADS_Rotation_Mobile then
-						adsMobileRotX, adsMobileRotY, adsMobileRotZ = skin.ADS_Rotation_Mobile.X, skin.ADS_Rotation_Mobile.Y, skin.ADS_Rotation_Mobile.Z
-						ui.AdsMobileRotX.SetValue(adsMobileRotX); ui.AdsMobileRotY.SetValue(adsMobileRotY); ui.AdsMobileRotZ.SetValue(adsMobileRotZ)
-					end
+				-- Reset animation selector to Idle
+				currentAnimIndex = 1
+				selectedAnimState = "Idle"
+				ui.AnimSelector.Text = "Anim: " .. selectedAnimState
+				
+				-- Load viewport model for preview
+				loadViewportModel(currentTool)
+				
+				-- Play animation in viewport
+				if currentWeaponAnimations and currentWeaponAnimations[selectedAnimState] then
+					local animId = type(currentWeaponAnimations[selectedAnimState]) == "table" 
+						and currentWeaponAnimations[selectedAnimState].Id 
+						or currentWeaponAnimations[selectedAnimState]
+					playViewportAnimation(animId)
 				end
 			end
 		end
@@ -1143,18 +1703,9 @@ ui.ApplyButton.MouseButton1Click:Connect(function()
 	end
 	
 	local source = weaponModuleScript.Source
-	local originalLength = #source
 	local replaced = 0
 	
-	-- Simple approach: gsub directly on the source
-	-- For ViewmodelPosition, we need to find the one inside the specific weapon's block
-	
-	-- Step 1: Find and replace ViewmodelPosition within weapon block
-	-- We'll use a more unique pattern that includes the weapon name context
-	
 	local escapedWeaponName = targetWeaponName:gsub("%-", "%%-")
-	local skinName = currentSkinName or "Default Skin"
-	local escapedSkinName = skinName:gsub("%-", "%%-"):gsub("'", "")
 	
 	-- Helper function to replace a property value
 	local function replaceVector3(src, propName, x, y, z, isInteger)
@@ -1166,16 +1717,16 @@ ui.ApplyButton.MouseButton1Click:Connect(function()
 		return newSrc, count
 	end
 	
-	-- Find the weapon block first to ensure it exists
+	-- Find the weapon block
 	local weaponPattern = '%["' .. escapedWeaponName .. '"%]%s*=%s*{'
 	local weaponStart, weaponEnd = source:find(weaponPattern)
 	
 	if not weaponStart then
-		ui.StatusLabel.Text = "Error: Weapon '" .. targetWeaponName .. "' not found in source!"
+		ui.StatusLabel.Text = "Error: Weapon '" .. targetWeaponName .. "' not found!"
 		return
 	end
 	
-	-- Find the end of this weapon's block (next weapon or end)
+	-- Find the end of this weapon's block
 	local depth = 1
 	local pos = weaponEnd + 1
 	while depth > 0 and pos <= #source do
@@ -1189,72 +1740,86 @@ ui.ApplyButton.MouseButton1Click:Connect(function()
 	end
 	local weaponBlockEnd = pos - 1
 	
-	-- Extract the weapon block
+	-- Extract weapon block
 	local beforeWeapon = source:sub(1, weaponStart - 1)
 	local weaponBlock = source:sub(weaponStart, weaponBlockEnd)
 	local afterWeapon = source:sub(weaponBlockEnd + 1)
 	
-	-- Replace ViewmodelPosition and ViewmodelRotation in this block
-	local newBlock, count
+	-- Find the animation block for selected animation state (e.g., Idle = { ... })
+	local animPattern = selectedAnimState .. "%s*=%s*{"
+	local animStart, animEnd = weaponBlock:find(animPattern)
 	
-	newBlock, count = replaceVector3(weaponBlock, "ViewmodelPosition", posX, posY, posZ, false)
-	if count > 0 then weaponBlock = newBlock; replaced = replaced + count end
+	print("[ViewmodelEditor] Looking for animation:", selectedAnimState)
+	print("[ViewmodelEditor] Animation pattern:", animPattern)
+	print("[ViewmodelEditor] Found animStart:", animStart, "animEnd:", animEnd)
 	
-	newBlock, count = replaceVector3(weaponBlock, "ViewmodelRotation", rotX, rotY, rotZ, true)
-	if count > 0 then weaponBlock = newBlock; replaced = replaced + count end
-	
-	-- Now find the skin block within the weapon block for ADS properties
-	local skinPattern = '%["' .. escapedSkinName .. '"%]%s*=%s*{'
-	local skinStart, skinEnd = weaponBlock:find(skinPattern)
-	
-	if skinStart then
-		
-		-- Find skin block end
-		local skinDepth = 1
-		local skinPos = skinEnd + 1
-		while skinDepth > 0 and skinPos <= #weaponBlock do
-			local char = weaponBlock:sub(skinPos, skinPos)
+	if animStart then
+		-- Find end of animation block
+		local animDepth = 1
+		local animPos = animEnd + 1
+		while animDepth > 0 and animPos <= #weaponBlock do
+			local char = weaponBlock:sub(animPos, animPos)
 			if char == "{" then
-				skinDepth = skinDepth + 1
+				animDepth = animDepth + 1
 			elseif char == "}" then
-				skinDepth = skinDepth - 1
+				animDepth = animDepth - 1
 			end
-			skinPos = skinPos + 1
+			animPos = animPos + 1
 		end
-		local skinBlockEnd = skinPos - 1
+		local animBlockEnd = animPos - 1
 		
-		-- Extract skin block
-		local beforeSkin = weaponBlock:sub(1, skinStart - 1)
-		local skinBlock = weaponBlock:sub(skinStart, skinBlockEnd)
-		local afterSkin = weaponBlock:sub(skinBlockEnd + 1)
+		-- Extract animation block
+		local beforeAnim = weaponBlock:sub(1, animStart - 1)
+		local animBlock = weaponBlock:sub(animStart, animBlockEnd)
+		local afterAnim = weaponBlock:sub(animBlockEnd + 1)
 		
-		-- Replace ADS properties in skin block
-		newBlock, count = replaceVector3(skinBlock, "ADS_Position", adsX, adsY, adsZ, false)
-		if count > 0 then skinBlock = newBlock; replaced = replaced + count end
+		print("[ViewmodelEditor] animBlock length:", #animBlock)
+		print("[ViewmodelEditor] animBlock content:", animBlock:sub(1, 200)) -- First 200 chars
 		
-		newBlock, count = replaceVector3(skinBlock, "ADS_Rotation", adsRotX, adsRotY, adsRotZ, true)
-		if count > 0 then skinBlock = newBlock; replaced = replaced + count end
+		-- Replace Position and Rotation in animation block
+		local newBlock, count
 		
-		newBlock, count = replaceVector3(skinBlock, "ADS_Position_Mobile", adsMobileX, adsMobileY, adsMobileZ, false)
-		if count > 0 then skinBlock = newBlock; replaced = replaced + count end
+		newBlock, count = replaceVector3(animBlock, "Position", posX, posY, posZ, false)
+		print("[ViewmodelEditor] Position replacement count:", count)
+		if count > 0 then animBlock = newBlock; replaced = replaced + count end
 		
-		newBlock, count = replaceVector3(skinBlock, "ADS_Rotation_Mobile", adsMobileRotX, adsMobileRotY, adsMobileRotZ, true)
-		if count > 0 then skinBlock = newBlock; replaced = replaced + count end
+		newBlock, count = replaceVector3(animBlock, "Rotation", rotX, rotY, rotZ, true)
+		print("[ViewmodelEditor] Rotation replacement count:", count)
+		if count > 0 then animBlock = newBlock; replaced = replaced + count end
 		
-		weaponBlock = beforeSkin .. skinBlock .. afterSkin
+		print("[ViewmodelEditor] Total replaced:", replaced)
+		
+		weaponBlock = beforeAnim .. animBlock .. afterAnim
 	else
-		ui.StatusLabel.Text = "Warning: Skin '" .. skinName .. "' not found"
+		ui.StatusLabel.Text = "Warning: Animation '" .. selectedAnimState .. "' not found in Animations!"
 	end
 	
 	source = beforeWeapon .. weaponBlock .. afterWeapon
 	
 	if replaced > 0 then
-		ChangeHistoryService:SetWaypoint("Viewmodel Edit: " .. targetWeaponName)
+		ChangeHistoryService:SetWaypoint("Viewmodel Edit: " .. targetWeaponName .. " " .. selectedAnimState)
 		weaponModuleScript.Source = source
 		ChangeHistoryService:SetWaypoint("Viewmodel Edit Applied")
-		ui.StatusLabel.Text = "Success! " .. replaced .. " values updated for " .. targetWeaponName
+		
+		-- PRINT COPYABLE CODE for file-sync workflows (Rojo)
+		print("==============================================")
+		print("[ViewmodelEditor] COPY THIS TO WeaponModule.lua:")
+		print("==============================================")
+		print(string.format([[
+%s = {
+	Id = "%s",
+	Position = Vector3.new(%.3f, %.3f, %.3f),
+	Rotation = Vector3.new(%.0f, %.0f, %.0f)
+},]], 
+			selectedAnimState,
+			currentWeaponAnimations and currentWeaponAnimations[selectedAnimState] and 
+				(type(currentWeaponAnimations[selectedAnimState]) == "table" and currentWeaponAnimations[selectedAnimState].Id or currentWeaponAnimations[selectedAnimState]) or "rbxassetid://",
+			posX, posY, posZ, rotX, rotY, rotZ))
+		print("==============================================")
+		
+		ui.StatusLabel.Text = "Updated! See Output for copyable code"
 	else
-		ui.StatusLabel.Text = "Warning: No patterns matched for " .. targetWeaponName
+		ui.StatusLabel.Text = "Warning: No changes for " .. selectedAnimState .. " in " .. targetWeaponName
 	end
 end)
 
@@ -1311,23 +1876,7 @@ local function renderPresets()
 				ui.RotX.SetValue(rotX); ui.RotY.SetValue(rotY); ui.RotZ.SetValue(rotZ)
 			end
 			
-			-- Load ADS (check if exists in preset)
-			if data.AdsPos then
-				adsX, adsY, adsZ = data.AdsPos.X, data.AdsPos.Y, data.AdsPos.Z
-				ui.AdsX.SetValue(adsX); ui.AdsY.SetValue(adsY); ui.AdsZ.SetValue(adsZ)
-			end
-			if data.AdsRot then
-				adsRotX, adsRotY, adsRotZ = data.AdsRot.X, data.AdsRot.Y, data.AdsRot.Z
-				ui.AdsRotX.SetValue(adsRotX); ui.AdsRotY.SetValue(adsRotY); ui.AdsRotZ.SetValue(adsRotZ)
-			end
-			if data.AdsMobPos then
-				adsMobileX, adsMobileY, adsMobileZ = data.AdsMobPos.X, data.AdsMobPos.Y, data.AdsMobPos.Z
-				ui.AdsMobileX.SetValue(adsMobileX); ui.AdsMobileY.SetValue(adsMobileY); ui.AdsMobileZ.SetValue(adsMobileZ)
-			end
-			if data.AdsMobRot then
-				adsMobileRotX, adsMobileRotY, adsMobileRotZ = data.AdsMobRot.X, data.AdsMobRot.Y, data.AdsMobRot.Z
-				ui.AdsMobileRotX.SetValue(adsMobileRotX); ui.AdsMobileRotY.SetValue(adsMobileRotY); ui.AdsMobileRotZ.SetValue(adsMobileRotZ)
-			end
+			-- Note: ADS presets removed - positions are now per-animation
 			
 			ui.StatusLabel.Text = "Loaded Preset: " .. name
 		end)
@@ -1363,37 +1912,32 @@ ui.SavePresetButton.MouseButton1Click:Connect(function()
 		return
 	end
 	
-	-- Save current values
+	-- Save current values (per-animation - saves current position)
 	presets[name] = {
+		AnimState = selectedAnimState,
 		Pos = {X=posX, Y=posY, Z=posZ},
 		Rot = {X=rotX, Y=rotY, Z=rotZ},
-		AdsPos = {X=adsX, Y=adsY, Z=adsZ},
-		AdsRot = {X=adsRotX, Y=adsRotY, Z=adsRotZ},
-		AdsMobPos = {X=adsMobileX, Y=adsMobileY, Z=adsMobileZ},
-		AdsMobRot = {X=adsMobileRotX, Y=adsMobileRotY, Z=adsMobileRotZ},
 	}
 	
 	plugin:SetSetting(PRESETS_KEY, presets)
 	renderPresets()
-	ui.StatusLabel.Text = "Saved Preset: " .. name
+	ui.StatusLabel.Text = "Saved Preset: " .. name .. " (" .. selectedAnimState .. ")"
 	ui.PresetNameInput.Text = ""
 end)
 
--- Print Output
+-- Print Output (per-animation format)
 ui.CopyButton.MouseButton1Click:Connect(function()
 	local code = string.format([[
--- Viewmodel
-ViewmodelPosition = Vector3.new(%.3f, %.3f, %.3f),
-ViewmodelRotation = Vector3.new(%.0f, %.0f, %.0f),
-
--- Skin: %s
-ADS_Position = Vector3.new(%.3f, %.3f, %.3f),
-ADS_Rotation = Vector3.new(%.0f, %.0f, %.0f),
-ADS_Position_Mobile = Vector3.new(%.3f, %.3f, %.3f),
-ADS_Rotation_Mobile = Vector3.new(%.0f, %.0f, %.0f),
-]], posX, posY, posZ, rotX, rotY, rotZ, currentSkinName or "Default Skin",
-	adsX, adsY, adsZ, adsRotX, adsRotY, adsRotZ,
-	adsMobileX, adsMobileY, adsMobileZ, adsMobileRotX, adsMobileRotY, adsMobileRotZ)
+-- Animation: %s
+%s = {
+	Id = "%s",
+	Position = Vector3.new(%.3f, %.3f, %.3f),
+	Rotation = Vector3.new(%.0f, %.0f, %.0f)
+}
+]], selectedAnimState, selectedAnimState, 
+	currentWeaponAnimations and currentWeaponAnimations[selectedAnimState] and 
+		(type(currentWeaponAnimations[selectedAnimState]) == "table" and currentWeaponAnimations[selectedAnimState].Id or currentWeaponAnimations[selectedAnimState]) or "rbxassetid://",
+	posX, posY, posZ, rotX, rotY, rotZ)
 	
 	print("=== VIEWMODEL VALUES ===")
 	print(code)
@@ -1406,7 +1950,8 @@ local originalFOV = 70
 local camera = workspace.CurrentCamera
 
 local function updateFOV()
-	if isADSPreview and currentWeaponName then
+	-- Update FOV when ADS animation is selected
+	if selectedAnimState == "ADS" and currentWeaponName then
 		local weaponModule = game.ReplicatedStorage:FindFirstChild("ModuleScript")
 		if weaponModule then weaponModule = weaponModule:FindFirstChild("WeaponModule") end
 		if weaponModule then
@@ -1423,18 +1968,12 @@ local function updateFOV()
 	end
 end
 
--- Hook into Toggle Button
-local originalToggleADS = ui.ADSToggle.MouseButton1Click
--- We can't really "hook" the existing event without modifying the connection variable which we don't have access to easily if it's anonymous.
--- However, we can just ADD a new connection since they run in order/parallel.
--- Actually, the previous connection just toggles the boolean. We can add another one.
-
-ui.ADSToggle.MouseButton1Click:Connect(function()
-	-- The boolean is already toggled by the first connection above (lines 546)
-	-- We just need to update FOV
-	if isADSPreview then
-		originalFOV = camera.FieldOfView -- Capture current FOV before switching (usually 70)
-		-- Safety check: if we are already zoomed in from previous glitch, maybe reset to default
+-- Hook into Animation Selector for FOV change
+ui.AnimSelector.MouseButton1Click:Connect(function()
+	-- The animation is already changed by the first connection
+	-- We just need to update FOV after animation change
+	if selectedAnimState == "ADS" then
+		originalFOV = camera.FieldOfView
 		if originalFOV < 60 then originalFOV = 70 end 
 	end
 	updateFOV()
@@ -1493,21 +2032,11 @@ RunService.RenderStepped:Connect(function()
 		-- Sync Editor Values to Attributes
 		-- HybridViewmodel will read these attributes to override its position
 		
-		vm:SetAttribute("Editor_HipPos", Vector3.new(posX, posY, posZ))
-		vm:SetAttribute("Editor_HipRot", Vector3.new(rotX, rotY, rotZ))
-		
-		if isMobilePreview then
-			vm:SetAttribute("Editor_AdsPos", Vector3.new(adsMobileX, adsMobileY, adsMobileZ))
-			vm:SetAttribute("Editor_AdsRot", Vector3.new(adsMobileRotX, adsMobileRotY, adsMobileRotZ))
-		else
-			vm:SetAttribute("Editor_AdsPos", Vector3.new(adsX, adsY, adsZ))
-			vm:SetAttribute("Editor_AdsRot", Vector3.new(adsRotX, adsRotY, adsRotZ))
-		end
-		
-		-- Optional: Force ADS state from plugin toggle
-		-- vm:SetAttribute("Editor_ForceADS", isADSPreview) 
-		-- (For now we let game logic handle ADS state, unless we want to debug specific pose)
+		-- Set current animation position for game viewmodel sync
+		vm:SetAttribute("Editor_AnimPos", Vector3.new(posX, posY, posZ))
+		vm:SetAttribute("Editor_AnimRot", Vector3.new(rotX, rotY, rotZ))
+		vm:SetAttribute("Editor_AnimState", selectedAnimState)
 	end
 end)
 
-print("[Viewmodel Editor] Plugin loaded with ADS support & FOV Preview!")
+print("[Viewmodel Editor] Plugin loaded with per-animation position support!")

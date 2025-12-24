@@ -357,6 +357,17 @@ local function setupWeapon(tool)
 	local function stopTrack(track, fade)
 		if track and track.IsPlaying then track:Stop(fade) end
 	end
+	
+	-- HELPER: Get Animation ID from new per-animation structure
+	-- Supports both new format (table with Id) and legacy format (string)
+	local function getAnimId(animData)
+		if type(animData) == "table" then
+			return animData.Id
+		elseif type(animData) == "string" then
+			return animData
+		end
+		return nil
+	end
 
 	-- SETUP ANIMATIONS
 	if weaponStats.Animations then
@@ -365,27 +376,30 @@ local function setupWeapon(tool)
 			local animator = humanoid:FindFirstChild("Animator") or humanoid:WaitForChild("Animator", 5)
 			if animator then
 				-- Load Idle
-				if weaponStats.Animations.Idle then
+				local idleAnimId = getAnimId(weaponStats.Animations.Idle)
+				if idleAnimId then
 					local anim = Instance.new("Animation")
-					anim.AnimationId = weaponStats.Animations.Idle
+					anim.AnimationId = idleAnimId
 					currentIdleTrack = animator:LoadAnimation(anim)
 					currentIdleTrack.Priority = Enum.AnimationPriority.Action
 					currentIdleTrack.Looped = true
 				end
 
 				-- Load Run
-				if weaponStats.Animations.Run then
+				local runAnimId = getAnimId(weaponStats.Animations.Run)
+				if runAnimId then
 					local anim = Instance.new("Animation")
-					anim.AnimationId = weaponStats.Animations.Run
+					anim.AnimationId = runAnimId
 					currentRunTrack = animator:LoadAnimation(anim)
 					currentRunTrack.Priority = Enum.AnimationPriority.Action
 					currentRunTrack.Looped = true
 				end
 
 				-- Load ADS
-				if weaponStats.Animations.ADS then
+				local adsAnimId = getAnimId(weaponStats.Animations.ADS)
+				if adsAnimId then
 					local anim = Instance.new("Animation")
-					anim.AnimationId = weaponStats.Animations.ADS
+					anim.AnimationId = adsAnimId
 					currentADSTrack = animator:LoadAnimation(anim)
 					currentADSTrack.Priority = Enum.AnimationPriority.Action
 					currentADSTrack.Looped = true
@@ -396,16 +410,16 @@ local function setupWeapon(tool)
 				if isSprinting and currentRunTrack then
 					playTrack(currentRunTrack, 0.2)
 					-- Viewmodel Run (if exists, else Idle)
-					if viewmodel and weaponStats.Animations.Run then
-						viewmodel:playAnimation(weaponStats.Animations.Run, true)
-					elseif viewmodel and weaponStats.Animations.Idle then
-						viewmodel:playAnimation(weaponStats.Animations.Idle, true)
+					if viewmodel and runAnimId then
+						viewmodel:playAnimation(runAnimId, true)
+					elseif viewmodel and idleAnimId then
+						viewmodel:playAnimation(idleAnimId, true)
 					end
 				elseif currentIdleTrack then
 					playTrack(currentIdleTrack, 0.2)
 					-- Viewmodel Idle
-					if viewmodel and weaponStats.Animations.Idle then
-						viewmodel:playAnimation(weaponStats.Animations.Idle, true)
+					if viewmodel and idleAnimId then
+						viewmodel:playAnimation(idleAnimId, true)
 					end
 				end
 
@@ -417,20 +431,23 @@ local function setupWeapon(tool)
 							stopTrack(currentIdleTrack, 0.2)
 							playTrack(currentRunTrack, 0.2)
 							-- Viewmodel Run
-							if viewmodel and weaponStats.Animations.Run then
-								viewmodel:playAnimation(weaponStats.Animations.Run, true)
+							local vmRunId = getAnimId(weaponStats.Animations.Run)
+							if viewmodel and vmRunId then
+								viewmodel:playAnimation(vmRunId, true)
 							elseif viewmodel then
 								-- If no run anim, keep idle or stop? Usually keep idle but maybe bob increases
 								-- For now, fallback to idle if no run anim
-								if weaponStats.Animations.Idle then
-									viewmodel:playAnimation(weaponStats.Animations.Idle, true)
+								local vmIdleId = getAnimId(weaponStats.Animations.Idle)
+								if vmIdleId then
+									viewmodel:playAnimation(vmIdleId, true)
 								end
 							end
 						elseif not sprinting then
 							stopTrack(currentRunTrack, 0.2)
 							-- Viewmodel Stop Run (Back to Idle)
-							if viewmodel and weaponStats.Animations.Idle then
-								viewmodel:playAnimation(weaponStats.Animations.Idle, true)
+							local vmIdleId = getAnimId(weaponStats.Animations.Idle)
+							if viewmodel and vmIdleId then
+								viewmodel:playAnimation(vmIdleId, true)
 							end
 							
 							if isAiming and currentADSTrack then

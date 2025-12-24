@@ -24,17 +24,29 @@ WeaponModule.Weapons = {
 		TracerOffset = Vector3.new(0, 0.2, -0.7),
 		TransitionTime = 0.15,
 		ADS_BlendTimeVM = 0.2,
-		ViewmodelPosition = Vector3.new(1.3, -0.5, -2.5),
-		ViewmodelRotation = Vector3.new(0, 0, 0),
+		-- ViewmodelPosition and ViewmodelRotation are now PER-ANIMATION (see Animations below)
 		Sounds = {
 			Fire = "Weapons.Pistol.Fire",
 			Reload = "Weapons.Pistol.Reload",
 			Empty = "Weapons.Empty"
 		},
 		Animations = {
-			Idle = "rbxassetid://97580554547053",
-			Run = "rbxassetid://110673281003404",
-			ADS = "rbxassetid://96179279485775"
+			-- Per-animation viewmodel positions (R15 animations)
+			Idle = {
+				Id = "rbxassetid://88770091398413",
+				Position = Vector3.new(1.3, -0.5, -2.5),
+				Rotation = Vector3.new(0, 0, 0)
+			},
+			Run = {
+				Id = "rbxassetid://110673281003404",
+				Position = Vector3.new(1.3, -0.5, -2.5),
+				Rotation = Vector3.new(0, 0, 0)
+			},
+			ADS = {
+				Id = "rbxassetid://96179279485775",
+				Position = Vector3.new(0.15, -0.37, -1),
+				Rotation = Vector3.new(0, 0, 0)
+			}
 		},
 		UpgradeConfig = {
 			BaseCost = 150,

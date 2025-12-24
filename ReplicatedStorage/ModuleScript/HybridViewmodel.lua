@@ -30,7 +30,11 @@ function HybridViewmodel.new(tool, player, weaponName, weaponModule)
 	self.viewmodel = nil
 	self.weaponClone = nil
 	self.isAiming = false
-	self.adsBlend = 0
+	
+	-- Animation-based positioning
+	self.currentAnimState = "Idle" -- Current animation state (Idle, Run, ADS, Reload)
+	self.targetAnimState = "Idle"
+	self.animBlend = 0 -- For smooth transition between animation positions
 	
 	-- Sway & Bob
 	self.lastCameraCFrame = self.camera.CFrame
@@ -40,22 +44,36 @@ function HybridViewmodel.new(tool, player, weaponName, weaponModule)
 	
 	-- Get weapon stats
 	local weaponStats = self.WeaponModule.Weapons[self.weaponName] or {}
+	self.weaponStats = weaponStats
 	self.swayIntensity = weaponStats.SwayIntensity or 0.5
 	self.bobIntensity = weaponStats.BobIntensity or 0.3
 	self.bobFrequency = weaponStats.BobFrequency or 8
 	
-	-- Viewmodel positioning from weapon stats
-	self.viewmodelPosition = weaponStats.ViewmodelPosition or Vector3.new(0.5, -1, -1.8)
-	self.viewmodelRotation = weaponStats.ViewmodelRotation or Vector3.new(0, 0, 0)
+	-- Per-animation positions (from new Animations structure)
+	self.animPositions = {}
+	if weaponStats.Animations then
+		for animName, animData in pairs(weaponStats.Animations) do
+			if type(animData) == "table" then
+				self.animPositions[animName] = {
+					Position = animData.Position or Vector3.new(1.3, -0.5, -2.5),
+					Rotation = animData.Rotation or Vector3.new(0, 0, 0)
+				}
+			else
+				-- Legacy format (just animation ID string) - use default position
+				self.animPositions[animName] = {
+					Position = Vector3.new(1.3, -0.5, -2.5),
+					Rotation = Vector3.new(0, 0, 0)
+				}
+			end
+		end
+	end
 	
-	-- ADS Positioning
-	self.adsPosition = weaponStats.ADS_Position or Vector3.new(0, -1, -1)
-	self.adsRotation = weaponStats.ADS_Rotation or Vector3.new(0, 0, 0)
-	
-	-- Mobile ADS (Optional Override)
-	if game:GetService("UserInputService").TouchEnabled and not game:GetService("UserInputService").MouseEnabled then
-		if weaponStats.ADS_Position_Mobile then self.adsPosition = weaponStats.ADS_Position_Mobile end
-		if weaponStats.ADS_Rotation_Mobile then self.adsRotation = weaponStats.ADS_Rotation_Mobile end
+	-- Default position if no animations defined
+	if not next(self.animPositions) then
+		self.animPositions["Idle"] = {
+			Position = Vector3.new(1.3, -0.5, -2.5),
+			Rotation = Vector3.new(0, 0, 0)
+		}
 	end
 	
 	return self
@@ -87,12 +105,35 @@ function HybridViewmodel:createViewmodel()
 		return
 	end
 	
-	-- 3. Make all parts non-collidable, no shadows
+	-- 3. Configure Humanoid for viewmodel (disable physics interference)
+	local humanoid = self.viewmodel:FindFirstChildOfClass("Humanoid")
+	if humanoid then
+		humanoid.WalkSpeed = 0
+		humanoid.JumpPower = 0
+		humanoid.JumpHeight = 0
+		humanoid:SetStateEnabled(Enum.HumanoidStateType.Running, false)
+		humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
+		humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false)
+		humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+		humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics, false)
+	end
+	
+	-- 4. Make all parts non-collidable, no shadows, and Massless for invisible parts
+	local armParts = {
+		["RightUpperArm"] = true, ["RightLowerArm"] = true, ["RightHand"] = true,
+		["LeftUpperArm"] = true, ["LeftLowerArm"] = true, ["LeftHand"] = true
+	}
+	
 	for _, part in pairs(self.viewmodel:GetDescendants()) do
 		if part:IsA("BasePart") then
 			part.CanCollide = false
 			part.CastShadow = false
 			part.Anchored = false
+			
+			-- Make non-arm parts Massless so they don't affect physics
+			if not armParts[part.Name] then
+				part.Massless = true
+			end
 		end
 	end
 	
@@ -146,11 +187,31 @@ function HybridViewmodel:createViewmodel()
 		self.viewmodelMuzzle = self.weaponClone:FindFirstChild("Muzzle")
 	end
 	
-	-- 6. Get AnimationController for animations
-	self.animController = self.viewmodel:FindFirstChildOfClass("AnimationController")
-	if not self.animController then
-		self.animController = Instance.new("AnimationController")
-		self.animController.Parent = self.viewmodel
+	-- 6. Get Humanoid or AnimationController for animations
+	-- R15 rigs have Humanoid, use that for animations
+	local humanoid = self.viewmodel:FindFirstChildOfClass("Humanoid")
+	if humanoid then
+		-- Use Humanoid's Animator for R15 rig
+		self.animController = humanoid
+		local animator = humanoid:FindFirstChildOfClass("Animator")
+		if not animator then
+			animator = Instance.new("Animator")
+			animator.Parent = humanoid
+		end
+		self.animator = animator
+	else
+		-- Fallback to AnimationController for custom rigs
+		self.animController = self.viewmodel:FindFirstChildOfClass("AnimationController")
+		if not self.animController then
+			self.animController = Instance.new("AnimationController")
+			self.animController.Parent = self.viewmodel
+		end
+		local animator = self.animController:FindFirstChildOfClass("Animator")
+		if not animator then
+			animator = Instance.new("Animator")
+			animator.Parent = self.animController
+		end
+		self.animator = animator
 	end
 	
 	-- Initial position
@@ -209,24 +270,57 @@ function HybridViewmodel:updateViewmodel(dt, isAiming)
 	end
 	
 	-- Calculate final position
-	-- Calculate final position with ADS interpolation
-	local targetBlend = self.isAiming and 1 or 0
-	-- Simple linear interpolation for blend factor (can be eased if needed)
-	self.adsBlend = self.adsBlend + (targetBlend - self.adsBlend) * math.min(dt * 15, 1)
+	-- Determine target animation state based on current conditions
+	if self.isAiming then
+		self.targetAnimState = "ADS"
+	else
+		-- Check if player is moving
+		local char = self.player.Character
+		local isMoving = false
+		if char then
+			local hrp = char:FindFirstChild("HumanoidRootPart")
+			if hrp then
+				isMoving = hrp.AssemblyLinearVelocity.Magnitude > 1
+			end
+		end
+		self.targetAnimState = isMoving and "Run" or "Idle"
+	end
 	
-	-- [EDITOR Overrides]
-	local editorHipPos = self.viewmodel:GetAttribute("Editor_HipPos")
-	local editorHipRot = self.viewmodel:GetAttribute("Editor_HipRot")
-	local editorAdsPos = self.viewmodel:GetAttribute("Editor_AdsPos")
-	local editorAdsRot = self.viewmodel:GetAttribute("Editor_AdsRot")
+	-- Get position for current and target animation states
+	-- Use Idle as fallback for any missing animation positions
+	local idlePos = self.animPositions["Idle"] or {
+		Position = Vector3.new(1.3, -0.5, -2.5),
+		Rotation = Vector3.new(0, 0, 0)
+	}
+	local currentAnimPos = self.animPositions[self.currentAnimState] or idlePos
+	local targetAnimPos = self.animPositions[self.targetAnimState] or idlePos
 	
-	local targetHipPos = editorHipPos or self.viewmodelPosition
-	local targetHipRot = editorHipRot or self.viewmodelRotation
-	local targetAdsPos = editorAdsPos or self.adsPosition
-	local targetAdsRot = editorAdsRot or self.adsRotation
+	-- If Run has same position as default, use Idle position instead
+	if self.targetAnimState == "Run" and targetAnimPos.Position == Vector3.new(1.3, -0.5, -2.5) then
+		targetAnimPos = idlePos
+	end
+	if self.currentAnimState == "Run" and currentAnimPos.Position == Vector3.new(1.3, -0.5, -2.5) then
+		currentAnimPos = idlePos
+	end
 	
-	local currentPos = targetHipPos:Lerp(targetAdsPos, self.adsBlend)
-	local currentRot = targetHipRot:Lerp(targetAdsRot, self.adsBlend)
+	-- Smooth transition between animation positions
+	if self.currentAnimState ~= self.targetAnimState then
+		self.animBlend = self.animBlend + dt * 10
+		if self.animBlend >= 1 then
+			self.animBlend = 0
+			self.currentAnimState = self.targetAnimState
+		end
+	end
+	
+	local blendFactor = math.min(self.animBlend, 1)
+	local currentPos = currentAnimPos.Position:Lerp(targetAnimPos.Position, blendFactor)
+	local currentRot = currentAnimPos.Rotation:Lerp(targetAnimPos.Rotation, blendFactor)
+	
+	-- [EDITOR Overrides] - Now per-animation
+	local editorPos = self.viewmodel:GetAttribute("Editor_AnimPos")
+	local editorRot = self.viewmodel:GetAttribute("Editor_AnimRot")
+	if editorPos then currentPos = editorPos end
+	if editorRot then currentRot = editorRot end
 	
 	local basePosition = CFrame.new(currentPos)
 	local baseRotation = CFrame.Angles(
@@ -250,18 +344,52 @@ function HybridViewmodel:applyVisualRecoil()
 	-- Recoil is now handled by camera shake in WeaponClient
 end
 
+-- Set animation state manually (for external control)
+function HybridViewmodel:setAnimState(animState)
+	if self.animPositions[animState] then
+		self.targetAnimState = animState
+	end
+end
+
+-- Get animation ID from new Animations structure
+function HybridViewmodel:getAnimationId(animName)
+	local weaponStats = self.weaponStats
+	if not weaponStats or not weaponStats.Animations then return nil end
+	
+	local animData = weaponStats.Animations[animName]
+	if type(animData) == "table" then
+		return animData.Id
+	elseif type(animData) == "string" then
+		return animData -- Legacy format
+	end
+	return nil
+end
+
 function HybridViewmodel:playAnimation(animId, loop, priority)
-	if not self.animController or not animId then return end
+	if not self.animator or not animId then return end
+	
+	-- Handle new per-animation format (table with Id) or legacy format (string)
+	local actualAnimId = animId
+	if type(animId) == "table" then
+		actualAnimId = animId.Id
+	end
+	if not actualAnimId then return end
 	
 	-- Stop previous track
 	self:stopAnimation()
 	
 	-- Create new animation object
 	local anim = Instance.new("Animation")
-	anim.AnimationId = animId
+	anim.AnimationId = actualAnimId
 	
-	local track = self.animController:LoadAnimation(anim)
-	if not track then return end
+	local success, track = pcall(function()
+		return self.animator:LoadAnimation(anim)
+	end)
+	
+	if not success or not track then 
+		warn("[HybridViewmodel] Failed to load animation:", animId)
+		return 
+	end
 	
 	track.Looped = loop or false
 	track.Priority = priority or Enum.AnimationPriority.Action
