@@ -151,3 +151,80 @@ TANPA partikel, TANPA sculpt besar tambahan. Side view, background hitam.
 - [ ] Background bersih (hitam/transparan)
 - [ ] Tidak ada VFX di gambar statis
 - [ ] Siluet senjata masih dikenali
+- [ ] Full weapon visible (tidak terpotong)
+- [ ] Bipod dilipat/dihapus
+- [ ] Tanpa attachment tambahan (scope eksternal, rail, dll)
+
+---
+
+## 🔫 Aturan Khusus Per Tipe Senjata
+
+### Pistol
+- Desain compact, tanpa attachment
+- Perban/tape pada grip
+- Contoh: M1911, Desert Eagle, Glock-19
+
+### SMG (Submachine Gun)
+- Tanpa scope/rail eksternal
+- Perban pada grip dan handguard
+- P90: Siluet bullpup dengan top-mounted magazine
+- Contoh: P90, MP5, KRISS Vector
+
+### Assault Rifle
+- Iron sights saja, tanpa scope
+- Perban pada grip dan stock
+- Pastikan full weapon visible (tidak terpotong)
+- Contoh: AK-47, M4A1, SCAR
+
+### Shotgun
+- Heat shield boleh ditampilkan
+- Tanpa attachment
+- Perban pada grip dan forend
+- Contoh: M590A1
+
+### Sniper Rifle
+- Scope sederhana boleh ditampilkan
+- **Bipod HARUS dilipat atau dihapus**
+- Barrel harus panjang (jangan terlalu pendek)
+- Perban pada grip dan stock
+- Contoh: L115A1, DSR-50, Barrett M82
+
+### LMG (Light Machine Gun)
+- **Ammo belt HARUS contained di dalam drum** (tidak memanjang keluar)
+- Tanpa bipod
+- Perban pada grip
+- Contoh: RPD, PKP, M249
+
+---
+
+## 📋 Daftar Senjata (Progress)
+
+### ✅ Selesai
+| Senjata | Tipe | Status |
+|---------|------|--------|
+| M1911 | Pistol | ✅ OK |
+| Desert Eagle | Pistol | ✅ OK |
+| Glock-19 | Pistol | ✅ OK |
+| AK-47 | Assault Rifle | ✅ OK |
+| M4A1 | Assault Rifle | ✅ OK |
+| SCAR | Assault Rifle | ✅ OK |
+| P90 | SMG | ✅ OK |
+| MP5 | SMG | ✅ OK |
+| KRISS Vector | SMG | ✅ OK |
+| M590A1 | Shotgun | ✅ OK |
+| L115A1 | Sniper | ✅ OK |
+| DSR-50 | Sniper | ✅ OK |
+| Barrett M82 | Sniper | ✅ OK |
+
+### 🔄 Perlu Perbaikan
+| Senjata | Tipe | Masalah |
+|---------|------|---------|
+| RPD | LMG | Ammo belt memanjang keluar, harus contained |
+
+### 📝 Belum Dibuat
+- UZI (SMG)
+- SPAS-12 (Shotgun)
+- AA-12 (Shotgun)
+- PKP (LMG)
+- M249 (LMG)
+- Minigun (LMG)
