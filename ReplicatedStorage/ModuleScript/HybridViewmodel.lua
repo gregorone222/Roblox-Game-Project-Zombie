@@ -51,28 +51,34 @@ function HybridViewmodel.new(tool, player, weaponName, weaponModule)
 	
 	-- Per-animation positions (from new Animations structure)
 	self.animPositions = {}
+	
+	-- Legacy fallback: Get root-level ViewmodelPosition/Rotation if defined
+	local legacyPosition = weaponStats.ViewmodelPosition or Vector3.new(1.3, -0.5, -2.5)
+	local legacyRotation = weaponStats.ViewmodelRotation or Vector3.new(0, 0, 0)
+	
 	if weaponStats.Animations then
 		for animName, animData in pairs(weaponStats.Animations) do
 			if type(animData) == "table" then
+				-- New format: Per-animation position
 				self.animPositions[animName] = {
-					Position = animData.Position or Vector3.new(1.3, -0.5, -2.5),
-					Rotation = animData.Rotation or Vector3.new(0, 0, 0)
+					Position = animData.Position or legacyPosition, -- Fallback to legacy
+					Rotation = animData.Rotation or legacyRotation
 				}
 			else
-				-- Legacy format (just animation ID string) - use default position
+				-- Legacy format (just animation ID string) - use legacy position
 				self.animPositions[animName] = {
-					Position = Vector3.new(1.3, -0.5, -2.5),
-					Rotation = Vector3.new(0, 0, 0)
+					Position = legacyPosition,
+					Rotation = legacyRotation
 				}
 			end
 		end
 	end
 	
-	-- Default position if no animations defined
+	-- Default position if no animations defined (use legacy values)
 	if not next(self.animPositions) then
 		self.animPositions["Idle"] = {
-			Position = Vector3.new(1.3, -0.5, -2.5),
-			Rotation = Vector3.new(0, 0, 0)
+			Position = legacyPosition,
+			Rotation = legacyRotation
 		}
 	end
 	
@@ -321,7 +327,7 @@ function HybridViewmodel:updateViewmodel(dt, isAiming)
 	local editorRot = self.viewmodel:GetAttribute("Editor_AnimRot")
 	if editorPos then currentPos = editorPos end
 	if editorRot then currentRot = editorRot end
-	
+
 	local basePosition = CFrame.new(currentPos)
 	local baseRotation = CFrame.Angles(
 		math.rad(currentRot.X),
