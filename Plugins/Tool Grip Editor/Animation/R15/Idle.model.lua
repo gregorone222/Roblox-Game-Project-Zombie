@@ -1,0 +1,7 @@
+return {
+	ClassName = "Animation",
+
+	Properties = {
+		AnimationId = "rbxassetid://507766388"
+	}
+}
