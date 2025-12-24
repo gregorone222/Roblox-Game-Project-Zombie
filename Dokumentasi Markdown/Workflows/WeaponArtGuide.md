@@ -212,19 +212,35 @@ TANPA partikel, TANPA sculpt besar tambahan. Side view, background hitam.
 | MP5 | SMG | ✅ OK |
 | KRISS Vector | SMG | ✅ OK |
 | M590A1 | Shotgun | ✅ OK |
+| Benelli M4 | Shotgun | ✅ OK |
+| Remington 870 | Shotgun | ✅ OK |
 | L115A1 | Sniper | ✅ OK |
 | DSR-50 | Sniper | ✅ OK |
 | Barrett M82 | Sniper | ✅ OK |
-
-### 🔄 Perlu Perbaikan
-| Senjata | Tipe | Masalah |
-|---------|------|---------|
-| RPD | LMG | Ammo belt memanjang keluar, harus contained |
+| RPD | LMG | ✅ OK |
+| MG42 | LMG | ✅ OK |
+| M249 | LMG | ✅ OK |
+| Minigun | Special | ✅ OK |
 
 ### 📝 Belum Dibuat
 - UZI (SMG)
 - SPAS-12 (Shotgun)
 - AA-12 (Shotgun)
 - PKP (LMG)
-- M249 (LMG)
-- Minigun (LMG)
+
+---
+
+## 📝 Catatan Style Penting
+
+### ❌ Hindari
+- **Terlalu realistis** - Harus tetap stylized
+- **Terlalu kartun (cel-shaded flat)** - Bukan style Walking Dead Telltale
+- **Plastik/karet** - Material harus terlihat metal yang berat
+
+### ✅ Target Style
+- **Fortnite/Overwatch polished 3D** dengan soft gradients
+- **Stylized tapi detailed** - bukan flat comic style
+- **Metal weathered** dengan rust dan wear
+- **Warm colors** (sunset orange, brown, rusty)
+- **Post-apocalyptic survivor** dengan cloth tape/bandage wraps
+
