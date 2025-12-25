@@ -244,7 +244,9 @@ Dokumentasi lengkap semua RemoteEvents dan RemoteFunctions di proyek.
 
 ---
 
-## ⚡ Element Events
+## ⚡ Tactical Boost Events
+
+> **Note:** Internal code uses "Element" naming for backwards compatibility.
 
 ### ActivateElementEvent
 | Property | Value |
@@ -252,7 +254,7 @@ Dokumentasi lengkap semua RemoteEvents dan RemoteFunctions di proyek.
 | **Direction** | Client → Server |
 | **Parameters** | `elementName: string` |
 | **Handler** | `ElementConfigModule.lua:562` |
-| **Description** | Activate purchased element |
+| **Description** | Activate purchased tactical boost |
 
 ### ElementActivated
 | Property | Value |
@@ -260,7 +262,7 @@ Dokumentasi lengkap semua RemoteEvents dan RemoteFunctions di proyek.
 | **Direction** | Server → Client |
 | **Parameters** | `elementName: string`, `duration: number` |
 | **Handler** | Client UI |
-| **Description** | Notify element activation |
+| **Description** | Notify tactical boost activation |
 
 ### ElementDeactivated
 | Property | Value |
@@ -268,7 +270,7 @@ Dokumentasi lengkap semua RemoteEvents dan RemoteFunctions di proyek.
 | **Direction** | Server → Client |
 | **Parameters** | `elementName: string` |
 | **Handler** | Client UI |
-| **Description** | Notify element expiration |
+| **Description** | Notify tactical boost expiration |
 
 ---
 
@@ -338,7 +340,7 @@ Dokumentasi lengkap semua RemoteEvents dan RemoteFunctions di proyek.
 | **Returns** | `{success: boolean}` |
 | **Handler** | `PerkModule.lua` |
 
-### PurchaseElement
+### PurchaseTacticalBoost (PurchaseElement)
 | Property | Value |
 |:---------|:------|
 | **Parameters** | `elementName: string` |

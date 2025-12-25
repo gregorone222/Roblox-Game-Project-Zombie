@@ -9,7 +9,7 @@ Sistem mata uang dan kemajuan pemain.
 | Currency | Type | Source | Usage |
 |:---------|:-----|:-------|:------|
 | **Coins** | Permanen | Wave Clear & Damage | Skin/Item permanen, Gacha |
-| **BP (Battle Points)** | Sesi | In-game kills/objectives | In-game shops (Element, Perk, Weapon, Upgrade) |
+| **BP (Battle Points)** | Sesi | In-game kills/objectives | In-game shops (Tactical Boost, Perk, Weapon, Upgrade) |
 | **AP** | Permanen | Achievements | AP Shop items |
 | **MP** | Permanen | Missions | MP Shop items |
 

@@ -19,9 +19,9 @@ Target audiens utama adalah pemain berusia <13 tahun, dengan visual yang ramah a
 | Document | Description |
 |:---------|:------------|
 | [Wave System](gameplay/wave-system.md) | Wave mechanics, special events, boss spawns |
-| [Combat System](gameplay/combat-system.md) | Weapons, perks, elements, damage |
+| [Combat System](gameplay/combat-system.md) | Weapons, perks, tactical boosts, damage |
 | [Economy](gameplay/economy.md) | Coins, BP, progression, leveling |
-| [Shop System](gameplay/shop-system.md) | In-game BP shops (Element, Perk, Weapon, Upgrade) |
+| [Shop System](gameplay/shop-system.md) | In-game BP shops (Tactical Boost, Perk, Weapon, Upgrade) |
 | [Tactical Boosts](gameplay/tactical-boosts.md) | Combat boost items (formerly Elements) |
 | [Field Kit](gameplay/field-kit.md) | Pre-mission supplies (rewards only) |
 | [Difficulty Modes](gameplay/difficulty-modes.md) | Easy → Crazy settings |

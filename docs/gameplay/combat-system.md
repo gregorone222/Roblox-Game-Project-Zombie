@@ -40,17 +40,17 @@ Holographic Data Chips yang memberikan upgrade permanen.
 
 ---
 
-## Elements
+## Tactical Boosts
 
-Kemampuan aktif pemain:
-- **Fire** - Burn damage over time
-- **Ice** - Slow enemies
-- **Poison** - DOT and debuff
-- **Electric** - Stun effect
-- **Wind** - Knockback
-- **Earth** - Defense buff
-- **Light** - Healing/buff
-- **Dark** - Damage amplification
+Upgrade sementara untuk senjata/pemain (dibeli per-wave):
+- **Incendiary Rounds** - Burn damage over time
+- **Cryo Compound** - Slow enemies
+- **Toxic Agent** - DOT poison
+- **EMP Burst** - Chain damage
+- **Concussion Blast** - Knockback + speed
+- **Hardened Armor** - Defense buff
+- **Stimpack** - Brief invincibility
+- **Adrenaline Serum** - Life steal
 
 ---
 

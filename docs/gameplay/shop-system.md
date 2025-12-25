@@ -35,8 +35,8 @@ BP adalah mata uang utama dalam game yang didapat dari:
     │         [RADIO TOWER]         │
     │            (center)            │
     │                                │
-    │   [RANDOM]            [ELEMENT]│
-    │   Mystery              Tactical│
+    │   [RANDOM]           [TACTICAL]│
+    │   Mystery              Boosts  │
     │   Cache                Vendor  │
     │                                │
     └────────────────────────────────┘
@@ -46,7 +46,7 @@ BP adalah mata uang utama dalam game yang didapat dari:
 
 ## 🎯 4 SHOP SYSTEMS
 
-### 1️⃣ Tactical Boosts Shop (Element)
+### 1️⃣ Tactical Boosts Shop
 
 **Objek:** Vending Machine / Tactical Crate  
 **Trigger:** Proximity Prompt "E"
@@ -86,10 +86,9 @@ BP adalah mata uang utama dalam game yang didapat dari:
 **Rules:**
 - Perks **PERMANEN** untuk seluruh sesi game
 - Limit jumlah perk berdasarkan **difficulty**:
-  - Easy: Unlimited
-  - Normal: Max 4
-  - Hard: Max 3
-  - Crazy: Max 2
+  - Easy/Normal/Hard/Expert: Max 3
+  - Hell: Max 2
+  - Crazy: Max 1
 - Tidak bisa beli perk yang sama dua kali
 
 **Tier Structure:**
