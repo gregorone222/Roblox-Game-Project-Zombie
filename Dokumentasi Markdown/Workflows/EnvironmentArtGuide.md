@@ -44,11 +44,12 @@ Asset furniture MURNI tanpa tambahan environment.
 | Sofa Rusak | Kain robek, stuffing keluar | ✅ |
 | Meja Kayu | Permukaan tergores, kaki ditape | ✅ |
 | Kursi Rusak | Kaki hilang, seat retak | ✅ |
-| TV CRT Rusak | Layar pecah, kabel keluar | ✅ |
-| Lemari | - | 📝 |
-| Kasur | - | 📝 |
-| Rak Buku | - | 📝 |
-| Lampu Meja | - | 📝 |
+| TV CRT Rusak | Layar pecah, casing rusak (clean, no effects) | ✅ |
+| Lemari | Pintu lepas, rak rusak, laci hilang | ✅ |
+| Kasur | Frame bengkok, kasur robek, per terlihat | ✅ |
+| Rak Buku | Rak ambruk, buku jatuh | ✅ |
+| Lampu Meja | Arm bengkok, lampshade retak | ✅ |
+| Kulkas Tua | Pintu terbuka, metal berkarat, vintage style | ✅ |
 
 ---
 
@@ -57,12 +58,11 @@ Asset environment yang berdiri sendiri.
 
 | Asset | Deskripsi | Status |
 |-------|-----------|--------|
-| Batu Besar | - | 📝 |
-| Batu Kecil | - | 📝 |
+| Rock Pile | Formasi batu besar, lumut, weathered | ✅ |
+| Old Tires | Tumpukan ban, karet aus, retak | ✅ |
+| Debris Pile | Kaleng, botol pecah, kardus, sampah | ✅ |
 | Sarang Laba-laba | - | 📝 |
 | Tanaman Merambat | - | 📝 |
-| Debu/Debris | - | 📝 |
-| Puing Beton | - | 📝 |
 
 ---
 
@@ -71,11 +71,12 @@ Objek khas post-apocalyptic.
 
 | Asset | Deskripsi | Status |
 |-------|-----------|--------|
-| Barrel | - | 📝 |
-| Peti Kayu | - | 📝 |
-| Sandbag | - | 📝 |
-| Generator | - | 📝 |
-| Radio Rusak | - | 📝 |
+| Metal Barrel | Berkarat, penyok, noda oli | ✅ |
+| Peti Kayu | Papan retak, paku berkarat | ✅ |
+| Sandbag | Kantong canvas bertumpuk, barricade | ✅ |
+| Generator | Casing berkarat, kabel keluar, tangki penyok | ✅ |
+| Radio Rusak | Vintage transistor, casing retak, antena bengkok | ✅ |
+| Campfire | Batu melingkar, kayu bakar | 📝 |
 
 ---
 
@@ -84,9 +85,9 @@ Asset untuk luar ruangan.
 
 | Asset | Deskripsi | Status |
 |-------|-----------|--------|
+| Pagar Rusak | Papan rusak, tiang miring | ✅ |
 | Mobil Rusak | - | 📝 |
 | Tiang Listrik | - | 📝 |
-| Pagar Rusak | - | 📝 |
 | Lampu Jalan | - | 📝 |
 
 ---
