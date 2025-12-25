@@ -49,11 +49,31 @@ local ProfileModule = require(ServerScriptService.ModuleScript:WaitForChild("Pro
 local MissionManager = require(ServerScriptService.ModuleScript:WaitForChild("MissionManager"))
 
 -- === BUILD LOBBY ENVIRONMENT ===
-local success, LobbyBuilder = pcall(require, ServerScriptService.ModuleScript:WaitForChild("LobbyBuilderSubway"))
-if success and LobbyBuilder and LobbyBuilder.Build then
+-- UPDATED: Use Farmhouse lobby (Cozy Apocalypse theme)
+local LobbyBuilder = nil
+local farmhouseModule = ServerScriptService.ModuleScript:FindFirstChild("LobbyBuilder_Farmhouse")
+if farmhouseModule then
+	local success, result = pcall(require, farmhouseModule)
+	if success then
+		LobbyBuilder = result
+	end
+end
+
+-- Fallback to Subway if Farmhouse not found
+if not LobbyBuilder then
+	local subwayModule = ServerScriptService.ModuleScript:FindFirstChild("LobbyBuilder_Subway")
+	if subwayModule then
+		local success, result = pcall(require, subwayModule)
+		if success then
+			LobbyBuilder = result
+		end
+	end
+end
+
+if LobbyBuilder and LobbyBuilder.Build then
 	LobbyBuilder.Build()
 else
-	warn("LobbyManager: Failed to load or execute LobbyBuilder_Subway.")
+	warn("LobbyManager: Failed to load any LobbyBuilder module.")
 end
 
 -- === SETUP REMOTES (MENGGUNAKAN FUNGSI SAFE) ===

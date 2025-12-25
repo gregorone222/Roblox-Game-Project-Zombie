@@ -16,7 +16,9 @@ local function safeRequire(name)
 	local module = script.Parent:FindFirstChild(name)
 	if not module then
 		-- Fallback search if naming is inconsistent
-		if name == "LobbyBuilderSubway" then
+		if name == "LobbyBuilderFarmhouse" then
+			module = script.Parent:FindFirstChild("LobbyBuilder_Farmhouse")
+		elseif name == "LobbyBuilderSubway" then
 			module = script.Parent:FindFirstChild("LobbyBuilder_Subway")
 		end
 	end
@@ -24,7 +26,8 @@ local function safeRequire(name)
 	return nil
 end
 
-local LobbyBuilder = safeRequire("LobbyBuilderSubway")
+-- UPDATED: Use Farmhouse lobby (Cozy Apocalypse theme)
+local LobbyBuilder = safeRequire("LobbyBuilderFarmhouse")
 local VillageBuilder = safeRequire("MapBuilderVillage")
 
 function BuildingManager.LoadMap(mapName)
