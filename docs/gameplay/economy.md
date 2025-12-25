@@ -2,12 +2,14 @@
 
 Sistem mata uang dan kemajuan pemain.
 
+> 📎 Lihat juga: [Shop System](shop-system.md) | [Field Kit](field-kit.md)
+
 ## Currency Types
 
 | Currency | Type | Source | Usage |
 |:---------|:-----|:-------|:------|
-| **Coins** | Permanen | Wave Clear & Damage | Skin/Item permanen |
-| **Points** | Sesi | In-game score | Buka pintu, beli senjata |
+| **Coins** | Permanen | Wave Clear & Damage | Skin/Item permanen, Gacha |
+| **BP (Battle Points)** | Sesi | In-game kills/objectives | In-game shops (Element, Perk, Weapon, Upgrade) |
 | **AP** | Permanen | Achievements | AP Shop items |
 | **MP** | Permanen | Missions | MP Shop items |
 

@@ -20,13 +20,17 @@ Target audiens utama adalah pemain berusia <13 tahun, dengan visual yang ramah a
 |:---------|:------------|
 | [Wave System](gameplay/wave-system.md) | Wave mechanics, special events, boss spawns |
 | [Combat System](gameplay/combat-system.md) | Weapons, perks, elements, damage |
-| [Economy](gameplay/economy.md) | Coins, points, progression, leveling |
+| [Economy](gameplay/economy.md) | Coins, BP, progression, leveling |
+| [Shop System](gameplay/shop-system.md) | In-game BP shops (Element, Perk, Weapon, Upgrade) |
+| [Tactical Boosts](gameplay/tactical-boosts.md) | Combat boost items (formerly Elements) |
+| [Field Kit](gameplay/field-kit.md) | Pre-mission supplies (rewards only) |
 | [Difficulty Modes](gameplay/difficulty-modes.md) | Easy → Crazy settings |
 
 ### 🎨 Design
 | Document | Description |
 |:---------|:------------|
 | [Art Direction](design/art-direction.md) | Visual style guidelines |
+| [Asset Checklist](design/asset-checklist.md) | Master asset tracking list |
 | [Environment Art Guide](design/environment-art-guide.md) | Environment asset creation |
 | [Weapon Art Guide](design/weapon-art-guide.md) | Weapon asset creation |
 | [UI Design System](design/ui-design-system.md) | Colors, fonts, sizing standards |
@@ -48,9 +52,9 @@ Target audiens utama adalah pemain berusia <13 tahun, dengan visual yang ramah a
 ### 👾 Entities
 | Document | Description |
 |:---------|:------------|
+| [Characters](entities/characters.md) | NPCs, Bosses, Player character |
 | [Zombies](entities/zombies.md) | Enemy types & behavior |
 | [Bosses](entities/bosses.md) | Boss mechanics |
-| [NPCs](entities/npcs.md) | Friendly NPCs |
 
 ### 📜 Story
 | Document | Description |
