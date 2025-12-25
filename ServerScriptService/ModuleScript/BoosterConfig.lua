@@ -1,38 +1,45 @@
 -- BoosterConfig.lua (ModuleScript)
 -- Path: ServerScriptService/ModuleScript/BoosterConfig.lua
 -- Script Place: Lobby
+-- NOTE: Boosters are now REWARD-ONLY (Daily Reward / Gacha), NOT purchasable
 
 local BoosterConfig = {
 	SelfRevive = {
-		Name = "Self Revive",
-		Price = 2500,
-		Icon = "SR",
-		Description = "Gives you a chance to revive yourself upon being knocked down."
+		Name = "Second Chance",
+		Icon = "💚",
+		Description = "Automatically revive yourself once when knocked down.",
+		Rarity = "Rare",
+		Source = "Daily Day 7 / Gacha"
 	},
 	StarterPoints = {
-		Name = "Starter Points",
-		Price = 3500,
-		Icon = "SP",
-		Description = "Gives you 1500 starting points."
+		Name = "Starting Funds",
+		Icon = "💰",
+		Description = "Start the game with 1,500 bonus BP.",
+		Rarity = "Common",
+		Source = "Daily Day 3 / Gacha"
 	},
 	CouponDiscount = {
-		Name = "50% Discount Coupon",
-		Price = 3500,
-		Icon = "50%",
-		Description = "Activate to get a 50% discount on your next vending machine purchase."
+		Name = "Bargain Pass",
+		Icon = "🏷️",
+		Description = "Get 50% off your next in-game shop purchase.",
+		Rarity = "Common",
+		Source = "Daily Day 5 / Gacha"
 	},
 	StartingShield = {
-		Name = "Starting Shield",
-		Price = 3500,
-		Icon = "SH",
-		Description = "Gain a 50% health shield at the start of the game."
+		Name = "Body Armor",
+		Icon = "🛡️",
+		Description = "Start the game with 50% bonus shield health.",
+		Rarity = "Rare",
+		Source = "Gacha"
 	},
 	LegionsLegacy = {
-		Name = "Legion's Legacy",
-		Price = 4000,
-		Icon = "LL",
-		Description = "Replaces your starter weapon (M1911) with one random weapon from the entire list of available weapons in RandomWeapon."
+		Name = "Mystery Loadout",
+		Icon = "🎁",
+		Description = "Replace your starter weapon with a random weapon from the full arsenal.",
+		Rarity = "Epic",
+		Source = "Gacha"
 	}
 }
 
 return BoosterConfig
+
