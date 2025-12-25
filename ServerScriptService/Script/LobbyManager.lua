@@ -59,16 +59,7 @@ if farmhouseModule then
 	end
 end
 
--- Fallback to Subway if Farmhouse not found
-if not LobbyBuilder then
-	local subwayModule = ServerScriptService.ModuleScript:FindFirstChild("LobbyBuilder_Subway")
-	if subwayModule then
-		local success, result = pcall(require, subwayModule)
-		if success then
-			LobbyBuilder = result
-		end
-	end
-end
+
 
 if LobbyBuilder and LobbyBuilder.Build then
 	LobbyBuilder.Build()

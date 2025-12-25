@@ -18,8 +18,6 @@ local function safeRequire(name)
 		-- Fallback search if naming is inconsistent
 		if name == "LobbyBuilderFarmhouse" then
 			module = script.Parent:FindFirstChild("LobbyBuilder_Farmhouse")
-		elseif name == "LobbyBuilderSubway" then
-			module = script.Parent:FindFirstChild("LobbyBuilder_Subway")
 		end
 	end
 	if module then return require(module) end

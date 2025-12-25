@@ -42,7 +42,7 @@ Target audiens utama adalah pemain berusia <13 tahun, dengan visual yang ramah a
 ### 🗺️ Maps & Places
 | Document | Description |
 |:---------|:------------|
-| [Lobby - Subway](maps/lobby-subway.md) | Subway station lobby |
+| [Lobby - Farmhouse](maps/lobby-farmhouse.md) | Abandoned farmhouse basecamp |
 | [ACT 1 - Village](maps/act1-village.md) | The Cursed Village |
 
 ### 👾 Entities
