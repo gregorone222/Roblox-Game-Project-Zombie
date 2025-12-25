@@ -24,7 +24,7 @@ pcall(PhysicsService.RegisterCollisionGroup, PhysicsService, CollisionUtil.PROJE
 -- Define collision relationships
 local groups = {
 	{Name = CollisionUtil.PLAYER_GROUP, CollidesWith = {"Default", CollisionUtil.WALL_GROUP, CollisionUtil.ZOMBIE_GROUP}},
-	{Name = CollisionUtil.ZOMBIE_GROUP, CollidesWith = {"Default", CollisionUtil.PLAYER_GROUP}},
+	{Name = CollisionUtil.ZOMBIE_GROUP, CollidesWith = {"Default", CollisionUtil.PLAYER_GROUP, CollisionUtil.ZOMBIE_GROUP}},
 	{Name = CollisionUtil.WALL_GROUP, CollidesWith = {"Default", CollisionUtil.PLAYER_GROUP}},
 	{Name = CollisionUtil.PROJECTILE_GROUP, CollidesWith = {"Default", CollisionUtil.PLAYER_GROUP, CollisionUtil.ZOMBIE_GROUP}}
 }
