@@ -11,9 +11,9 @@ Master list semua asset yang dibutuhkan untuk Lobby dan ACT 1.
 ### Lobby NPCs
 - [x] Alexander (Komandan)
 - [x] Quartermaster (Pedagang)
-- [ ] Doc (Medic)
-- [ ] Rosco (Anak Kecil)
-- [ ] Gramps (Veteran Tua)
+- [x] Doc (Medic) - *spawn point added, needs model*
+- [x] Rosco (Anak Kecil) - *spawn point added, needs model*
+- [x] Gramps (Veteran Tua) - *spawn point added, needs model*
 - [ ] Buddy (Anjing) - **FUTURE**
 
 ### ACT 1 Bosses

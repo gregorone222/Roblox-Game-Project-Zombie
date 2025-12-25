@@ -283,9 +283,9 @@ Perimeter:      ~120 x 120 studs enclosed
 ### NPCs (Spawn Points)
 - [x] Alexander (Gazebo)
 - [x] Quartermaster (Barn)
-- [ ] Doc (Medical Tent)
-- [ ] Rosco (Campfire)
-- [ ] Gramps (Porch)
+- [x] Doc (Medical Tent)
+- [x] Rosco (Campfire)
+- [x] Gramps (Porch)
 
 ### Storytelling Props
 - [x] Empty Swing

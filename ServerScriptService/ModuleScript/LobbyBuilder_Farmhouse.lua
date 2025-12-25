@@ -685,6 +685,18 @@ function LobbyBuilder.Build()
 	local qmPos = CFrame.new(-55, GROUND_LEVEL + 1, 5) * CFrame.Angles(0, math.rad(180), 0)
 	spawnNPC("Quartermaster", qmPos, env, COLORS.WoodDark)
 	
+	-- Doc NPC (in medical tent)
+	local docPos = CFrame.new(tentOrigin.X, GROUND_LEVEL + 1, tentOrigin.Z) * CFrame.Angles(0, math.rad(180), 0)
+	spawnNPC("Doc", docPos, env, Color3.fromRGB(80, 120, 80))
+	
+	-- Rosco NPC (near campfire, sitting on log bench)
+	local roscoPos = CFrame.new(campfireOrigin.X - 5, GROUND_LEVEL + 1, campfireOrigin.Z + 4) * CFrame.Angles(0, math.rad(45), 0)
+	spawnNPC("Rosco", roscoPos, env, Color3.fromRGB(150, 120, 80))
+	
+	-- Gramps NPC (on main house porch, in rocking chair area)
+	local grampsPos = CFrame.new(spawnPos.X - 8, GROUND_LEVEL + 1, spawnPos.Z) * CFrame.Angles(0, math.rad(0), 0)
+	spawnNPC("Gramps", grampsPos, env, Color3.fromRGB(100, 90, 80))
+	
 	-- 6. INTERACTION POINTS
 	createInteraction("DialogueAlexander", alexPos * CFrame.new(0, 0, 2), Vector3.new(6, 6, 6), "Talk", env)
 	createInteraction("BoosterShop", CFrame.new(tentOrigin.X, tentOrigin.Y + 2, tentOrigin.Z), Vector3.new(10, 6, 8), "Medical Supplies", env)
