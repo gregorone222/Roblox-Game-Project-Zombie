@@ -56,7 +56,7 @@ ZombieConfig.Types = {
 	},
 	Boss = {
 		Name = "Plague Titan",
-		MaxHealth = 750,
+		MaxHealth = 75000,
 		WalkSpeed = 8,
 		AttackDamage = 50, -- Serangan melee standar jika pemain terlalu dekat
 		AttackRange = 8,
@@ -174,7 +174,7 @@ ZombieConfig.Types = {
 	},
 	Boss3 = {
 		Name = "The Blighted Alchemist",
-		MaxHealth = 1250,
+		MaxHealth = 125000,
 		WalkSpeed = 8,
 		AttackDamage = 55,
 		AttackRange = 25,
