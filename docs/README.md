@@ -78,6 +78,7 @@ Target audiens utama adalah pemain berusia <13 tahun, dengan visual yang ramah a
 | [Wave Director](tools/wave-director.md) | Wave composition editor |
 | [Loot Balancer](tools/loot-balancer.md) | Drop rate balancer |
 | [Unified Shop Editor](tools/unified-shop-editor.md) | AP/MP shop editor |
+| [Boss Skill Tester](tools/boss-skill-tester.md) | Boss skill testing in Play Mode |
 
 ### 📋 Reference
 | Document | Description |

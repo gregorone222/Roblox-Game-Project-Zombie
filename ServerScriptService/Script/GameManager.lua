@@ -856,8 +856,11 @@ OpenStartUIEvent.OnServerEvent:Connect(function(_player)
 			for _, plr in ipairs(game.Players:GetPlayers()) do
 				if readyPlayers[plr.UserId] then ready += 1 end
 			end
-			if ready < total then
+		if ready < total then
+				-- Timeout - not enough players voted, do nothing (vote expired)
+				StartVoteCanceledEvent:FireAllClients("Vote Timeout")
 			end
+		end
 	end)
 end)
 

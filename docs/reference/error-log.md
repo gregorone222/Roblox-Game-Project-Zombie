@@ -22,9 +22,18 @@ Batasan teknis yang ditemukan selama pengembangan.
 | **Math Safety** | `math.max(nil, 5)` errors | Use `tonumber(input) or 0` |
 | **Remote Security** | Trust client input | Validate types on server |
 | **Variable Shadowing** | Redefine global with local | Check scope carefully |
+| **IsRunning Property** | `RunService:GetPropertyChangedSignal("IsRunning")` error | `IsRunning()` is a **method**, not property. Use `BindToRenderStep` or poll check |
 
-## 🔄 Deprecated Modules
+## � Plugin-Specific Issues
+
+| Issue | Cause | Solution |
+|:------|:------|:---------|
+| **IsRunning not valid property** | Trying to use `GetPropertyChangedSignal` on method | Use polling or `BindToRenderStep` for one-time check |
+| **LocalPlayer nil in Edit** | Plugin context vs Play context | Check `RunService:IsRunning()` before accessing LocalPlayer |
+
+## �🔄 Deprecated Modules
 
 | Module | Status | Replacement |
 |:-------|:-------|:------------|
 | `ProximityUIHandler` | Removed | Direct `ProximityPrompt.Triggered` connection |
+
