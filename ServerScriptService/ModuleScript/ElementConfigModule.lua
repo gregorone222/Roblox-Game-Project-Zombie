@@ -28,9 +28,13 @@ local ElementDeactivated   = RemoteEvents:WaitForChild("ElementDeactivated")
 local ActivateElementEvent = RemoteEvents:WaitForChild("ActivateElementEvent")
 local InvincibilityEffectEvent = RemoteEvents:WaitForChild("InvincibilityEffectEvent")
 
---// Config Elements
+--// Config Elements (REFLAVORED: Tactical Survival Theme)
+-- Internal keys kept for code compatibility, DisplayName for UI
 local ElementsConfig = {
+	-- INCENDIARY ROUNDS: Fire damage + burn effect
 	Fire   = {
+		DisplayName = "Incendiary Rounds",
+		Description = "Peluru pembakar. Musuh terbakar dan menerima damage tambahan.",
 		Cost = 1500, Duration = 10,
 		DamageMultiplier = 0.3,
 		BurnPercentPerTick = 0.10,
@@ -38,26 +42,38 @@ local ElementsConfig = {
 		BurnInterval = 1,
 		SFX_SoundId = "rbxassetid://123456789", SFX_Volume = 1, SFX_Pitch = 1,
 	},
+	-- CRYO COMPOUND: Slow enemies
 	Ice    = {
+		DisplayName = "Cryo Compound",
+		Description = "Senyawa beku. Memperlambat gerakan musuh.",
 		Cost = 1500,
 		Duration = 20,
 		SlowPercent = 0.30,
 		SlowDuration = 4,
 		SFX_SoundId = "rbxassetid://123456789", SFX_Volume = 1, SFX_Pitch = 1,
 	},
+	-- TOXIC AGENT: Damage over time
 	Poison = {
+		DisplayName = "Toxic Agent",
+		Description = "Agen beracun. Musuh menerima damage terus-menerus.",
 		Cost = 1500,
 		Duration = 10,
 		PoisonDPS = 5,
 		PoisonDuration = 6,
 		SFX_SoundId = "rbxassetid://123456789", SFX_Volume = 1, SFX_Pitch = 1,
 	},
+	-- EMP BURST: Chain damage to nearby
 	Shock  = {
+		DisplayName = "EMP Burst",
+		Description = "Gelombang elektromagnetik. Damage menyebar ke musuh sekitar.",
 		Cost = 1500, Duration = 10,
 		ChainRange = 6, ChainDamageMultiplier = 0.5,
 		SFX_SoundId = "rbxassetid://123456789", SFX_Volume = 1, SFX_Pitch = 1,
 	},
+	-- CONCUSSION BLAST: Push enemies + speed boost
 	Wind   = {
+		DisplayName = "Concussion Blast",
+		Description = "Ledakan kejut. Mendorong musuh dan meningkatkan kecepatan.",
 		Cost = 1500,
 		Duration = 10,
 		SpeedMultiplier = 1.5,
@@ -65,14 +81,26 @@ local ElementsConfig = {
 		PushDuration = 0.35,
 		SFX_SoundId = "rbxassetid://123456789", SFX_Volume = 1, SFX_Pitch = 1,
 	},
+	-- HARDENED ARMOR: Damage reduction
 	Earth  = {
+		DisplayName = "Hardened Armor",
+		Description = "Pelindung temporal. Mengurangi damage yang diterima.",
 		Cost = 1500,
 		Duration = 10,
 		DamageReduction = 0.20,
 		SFX_SoundId = "rbxassetid://123456789", SFX_Volume = 1, SFX_Pitch = 1,
 	},
-	Light  = { Cost = 3000, Duration = 3, InvincibilityDuration = 3, SFX_SoundId = "rbxassetid://123456789", SFX_Volume = 1, SFX_Pitch = 1 },
+	-- STIMPACK: Brief invincibility
+	Light  = {
+		DisplayName = "Stimpack",
+		Description = "Suntikan adrenalin. Kebal damage sementara.",
+		Cost = 3000, Duration = 3, InvincibilityDuration = 3,
+		SFX_SoundId = "rbxassetid://123456789", SFX_Volume = 1, SFX_Pitch = 1,
+	},
+	-- ADRENALINE SERUM: Life steal
 	Dark   = {
+		DisplayName = "Adrenaline Serum",
+		Description = "Serum eksperimental. Mencuri HP dari musuh yang diserang.",
 		Cost = 5000,
 		Duration = 5,
 		LifeStealPercent = 0.1,

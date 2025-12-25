@@ -26,86 +26,86 @@ if workspace:FindFirstChild("Elements") then
 	end
 end
 
--- --- CONFIGURATION DATA (Mirrors PrototypeElementShopUI.html & ElementConfigModule.lua) ---
+-- --- CONFIGURATION DATA (REFLAVORED: Tactical Survival Theme) ---
 local elementsData = {
 	Fire = {
-		name = "Fire",
+		name = "Incendiary Rounds",
 		icon = "🔥",
 		type = "Damage",
 		cost = 1500,
 		duration = 10,
 		color = Color3.fromHex("#ef4444"), -- Red
-		desc = "Adds fire element to your weapon. Burning enemies take additional damage every second.",
+		desc = "Peluru pembakar. Musuh terbakar dan menerima damage tambahan setiap detik.",
 		stats = { {label="Burn Damage", val="10% / tick"}, {label="Ticks", val="3x"} }
 	},
 	Ice = {
-		name = "Ice",
+		name = "Cryo Compound",
 		icon = "❄️",
 		type = "Control",
 		cost = 1500,
 		duration = 20,
 		color = Color3.fromHex("#06b6d4"), -- Cyan
-		desc = "Freezes enemies on hit, significantly reducing movement speed (Slow).",
+		desc = "Senyawa beku. Memperlambat gerakan musuh secara signifikan.",
 		stats = { {label="Slow Effect", val="30%"}, {label="Duration", val="4s"} }
 	},
 	Poison = {
-		name = "Poison",
+		name = "Toxic Agent",
 		icon = "☠️",
 		type = "DoT",
 		cost = 1500,
 		duration = 10,
 		color = Color3.fromHex("#22c55e"), -- Green
-		desc = "Poisons enemies, dealing continuous damage over time (DoT).",
+		desc = "Agen beracun. Musuh menerima damage terus-menerus (Damage over Time).",
 		stats = { {label="Poison DPS", val="5 Dmg"}, {label="Duration", val="6s"} }
 	},
 	Shock = {
-		name = "Shock",
+		name = "EMP Burst",
 		icon = "⚡",
 		type = "AoE",
 		cost = 1500,
 		duration = 10,
 		color = Color3.fromHex("#eab308"), -- Yellow
-		desc = "Electric attacks that chain to nearby enemies.",
+		desc = "Gelombang elektromagnetik. Damage menyebar ke musuh sekitar.",
 		stats = { {label="Chain Range", val="6 Studs"}, {label="Chain Dmg", val="50%"} }
 	},
 	Wind = {
-		name = "Wind",
+		name = "Concussion Blast",
 		icon = "💨",
 		type = "Utility",
 		cost = 1500,
 		duration = 10,
 		color = Color3.fromHex("#f8fafc"), -- Slate/White
-		desc = "Wind bullets push enemies back (Knockback) and increase player movement speed.",
+		desc = "Ledakan kejut. Mendorong musuh dan meningkatkan kecepatan gerak.",
 		stats = { {label="Push Speed", val="60"}, {label="Move Speed", val="+50%"} }
 	},
 	Earth = {
-		name = "Earth",
-		icon = "🌍",
+		name = "Hardened Armor",
+		icon = "🛡️",
 		type = "Defense",
 		cost = 1500,
 		duration = 10,
 		color = Color3.fromHex("#a8a29e"), -- Stone
-		desc = "Grants stone skin protection, reducing damage taken from enemies.",
+		desc = "Pelindung temporal. Mengurangi damage yang diterima dari musuh.",
 		stats = { {label="Dmg Reduction", val="20%"}, {label="Resilience", val="High"} }
 	},
 	Light = {
-		name = "Light",
-		icon = "✨",
+		name = "Stimpack",
+		icon = "💉",
 		type = "Ultimate",
 		cost = 3000,
 		duration = 3,
 		color = Color3.fromHex("#fde047"), -- Light Yellow
-		desc = "Grants temporary invincibility. Expensive but a lifesaver.",
+		desc = "Suntikan adrenalin. Kebal damage sementara - penyelamat darurat.",
 		stats = { {label="Invincible", val="TRUE"}, {label="Duration", val="3s"} }
 	},
 	Dark = {
-		name = "Dark",
-		icon = "🌑",
+		name = "Adrenaline Serum",
+		icon = "🩸",
 		type = "Sustain",
 		cost = 5000,
 		duration = 5,
 		color = Color3.fromHex("#9333ea"), -- Purple
-		desc = "Absorbs enemy life (Lifesteal) to restore player HP on every hit.",
+		desc = "Serum eksperimental. Mencuri HP dari musuh yang diserang (Lifesteal).",
 		stats = { {label="Lifesteal", val="10%"}, {label="Duration", val="5s"} }
 	}
 }
@@ -181,7 +181,7 @@ headerBorder.BorderSizePixel = 0
 headerBorder.Parent = sidebarHeader
 
 local titleLabel = Instance.new("TextLabel")
-titleLabel.Text = "ELEMENTAL FORGE"
+titleLabel.Text = "TACTICAL BOOSTS"
 titleLabel.Font = fontTech
 titleLabel.TextSize = 24
 titleLabel.TextColor3 = Color3.new(1, 1, 1)
@@ -192,7 +192,7 @@ titleLabel.TextXAlignment = Enum.TextXAlignment.Center -- Centered
 titleLabel.Parent = sidebarHeader
 
 local subtitleLabel = Instance.new("TextLabel")
-subtitleLabel.Text = "Select an element to modify your weapon."
+subtitleLabel.Text = "Pilih boost untuk upgrade senjatamu."
 subtitleLabel.Font = fontStandard
 subtitleLabel.TextSize = 12
 subtitleLabel.TextColor3 = Color3.fromRGB(148, 163, 184) -- Slate-400
