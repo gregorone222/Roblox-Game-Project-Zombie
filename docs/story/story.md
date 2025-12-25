@@ -129,57 +129,16 @@ Bukan lagi membunuh semua musuh, tapi **menemukan cure** dan memilih siapa yang 
 
 ## 👥 Characters
 
-### Alexander (Komandan)
-**Location:** Gazebo, Farmhouse Lobby  
-**Role:** Narrator, Mission Briefer, Moral Compass  
-**Gender:** Male
+> 📎 **Detail lengkap:** [Characters Documentation](../entities/characters.md)
 
-**Background:**
-> Alexander dulunya **guru sekolah** yang terpaksa menjadi pemimpin karena dia satu-satunya yang bisa tetap tenang. Dia menyembunyikan rasa bersalah karena tidak bisa menyelamatkan murid-muridnya.
+### Lobby NPCs (ACT 1)
 
-**Personality:**
-- Tenang di luar, broken di dalam
-- Selalu memanggil player "Operator" untuk menjaga jarak emosional
-- Berbicara dengan formal tapi hangat
+| Character | Role | Location |
+|:----------|:-----|:---------|
+| **Alexander** | Komandan, Narrator | Gazebo |
+| **Quartermaster** | Weapon/Equipment Seller | Barn |
 
-**Sample Dialogues:**
-```
-"Selamat datang, Operator. Senang melihatmu masih berdiri."
-
-"Dulu saya mengajar anak-anak bagaimana membaca...
-Sekarang saya mengajar orang dewasa bagaimana bertahan."
-
-"Kita semua punya orang yang tidak bisa kita selamatkan.
-Yang penting sekarang adalah siapa yang BISA kita selamatkan."
-
-"Farm ini? Kami menemukannya kosong. Pemiliknya...
-tidak perlu kuceritakan. Kamu sudah tahu jawabannya."
-```
-
----
-
-### Quartermaster (Pedagang)
-**Location:** Barn, Farmhouse Lobby  
-**Role:** Weapon Seller, Equipment Dealer  
-**Gender:** Male
-
-**Background:**
-> Mantan mekanik yang selamat karena berada di bengkel saat outbreak. Praktis, sarkastik, tapi loyal.
-
-**Personality:**
-- "Business is business" attitude
-- Menyembunyikan kepedulian di balik transaksi
-- Suka memodifikasi senjata
-
-**Sample Dialogues:**
-```
-"Butuh sesuatu? Coins dan Achievement Points diterima di sini."
-
-"Senjata bagus itu seperti teman baik - selalu ada saat dibutuhkan."
-
-"Hati-hati di luar sana. Bukan karena aku peduli...
-...tapi siapa lagi yang mau beli barangku kalau kamu mati?"
-```
+*Saran NPC tambahan ada di dokumen characters.*
 
 ---
 
