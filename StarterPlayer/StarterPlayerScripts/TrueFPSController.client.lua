@@ -171,6 +171,16 @@ local function updateTransparency(inFirstPerson)
 end
 
 
+local function resetJoints()
+	for name, data in pairs(cachedJoints) do
+		if data.Joint and data.Joint.Parent then
+			data.Joint.C0 = data.OriginalC0
+		end
+	end
+end
+
+local wasFirstPerson = false -- Track previous state for transition detection
+
 local function onRenderStepped(dt)
 	if not character or not head or not humanoid or humanoid.Health <= 0 then return end
 	
@@ -183,12 +193,14 @@ local function onRenderStepped(dt)
 	-- 2. Update transparency based on view mode
 	updateTransparency(isFirstPerson)
 	
-	-- 3. Apply local IK
+	-- 3. Get look direction from camera
+	local lookVectorY = camera.CFrame.LookVector.Y
+	
+	-- 4. Apply local IK (works in BOTH first and third person)
+	applyLocalLook(lookVectorY)
+	
+	-- 5. Send look direction to server (throttled) - only in first person for replication
 	if isFirstPerson then
-		local lookVectorY = camera.CFrame.LookVector.Y
-		applyLocalLook(lookVectorY)
-		
-		-- 4. Send to server (throttled)
 		local now = tick()
 		if now - lastLookSendTime > UPDATE_RATE then
 			lastLookSendTime = now
@@ -196,7 +208,14 @@ local function onRenderStepped(dt)
 				lookEvent:FireServer(lookVectorY)
 			end
 		end
+	elseif wasFirstPerson then
+		-- TRANSITION: Just exited first person, send neutral to server
+		if lookEvent then
+			lookEvent:FireServer(0)
+		end
 	end
+	
+	wasFirstPerson = isFirstPerson
 end
 
 
