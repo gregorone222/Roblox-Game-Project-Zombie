@@ -48,6 +48,53 @@ Master list semua asset yang dibutuhkan untuk Lobby dan ACT 1.
 
 ---
 
+## 🏚️ ACT 1 STRUCTURES
+
+### Town Square
+- [x] Radio Tower (with Zone_Defend)
+- [x] Square Pavement
+- [x] Street Lamps (4)
+- [x] Blinking light (tower top)
+
+### Residential
+- [x] Ruined Houses (12, procedural)
+- [x] House Floors
+- [x] House Walls (random missing)
+- [x] House Roofs (wedge)
+
+### Forest
+- [x] Overgrown Trees (40)
+- [x] Tree Trunks with moss
+- [x] Tree Canopy (green)
+- [x] Hanging Ivy
+- [x] Leaf Clusters
+
+### Boundaries
+- [x] Invisible Barriers (4 walls)
+
+---
+
+## 🪑 ACT 1 FURNITURE/PROPS
+
+### In Houses
+- [x] Destructible Table
+- [x] Destructible Chairs
+
+### Nostalgic Props (ACT 1)
+- [x] Empty Swing (1)
+- [x] Abandoned Teddy (2)
+- [x] Old Radio (1)
+- [x] Broken Bicycle (2)
+
+### Objective Items
+- [ ] Gas Canister (Wave 8 collectible)
+- [ ] Sample Container (Wave 38 collectible)
+
+### Particles
+- [x] Falling Leaves emitters (5)
+
+---
+
 ## 🪑 LOBBY FURNITURE
 
 ### Main House (Porch)
