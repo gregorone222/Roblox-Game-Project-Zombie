@@ -8,11 +8,11 @@ Sistem pertempuran dan senjata.
 | Type | Weapons |
 |:-----|:--------|
 | **Pistol** | M1911, Desert-Eagle, Glock-19 |
-| **SMG** | P90, MP5, UZI |
+| **SMG** | P90, MP5, KRISS-Vector |
 | **Assault Rifle** | AK-47, SCAR, M4A1 |
-| **Shotgun** | M590A1, AA-12, SPAS-12 |
+| **Shotgun** | M590A1, Benelli-M4, Remington-870 |
 | **Sniper** | L115A1, DSR, Barrett-M82 |
-| **LMG** | RPD, PKP, M249, Minigun |
+| **LMG** | RPD, MG42, M249, Minigun |
 
 ### Acquisition
 - **Mystery Box (Gacha):** Senjata acak dari Digital Fabricator
@@ -34,7 +34,7 @@ Holographic Data Chips yang memberikan upgrade permanen.
 | **HP Plus** | Iron Will ❤️ | Max Health +30% |
 | **Stamina Plus** | Second Wind 🏃 | Max Stamina +30% |
 | **Reload Plus** | Dexterity ✋ | Reload speed +30% |
-| **Fast Hands** | Adrenaline 🔥 | Fire Rate +30% |
+| **RateBoost** | Adrenaline 🔥 | Fire Rate +30% |
 | **Revive Plus** | Humanity 🤝 | Revive 50% faster |
 | **Medic** | Field Medic 💚 | Revived allies get 30% HP |
 

@@ -11,10 +11,12 @@ Sistem wave yang mengatur spawn zombie dan event spesial.
 
 | Event | Trigger | Effect |
 |:------|:--------|:-------|
-| **Dark Wave** | Tiap 2 Wave | Ambient dipadamkan, mengandalkan senter |
-| **Blood Moon** | 5% chance saat Dark Wave | Spawn Rate 1.5x, dunia merah |
+| **Day Cycle** | Progressive 6AM→6PM | Misi dimulai pagi, berakhir senja (Golden Hour) |
 | **Fast Wave** | 5% chance | Kecepatan Zombie 1.2x |
 | **Special Wave** | 5% chance | Hanya spawn Shooter & Tank |
+
+> [!NOTE]
+> Dark Wave dan Blood Moon sudah **diganti** dengan sistem Progressive Day Cycle.
 
 ## Boss Waves (ACT 1)
 

@@ -62,6 +62,7 @@ Target audiens utama adalah pemain berusia <13 tahun, dengan visual yang ramah a
 | [UI Development](workflows/ui-development.md) | UI development workflow |
 | [VFX Development](workflows/vfx-development.md) | VFX development workflow |
 | [Environment Development](workflows/environment-development.md) | Environment development workflow |
+| [Builder Scripting](workflows/builder-scripting.md) | Building structures with createPart & createWedge |
 | [Debugging](workflows/debugging.md) | Debugging guides |
 
 ### 🔌 Tools & Plugins
@@ -70,6 +71,12 @@ Target audiens utama adalah pemain berusia <13 tahun, dengan visual yang ramah a
 | [Viewmodel Editor](tools/viewmodel-editor.md) | FPS viewmodel positioning |
 | [Live Config Tuner](tools/live-config-tuner.md) | Real-time config tuning |
 | [AI NPC Integration](tools/ai-npc-integration.md) | AI NPC workflow |
+| [Phone Companion App](tools/phone-companion-app.md) | Mobile companion app |
+| [Procedural 3D Generator](tools/procedural-3d-generator.md) | 3D asset generation |
+| [Arsenal Forge](tools/arsenal-forge.md) | Weapon stats editor & tester |
+| [Wave Director](tools/wave-director.md) | Wave composition editor |
+| [Loot Balancer](tools/loot-balancer.md) | Drop rate balancer |
+| [Unified Shop Editor](tools/unified-shop-editor.md) | AP/MP shop editor |
 
 ### 📋 Reference
 | Document | Description |
