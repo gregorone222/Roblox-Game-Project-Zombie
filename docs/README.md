@@ -36,6 +36,7 @@ Target audiens utama adalah pemain berusia <13 tahun, dengan visual yang ramah a
 |:---------|:------------|
 | [Architecture](technical/architecture.md) | Service-Manager pattern |
 | [DataStore](technical/datastore.md) | ProfileStore, schema |
+| [Remote Events API](technical/remote-events-api.md) | RemoteEvents & RemoteFunctions reference |
 | [Deprecated API](technical/deprecated-api.md) | Usang API & solusi |
 
 ### 🗺️ Maps & Places
