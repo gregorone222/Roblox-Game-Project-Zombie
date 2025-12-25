@@ -233,7 +233,7 @@ function ZombieModule.SpawnZombie(spawnPoint, typeName, playerCount, difficulty,
 			local distanceToTarget = (targetPos - currentPos).Magnitude
 			local attackRange = zombie:GetAttribute("AttackRange") or 4
 
-			-- 1. ATTACK LOGIC: Highest priority. If in range, attack.
+		-- 1. ATTACK LOGIC: Highest priority. If in range, attack.
 			if distanceToTarget <= attackRange then
 				-- OPTIMIZATION: Throttled Line of Sight Check
 				if tick() - lastLoSCheckTime > losCheckInterval then
@@ -254,15 +254,17 @@ function ZombieModule.SpawnZombie(spawnPoint, typeName, playerCount, difficulty,
 					if hasLineOfSight then
 						-- Clear any existing path since we've reached the target
 						currentWaypoints = {}
+						
+						-- STOP MOVEMENT: Zombie should not advance when player is in attack range
+						humanoid.WalkSpeed = 0
+						
+						-- Face the target
+						zombie:SetPrimaryPartCFrame(CFrame.new(currentPos, Vector3.new(targetPos.X, currentPos.Y, targetPos.Z)))
 
 						-- Check attack cooldown
 						if tick() - lastAttackTime > attackCooldown then
 							lastAttackTime = tick()
 							zombie:SetAttribute("Attacking", true)
-							humanoid.WalkSpeed = 0 -- Stop moving to attack
-
-							-- Face the target for the attack
-							zombie:SetPrimaryPartCFrame(CFrame.new(currentPos, Vector3.new(targetPos.X, currentPos.Y, targetPos.Z)))
 
 							-- Perform the attack damage in a separate thread
 							task.spawn(function()
@@ -282,6 +284,12 @@ function ZombieModule.SpawnZombie(spawnPoint, typeName, playerCount, difficulty,
 							end)
 						end
 						continue -- Do not proceed to movement logic this cycle
+					end
+				else
+					-- Between LoS checks, if we're still in attack range, stay stopped
+					if distanceToTarget <= attackRange then
+						humanoid.WalkSpeed = 0
+						continue
 					end
 				end
 			end
