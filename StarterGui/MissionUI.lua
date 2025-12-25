@@ -1,7 +1,8 @@
 -- MissionUI.lua (LocalScript)
 -- Path: StarterGui/MissionUI.client.lua
 -- Script Place: Lobby
--- Theme: Notice Board / Clipboard (Paper Texture, Pushpins, Polaroid Photos)
+-- Theme: Survivor Camp Notice Board (COZY APOCALYPSE)
+-- Style: Warm wood tones, aged paper, lantern-lit atmosphere
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
@@ -21,27 +22,39 @@ if playerGui:FindFirstChild("MissionButton") then
 end
 
 -- ======================================================
--- 1. CONFIGURATION & THEME (Paperwork)
+-- 1. CONFIGURATION & THEME (Cozy Apocalypse)
 -- ======================================================
 
 local THEME = {
-	BoardWood = Color3.fromRGB(139, 69, 19),    -- Corkboard/Wood
-	PaperWhite = Color3.fromRGB(240, 235, 225), -- Aged Paper
-	PaperYellow = Color3.fromRGB(245, 230, 160),-- Note Paper
-
-	InkBlue = Color3.fromRGB(20, 20, 100),      -- Pen Ink
-	InkBlack = Color3.fromRGB(20, 20, 20),      -- Printed Text
-	InkRed = Color3.fromRGB(200, 30, 30),       -- Stamp Ink
-
-	PinRed = Color3.fromRGB(200, 50, 50),
-	PinGreen = Color3.fromRGB(50, 150, 50),
-	PinMetal = Color3.fromRGB(200, 200, 200),
+	-- Wood tones (Warm, weathered)
+	BoardWood = Color3.fromRGB(90, 60, 40),       -- Dark weathered wood
+	BoardWoodLight = Color3.fromRGB(120, 85, 55), -- Lighter wood accent
+	
+	-- Paper (Aged, warm tones)
+	PaperWhite = Color3.fromRGB(235, 225, 200),   -- Aged cream paper
+	PaperYellow = Color3.fromRGB(230, 210, 150),  -- Yellow sticky note
+	PaperBrown = Color3.fromRGB(200, 180, 140),   -- Brown parchment
+	
+	-- Ink (Handwritten feel)
+	InkBrown = Color3.fromRGB(60, 40, 20),        -- Brown ink (primary)
+	InkBlack = Color3.fromRGB(30, 25, 20),        -- Faded black
+	InkRed = Color3.fromRGB(160, 50, 40),         -- Muted red (urgent)
+	InkGreen = Color3.fromRGB(50, 100, 50),       -- Success green
+	
+	-- Accents
+	PinRed = Color3.fromRGB(180, 60, 50),         -- Pushpin
+	PinMetal = Color3.fromRGB(150, 140, 130),     -- Metal tack
+	Glow = Color3.fromRGB(255, 200, 120),         -- Lantern glow accent
+	
+	-- Background
+	Overlay = Color3.fromRGB(20, 15, 10),         -- Dark overlay
 }
 
 local FONTS = {
 	Hand = Enum.Font.IndieFlower,        -- Handwritten notes
 	Type = Enum.Font.SpecialElite,       -- Typewritten docs
 	Stamp = Enum.Font.Bangers,           -- Rubber stamps
+	Title = Enum.Font.Fondamento,        -- Decorative headers
 }
 
 -- Remote Functions/Events
@@ -272,7 +285,7 @@ local wHeader = Instance.new("TextLabel")
 wHeader.Text = "WEEKLY GOALS"
 wHeader.Font = FONTS.Hand
 wHeader.TextSize = 28
-wHeader.TextColor3 = THEME.InkBlue
+wHeader.TextColor3 = THEME.InkBrown
 wHeader.Size = UDim2.new(1, 0, 0, 40)
 wHeader.BackgroundTransparency = 1
 wHeader.Parent = weeklyPaper
@@ -282,7 +295,7 @@ wList.Size = UDim2.new(0.9, 0, 0.85, 0)
 wList.Position = UDim2.new(0.05, 0, 0.15, 0)
 wList.BackgroundTransparency = 1
 wList.ScrollBarThickness = 4
-wList.ScrollBarImageColor3 = THEME.InkBlue
+wList.ScrollBarImageColor3 = THEME.InkBrown
 wList.Parent = weeklyPaper
 local wlLayout = Instance.new("UIListLayout")
 wlLayout.Padding = UDim.new(0, 10)
@@ -304,7 +317,7 @@ local function createMissionItem(id, info, listParent, isWeekly)
 	local line = Instance.new("Frame")
 	line.Size = UDim2.new(1, 0, 0, 1)
 	line.Position = UDim2.new(0, 0, 1, -1)
-	line.BackgroundColor3 = isWeekly and THEME.InkBlue or THEME.InkBlack
+	line.BackgroundColor3 = isWeekly and THEME.InkBrown or THEME.InkBlack
 	line.BorderSizePixel = 0
 	line.Parent = frame
 
@@ -314,7 +327,7 @@ local function createMissionItem(id, info, listParent, isWeekly)
 	desc.Size = UDim2.new(0.7, 0, 0.6, 0)
 	desc.BackgroundTransparency = 1
 	desc.Font = isWeekly and FONTS.Hand or FONTS.Type
-	desc.TextColor3 = isWeekly and THEME.InkBlue or THEME.InkBlack
+	desc.TextColor3 = isWeekly and THEME.InkBrown or THEME.InkBlack
 	desc.TextSize = 18
 	desc.TextXAlignment = Enum.TextXAlignment.Left
 	desc.TextWrapped = true
