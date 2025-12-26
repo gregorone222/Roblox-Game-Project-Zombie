@@ -222,12 +222,6 @@ TANPA partikel, TANPA sculpt besar tambahan. Side view, background hitam.
 | M249 | LMG | ✅ OK |
 | Minigun | Special | ✅ OK |
 
-### 📝 Belum Dibuat
-- UZI (SMG)
-- SPAS-12 (Shotgun)
-- AA-12 (Shotgun)
-- PKP (LMG)
-
 ---
 
 ## 📝 Catatan Style Penting
@@ -243,4 +237,3 @@ TANPA partikel, TANPA sculpt besar tambahan. Side view, background hitam.
 - **Metal weathered** dengan rust dan wear
 - **Warm colors** (sunset orange, brown, rusty)
 - **Post-apocalyptic survivor** dengan cloth tape/bandage wraps
-

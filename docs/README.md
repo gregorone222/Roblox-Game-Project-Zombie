@@ -6,7 +6,7 @@ Target audiens utama adalah pemain berusia <13 tahun, dengan visual yang ramah a
 ## 🎨 Art Direction & Vision
 - **Style:** Stylized, Cartoon, Vibrant (Fortnite/Overwatch Style)
 - **Tone:** Fun, Arcade, Heroic (Bukan Horror/Grime)
-- **Visuals:** Warna cerah (Neon/Pastel), UI Rounded, Efek Hologram & Digital
+- **Visuals:** Warna cerah (Neon/Pastel), UI Rounded
 
 ## ❤️ Core Philosophy
 **"Memory over Addiction"** - Menciptakan pengalaman Co-op yang hangat dan bermakna.

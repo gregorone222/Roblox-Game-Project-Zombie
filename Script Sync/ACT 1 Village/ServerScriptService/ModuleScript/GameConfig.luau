@@ -1,0 +1,223 @@
+-- GameConfig.lua (ModuleScript)
+-- Path: ServerScriptService/ModuleScript/GameConfig.lua
+-- Script Place: Lobby, ACT 1: Village
+
+local config = {
+	-- Debug / Preview Mode
+	DebugMode = false,
+
+	-- Pengaturan DataStore
+	DataStore = {
+		-- Lingkungan saat ini: "prod" untuk rilis, "dev" untuk pengujian
+		Environment = "dev",
+	},
+
+	-- Pengaturan Gelombang (Wave)
+	Wave = {
+		-- Bonus yang diberikan kepada pemain yang bertahan hidup di akhir setiap gelombang
+		BonusPoints = 100,
+		-- Persentase heal yang diterima pemain di akhir setiap gelombang (0.1 = 10%)
+		HealPercentage = 0.1,
+		-- Pengganda jumlah zombi per pemain di setiap gelombang
+		ZombiesPerWavePerPlayer = 5,
+		-- Bonus poin yang diberikan saat mengalahkan bos
+		BossKillBonus = 5000,
+	},
+
+	-- Pengaturan Gelombang Gelap (Dark Wave) - DISABLED
+	DarkWave = {
+		-- Set to 0 to disable (replaced by progressive day cycle)
+		Interval = 0,
+	},
+
+	-- Pengaturan Bulan Darah (Blood Moon) - DISABLED
+	BloodMoon = {
+		-- Set to 0 to disable (replaced by progressive day cycle)
+		Chance = 0,
+		SpawnMultiplier = 1.5, -- Keep for potential future use
+	},
+
+	-- === NEW: Progressive Day Cycle ===
+	-- Misi dimulai pagi hari dan berakhir saat golden hour
+	DayCycle = {
+		Enabled = true,
+		StartTime = 6,    -- 6 AM (sunrise) at wave 1
+		EndTime = 18,     -- 6 PM (golden hour) at wave 50
+		TotalWaves = 50,  -- Total waves for full cycle
+		TransitionDuration = 15, -- Seconds to transition between wave times
+	},
+
+	-- Pengaturan Gelombang Spesial Baru
+	FastWave = {
+		-- Peluang terjadinya gelombang ini (0.15 = 15%)
+		Chance = 0.05,
+		-- Pengganda kecepatan untuk semua zombi
+		SpeedMultiplier = 1.2,
+	},
+
+	SpecialWave = {
+		-- Peluang terjadinya gelombang ini (0.15 = 15%)
+		Chance = 0.05,
+		-- Tipe zombi yang diizinkan untuk spawn
+		AllowedTypes = {"Shooter", "Tank"},
+	},
+
+	-- Pengaturan Pencahayaan (Lighting)
+	Lighting = {
+		-- Pengaturan untuk suasana gelap
+		DarkSettings = {
+			Brightness = 1,
+			ClockTime = 0,
+			Ambient = Color3.new(0, 0, 0),
+			OutdoorAmbient = Color3.new(0, 0, 0)
+		},
+		-- Pengaturan untuk suasana Blood Moon
+		BloodSettings = {
+			Brightness = 1,
+			ClockTime = 2,
+			Ambient = Color3.fromRGB(64, 0, 0),
+			OutdoorAmbient = Color3.fromRGB(128, 0, 0)
+		},
+		-- Durasi transisi pencahayaan dalam detik
+		TransitionDuration = 10,
+	},
+
+	-- Pengaturan Senjata Acak
+	RandomWeapon = {
+		BaseCost = 750,
+		CostIncrease = 50, -- Jumlah kenaikan harga setiap pembelian
+	},
+
+	-- Pengaturan Ekonomi
+	Economy = {
+		-- Pengganda untuk menghitung BP yang didapat dari kerusakan (misal: 1 damage * 0.5 = 0.5 BP)
+		BP_Per_Damage_Multiplier = 0.5,
+
+		-- Pengaturan Ekonomi Koin (Mata Uang Permanen)
+		Coins = {
+			-- Bonus koin tetap yang diberikan di akhir setiap gelombang
+			WaveCompleteBonus = 50,
+			-- Rasio konversi kerusakan menjadi koin. Formula: Kerusakan / Rasio.
+			-- Rasio ini akan dikalikan dengan HealthMultiplier tingkat kesulitan untuk menyeimbangkan.
+			DamageToCoinConversionRatio = 20,
+			-- Pengganda hadiah koin berdasarkan tingkat kesulitan. Diterapkan SETELAH perhitungan dasar.
+			DifficultyCoinMultipliers = {
+				Easy = 1,
+				Normal = 1.2,
+				Hard = 1.5,
+				Expert = 2,
+				Hell = 2.5,
+				Crazy = 3,
+			}
+		},
+
+		-- Pengaturan Ekonomi XP (Progresi Level)
+		XP = {
+			-- Bonus XP tetap yang diberikan di akhir setiap gelombang
+			WaveCompleteXPBonus = 100,
+			-- Rasio konversi kerusakan menjadi XP.
+			DamageToXPConversionRatio = 5,
+			-- Pengganda hadiah XP berdasarkan tingkat kesulitan.
+			DifficultyXPMultipliers = {
+				Easy = 1,
+				Normal = 1.2,
+				Hard = 1.5,
+				Expert = 2,
+				Hell = 2.2,
+				Crazy = 2.5,
+			}
+		}
+	},
+
+	-- Pengaturan Tingkat Kesulitan
+	Difficulty = {
+		Easy = {
+			HealthMultiplier = 1,
+			DamageMultiplier = 1,
+			Rules = {
+				FriendlyFire = false,
+				IncreaseRandomWeaponCost = false,
+				MaxPerks = 3,
+				AllowRevive = true,
+			}
+		},
+		Normal = {
+			HealthMultiplier = 1.5,
+			DamageMultiplier = 1.5,
+			Rules = {
+				FriendlyFire = false,
+				IncreaseRandomWeaponCost = false,
+				MaxPerks = 3,
+				AllowRevive = true,
+			}
+		},
+		Hard = {
+			HealthMultiplier = 2,
+			DamageMultiplier = 2,
+			Rules = {
+				FriendlyFire = true,
+				IncreaseRandomWeaponCost = false,
+				MaxPerks = 3,
+				AllowRevive = true,
+			}
+		},
+		Expert = {
+			HealthMultiplier = 3,
+			DamageMultiplier = 3,
+			Rules = {
+				FriendlyFire = true,
+				IncreaseRandomWeaponCost = true,
+				MaxPerks = 3,
+				AllowRevive = true,
+			}
+		},
+		Hell = {
+			HealthMultiplier = 5,
+			DamageMultiplier = 5,
+			Rules = {
+				FriendlyFire = true,
+				IncreaseRandomWeaponCost = true,
+				MaxPerks = 2,
+				AllowRevive = true,
+			}
+		},
+		Crazy = {
+			HealthMultiplier = 10,
+			DamageMultiplier = 10,
+			Rules = {
+				FriendlyFire = true,
+				IncreaseRandomWeaponCost = true,
+				MaxPerks = 1,
+				AllowRevive = false,
+			}
+		},
+	},
+
+	-- Pengaturan Sistem Knock & Revive
+	KnockSystem = {
+		-- Waktu revive dasar dalam detik
+		BaseReviveTime = 6,
+		-- Waktu revive jika reviver memiliki perk "ReviveBoost"
+		BoostedReviveTime = 3,
+		-- Penalti waktu tambahan per knock (setelah knock pertama)
+		PenaltyPerKnock = 1,
+		-- Jarak maksimum untuk melakukan revive
+		MaxReviveDistance = 8,
+		-- Persentase HP yang dipulihkan saat revive normal (0.1 = 10%)
+		DefaultReviveHealth = 0.1,
+		-- Persentase HP yang dipulihkan jika reviver memiliki perk "MedicBoost"
+		BoostedReviveHealth = 0.3,
+		-- Cooldown untuk ping saat knocked dalam detik
+		PingCooldown = 15,
+		-- Kekuatan lompatan standar setelah di-revive
+		PostReviveJumpPower = 50,
+	},
+
+	-- Pengaturan default untuk pemain
+	Player = {
+		-- Kekuatan lompatan standar
+		DefaultJumpPower = 30,
+	},
+}
+
+return config

@@ -1,0 +1,47 @@
+-- PlaceId Guard: Only run in ACT 1 Village
+local ACT1_PLACE_ID = 91523772574713
+if game.PlaceId ~= ACT1_PLACE_ID then return end
+
+-- MuzzleFlashHandler.lua (Script)
+-- Path: ServerScriptService/Script/MuzzleFlashHandler.lua
+-- Script Place: ACT 1: Village
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local RemoteEvents = game.ReplicatedStorage.RemoteEvents
+local ModuleScriptReplicatedStorage = ReplicatedStorage.ModuleScript
+
+local WeaponModule = require(ModuleScriptReplicatedStorage:WaitForChild("WeaponModule"))
+
+local MuzzleFlashEvent = RemoteEvents:WaitForChild("MuzzleFlashEvent")
+local MuzzleFlashBroadcast = RemoteEvents:WaitForChild("MuzzleFlashBroadcast")
+
+MuzzleFlashEvent.OnServerEvent:Connect(function(player, handle, weaponName)
+	local char = player.Character
+	if not char then return end
+
+	-- Cari tool yang sesuai dengan weaponName di karakter
+	local tool = char:FindFirstChild(weaponName)
+	if not tool or not tool:IsA("Tool") then return end
+
+	local weaponStats = WeaponModule.Weapons[weaponName]
+	if not weaponStats then return end
+
+	-- Priority 1: Cari Muzzle part
+	local muzzle = tool:FindFirstChild("Muzzle")
+	local flashCFrame
+	
+	if muzzle and muzzle:IsA("BasePart") then
+		-- Gunakan posisi Muzzle langsung
+		flashCFrame = muzzle.CFrame
+	else
+		-- Fallback: Handle + MuzzleOffset
+		local handle = tool:FindFirstChild("Handle")
+		if not handle then return end
+		local muzzleOffset = weaponStats.MuzzleOffset or Vector3.new(0, 0, -1)
+		flashCFrame = handle.CFrame * CFrame.new(muzzleOffset)
+	end
+
+	-- Broadcast ke semua klien dengan info player
+	MuzzleFlashBroadcast:FireAllClients(player, flashCFrame, weaponName)
+end)

@@ -27,9 +27,7 @@ Alur kerja kolaboratif standar untuk pembuatan User Interface (UI).
 
 ### Visual References
 - Fortnite: Save the World (Homebase)
-- The Last of Us (kartun version)
 - Overwatch 2 (Junkrat style)
-- Adventure Time (Post-mushroom war)
 
 ## 3. Asset Processing (User)
 1. Selection - pilih variasi terbaik

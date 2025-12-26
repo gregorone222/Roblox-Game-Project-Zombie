@@ -166,7 +166,6 @@ Kadang aku dengar suara aneh dari arah hutan..."
 
 **Appearance:**
 - Kakek tua dengan topi petani
-- Selimut di pundak
 - Tongkat kayu di samping kursi
 - Sering menutup mata (tapi belum tentu tidur)
 
