@@ -241,8 +241,6 @@ function HybridViewmodel:createViewmodel()
 
 	-- Initial position
 	self:updateViewmodel(0)
-
-	print("[HybridViewmodel] Created viewmodel for:", self.weaponName)
 end
 
 function HybridViewmodel:destroyViewmodel()
