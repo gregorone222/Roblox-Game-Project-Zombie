@@ -19,18 +19,32 @@ WeaponModule.Weapons = {
 		Spread = 0.06,
 		ADS_Spread = 0.015,
 		Recoil = 0.6,
-		IdleAnimation = "rbxassetid://96179279485775",
 		Use_Skin = "Default Skin",
-		MuzzleOffset = Vector3.new(0, 0, -0.7),
-		TracerOffset = Vector3.new(0, 0.2, -0.7),
 		TransitionTime = 0.15,
 		ADS_BlendTimeVM = 0.2,
-		ViewmodelPosition = Vector3.new(1.3, -0.5, -2.5),
-		ViewmodelRotation = Vector3.new(0, 0, 0),
+		-- ViewmodelPosition and ViewmodelRotation are now PER-ANIMATION (see Animations below)
 		Sounds = {
 			Fire = "Weapons.Pistol.Fire",
 			Reload = "Weapons.Pistol.Reload",
 			Empty = "Weapons.Empty"
+		},
+		Animations = {
+			-- Per-animation viewmodel positions (R15 animations)
+			Idle = {
+				Id = "rbxassetid://88770091398413",
+				Position = Vector3.new(0.117, -1.563, -0.250),
+				Rotation = Vector3.new(5, 353, 0)
+			},
+			Run = {
+				Id = "rbxassetid://110673281003404",
+				Position = Vector3.new(0.100, -1.650, -0.750),
+				Rotation = Vector3.new(6, 0, -7)
+			},
+			ADS = {
+				Id = "rbxassetid://96179279485775",
+				Position = Vector3.new(-0.365, -1.698, 0.329),
+				Rotation = Vector3.new(0, -8, 0)
+			}
 		},
 		UpgradeConfig = {
 			BaseCost = 150,
@@ -49,16 +63,7 @@ WeaponModule.Weapons = {
 				ADS_Position_Mobile = Vector3.new(0.15, -0.37, -1),
 				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
 			},
-			["Frostfang"] = {
-				MeshId = "rbxassetid://133865573871863",
-				TextureId = "rbxassetid://77597734282220",
-				ADS_Position = Vector3.new(0.15, -0.32, -1),
-				ADS_Rotation = Vector3.new(0, 0, 0),
-				ADS_Position_Mobile = Vector3.new(0.15, -0.37, -1),
-				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
-				MPCost = 2500,
-				APCost = 500
-			}
+			-- TODO: Add more skins here
 		},
 		ShowCrosshair = true,
 		ShowCrosshairADS = false,
@@ -88,8 +93,6 @@ WeaponModule.Weapons = {
 		ADS_Spread = 0.02,
 		Recoil = 2,
 		Use_Skin = "Default Skin",
-		MuzzleOffset = Vector3.new(0, 0, -3.5),
-		TracerOffset = Vector3.new(0, 0, -3.5),
 		TransitionTime = 0.2,
 		ADS_BlendTimeVM = 0.2,
 		ViewmodelPosition = Vector3.new(1.5, -0.8, -2.5),
@@ -98,6 +101,24 @@ WeaponModule.Weapons = {
 			Fire = "Weapons.Rifle.Fire",
 			Reload = "Weapons.Rifle.Reload",
 			Empty = "Weapons.Empty"
+		},
+		Animations = {
+			-- Per-animation viewmodel positions (R15 animations)
+			Idle = {
+				Id = "rbxassetid://100826748354431",
+				Position = Vector3.new(0.117, -1.563, -0.250),
+				Rotation = Vector3.new(5, 353, 0)
+			},
+			Run = {
+				Id = "rbxassetid://72920768054653",
+				Position = Vector3.new(0.100, -1.650, -0.750),
+				Rotation = Vector3.new(6, 0, -7)
+			},
+			ADS = {
+				Id = "rbxassetid://108327320146582",
+				Position = Vector3.new(-0.365, -1.698, 0.329),
+				Rotation = Vector3.new(0, -8, 0)
+			}
 		},
 		UpgradeConfig = {
 			BaseCost = 150,
@@ -116,16 +137,7 @@ WeaponModule.Weapons = {
 				ADS_Position_Mobile = Vector3.new(0.52, -0.36, -1.1),
 				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
 			},
-			["Magma Wyrm"] = {
-				MeshId = "rbxassetid://86320221349682",
-				TextureId = "rbxassetid://79174709237539",
-				ADS_Position = Vector3.new(0.5, -0.42, -1.2),
-				ADS_Rotation = Vector3.new(0, 0, 0),
-				ADS_Position_Mobile = Vector3.new(0.5, -0.45, -1),
-				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
-				MPCost = 2500,
-				APCost = 500
-			}
+			-- TODO: Add more skins here
 		},
 		ShowCrosshair = true,
 		ShowCrosshairADS = false,
@@ -155,8 +167,6 @@ WeaponModule.Weapons = {
 		ADS_Spread = 0.03,
 		Recoil = 1.5,
 		Use_Skin = "Default Skin",
-		MuzzleOffset = Vector3.new(0, 0, -1.8),
-		TracerOffset = Vector3.new(0, -0.2, -1.8),
 		TransitionTime = 0.18,
 		ADS_BlendTimeVM = 0.2,
 		ViewmodelPosition = Vector3.new(1.3, -0.6, -2.5),
@@ -165,6 +175,24 @@ WeaponModule.Weapons = {
 			Fire = "Weapons.SMG.Fire",
 			Reload = "Weapons.SMG.Reload",
 			Empty = "Weapons.Empty"
+		},
+		Animations = {
+			-- Per-animation viewmodel positions (R15 animations)
+			Idle = {
+				Id = "rbxassetid://97043795469878",
+				Position = Vector3.new(0.117, -1.563, -0.250),
+				Rotation = Vector3.new(5, 353, 0)
+			},
+			Run = {
+				Id = "rbxassetid://72508031899093",
+				Position = Vector3.new(0.100, -1.650, -0.750),
+				Rotation = Vector3.new(6, 0, -7)
+			},
+			ADS = {
+				Id = "rbxassetid://133396772482448",
+				Position = Vector3.new(-0.365, -1.698, 0.329),
+				Rotation = Vector3.new(0, -8, 0)
+			}
 		},
 		UpgradeConfig = {
 			BaseCost = 150,
@@ -183,16 +211,7 @@ WeaponModule.Weapons = {
 				ADS_Position_Mobile = Vector3.new(0.3, -0.46, -1),
 				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
 			},
-			["Ember-Stinger"] = {
-				MeshId = "rbxassetid://121935121387960",
-				TextureId = "rbxassetid://74165754312654",
-				ADS_Position = Vector3.new(0.3, -0.4, -1),
-				ADS_Rotation = Vector3.new(0, 0, 0),
-				ADS_Position_Mobile = Vector3.new(0.3, -0.46, -1),
-				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
-				MPCost = 5000,
-				APCost = 1500
-			}
+			-- TODO: Add more skins here
 		},
 		ShowCrosshair = true,
 		ShowCrosshairADS = false,
@@ -223,8 +242,6 @@ WeaponModule.Weapons = {
 		Recoil = 4,
 		Pellets = 9,
 		Use_Skin = "Default Skin",
-		MuzzleOffset = Vector3.new(0, 0, -3),
-		TracerOffset = Vector3.new(0, 0, -3),
 		TransitionTime = 0.25,
 		ADS_BlendTimeVM = 0.2,
 		ViewmodelPosition = Vector3.new(1.6, -0.8, -2.5),
@@ -233,6 +250,24 @@ WeaponModule.Weapons = {
 			Fire = "Weapons.Shotgun.Fire",
 			Reload = "Weapons.Shotgun.Reload",
 			Empty = "Weapons.Empty"
+		},
+		Animations = {
+			-- Per-animation viewmodel positions (R15 animations)
+			Idle = {
+				Id = "rbxassetid://87200989978857",
+				Position = Vector3.new(0.117, -1.563, -0.250),
+				Rotation = Vector3.new(5, 353, 0)
+			},
+			Run = {
+				Id = "rbxassetid://82244417276650",
+				Position = Vector3.new(0.100, -1.650, -0.750),
+				Rotation = Vector3.new(6, 0, -7)
+			},
+			ADS = {
+				Id = "rbxassetid://109872961182726",
+				Position = Vector3.new(-0.365, -1.698, 0.329),
+				Rotation = Vector3.new(0, -8, 0)
+			}
 		},
 		UpgradeConfig = {
 			BaseCost = 150,
@@ -251,16 +286,7 @@ WeaponModule.Weapons = {
 				ADS_Position_Mobile = Vector3.new(0.5, -0.25, -1),
 				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
 			},
-			["Earthshatter"] = {
-				MeshId = "rbxassetid://138496874472635",
-				TextureId = "rbxassetid://128746964491824",
-				ADS_Position = Vector3.new(0.5, -0.25, -1),
-				ADS_Rotation = Vector3.new(0, 0, 0),
-				ADS_Position_Mobile = Vector3.new(0.5, -0.25, -1),
-				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
-				MPCost = 2500,
-				APCost = 1500
-			}
+			-- TODO: Add more skins here
 		},
 		ShowCrosshair = true,
 		ShowCrosshairADS = false,
@@ -290,8 +316,6 @@ WeaponModule.Weapons = {
 		ADS_Spread = 0.001,
 		Recoil = 6,
 		Use_Skin = "Default Skin",
-		MuzzleOffset = Vector3.new(0, 0, -3),
-		TracerOffset = Vector3.new(0, 0, -3),
 		TransitionTime = 0.3,
 		ADS_BlendTimeVM = 0.2,
 		ViewmodelPosition = Vector3.new(1.6, -0.3, -2.5),
@@ -300,6 +324,24 @@ WeaponModule.Weapons = {
 			Fire = "Weapons.Sniper.Fire",
 			Reload = "Weapons.Sniper.Reload",
 			Empty = "Weapons.Empty"
+		},
+		Animations = {
+			-- Per-animation viewmodel positions (R15 animations)
+			Idle = {
+				Id = "rbxassetid://121902228649616",
+				Position = Vector3.new(0.117, -1.563, -0.250),
+				Rotation = Vector3.new(5, 353, 0)
+			},
+			Run = {
+				Id = "rbxassetid://135548977187126",
+				Position = Vector3.new(0.100, -1.650, -0.750),
+				Rotation = Vector3.new(6, 0, -7)
+			},
+			ADS = {
+				Id = "rbxassetid://80982085891352",
+				Position = Vector3.new(-0.365, -1.698, 0.329),
+				Rotation = Vector3.new(0, -8, 0)
+			}
 		},
 		UpgradeConfig = {
 			BaseCost = 150,
@@ -318,16 +360,7 @@ WeaponModule.Weapons = {
 				ADS_Position_Mobile = Vector3.new(0.15, 10, -1),
 				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
 			},
-			["Tiamat's Gaze"] = {
-				MeshId = "rbxassetid://105308918653480",
-				TextureId = "rbxassetid://92815788833196",
-				ADS_Position = Vector3.new(0.15, 10, -1),
-				ADS_Rotation = Vector3.new(0, 0, 0),
-				ADS_Position_Mobile = Vector3.new(0.15, 10, -1),
-				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
-				MPCost = 2500,
-				APCost = 4000
-			}
+			-- TODO: Add more skins here
 		},
 		ShowCrosshair = false,
 		ShowCrosshairADS = true,
@@ -357,8 +390,6 @@ WeaponModule.Weapons = {
 		ADS_Spread = 0.012,
 		Recoil = 1.2,
 		Use_Skin = "Default Skin",
-		MuzzleOffset = Vector3.new(0, 0, -0.8),
-		TracerOffset = Vector3.new(0, 0.2, -0.8),
 		TransitionTime = 0.15,
 		ADS_BlendTimeVM = 0.2,
 		ViewmodelPosition = Vector3.new(1.2, -0.4, -2.3),
@@ -367,6 +398,24 @@ WeaponModule.Weapons = {
 			Fire = "Weapons.Pistol.Fire",
 			Reload = "Weapons.Pistol.Reload",
 			Empty = "Weapons.Empty"
+		},
+		Animations = {
+			-- Per-animation viewmodel positions (R15 animations)
+			Idle = {
+				Id = "rbxassetid://132391095441661",
+				Position = Vector3.new(0.117, -1.563, -0.250),
+				Rotation = Vector3.new(5, 353, 0)
+			},
+			Run = {
+				Id = "rbxassetid://135548977187126",
+				Position = Vector3.new(0.100, -1.650, -0.750),
+				Rotation = Vector3.new(6, 0, -7)
+			},
+			ADS = {
+				Id = "rbxassetid://124831631791034",
+				Position = Vector3.new(-0.365, -1.698, 0.329),
+				Rotation = Vector3.new(0, -8, 0)
+			}
 		},
 		UpgradeConfig = {
 			BaseCost = 200,
@@ -385,16 +434,7 @@ WeaponModule.Weapons = {
 				ADS_Position_Mobile = Vector3.new(0.15, -0.35, -1),
 				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
 			},
-			["Imperial Dragon"] = {
-				MeshId = "rbxassetid://124923572099909",
-				TextureId = "rbxassetid://134958579707457",
-				ADS_Position = Vector3.new(0.15, -0.33, -1),
-				ADS_Rotation = Vector3.new(0, 0, 0),
-				ADS_Position_Mobile = Vector3.new(0.15, -0.35, -1),
-				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
-				MPCost = 2500,
-				APCost = 150
-			}
+			-- TODO: Add more skins here
 		},
 		ShowCrosshair = true,
 		ShowCrosshairADS = false,
@@ -424,8 +464,6 @@ WeaponModule.Weapons = {
 		ADS_Spread = 0.01,
 		Recoil = 0.4,
 		Use_Skin = "Default Skin",
-		MuzzleOffset = Vector3.new(0, 0, -0.6),
-		TracerOffset = Vector3.new(0, 0.2, -0.6),
 		TransitionTime = 0.12,
 		ADS_BlendTimeVM = 0.2,
 		ViewmodelPosition = Vector3.new(1.4, -0.5, -2.3),
@@ -452,16 +490,7 @@ WeaponModule.Weapons = {
 				ADS_Position_Mobile = Vector3.new(0.15, -0.37, -1),
 				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
 			},
-			["Toxic Fang"] = {
-				MeshId = "rbxassetid://90503068060048",
-				TextureId = "rbxassetid://96006022728808",
-				ADS_Position = Vector3.new(0.15, -0.37, -1),
-				ADS_Rotation = Vector3.new(0, 0, 0),
-				ADS_Position_Mobile = Vector3.new(0.15, -0.37, -1),
-				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
-				MPCost = 2500,
-				APCost = 150
-			}
+			-- TODO: Add more skins here
 		},
 		ShowCrosshair = true,
 		ShowCrosshairADS = false,
@@ -491,8 +520,6 @@ WeaponModule.Weapons = {
 		ADS_Spread = 0.02,
 		Recoil = 1.2,
 		Use_Skin = "Default Skin",
-		MuzzleOffset = Vector3.new(0, 0, -1.5),
-		TracerOffset = Vector3.new(0, -0.1, -1.5),
 		TransitionTime = 0.18,
 		ADS_BlendTimeVM = 0.2,
 		ViewmodelPosition = Vector3.new(1.6, -0.7, -2.5),
@@ -519,16 +546,7 @@ WeaponModule.Weapons = {
 				ADS_Position_Mobile = Vector3.new(0.3, -0.52, -1),
 				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
 			},
-			["Abyssal Watcher"] = {
-				MeshId = "rbxassetid://101613325015275",
-				TextureId = "rbxassetid://92446147800521",
-				ADS_Position = Vector3.new(0.3, -0.52, -1.2),
-				ADS_Rotation = Vector3.new(0, 0, 0),
-				ADS_Position_Mobile = Vector3.new(0.3, -0.52, -1),
-				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
-				MPCost = 2500,
-				APCost = 150
-			}
+			-- TODO: Add more skins here
 		},
 		ShowCrosshair = true,
 		ShowCrosshairADS = false,
@@ -543,24 +561,22 @@ WeaponModule.Weapons = {
 		VisualRecoilKick = -0.7,
 		VisualRecoilRecovery = 15
 	},
-	["UZI"] = {
-		DisplayName = "UZI",
+	["KRISS-Vector"] = {
+		DisplayName = "KRISS Vector",
 		Category = "SMG",
-		Damage = 18,
+		Damage = 24,
 		HeadshotMultiplier = 2,
-		MaxAmmo = 32,
-		ReserveAmmo = 128,
-		ReloadTime = 2.1,
-		FireRate = 0.05,
-		ADSFoV = 58,
+		MaxAmmo = 25,
+		ReserveAmmo = 125,
+		ReloadTime = 2.0,
+		FireRate = 0.045,
+		ADSFoV = 55,
 		ADS_WalkSpeed = 10,
-		Spread = 0.1,
-		ADS_Spread = 0.025,
-		Recoil = 1.0,
+		Spread = 0.07,
+		ADS_Spread = 0.018,
+		Recoil = 0.8,
 		Use_Skin = "Default Skin",
-		MuzzleOffset = Vector3.new(0, 0, -1.2),
-		TracerOffset = Vector3.new(0, -0.1, -1.2),
-		TransitionTime = 0.16,
+		TransitionTime = 0.14,
 		ADS_BlendTimeVM = 0.2,
 		ViewmodelPosition = Vector3.new(1.5, -0.6, -2.4),
 		ViewmodelRotation = Vector3.new(0, 0, 0),
@@ -570,11 +586,11 @@ WeaponModule.Weapons = {
 			Empty = "Weapons.Empty"
 		},
 		UpgradeConfig = {
-			BaseCost = 160,
-			CostMultiplier = 1.4,
-			CostExpo = 1.2,
-			DamagePerLevel = 4,
-			AmmoPerLevel = 8,
+			BaseCost = 180,
+			CostMultiplier = 1.5,
+			CostExpo = 1.3,
+			DamagePerLevel = 5,
+			AmmoPerLevel = 6,
 			MaxLevel = 10
 		},
 		Skins = {
@@ -586,16 +602,7 @@ WeaponModule.Weapons = {
 				ADS_Position_Mobile = Vector3.new(0.3, -0.46, -0.8),
 				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
 			},
-			["Dragon's Sting"] = {
-				MeshId = "rbxassetid://94474076960084",
-				TextureId = "rbxassetid://114488545177685",
-				ADS_Position = Vector3.new(0.3, -0.46, -0.8),
-				ADS_Rotation = Vector3.new(0, 0, 0),
-				ADS_Position_Mobile = Vector3.new(0.3, -0.46, -0.8),
-				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
-				MPCost = 2500,
-				APCost = 150
-			}
+			-- TODO: Add more skins here
 		},
 		ShowCrosshair = true,
 		ShowCrosshairADS = false,
@@ -625,8 +632,6 @@ WeaponModule.Weapons = {
 		ADS_Spread = 0.018,
 		Recoil = 1.8,
 		Use_Skin = "Default Skin",
-		MuzzleOffset = Vector3.new(0, 0, -3.2),
-		TracerOffset = Vector3.new(0, 0, -3.2),
 		TransitionTime = 0.2,
 		ADS_BlendTimeVM = 0.2,
 		ViewmodelPosition = Vector3.new(1.5, -1, -2.5),
@@ -653,16 +658,7 @@ WeaponModule.Weapons = {
 				ADS_Position_Mobile = Vector3.new(0.5, -0.75, -1.4),
 				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
 			},
-			["Jade Serpent"] = {
-				MeshId = "rbxassetid://95796827607716",
-				TextureId = "rbxassetid://118591800907782",
-				ADS_Position = Vector3.new(0.5, -0.75, -1.4),
-				ADS_Rotation = Vector3.new(0, 0, 0),
-				ADS_Position_Mobile = Vector3.new(0.5, -0.75, -1.4),
-				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
-				MPCost = 2500,
-				APCost = 150
-			}
+			-- TODO: Add more skins here
 		},
 		ShowCrosshair = true,
 		ShowCrosshairADS = false,
@@ -692,8 +688,6 @@ WeaponModule.Weapons = {
 		ADS_Spread = 0.02,
 		Recoil = 1.5,
 		Use_Skin = "Default Skin",
-		MuzzleOffset = Vector3.new(0, 0, -3.0),
-		TracerOffset = Vector3.new(0, 0, -3.0),
 		TransitionTime = 0.18,
 		ADS_BlendTimeVM = 0.2,
 		ViewmodelPosition = Vector3.new(1.5, -0.7, -2.5),
@@ -720,16 +714,7 @@ WeaponModule.Weapons = {
 				ADS_Position_Mobile = Vector3.new(0.5, -0.5, -1.1),
 				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
 			},
-			["Cataclysm"] = {
-				MeshId = "rbxassetid://108029015161411",
-				TextureId = "rbxassetid://122488026885264",
-				ADS_Position = Vector3.new(0.5, -0.5, -1.1),
-				ADS_Rotation = Vector3.new(0, 0, 0),
-				ADS_Position_Mobile = Vector3.new(0.5, -0.5, -1.1),
-				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
-				MPCost = 2500,
-				APCost = 150
-			}
+			-- TODO: Add more skins here
 		},
 		ShowCrosshair = true,
 		ShowCrosshairADS = false,
@@ -744,25 +729,23 @@ WeaponModule.Weapons = {
 		VisualRecoilKick = -0.7,
 		VisualRecoilRecovery = 15
 	},
-	["AA-12"] = {
-		DisplayName = "AA-12",
+	["Benelli-M4"] = {
+		DisplayName = "Benelli M4",
 		Category = "Shotgun",
-		Damage = 8,
+		Damage = 11,
 		HeadshotMultiplier = 1.5,
-		MaxAmmo = 8,
-		ReserveAmmo = 40,
-		ReloadTime = 2,
-		FireRate = 0.3,
-		ADSFoV = 45,
-		ADS_WalkSpeed = 5,
-		Spread = 0.4,
-		ADS_Spread = 0.2,
-		Recoil = 3,
+		MaxAmmo = 7,
+		ReserveAmmo = 35,
+		ReloadTime = 2.2,
+		FireRate = 0.4,
+		ADSFoV = 42,
+		ADS_WalkSpeed = 6,
+		Spread = 0.32,
+		ADS_Spread = 0.16,
+		Recoil = 3.5,
 		Pellets = 8,
 		Use_Skin = "Default Skin",
-		MuzzleOffset = Vector3.new(0, 0, -2.8),
-		TracerOffset = Vector3.new(0, 0, -2.8),
-		TransitionTime = 0.25,
+		TransitionTime = 0.24,
 		ADS_BlendTimeVM = 0.2,
 		ViewmodelPosition = Vector3.new(1.6, -0.8, -2.5),
 		ViewmodelRotation = Vector3.new(0, 0, 0),
@@ -772,10 +755,10 @@ WeaponModule.Weapons = {
 			Empty = "Weapons.Empty"
 		},
 		UpgradeConfig = {
-			BaseCost = 250,
-			CostMultiplier = 1.7,
-			CostExpo = 1.4,
-			DamagePerLevel = 4,
+			BaseCost = 240,
+			CostMultiplier = 1.6,
+			CostExpo = 1.3,
+			DamagePerLevel = 5,
 			AmmoPerLevel = 2,
 			MaxLevel = 10
 		},
@@ -788,16 +771,7 @@ WeaponModule.Weapons = {
 				ADS_Position_Mobile = Vector3.new(0.5, -0.46, -1),
 				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
 			},
-			["Celtic Guardian"] = {
-				MeshId = "rbxassetid://74630551326118",
-				TextureId = "rbxassetid://121590063980368",
-				ADS_Position = Vector3.new(0.5, -0.46, -1),
-				ADS_Rotation = Vector3.new(0, 0, 0),
-				ADS_Position_Mobile = Vector3.new(0.5, -0.46, -1),
-				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
-				MPCost = 2500,
-				APCost = 150
-			}
+			-- TODO: Add more skins here
 		},
 		ShowCrosshair = true,
 		ShowCrosshairADS = false,
@@ -812,25 +786,23 @@ WeaponModule.Weapons = {
 		VisualRecoilKick = -0.7,
 		VisualRecoilRecovery = 15
 	},
-	["SPAS-12"] = {
-		DisplayName = "SPAS-12",
+	["Remington-870"] = {
+		DisplayName = "Remington 870",
 		Category = "Shotgun",
-		Damage = 12,
+		Damage = 13,
 		HeadshotMultiplier = 1.5,
 		MaxAmmo = 6,
-		ReserveAmmo = 36,
-		ReloadTime = 3.0,
-		FireRate = 0.8,
-		ADSFoV = 42,
+		ReserveAmmo = 30,
+		ReloadTime = 2.8,
+		FireRate = 0.9,
+		ADSFoV = 40,
 		ADS_WalkSpeed = 5,
-		Spread = 0.3,
-		ADS_Spread = 0.18,
-		Recoil = 3.5,
-		Pellets = 8,
+		Spread = 0.28,
+		ADS_Spread = 0.14,
+		Recoil = 4.0,
+		Pellets = 9,
 		Use_Skin = "Default Skin",
-		MuzzleOffset = Vector3.new(0, 0, -3.2),
-		TracerOffset = Vector3.new(0, 0, -3.2),
-		TransitionTime = 0.26,
+		TransitionTime = 0.28,
 		ADS_BlendTimeVM = 0.2,
 		ViewmodelPosition = Vector3.new(1.6, -0.8, -2.5),
 		ViewmodelRotation = Vector3.new(0, 0, 0),
@@ -840,10 +812,10 @@ WeaponModule.Weapons = {
 			Empty = "Weapons.Empty"
 		},
 		UpgradeConfig = {
-			BaseCost = 230,
-			CostMultiplier = 1.6,
+			BaseCost = 200,
+			CostMultiplier = 1.5,
 			CostExpo = 1.3,
-			DamagePerLevel = 5,
+			DamagePerLevel = 6,
 			AmmoPerLevel = 2,
 			MaxLevel = 10
 		},
@@ -856,16 +828,7 @@ WeaponModule.Weapons = {
 				ADS_Position_Mobile = Vector3.new(0.5, -0.53, -1),
 				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
 			},
-			["Leviathan"] = {
-				MeshId = "rbxassetid://71271748638119",
-				TextureId = "rbxassetid://96726719275318",
-				ADS_Position = Vector3.new(0.5, -0.53, -1),
-				ADS_Rotation = Vector3.new(0, 0, 0),
-				ADS_Position_Mobile = Vector3.new(0.5, -0.53, -1),
-				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
-				MPCost = 2500,
-				APCost = 150
-			}
+			-- TODO: Add more skins here
 		},
 		ShowCrosshair = true,
 		ShowCrosshairADS = false,
@@ -895,8 +858,6 @@ WeaponModule.Weapons = {
 		ADS_Spread = 0.0008,
 		Recoil = 7,
 		Use_Skin = "Default Skin",
-		MuzzleOffset = Vector3.new(0, 0, -3.5),
-		TracerOffset = Vector3.new(0, 0, -3.5),
 		TransitionTime = 0.35,
 		ADS_BlendTimeVM = 0.2,
 		ViewmodelPosition = Vector3.new(1.6, -0.3, -2.5),
@@ -923,16 +884,7 @@ WeaponModule.Weapons = {
 				ADS_Position_Mobile = Vector3.new(0.15, 10, -1),
 				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
 			},
-			["Hell's Longview"] = {
-				MeshId = "rbxassetid://88085754055541",
-				TextureId = "rbxassetid://114891981963144",
-				ADS_Position = Vector3.new(0.15, 10, -1),
-				ADS_Rotation = Vector3.new(0, 0, 0),
-				ADS_Position_Mobile = Vector3.new(0.15, 10, -1),
-				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
-				MPCost = 10000,
-				APCost = 150
-			}
+			-- TODO: Add more skins here
 		},
 		ShowCrosshair = false,
 		ShowCrosshairADS = true,
@@ -962,8 +914,6 @@ WeaponModule.Weapons = {
 		ADS_Spread = 0.0006,
 		Recoil = 9,
 		Use_Skin = "Default Skin",
-		MuzzleOffset = Vector3.new(0, 0, -4.0),
-		TracerOffset = Vector3.new(0, 0, -4.0),
 		TransitionTime = 0.4,
 		ADS_BlendTimeVM = 0.2,
 		ViewmodelPosition = Vector3.new(1.6, -0.3, -2.5),
@@ -990,16 +940,7 @@ WeaponModule.Weapons = {
 				ADS_Position_Mobile = Vector3.new(0.15, 10, -1),
 				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
 			},
-			["Final Judgment"] = {
-				MeshId = "rbxassetid://102032883320717",
-				TextureId = "rbxassetid://122464756416307",
-				ADS_Position = Vector3.new(0.15, 10, -1),
-				ADS_Rotation = Vector3.new(0, 0, 0),
-				ADS_Position_Mobile = Vector3.new(0.15, 10, -1),
-				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
-				MPCost = 2500,
-				APCost = 150
-			}
+			-- TODO: Add more skins here
 		},
 		ShowCrosshair = false,
 		ShowCrosshairADS = true,
@@ -1029,8 +970,6 @@ WeaponModule.Weapons = {
 		ADS_Spread = 0.04,
 		Recoil = 2.5,
 		Use_Skin = "Default Skin",
-		MuzzleOffset = Vector3.new(0, 0, -4.0),
-		TracerOffset = Vector3.new(0, 0, -4.0),
 		TransitionTime = 0.25,
 		ADS_BlendTimeVM = 0.2,
 		ViewmodelPosition = Vector3.new(1.5, -0.6, -2.5),
@@ -1057,16 +996,7 @@ WeaponModule.Weapons = {
 				ADS_Position_Mobile = Vector3.new(0.5, -0.6, -0.5),
 				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
 			},
-			["Volcanic Pulse"] = {
-				MeshId = "rbxassetid://82779836747791",
-				TextureId = "rbxassetid://88845012995250",
-				ADS_Position = Vector3.new(0.5, -0.6, -0.5),
-				ADS_Rotation = Vector3.new(0, 0, 0),
-				ADS_Position_Mobile = Vector3.new(0.5, -0.6, -0.5),
-				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
-				MPCost = 2500,
-				APCost = 150
-			}
+			-- TODO: Add more skins here
 		},
 		ShowCrosshair = true,
 		ShowCrosshairADS = false,
@@ -1081,24 +1011,22 @@ WeaponModule.Weapons = {
 		VisualRecoilKick = -0.7,
 		VisualRecoilRecovery = 15
 	},
-	["PKP"] = {
-		DisplayName = "PKP",
+	["MG42"] = {
+		DisplayName = "MG42",
 		Category = "LMG",
-		Damage = 35,
+		Damage = 32,
 		HeadshotMultiplier = 2,
-		MaxAmmo = 100,
-		ReserveAmmo = 200,
-		ReloadTime = 5.0,
-		FireRate = 0.1,
-		ADSFoV = 62,
-		ADS_WalkSpeed = 7,
-		Spread = 0.14,
-		ADS_Spread = 0.035,
-		Recoil = 3.0,
+		MaxAmmo = 75,
+		ReserveAmmo = 225,
+		ReloadTime = 4.5,
+		FireRate = 0.05,
+		ADSFoV = 60,
+		ADS_WalkSpeed = 6,
+		Spread = 0.16,
+		ADS_Spread = 0.04,
+		Recoil = 2.5,
 		Use_Skin = "Default Skin",
-		MuzzleOffset = Vector3.new(0, 0, -4.2),
-		TracerOffset = Vector3.new(0, 0, -4.2),
-		TransitionTime = 0.26,
+		TransitionTime = 0.28,
 		ADS_BlendTimeVM = 0.2,
 		ViewmodelPosition = Vector3.new(1.5, -0.6, -2.5),
 		ViewmodelRotation = Vector3.new(0, 0, 0),
@@ -1108,11 +1036,11 @@ WeaponModule.Weapons = {
 			Empty = "Weapons.Empty"
 		},
 		UpgradeConfig = {
-			BaseCost = 300,
+			BaseCost = 320,
 			CostMultiplier = 1.8,
 			CostExpo = 1.4,
-			DamagePerLevel = 7,
-			AmmoPerLevel = 12,
+			DamagePerLevel = 6,
+			AmmoPerLevel = 15,
 			MaxLevel = 10
 		},
 		Skins = {
@@ -1124,16 +1052,7 @@ WeaponModule.Weapons = {
 				ADS_Position_Mobile = Vector3.new(0.5, -0.3, -1.3),
 				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
 			},
-			["Thunderbolt"] = {
-				MeshId = "rbxassetid://94719330573417",
-				TextureId = "rbxassetid://85145782052041",
-				ADS_Position = Vector3.new(0.5, -0.3, -1.3),
-				ADS_Rotation = Vector3.new(0, 0, 0),
-				ADS_Position_Mobile = Vector3.new(0.5, -0.3, -1.3),
-				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
-				MPCost = 2500,
-				APCost = 150
-			}
+			-- TODO: Add more skins here
 		},
 		ShowCrosshair = true,
 		ShowCrosshairADS = false,
@@ -1163,8 +1082,6 @@ WeaponModule.Weapons = {
 		ADS_Spread = 0.05,
 		Recoil = 2.0,
 		Use_Skin = "Default Skin",
-		MuzzleOffset = Vector3.new(0, 0, -4.5),
-		TracerOffset = Vector3.new(0, 0, -4.5),
 		TransitionTime = 0.28,
 		ADS_BlendTimeVM = 0.2,
 		ViewmodelPosition = Vector3.new(1.5, -0.6, -2.5),
@@ -1191,16 +1108,7 @@ WeaponModule.Weapons = {
 				ADS_Position_Mobile = Vector3.new(0.51, -0.52, -0.5),
 				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
 			},
-			["Winter's Heart"] = {
-				MeshId = "rbxassetid://95864328372543",
-				TextureId = "rbxassetid://112324004688194",
-				ADS_Position = Vector3.new(0.51, -0.52, -0.5),
-				ADS_Rotation = Vector3.new(0, 0, 0),
-				ADS_Position_Mobile = Vector3.new(0.51, -0.52, -0.5),
-				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
-				MPCost = 2500,
-				APCost = 150
-			}
+			-- TODO: Add more skins here
 		},
 		ShowCrosshair = true,
 		ShowCrosshairADS = false,
@@ -1230,8 +1138,6 @@ WeaponModule.Weapons = {
 		ADS_Spread = 0.05,
 		Recoil = 1.0,
 		Use_Skin = "Default Skin",
-		MuzzleOffset = Vector3.new(0, 0, -4.5),
-		TracerOffset = Vector3.new(0, 0, -4.5),
 		TransitionTime = 0.28,
 		ADS_BlendTimeVM = 0.2,
 		ViewmodelPosition = Vector3.new(1.5, -1, -2.5),
@@ -1258,16 +1164,7 @@ WeaponModule.Weapons = {
 				ADS_Position_Mobile = Vector3.new(0.51, -0.52, -0.5),
 				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
 			},
-			["Hydra"] = {
-				MeshId = "rbxassetid://75877903567420",
-				TextureId = "rbxassetid://112390601306926",
-				ADS_Position = Vector3.new(0.51, -0.52, -0.5),
-				ADS_Rotation = Vector3.new(0, 0, 0),
-				ADS_Position_Mobile = Vector3.new(0.51, -0.52, -0.5),
-				ADS_Rotation_Mobile = Vector3.new(0, 0, 0),
-				MPCost = 2500,
-				APCost = 150
-			}
+			-- TODO: Add more skins here
 		},
 		ShowCrosshair = true,
 		ShowCrosshairADS = false,

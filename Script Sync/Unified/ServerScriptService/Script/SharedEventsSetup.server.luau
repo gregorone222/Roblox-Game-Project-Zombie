@@ -84,7 +84,7 @@ local allRemoteEvents = {
 	-- ========== PROFILE/STATS ==========
 	"ProfileDataEvent", "ProfileUpdateEvent",
 	"AchievementEvent", "AchievementUnlockEvent", "AchievementUpdateEvent",
-	"MissionEvent", "MissionProgressEvent", "MissionUpdateEvent",
+	"MissionEvent", "MissionProgressEvent", "MissionUpdateEvent", "MissionsReset",
 	"SkillEvent", "SkillUnlockEvent", "SkillUpdateEvent",
 	"InventoryEvent", "InventoryUpdateEvent",
 	

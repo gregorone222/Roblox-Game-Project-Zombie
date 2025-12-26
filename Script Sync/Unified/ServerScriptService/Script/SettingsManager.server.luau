@@ -8,8 +8,10 @@ local Players = game:GetService("Players")
 
 local DataStoreManager = require(ServerScriptService.ModuleScript:WaitForChild("DataStoreManager"))
 
-local UpdateSettingsEvent = ReplicatedStorage.RemoteEvents:WaitForChild("UpdateSettingsEvent")
-local LoadSettingsEvent = ReplicatedStorage.RemoteEvents:WaitForChild("LoadSettingsEvent")
+-- RemoteEvents (wait for SharedEventsSetup to create folders)
+local RemoteEvents = ReplicatedStorage:WaitForChild("RemoteEvents")
+local UpdateSettingsEvent = RemoteEvents:WaitForChild("UpdateSettingsEvent")
+local LoadSettingsEvent = RemoteEvents:WaitForChild("LoadSettingsEvent")
 
 -- Fungsi validasi mendalam untuk UDim2 yang disimpan sebagai tabel
 -- Fungsi validasi mendalam untuk UDim2 yang disimpan sebagai tabel atau UserData
