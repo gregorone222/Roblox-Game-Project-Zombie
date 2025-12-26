@@ -1,6 +1,3 @@
--- Plugin Guard: Only run in Plugin context
-if not plugin then return {} end
-
 ------------------------------------------------------------------------------------------------------
 -- @ CloneTrooper1019, 2019
 --   Tool Grip Editor v2.0!

@@ -1,6 +1,3 @@
--- Plugin Guard: Only run in Plugin context
-if not plugin then return {} end
-
 return {
 	ClassName = "Frame",
 	Properties = {

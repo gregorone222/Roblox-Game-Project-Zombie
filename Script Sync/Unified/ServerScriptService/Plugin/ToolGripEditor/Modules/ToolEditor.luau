@@ -1,6 +1,3 @@
--- Plugin Guard: Only run in Plugin context
-if not plugin then return {} end
-
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local Selection = game:GetService("Selection")
 local Players = game:GetService("Players")

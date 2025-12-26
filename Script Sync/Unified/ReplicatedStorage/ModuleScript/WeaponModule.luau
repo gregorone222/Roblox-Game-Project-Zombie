@@ -769,6 +769,24 @@ WeaponModule.Weapons = {
 			Reload = "Weapons.Rifle.Reload",
 			Empty = "Weapons.Empty"
 		},
+		Animations = {
+			-- Per-animation viewmodel positions (R15 animations)
+			Idle = {
+				Id = "rbxassetid://87771978994359",
+				Position = Vector3.new(0.117, -1.563, -0.250),
+				Rotation = Vector3.new(5, 353, 0)
+			},
+			Run = {
+				Id = "rbxassetid://73724217767508",
+				Position = Vector3.new(0.100, -1.650, -0.750),
+				Rotation = Vector3.new(6, 0, -7)
+			},
+			ADS = {
+				Id = "rbxassetid://113162933415719",
+				Position = Vector3.new(-0.365, -1.698, 0.329),
+				Rotation = Vector3.new(0, -8, 0)
+			}
+		},
 		UpgradeConfig = {
 			BaseCost = 200,
 			CostMultiplier = 1.5,

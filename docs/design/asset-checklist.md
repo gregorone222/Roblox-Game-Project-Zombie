@@ -1,318 +1,368 @@
 # 📦 Asset Checklist
 
-Master list semua asset yang dibutuhkan untuk Lobby dan ACT 1.
+Master list semua asset yang dibutuhkan untuk game.
 
-> 📎 Lihat juga: [Environment Art Guide](environment-art-guide.md) | [Lobby Map](../maps/lobby-farmhouse.md)
-
----
-
-## 👥 CHARACTERS
-
-### Lobby NPCs
-- [x] Alexander (Komandan)
-- [x] Quartermaster (Pedagang)
-- [x] Doc (Medic) - *spawn point added, needs model*
-- [x] Rosco (Anak Kecil) - *spawn point added, needs model*
-- [x] Gramps (Veteran Tua) - *spawn point added, needs model*
-- [ ] Buddy (Anjing) - **FUTURE**
-
-### ACT 1 Bosses
-- [ ] Plague Titan
-- [ ] Hive Mother
-- [ ] Blighted Alchemist
-
-### Zombies
-- [x] Standard Zombie
-- [x] Runner
-- [x] Shooter
-- [x] Tank
+> 📎 Lihat juga: [Environment Art Guide](environment-art-guide.md) | [Lobby Map](../maps/lobby-farmhouse.md) | [ACT 1 Map](../maps/act1-village.md)
 
 ---
 
-## 🏠 LOBBY STRUCTURES
+# 🏠 LOBBY ASSETS
 
-### Buildings
-- [x] Main House (exterior)
-- [x] Barn
-- [x] Medical Tent
-- [x] Gazebo
-- [x] Leaderboard Wall
-- [x] Perimeter Fence/Barricade
-- [ ] Watchtower (dekorasi, 2 unit)
+## 👥 Lobby NPCs
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ✅ | Alexander (Komandan) | Gazebo |
+| ✅ | Quartermaster (Pedagang) | Barn |
+| ✅ | Doc (Medic) | Medical Tent |
+| ✅ | Rosco (Anak Kecil) | Campfire |
+| ✅ | Gramps (Veteran Tua) | Porch |
+| ⏳ | Buddy (Anjing) | FUTURE |
 
-### Natural Elements
-- [x] Ground/Terrain
-- [ ] Trees (large) - Leaderboard area
-- [ ] Bushes
-- [ ] Grass patches
+## 🏠 Lobby Buildings
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ✅ | Main House (exterior) | |
+| ✅ | Barn | Quartermaster Shop |
+| ✅ | Medical Tent | Doc |
+| ✅ | Gazebo | Alexander |
+| ✅ | Leaderboard Wall | |
+| ✅ | Perimeter Fence/Barricade | |
+| ❌ | Watchtower | Dekorasi, 2 unit |
 
----
+## 🌳 Lobby Natural Elements
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ✅ | Ground/Terrain | |
+| ❌ | Trees (large) | Leaderboard area |
+| ❌ | Bushes | |
+| ❌ | Grass patches | |
 
-## 🏚️ ACT 1 STRUCTURES
-
-### Town Square
-- [x] Radio Tower (with Zone_Defend)
-- [x] Square Pavement
-- [x] Street Lamps (4)
-- [x] Blinking light (tower top)
-
-### Residential
-- [x] Ruined Houses (12, procedural)
-- [x] House Floors
-- [x] House Walls (random missing)
-- [x] House Roofs (wedge)
-
-### Forest
-- [x] Overgrown Trees (40)
-- [x] Tree Trunks with moss
-- [x] Tree Canopy (green)
-- [x] Hanging Ivy
-- [x] Leaf Clusters
-
-### Boundaries
-- [x] Invisible Barriers (4 walls)
-
----
-
-## 🪑 ACT 1 FURNITURE/PROPS
-
-### In Houses
-- [x] Destructible Table
-- [x] Destructible Chairs
-
-### Nostalgic Props (ACT 1)
-- [x] Empty Swing (1)
-- [x] Abandoned Teddy (2)
-- [x] Old Radio (1)
-- [x] Broken Bicycle (2)
-
-### Objective Items
-- [ ] Gas Canister (Wave 8 collectible)
-- [ ] Sample Container (Wave 38 collectible)
-
-### Particles
-- [x] Falling Leaves emitters (5)
-
----
-
-## 🪑 LOBBY FURNITURE
+## 🪑 Lobby Furniture
 
 ### Main House (Porch)
-- [ ] Rocking Chair (Gramps)
-- [ ] Side Table
-- [ ] Porch Lantern
-- [ ] Door Mat
-- [ ] Window (pecah, ditape)
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ❌ | Rocking Chair | Gramps |
+| ❌ | Side Table | |
+| ❌ | Porch Lantern | |
+| ❌ | Door Mat | |
+| ❌ | Window (pecah, ditape) | |
 
 ### Barn (Quartermaster Shop)
-- [ ] Workbench
-- [ ] Tool Rack
-- [ ] Hay Bales
-- [ ] Oil Lamp
-- [ ] Metal Shelves
-- [ ] Weapon Crates
-- [ ] Barrel (storage)
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ❌ | Workbench | |
+| ❌ | Tool Rack | |
+| ❌ | Hay Bales | |
+| ❌ | Oil Lamp | |
+| ❌ | Metal Shelves | |
+| ❌ | Weapon Crates | |
+| ❌ | Barrel (storage) | |
 
 ### Medical Tent (Doc)
-- [ ] Stretcher/Cot
-- [ ] Medical Crates
-- [ ] Folding Table
-- [ ] IV Stand
-- [ ] First Aid Boxes
-- [ ] Lantern
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ❌ | Stretcher/Cot | |
+| ❌ | Medical Crates | |
+| ❌ | Folding Table | |
+| ❌ | IV Stand | |
+| ❌ | First Aid Boxes | |
+| ❌ | Lantern | |
 
 ### Campfire Area (Rosco)
-- [x] Fire Pit
-- [ ] Log Benches (4-6)
-- [ ] Cooking Pot
-- [ ] Backpacks
-- [ ] Blankets
-- [ ] Rosco's Drawings (cipher props)
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ✅ | Fire Pit | |
+| ❌ | Log Benches | 4-6 units |
+| ❌ | Cooking Pot | |
+| ❌ | Backpacks | |
+| ❌ | Blankets | |
+| ❌ | Rosco's Drawings | Cipher props |
 
 ### Gazebo (Alexander)
-- [ ] Strategy Table
-- [ ] Map (on table)
-- [ ] Radio Set
-- [ ] Corkboard
-- [ ] Chairs (2-3)
-- [ ] Lanterns
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ❌ | Strategy Table | |
+| ❌ | Map (on table) | |
+| ❌ | Radio Set | |
+| ❌ | Corkboard | |
+| ❌ | Chairs | 2-3 units |
+| ❌ | Lanterns | |
 
 ### Leaderboard Area
-- [ ] Leaderboard Board
-- [ ] String Lights
-- [ ] Bench
-- [ ] Old Tree (large)
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ❌ | Leaderboard Board | |
+| ❌ | String Lights | |
+| ❌ | Bench | |
+| ❌ | Old Tree (large) | |
+
+## ✨ Lobby VFX/Particles
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ❌ | Fireflies | |
+| ❌ | Campfire Smoke | |
+| ❌ | Sun Rays (God rays) | |
+
+## 🔊 Lobby Audio
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ❌ | Crickets | Ambient |
+| ❌ | Wind (gentle) | Ambient |
+| ❌ | Fire crackling | Campfire |
+| ❌ | Distant birds | Ambient |
+| ❌ | Wood creaking | House |
+| ❌ | Radio static | Occasional |
 
 ---
 
-## 🧸 STORYTELLING PROPS
+# 🏚️ ACT 1: VILLAGE ASSETS
 
-### Miller Family Props
-- [x] Empty Swing
-- [x] Abandoned Teddy (Bella)
-- [x] Broken Bicycle
-- [x] Old Pickup Truck
-- [ ] Family Photo (interactable)
-- [ ] Child's Drawing (crayon)
-- [ ] Unfinished Dinner (4 plates)
-- [ ] Last Letter (readable)
+## 👹 ACT 1 Enemies
 
-### Survivor Props
-- [ ] Memorial Board
-- [ ] Warning Signs ("Survivors Only")
+### Zombies
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ✅ | Standard Zombie | |
+| ✅ | Runner | Fast |
+| ✅ | Shooter | Ranged |
+| ✅ | Tank | Heavy |
 
----
+### Bosses
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ❌ | Plague Titan | Wave 10 |
+| ❌ | Hive Mother | Wave 30 |
+| ❌ | Blighted Alchemist | Wave 50 |
 
-## 🛠️ GENERAL PROPS
+## 🏛️ ACT 1 Structures
 
-### Apocalyptic Props (dari Environment Art Guide)
-- [x] Metal Barrel (berkarat, penyok)
-- [x] Wooden Crate (papan retak)
-- [x] Sandbags
-- [x] Generator (berkarat)
-- [x] Radio Rusak (vintage)
-- [ ] Tarp/Canvas sheets
+### Town Square
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ✅ | Radio Tower | Zone_Defend |
+| ✅ | Square Pavement | |
+| ✅ | Street Lamps | 4 units |
+| ✅ | Blinking light | Tower top |
 
-### Indoor Furniture (dari Environment Art Guide)
-- [x] Sofa Rusak
-- [x] Meja Kayu (tergores)
-- [x] Kursi Rusak
-- [x] TV CRT Rusak
-- [x] Lemari (pintu lepas)
-- [x] Kasur (robek)
-- [x] Rak Buku (ambruk)
-- [x] Lampu Meja (bengkok)
-- [x] Kulkas Tua (berkarat)
+### Residential
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ✅ | Ruined Houses | 12, procedural |
+| ✅ | House Floors | |
+| ✅ | House Walls | Random missing |
+| ✅ | House Roofs | Wedge |
 
-### Lighting Props
-- [ ] Lantern (hanging)
-- [ ] Lantern (standing)
-- [ ] Torch (wall mount)
-- [ ] Torch (ground)
-- [ ] String Lights
+### Forest
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ✅ | Overgrown Trees | 40 units |
+| ✅ | Tree Trunks with moss | |
+| ✅ | Tree Canopy | Green |
+| ✅ | Hanging Ivy | |
+| ✅ | Leaf Clusters | |
 
-### Nature/Debris (dari Environment Art Guide)
-- [x] Rock Pile
-- [x] Old Tires
-- [x] Debris Pile
-- [ ] Sarang Laba-laba
-- [ ] Tanaman Merambat
-- [ ] Fallen Logs
+### Boundaries
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ✅ | Invisible Barriers | 4 walls |
 
-### Outdoor Props (dari Environment Art Guide)
-- [x] Pagar Rusak
-- [ ] Mobil Rusak
-- [ ] Tiang Listrik
-- [ ] Lampu Jalan
+## 🪑 ACT 1 Furniture/Props
 
----
+### In Houses (Destructible)
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ✅ | Destructible Table | |
+| ✅ | Destructible Chairs | |
+| ✅ | Sofa Rusak | |
+| ✅ | TV CRT Rusak | |
+| ✅ | Lemari (pintu lepas) | |
+| ✅ | Kasur (robek) | |
+| ✅ | Rak Buku (ambruk) | |
+| ✅ | Lampu Meja (bengkok) | |
+| ✅ | Kulkas Tua | Berkarat |
 
-## 🔫 WEAPONS (Visual Models)
+### Nostalgic/Story Props
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ✅ | Empty Swing | Miller family |
+| ✅ | Abandoned Teddy | Bella's |
+| ✅ | Broken Bicycle | 2 units |
+| ✅ | Old Radio | |
+| ✅ | Old Pickup Truck | |
+| ❌ | Family Photo | Interactable |
+| ❌ | Child's Drawing | Crayon |
+| ❌ | Unfinished Dinner | 4 plates |
+| ❌ | Last Letter | Readable |
 
-### Pistols
-- [x] M1911
-- [x] Glock-19
-- [x] Desert Eagle
+### Objective Items
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ❌ | Gas Canister | Wave 8 collect |
+| ❌ | Sample Container | Wave 38 collect |
 
-### Assault Rifles
-- [x] AK-47
-- [x] M4A1
-- [x] SCAR
+### Outdoor Props
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ✅ | Metal Barrel | Berkarat |
+| ✅ | Wooden Crate | Papan retak |
+| ✅ | Sandbags | |
+| ✅ | Generator | Berkarat |
+| ✅ | Rock Pile | |
+| ✅ | Old Tires | |
+| ✅ | Debris Pile | |
+| ✅ | Pagar Rusak | |
+| ❌ | Mobil Rusak | |
+| ❌ | Tiang Listrik | |
+| ❌ | Lampu Jalan | |
+| ❌ | Tarp/Canvas sheets | |
+| ❌ | Sarang Laba-laba | |
+| ❌ | Tanaman Merambat | |
+| ❌ | Fallen Logs | |
 
-### Shotguns
-- [x] M590A1 (Pump)
-- [x] Benelli M4
-- [x] Remington 870
-
-### SMG
-- [x] MP5
-- [x] P90
-- [x] KRISS Vector
-
-### Sniper
-- [x] L115A1
-
-### Heavy
-- [ ] RPG
-- [ ] Minigun
-
-### Melee
-- [ ] Bat
-- [ ] Machete
-- [ ] Crowbar
-
----
-
-## 🎭 VFX/PARTICLES
-
-### Environment
-- [ ] Fireflies
-- [ ] Falling Leaves
-- [ ] Campfire Smoke
-- [ ] Fog/Mist
-- [ ] Sun Rays (God rays)
-
-### Combat
-- [x] Muzzle Flash
-- [x] Blood Splatter (stylized)
-- [x] Hit Markers
-- [x] Bullet Tracers
-- [ ] Explosion
+## ✨ ACT 1 VFX/Particles
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ✅ | Falling Leaves | 5 emitters |
+| ❌ | Fog/Mist | |
 
 ### Boss VFX
-- [ ] Plague Titan: Radiation Aura
-- [ ] Hive Mother: Acid effects
-- [ ] Blighted Alchemist: Chemical effects
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ❌ | Plague Titan: Radiation Aura | |
+| ❌ | Hive Mother: Acid effects | |
+| ❌ | Blighted Alchemist: Chemical | |
+
+## 🔊 ACT 1 Audio
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ❌ | Last Words whispers | "...home...", "...sorry..." |
+| ❌ | Standard Zombie groans | |
+| ❌ | Runner Zombie cries | |
+| ❌ | Boss entry sounds | |
 
 ---
 
-## 🔊 AUDIO
+# 🔫 SHARED ASSETS (Lobby & ACT 1)
 
-### Ambient Sounds
-- [ ] Crickets
-- [ ] Wind (gentle)
-- [ ] Fire crackling
-- [ ] Distant birds
-- [ ] Wood creaking
-- [ ] Radio static (occasional)
+## 🔫 Weapons (Visual Models)
 
-### NPC Voice Lines
-- [ ] Alexander voice lines
-- [ ] Quartermaster voice lines
-- [ ] Doc voice lines
-- [ ] Rosco voice lines
-- [ ] Gramps voice lines
+### Pistols
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ✅ | M1911 | |
+| ✅ | Glock-19 | |
+| ✅ | Desert Eagle | |
 
-### Zombie Audio
-- [ ] Last Words whispers ("...home...", "...sorry...")
-- [ ] Standard Zombie groans
-- [ ] Runner Zombie cries
-- [ ] Boss entry sounds
+### Assault Rifles
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ✅ | AK-47 | |
+| ✅ | M4A1 | |
+| ✅ | SCAR | |
 
-### Weapons
-- [x] Pistol fire
-- [x] Rifle fire
-- [x] Shotgun fire
-- [x] SMG fire
-- [x] Sniper fire
-- [x] Reload sounds
-- [x] Empty clip sound
+### Shotguns
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ✅ | M590A1 (Pump) | |
+| ✅ | Benelli M4 | |
+| ✅ | Remington 870 | |
+
+### SMG
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ✅ | MP5 | |
+| ✅ | P90 | |
+| ✅ | KRISS Vector | |
+
+### Sniper
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ✅ | L115A1 | |
+| ✅ | DSR | |
+| ✅ | Barrett M82 | |
+
+### LMG
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ✅ | RPD | |
+| ✅ | MG42 | |
+| ✅ | M249 | |
+| ✅ | Minigun | Special |
+
+### Melee (FUTURE)
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ❌ | Bat | |
+| ❌ | Machete | |
+| ❌ | Crowbar | |
+
+## 💥 Combat VFX
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ✅ | Muzzle Flash | |
+| ✅ | Blood Splatter | Stylized |
+| ✅ | Hit Markers | |
+| ✅ | Bullet Tracers | |
+| ❌ | Explosion | |
+
+## 🔊 Weapon Audio
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ✅ | Pistol fire | |
+| ✅ | Rifle fire | |
+| ✅ | Shotgun fire | |
+| ✅ | SMG fire | |
+| ✅ | Sniper fire | |
+| ✅ | LMG fire | |
+| ✅ | Reload sounds | |
+| ✅ | Empty clip sound | |
+
+## 🎙️ NPC Voice Lines (FUTURE)
+| Status | Asset | Notes |
+|:------:|:------|:------|
+| ❌ | Alexander voice lines | |
+| ❌ | Quartermaster voice lines | |
+| ❌ | Doc voice lines | |
+| ❌ | Rosco voice lines | |
+| ❌ | Gramps voice lines | |
 
 ---
 
-## 📊 Progress Summary
+# 📊 Progress Summary
 
+## Lobby
 | Category | Done | Total | % |
-|:---------|:-----|:------|:--|
-| Characters | 6 | 12 | 50% |
-| Structures | 7 | 11 | 64% |
-| Lobby Furniture | 1 | 38 | 3% |
-| Storytelling Props | 4 | 10 | 40% |
-| General Props | 15 | 27 | 56% |
-| Weapons | 12 | 17 | 71% |
-| VFX | 4 | 13 | 31% |
-| Audio | 7 | 22 | 32% |
+|:---------|:-----|:------|:--:|
+| NPCs | 5 | 6 | 83% |
+| Buildings | 6 | 7 | 86% |
+| Natural Elements | 1 | 4 | 25% |
+| Furniture | 1 | 32 | 3% |
+| VFX | 0 | 3 | 0% |
+| Audio | 0 | 6 | 0% |
+| **Lobby Total** | **13** | **58** | **22%** |
 
-**Overall: ~44%**
+## ACT 1
+| Category | Done | Total | % |
+|:---------|:-----|:------|:--:|
+| Enemies | 4 | 7 | 57% |
+| Structures | 14 | 14 | 100% |
+| Furniture/Props | 20 | 33 | 61% |
+| VFX | 1 | 5 | 20% |
+| Audio | 0 | 4 | 0% |
+| **ACT 1 Total** | **39** | **63** | **62%** |
 
-> Update progress summary setelah menyelesaikan items.
+## Shared
+| Category | Done | Total | % |
+|:---------|:-----|:------|:--:|
+| Weapons | 16 | 19 | 84% |
+| Combat VFX | 4 | 5 | 80% |
+| Weapon Audio | 8 | 8 | 100% |
+| Voice Lines | 0 | 5 | 0% |
+| **Shared Total** | **28** | **37** | **76%** |
+
+---
+
+**Overall: ~51%** (80/158 assets)
+
+> ✅ = Done | ❌ = Todo | ⏳ = Future/Low Priority
