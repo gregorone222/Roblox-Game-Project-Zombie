@@ -12,9 +12,9 @@ local WeaponModule = require(ReplicatedStorage.ModuleScript:WaitForChild("Weapon
 
 local CoinsManager = {}
 
--- RemoteEvent
-local CoinsUpdateEvent = ReplicatedStorage.RemoteEvents:FindFirstChild("CoinsUpdateEvent") or Instance.new("RemoteEvent", ReplicatedStorage.RemoteEvents)
-CoinsUpdateEvent.Name = "CoinsUpdateEvent"
+-- RemoteEvent (wait for SharedEventsSetup to create folders)
+local RemoteEvents = ReplicatedStorage:WaitForChild("RemoteEvents")
+local CoinsUpdateEvent = RemoteEvents:WaitForChild("CoinsUpdateEvent")
 
 -- =============================================================================
 -- FUNGSI INTI

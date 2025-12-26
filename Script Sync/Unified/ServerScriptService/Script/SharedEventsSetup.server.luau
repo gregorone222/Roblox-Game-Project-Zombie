@@ -1,6 +1,7 @@
 -- SharedEventsSetup.server.luau
 -- Path: ServerScriptService/Script/SharedEventsSetup.server.luau
 -- Runs in ALL places to ensure all events/functions exist for unified script sync
+-- COMPLETE LIST: Generated from grep search of all WaitForChild calls
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -22,9 +23,9 @@ local RemoteFunctions = getOrCreateFolder(ReplicatedStorage, "RemoteFunctions")
 local BindableEvents = getOrCreateFolder(ReplicatedStorage, "BindableEvents")
 local BindableFunctions = getOrCreateFolder(ReplicatedStorage, "BindableFunctions")
 
--- === ALL REMOTE EVENTS (Client <-> Server) ===
+-- === ALL REMOTE EVENTS (Complete List) ===
 local allRemoteEvents = {
-	-- ========== WEAPON SYSTEM (ACT 1) ==========
+	-- ========== WEAPON SYSTEM ==========
 	"ShootEvent", "ReloadEvent", "AmmoUpdateEvent",
 	"TracerEvent", "TracerBroadcast",
 	"MuzzleFlashEvent", "MuzzleFlashBroadcast",
@@ -32,65 +33,73 @@ local allRemoteEvents = {
 	"PlayLocalGunshotSoundEvent", "PlayGunshotSoundEvent",
 	"ExplosionEvent",
 	
-	-- ========== COMBAT/DAMAGE (ACT 1) ==========
+	-- ========== COMBAT/DAMAGE ==========
 	"DamageDisplayEvent", "KnockEvent", "ReviveEvent", "GameOverEvent",
 	"ShieldUpdateEvent", "DebuffStatusEvent", "PingKnockedPlayerEvent",
-	"DamageFlashEvent",
+	"DamageFlashEvent", "CancelReviveEvent", "ReviveProgressEvent",
 	
-	-- ========== WAVE/GAME STATE (ACT 1) ==========
+	-- ========== WAVE/GAME STATE ==========
 	"WaveUpdateEvent", "WaveCountdownEvent", "MissionCompleteEvent",
 	"SpecialWaveEvent", "SpecialWaveAlertEvent",
 	"BossSpawnEvent", "BossHealthUpdateEvent", "BossTimerEvent",
+	"PlayerCountEvent", "OpenStartUIEvent", "ReadyCountEvent",
+	"StartVoteCountdownEvent", "StartVoteCanceledEvent", "CancelStartVoteEvent",
+	"GameSettingsUpdateEvent",
 	
-	-- ========== MOVEMENT (ACT 1) ==========
+	-- ========== MOVEMENT ==========
 	"UpdateWalkSpeedModifierEvent", "SprintEvent", "JumpEvent",
 	"StaminaUpdate", "LookEvent",
 	
-	-- ========== SHOPS (ACT 1) ==========
+	-- ========== SHOPS ==========
 	"UpgradeUIOpen", "ConfirmUpgrade",
-	"PerkShopEvent", "PerkBuyEvent",
-	"ElementShopEvent", "ElementBuyEvent",
+	"PerkShopEvent", "PerkBuyEvent", "OpenPerkShop", "PerkUpdate",
+	"ElementShopEvent", "ElementBuyEvent", "OpenElementShop", "ElementUpdate",
 	"RandomWeaponEvent", "BuyRandomWeaponEvent",
 	"OpenReplaceUI", "ReplaceChoice",
 	
-	-- ========== POINTS/CURRENCY (Shared) ==========
-	"PointsUpdate", "CoinsUpdate", "SetPlayerStats",
+	-- ========== POINTS/CURRENCY ==========
+	"PointsUpdate", "PointsUpdateEvent", "CoinsUpdate", "CoinsUpdateEvent", "SetPlayerStats",
 	
-	-- ========== PERKS/ELEMENTS (ACT 1) ==========
+	-- ========== PERKS/ELEMENTS ==========
 	"PerkActivatedEvent", "PerkDeactivatedEvent",
 	"PerkEquippedEvent", "PerkDisplayUpdate",
 	"ElementActivatedEvent", "ElementDeactivatedEvent",
 	"ElementEquippedEvent", "ElementDisplayUpdate",
 	
-	-- ========== BOSS VFX (ACT 1) ==========
+	-- ========== BOSS VFX ==========
 	"PlayBossSkillEvent", "Boss2GravityLocalPull", "ChromaticRequiemUIEvent",
 	
 	-- ========== LOBBY EVENTS ==========
-	"GachaEvent", "GachaRollEvent", "GachaResultEvent",
+	"GachaEvent", "GachaRollEvent", "GachaResultEvent", "GachaSkinWonEvent",
 	"StartGameEvent", "JoinRoomEvent", "LeaveRoomEvent", "RoomUpdateEvent",
 	"VoteDifficultyEvent", "DialogueEvent", "LeaderboardUpdateEvent",
 	"DailyRewardEvent", "ClaimDailyRewardEvent",
 	"SkinEquipEvent", "SkinUpdateEvent",
 	
 	-- ========== SHOP (LOBBY) ==========
-	"APShopEvent", "APShopBuyEvent",
-	"MPShopEvent", "MPShopBuyEvent",
-	"BoosterBuyEvent",
+	"APShopEvent", "APShopBuyEvent", "APUpdateEvent",
+	"MPShopEvent", "MPShopBuyEvent", "MPUpdateEvent",
+	"BoosterBuyEvent", "BoosterUpdateEvent",
 	
-	-- ========== PROFILE/STATS (Shared) ==========
-	"ProfileDataEvent", "AchievementEvent", "AchievementUnlockEvent",
-	"MissionEvent", "MissionProgressEvent",
-	"SkillEvent", "SkillUnlockEvent", "InventoryEvent",
+	-- ========== PROFILE/STATS ==========
+	"ProfileDataEvent", "ProfileUpdateEvent",
+	"AchievementEvent", "AchievementUnlockEvent", "AchievementUpdateEvent",
+	"MissionEvent", "MissionProgressEvent", "MissionUpdateEvent",
+	"SkillEvent", "SkillUnlockEvent", "SkillUpdateEvent",
+	"InventoryEvent", "InventoryUpdateEvent",
 	
-	-- ========== SETTINGS (Shared) ==========
+	-- ========== SETTINGS ==========
 	"SettingsUpdateEvent", "UpdateSettingsEvent", "LoadSettingsEvent",
 	"AdminEvent",
 	
 	-- ========== GLOBAL MISSION ==========
 	"GlobalMissionUpdate", "GlobalMissionProgress",
+	
+	-- ========== TITLE DISPLAY ==========
+	"TitleUpdateEvent",
 }
 
--- === ALL REMOTE FUNCTIONS (Client -> Server with return) ===
+-- === ALL REMOTE FUNCTIONS (Complete List) ===
 local allRemoteFunctions = {
 	-- ========== DATA ==========
 	"GetPlayerData", "GetPlayerStats", "GetLeaderboardData",
@@ -107,11 +116,11 @@ local allRemoteFunctions = {
 	-- ========== SETTINGS ==========
 	"GetSettings", "SaveSettings",
 	
-	-- ========== PERKS/ELEMENTS (ACT 1) ==========
+	-- ========== PERKS/ELEMENTS ==========
 	"PurchasePerk", "GetOwnedPerks",
 	"PurchaseElement", "GetOwnedElements",
 	
-	-- ========== WEAPONS (ACT 1) ==========
+	-- ========== WEAPONS ==========
 	"PurchaseRandomWeapon", "GetRandomWeaponCost",
 	"UpgradeWeaponRF", "GetWeaponLevelRF",
 	
@@ -128,15 +137,21 @@ local allRemoteFunctions = {
 	"GetSkillData", "UnlockSkill",
 	
 	-- ========== ACHIEVEMENTS ==========
-	"GetAchievementData", "ClaimAchievementReward",
+	"GetAchievementData", "ClaimAchievementReward", "GetAchievementsFunc",
 	
 	-- ========== GLOBAL MISSION ==========
 	"GetGlobalMissionData", "ContributeGlobalMission",
+	
+	-- ========== SKINS ==========
+	"GetOwnedSkins", "EquipSkin",
+	
+	-- ========== LOBBY ==========
+	"GetRoomList", "CreateRoom", "JoinRoom", "LeaveRoom",
 }
 
--- === ALL BINDABLE EVENTS (Server <-> Server internal) ===
+-- === ALL BINDABLE EVENTS ===
 local allBindableEvents = {
-	-- ========== ZOMBIE/COMBAT (ACT 1) ==========
+	-- ========== ZOMBIE/COMBAT ==========
 	"ZombieDied", "ReportDamageEvent", "ObjectDamaged",
 	
 	-- ========== ADMIN COMMANDS ==========
@@ -154,7 +169,7 @@ local allBindableEvents = {
 	"OpenLobbyEvent",
 }
 
--- === ALL BINDABLE FUNCTIONS (Server <-> Server with return) ===
+-- === ALL BINDABLE FUNCTIONS ===
 local allBindableFunctions = {
 	"GetCurrentWave",
 	"GetPlayerLoadout",
@@ -205,6 +220,53 @@ for _, name in ipairs(allBindableFunctions) do
 	end
 end
 
+-- === CREATE ADDITIONAL FOLDERS ===
+local SkillRemotes = getOrCreateFolder(ReplicatedStorage, "SkillRemotes")
+
+-- === ROOT-LEVEL EVENTS (directly in ReplicatedStorage, not in folder) ===
+local rootLevelEvents = {
+	"TitleChanged", "MissionPointsChanged", "MissionProgressUpdated",
+	"ShowDailyRewardUI",
+}
+for _, name in ipairs(rootLevelEvents) do
+	if not ReplicatedStorage:FindFirstChild(name) then
+		local event = Instance.new("RemoteEvent")
+		event.Name = name
+		event.Parent = ReplicatedStorage
+		createdEvents += 1
+	end
+end
+
+-- === ROOT-LEVEL FUNCTIONS (directly in ReplicatedStorage, not in folder) ===
+local rootLevelFunctions = {
+	"GetTitleData", "GetInitialMissionPoints",
+}
+for _, name in ipairs(rootLevelFunctions) do
+	if not ReplicatedStorage:FindFirstChild(name) then
+		local func = Instance.new("RemoteFunction")
+		func.Name = name
+		func.Parent = ReplicatedStorage
+		createdFunctions += 1
+	end
+end
+
+-- MissionPointsChanged also needs to be in RemoteEvents folder
+if not RemoteEvents:FindFirstChild("MissionPointsChanged") then
+	local event = Instance.new("RemoteEvent")
+	event.Name = "MissionPointsChanged"
+	event.Parent = RemoteEvents
+end
+if not RemoteEvents:FindFirstChild("MissionProgressUpdated") then
+	local event = Instance.new("RemoteEvent")
+	event.Name = "MissionProgressUpdated"
+	event.Parent = RemoteEvents
+end
+if not RemoteEvents:FindFirstChild("ShowDailyRewardUI") then
+	local event = Instance.new("RemoteEvent")
+	event.Name = "ShowDailyRewardUI"
+	event.Parent = RemoteEvents
+end
+
 print(string.format(
 	"SharedEventsSetup: Created %d RE, %d RF, %d BE, %d BF",
 	createdEvents, createdFunctions, createdBindables, createdBindableFuncs
@@ -214,3 +276,5 @@ print(string.format(
 	#RemoteEvents:GetChildren(), #RemoteFunctions:GetChildren(),
 	#BindableEvents:GetChildren(), #BindableFunctions:GetChildren()
 ))
+print("SharedEventsSetup: SkillRemotes folder created: " .. tostring(SkillRemotes ~= nil))
+
