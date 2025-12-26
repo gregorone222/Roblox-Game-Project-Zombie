@@ -1,3 +1,7 @@
+-- PlaceId Guard: Only run in ACT 1 Village
+local ACT1_PLACE_ID = 91523772574713
+if game.PlaceId ~= ACT1_PLACE_ID then return end
+
 -- PingKnockDisplay.lua (LocalScript)
 -- Path: StarterPlayer/StarterPlayerScripts/PingKnockDisplay.lua
 -- Script Place: ACT 1: Village

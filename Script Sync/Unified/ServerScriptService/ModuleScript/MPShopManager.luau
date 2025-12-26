@@ -1,3 +1,7 @@
+-- PlaceId Guard: Only run in Lobby
+local LOBBY_PLACE_ID = 101319079083908
+if game.PlaceId ~= LOBBY_PLACE_ID then return {} end
+
 -- MPShopManager.lua (ModuleScript)
 -- Path: ServerScriptService/ModuleScript/MPShopManager.lua
 -- Script Place: Lobby
