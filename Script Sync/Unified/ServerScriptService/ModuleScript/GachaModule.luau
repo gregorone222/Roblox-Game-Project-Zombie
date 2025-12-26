@@ -56,7 +56,7 @@ local function getAvailableSkinsForWeapon(player, weaponName)
 end
 
 -- RemoteEvent untuk pengumuman global (tidak ada perubahan di sini)
-local GachaSkinWonEvent = ReplicatedStorage.RemoteEvents:FindFirstChild("GachaSkinWonEvent")
+local GachaSkinWonEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):FindFirstChild("GachaSkinWonEvent")
 if not GachaSkinWonEvent then
 	GachaSkinWonEvent = Instance.new("RemoteEvent", ReplicatedStorage.RemoteEvents)
 	GachaSkinWonEvent.Name = "GachaSkinWonEvent"

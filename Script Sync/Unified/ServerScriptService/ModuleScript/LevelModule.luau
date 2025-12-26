@@ -17,7 +17,7 @@ local AchievementManager = require(script.Parent:WaitForChild("AchievementManage
 local LevelManager = {}
 
 -- RemoteEvent
-local LevelUpdateEvent = ReplicatedStorage.RemoteEvents:FindFirstChild("LevelUpdateEvent") or Instance.new("RemoteEvent", ReplicatedStorage.RemoteEvents)
+local LevelUpdateEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):FindFirstChild("LevelUpdateEvent") or Instance.new("RemoteEvent", ReplicatedStorage.RemoteEvents)
 LevelUpdateEvent.Name = "LevelUpdateEvent"
 
 -- Struktur data default untuk level (bagian dari Stats)

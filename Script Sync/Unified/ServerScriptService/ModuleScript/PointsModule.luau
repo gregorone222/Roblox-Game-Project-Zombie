@@ -77,7 +77,7 @@ function PointsSystem.AddPoints(player, amount)
 
 	-- update ke client (UI)
 	local ReplicatedStorage = game:GetService("ReplicatedStorage")
-	local PointsUpdate = ReplicatedStorage.RemoteEvents:FindFirstChild("PointsUpdate")
+	local PointsUpdate = ReplicatedStorage:WaitForChild("RemoteEvents"):FindFirstChild("PointsUpdate")
 	if PointsUpdate then
 		PointsUpdate:FireClient(player, playerPoints[player])
 	end

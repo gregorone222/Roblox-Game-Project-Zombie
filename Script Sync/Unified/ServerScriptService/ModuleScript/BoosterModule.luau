@@ -16,10 +16,11 @@ local StatsModule = require(script.Parent:WaitForChild("StatsModule"))
 
 local BoosterModule = {}
 
--- RemoteEvents
-local BoosterUpdateEvent = ReplicatedStorage.RemoteEvents:WaitForChild("BoosterUpdateEvent")
-local UpdatePlayerBoosterStatusEvent = ReplicatedStorage.RemoteEvents:WaitForChild("UpdatePlayerBoosterStatusEvent")
-local ActivateBoosterEvent = ReplicatedStorage.RemoteEvents:WaitForChild("ActivateBoosterEvent")
+-- RemoteEvents (wait for SharedEventsSetup to create folders)
+local RemoteEvents = ReplicatedStorage:WaitForChild("RemoteEvents")
+local BoosterUpdateEvent = RemoteEvents:WaitForChild("BoosterUpdateEvent")
+local UpdatePlayerBoosterStatusEvent = RemoteEvents:WaitForChild("UpdatePlayerBoosterStatusEvent")
+local ActivateBoosterEvent = RemoteEvents:WaitForChild("ActivateBoosterEvent")
 
 -- =============================================================================
 -- FUNGSI INTI

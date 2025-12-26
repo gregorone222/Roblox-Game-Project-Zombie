@@ -11,7 +11,7 @@ local ElementModule = {}
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players           = game:GetService("Players")
 
-local RemoteEvents = game.ReplicatedStorage.RemoteEvents
+local RemoteEvents = game.ReplicatedStorage:WaitForChild("RemoteEvents")
 local ModuleScriptReplicatedStorage = ReplicatedStorage.ModuleScript
 local ElementVFX = ReplicatedStorage.ElementVFX
 

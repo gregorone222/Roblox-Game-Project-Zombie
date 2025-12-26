@@ -41,10 +41,10 @@ local allRemoteEvents = {
 	-- ========== WAVE/GAME STATE ==========
 	"WaveUpdateEvent", "WaveCountdownEvent", "MissionCompleteEvent",
 	"SpecialWaveEvent", "SpecialWaveAlertEvent",
-	"BossSpawnEvent", "BossHealthUpdateEvent", "BossTimerEvent",
+	"BossSpawnEvent", "BossHealthUpdateEvent", "BossTimerEvent", "BossIncoming", "HardWipeVFXEvent",
 	"PlayerCountEvent", "OpenStartUIEvent", "ReadyCountEvent",
 	"StartVoteCountdownEvent", "StartVoteCanceledEvent", "CancelStartVoteEvent",
-	"GameSettingsUpdateEvent",
+	"GameSettingsUpdateEvent", "LevelUpdateEvent",
 	
 	-- ========== MOVEMENT ==========
 	"UpdateWalkSpeedModifierEvent", "SprintEvent", "JumpEvent",
@@ -79,7 +79,7 @@ local allRemoteEvents = {
 	-- ========== SHOP (LOBBY) ==========
 	"APShopEvent", "APShopBuyEvent", "APUpdateEvent",
 	"MPShopEvent", "MPShopBuyEvent", "MPUpdateEvent",
-	"BoosterBuyEvent", "BoosterUpdateEvent",
+	"BoosterBuyEvent", "BoosterUpdateEvent", "UpdatePlayerBoosterStatusEvent", "ActivateBoosterEvent",
 	
 	-- ========== PROFILE/STATS ==========
 	"ProfileDataEvent", "ProfileUpdateEvent",

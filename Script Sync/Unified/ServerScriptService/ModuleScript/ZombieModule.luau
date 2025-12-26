@@ -16,7 +16,7 @@ local TweenService = game:GetService("TweenService")
 local ServerScriptService = game:GetService("ServerScriptService")
 local PathfindingService = game:GetService("PathfindingService")
 
-local RemoteEvents = game.ReplicatedStorage.RemoteEvents
+local RemoteEvents = game.ReplicatedStorage:WaitForChild("RemoteEvents")
 local RemoteFunctions = ReplicatedStorage.RemoteFunctions
 local BindableEvents = ReplicatedStorage.BindableEvents
 local ZombieVFX = ReplicatedStorage.ZombieVFX

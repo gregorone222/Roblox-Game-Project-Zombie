@@ -16,8 +16,8 @@ local ElementModule = require(ServerScriptService.ModuleScript:WaitForChild("Ele
 local ShieldModule = require(ServerScriptService.ModuleScript:WaitForChild("ShieldModule"))
 local SpawnerModule -- Akan diinisialisasi melalui Init
 
-local BossTimerEvent = ReplicatedStorage.RemoteEvents:WaitForChild("BossTimerEvent")
-local BossAlertEvent = ReplicatedStorage.RemoteEvents:WaitForChild("BossIncoming")
+local BossTimerEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("BossTimerEvent")
+local BossAlertEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("BossIncoming")
 
 -- Helper function to find a valid target
 local function findTarget(bossModel)

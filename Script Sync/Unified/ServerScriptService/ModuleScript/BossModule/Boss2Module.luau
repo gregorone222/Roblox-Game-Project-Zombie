@@ -22,10 +22,10 @@ local ShieldModule = require(ServerScriptService.ModuleScript:WaitForChild("Shie
 local ZombieModule = require(ServerScriptService.ModuleScript:WaitForChild("ZombieModule"))
 
 -- Remote Events
-local BossTimerEvent = ReplicatedStorage.RemoteEvents:WaitForChild("BossTimerEvent")
-local BossAlertEvent = ReplicatedStorage.RemoteEvents:WaitForChild("BossIncoming")
-local HardWipeVFXEvent = ReplicatedStorage.RemoteEvents:WaitForChild("HardWipeVFXEvent")
-local PlayBossSkillEvent = ReplicatedStorage.RemoteEvents:FindFirstChild("PlayBossSkillEvent") or Instance.new("RemoteEvent", ReplicatedStorage.RemoteEvents)
+local BossTimerEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("BossTimerEvent")
+local BossAlertEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("BossIncoming")
+local HardWipeVFXEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("HardWipeVFXEvent")
+local PlayBossSkillEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):FindFirstChild("PlayBossSkillEvent") or Instance.new("RemoteEvent", ReplicatedStorage.RemoteEvents)
 PlayBossSkillEvent.Name = "PlayBossSkillEvent"
 
 function Boss2.Init(zombie, humanoid, config, executeHardWipe)

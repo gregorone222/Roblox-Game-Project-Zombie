@@ -11,7 +11,7 @@ local DebuffManager = {}
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local RemoteEvents = game.ReplicatedStorage.RemoteEvents
+local RemoteEvents = game.ReplicatedStorage:WaitForChild("RemoteEvents")
 
 local debuffStatusEvent = RemoteEvents:WaitForChild("DebuffStatusEvent")
 
