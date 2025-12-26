@@ -1,7 +1,3 @@
--- PlaceId Guard: Only run in Lobby
-local LOBBY_PLACE_ID = 101319079083908
-if game.PlaceId ~= LOBBY_PLACE_ID then return {} end
-
 -- GlobalMissionManager.lua (ModuleScript)
 -- Path: ServerScriptService/ModuleScript/GlobalMissionManager.lua
 -- Script Place: Lobby & ACT 1: Village
