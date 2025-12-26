@@ -12,4 +12,3 @@ local LocalAnalytics = require(LocalAnalyticsModule)
 -- Start listening immediately
 LocalAnalytics.Init()
 
-print("🛡️ Analytics Loader Active: Monitoring for errors...")

@@ -10,8 +10,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local ServerScriptService = game:GetService("ServerScriptService")
 
-local RemoteEvents = game.ReplicatedStorage.RemoteEvents
-local RemoteFunctions = ReplicatedStorage.RemoteFunctions
+local RemoteEvents = game.ReplicatedStorage:WaitForChild("RemoteEvents")
+local RemoteFunctions = ReplicatedStorage:WaitForChild("RemoteFunctions")
 local ModuleScriptServerScriptService = ServerScriptService.ModuleScript
 
 local PointsSystem = require(ModuleScriptServerScriptService:WaitForChild("PointsModule"))
@@ -64,11 +64,11 @@ local function requestOpenShop(player)
 end
 
 -- Handler untuk request buka shop
-local RequestOpenElementShop = ReplicatedStorage.RemoteEvents:FindFirstChild("RequestOpenElementShop")
+local RequestOpenElementShop = ReplicatedStorage:WaitForChild("RemoteEvents"):FindFirstChild("RequestOpenElementShop")
 if not RequestOpenElementShop then
 	RequestOpenElementShop = Instance.new("RemoteEvent")
 	RequestOpenElementShop.Name = "RequestOpenElementShop"
-	RequestOpenElementShop.Parent = ReplicatedStorage.RemoteEvents
+	RequestOpenElementShop.Parent = ReplicatedStorage:WaitForChild("RemoteEvents")
 end
 
 RequestOpenElementShop.OnServerEvent:Connect(function(player)
@@ -128,7 +128,7 @@ purchaseRF.OnServerInvoke = function(player, elementName)
 	end
 
 	-- Kirim event ke client bahwa element berhasil dibeli
-	local ElementPurchased = ReplicatedStorage:FindFirstChild("RemoteEvents") and ReplicatedStorage.RemoteEvents:FindFirstChild("ElementPurchased")
+	local ElementPurchased = ReplicatedStorage:FindFirstChild("RemoteEvents") and ReplicatedStorage:WaitForChild("RemoteEvents"):FindFirstChild("ElementPurchased")
 	if ElementPurchased then
 		ElementPurchased:FireClient(player, elementName)
 	end

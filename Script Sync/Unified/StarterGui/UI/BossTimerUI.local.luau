@@ -15,7 +15,7 @@ local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
-local RemoteEvents = game.ReplicatedStorage.RemoteEvents
+local RemoteEvents = game.ReplicatedStorage:WaitForChild("RemoteEvents")
 local BossTimerEvent = RemoteEvents:WaitForChild("BossTimerEvent")
 
 local screenGui = Instance.new("ScreenGui")

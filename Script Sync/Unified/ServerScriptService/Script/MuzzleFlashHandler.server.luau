@@ -8,7 +8,7 @@ if game.PlaceId ~= ACT1_PLACE_ID then return end
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local RemoteEvents = game.ReplicatedStorage.RemoteEvents
+local RemoteEvents = game.ReplicatedStorage:WaitForChild("RemoteEvents")
 local ModuleScriptReplicatedStorage = ReplicatedStorage.ModuleScript
 
 local WeaponModule = require(ModuleScriptReplicatedStorage:WaitForChild("WeaponModule"))

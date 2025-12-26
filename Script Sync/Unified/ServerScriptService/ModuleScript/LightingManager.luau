@@ -126,7 +126,7 @@ end
 function LightingManager.Init()
 	setupEffects()
 	LightingManager.ApplySettings(LightingManager.BaseSettings, 0)
-	print("LightingManager: Initialized Ethereal Sunset Environment.")
+	-- print removed
 end
 
 function LightingManager.ApplySettings(settings, duration)

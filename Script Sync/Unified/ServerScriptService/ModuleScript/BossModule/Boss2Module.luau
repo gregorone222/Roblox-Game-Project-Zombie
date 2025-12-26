@@ -29,7 +29,7 @@ local PlayBossSkillEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):FindFi
 PlayBossSkillEvent.Name = "PlayBossSkillEvent"
 
 function Boss2.Init(zombie, humanoid, config, executeHardWipe)
-	print("Boss2 (Hive Mother) Initialized")
+	-- print removed
 	local Lighting = game:GetService("Lighting")
 
 	local bossTag = Instance.new("BoolValue", zombie)

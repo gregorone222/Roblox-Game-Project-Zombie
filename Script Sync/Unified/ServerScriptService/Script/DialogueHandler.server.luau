@@ -12,7 +12,7 @@ local ProximityPromptService = game:GetService("ProximityPromptService")
 
 -- Ensure RemoteEvent exists
 local StartDialogueEvent = ReplicatedStorage:FindFirstChild("RemoteEvents") 
-    and ReplicatedStorage.RemoteEvents:FindFirstChild("StartDialogueEvent")
+    and ReplicatedStorage:WaitForChild("RemoteEvents"):FindFirstChild("StartDialogueEvent")
 
 if not StartDialogueEvent then
     -- Fallback safety if Constants/Init didn't run, though they should have
@@ -60,4 +60,3 @@ end
 -- Connect Service
 ProximityPromptService.PromptTriggered:Connect(onPromptTriggered)
 
-print("DialogueHandler Initialized. Listening for prompts...")

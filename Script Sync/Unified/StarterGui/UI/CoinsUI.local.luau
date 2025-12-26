@@ -14,7 +14,7 @@ local TweenService = game:GetService("TweenService") -- Tambahkan TweenService
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
-local CoinsUpdateEvent = ReplicatedStorage.RemoteEvents:WaitForChild("CoinsUpdateEvent")
+local CoinsUpdateEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("CoinsUpdateEvent")
 
 -- Hapus UI lama jika ada untuk mencegah duplikasi
 if playerGui:FindFirstChild("CoinsUI") then
@@ -138,7 +138,7 @@ CoinsUpdateEvent.OnClientEvent:Connect(updateCoinsUI)
 -- Muat nilai awal (jika diperlukan)
 -- Anda bisa menggunakan RemoteFunction untuk meminta nilai awal saat pemain masuk
 -- Contoh:
--- local getInitialCoins = ReplicatedStorage.RemoteFunctions:WaitForChild("GetInitialCoins")
+-- local getInitialCoins = ReplicatedStorage:WaitForChild("RemoteFunctions"):WaitForChild("GetInitialCoins")
 -- local initialCoins = getInitialCoins:InvokeServer()
 -- updateCoinsUI(initialCoins)
 -- Note: Pastikan RemoteFunction GetInitialCoins dibuat di server.

@@ -15,7 +15,7 @@ local ContentProvider = game:GetService("ContentProvider")
 local player = Players.LocalPlayer
 local gui = player:WaitForChild("PlayerGui")
 
-local RemoteEvents = game.ReplicatedStorage.RemoteEvents
+local RemoteEvents = game.ReplicatedStorage:WaitForChild("RemoteEvents")
 local GlobalKnockNotificationEvent = RemoteEvents:WaitForChild("GlobalKnockNotificationEvent")
 
 -- Preload assets
@@ -393,7 +393,7 @@ GlobalKnockNotificationEvent.OnClientEvent:Connect(function(playerName, isKnocke
 end)
 
 -- Clean up on Game Over
-local GameOverEvent = ReplicatedStorage.RemoteEvents:WaitForChild("GameOverEvent")
+local GameOverEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("GameOverEvent")
 GameOverEvent.OnClientEvent:Connect(function()
 	-- Clear all notifications
 	for _, child in ipairs(notificationContainer:GetChildren()) do

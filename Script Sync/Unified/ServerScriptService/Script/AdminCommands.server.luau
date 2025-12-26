@@ -228,6 +228,5 @@ for _, player in ipairs(Players:GetPlayers()) do
 	end)
 end
 
-print("AdminCommands loaded! Available commands:")
 print("  /help, /setwave, /skipwave, /killall, /victory, /time, /heal, /god, /points")
 print("  Admin access: " .. (IS_STUDIO and "All (Studio)" or #ADMIN_IDS .. " users"))

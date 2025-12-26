@@ -10,7 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
 
-local DamageDisplayEvent = ReplicatedStorage.RemoteEvents:WaitForChild("DamageDisplayEvent")
+local DamageDisplayEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("DamageDisplayEvent")
 
 -- Fungsi yang diperbarui untuk menerima model zombi
 local function createDamageDisplay(damage, zombieModel, isHeadshot)

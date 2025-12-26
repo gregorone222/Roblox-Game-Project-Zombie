@@ -17,8 +17,8 @@ local Lighting = game:GetService("Lighting")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
-local RemoteEvents = game.ReplicatedStorage.RemoteEvents
-local RemoteFunctions = ReplicatedStorage.RemoteFunctions
+local RemoteEvents = game.ReplicatedStorage:WaitForChild("RemoteEvents")
+local RemoteFunctions = ReplicatedStorage:WaitForChild("RemoteFunctions")
 local ModuleScriptReplicatedStorage = ReplicatedStorage.ModuleScript
 
 local WeaponModule = require(ModuleScriptReplicatedStorage:WaitForChild("WeaponModule"))

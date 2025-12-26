@@ -774,4 +774,4 @@ kickPlayerEvent.OnServerEvent:Connect(handleKickPlayer)
 --// INITIALIZATION
 --==============================================================================
 
-print("LobbyRoomManager.lua loaded successfully.")
+-- print removed

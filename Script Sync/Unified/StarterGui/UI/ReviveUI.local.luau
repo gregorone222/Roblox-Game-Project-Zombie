@@ -15,7 +15,7 @@ local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
-local RemoteEvents = game.ReplicatedStorage.RemoteEvents
+local RemoteEvents = game.ReplicatedStorage:WaitForChild("RemoteEvents")
 local ReviveEvent = RemoteEvents:WaitForChild("ReviveEvent")
 local CancelReviveEvent = RemoteEvents:WaitForChild("CancelReviveEvent")
 local ReviveProgressEvent = RemoteEvents:WaitForChild("ReviveProgressEvent")

@@ -17,8 +17,8 @@ local SoundService = game:GetService("SoundService")
 
 local player = Players.LocalPlayer
 
-local RemoteEvents = game.ReplicatedStorage.RemoteEvents
-local RemoteFunctions = ReplicatedStorage.RemoteFunctions
+local RemoteEvents = game.ReplicatedStorage:WaitForChild("RemoteEvents")
+local RemoteFunctions = ReplicatedStorage:WaitForChild("RemoteFunctions")
 local ModuleScriptReplicatedStorage = ReplicatedStorage:WaitForChild("ModuleScript")
 
 local WeaponModule = require(ModuleScriptReplicatedStorage:WaitForChild("WeaponModule"))

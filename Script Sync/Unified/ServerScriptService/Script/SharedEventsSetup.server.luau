@@ -5,7 +5,6 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-print("SharedEventsSetup: Initializing all events for all places...")
 
 -- === CREATE FOLDERS ===
 local function getOrCreateFolder(parent, name)
@@ -34,8 +33,8 @@ local allRemoteEvents = {
 	"ExplosionEvent",
 	
 	-- ========== COMBAT/DAMAGE ==========
-	"DamageDisplayEvent", "KnockEvent", "ReviveEvent", "GameOverEvent",
-	"ShieldUpdateEvent", "DebuffStatusEvent", "PingKnockedPlayerEvent",
+	"DamageDisplayEvent", "KnockEvent", "ReviveEvent", "GameOverEvent", "ExitGameEvent",
+	"ShieldUpdateEvent", "DebuffStatusEvent", "PingKnockedPlayerEvent", "GlobalKnockNotificationEvent",
 	"DamageFlashEvent", "CancelReviveEvent", "ReviveProgressEvent",
 	
 	-- ========== WAVE/GAME STATE ==========
@@ -44,7 +43,7 @@ local allRemoteEvents = {
 	"BossSpawnEvent", "BossHealthUpdateEvent", "BossTimerEvent", "BossIncoming", "HardWipeVFXEvent",
 	"PlayerCountEvent", "OpenStartUIEvent", "ReadyCountEvent",
 	"StartVoteCountdownEvent", "StartVoteCanceledEvent", "CancelStartVoteEvent",
-	"GameSettingsUpdateEvent", "LevelUpdateEvent",
+	"GameSettingsUpdateEvent", "LevelUpdateEvent", "RestartGameEvent",
 	
 	-- ========== MOVEMENT ==========
 	"UpdateWalkSpeedModifierEvent", "SprintEvent", "JumpEvent",
@@ -52,8 +51,8 @@ local allRemoteEvents = {
 	
 	-- ========== SHOPS ==========
 	"UpgradeUIOpen", "ConfirmUpgrade",
-	"PerkShopEvent", "PerkBuyEvent", "OpenPerkShop", "PerkUpdate",
-	"ElementShopEvent", "ElementBuyEvent", "OpenElementShop", "ElementUpdate",
+	"PerkShopEvent", "PerkBuyEvent", "OpenPerkShop", "PerkUpdate", "RequestOpenPerkShop", "ClosePerkShop",
+	"ElementShopEvent", "ElementBuyEvent", "OpenElementShop", "ElementUpdate", "RequestOpenElementShop", "CloseElementShop",
 	"RandomWeaponEvent", "BuyRandomWeaponEvent",
 	"OpenReplaceUI", "ReplaceChoice",
 	
@@ -61,10 +60,10 @@ local allRemoteEvents = {
 	"PointsUpdate", "PointsUpdateEvent", "CoinsUpdate", "CoinsUpdateEvent", "SetPlayerStats",
 	
 	-- ========== PERKS/ELEMENTS ==========
-	"PerkActivatedEvent", "PerkDeactivatedEvent",
+	"PerkActivatedEvent", "PerkDeactivatedEvent", "PerkActivated", "PerkDeactivated", "ActivatePerkEvent", "PerkPurchased",
 	"PerkEquippedEvent", "PerkDisplayUpdate",
-	"ElementActivatedEvent", "ElementDeactivatedEvent",
-	"ElementEquippedEvent", "ElementDisplayUpdate",
+	"ElementActivatedEvent", "ElementDeactivatedEvent", "ElementActivated", "ElementDeactivated", "ActivateElementEvent", "ElementPurchased",
+	"ElementEquippedEvent", "ElementDisplayUpdate", "InvincibilityEffectEvent",
 	
 	-- ========== BOSS VFX ==========
 	"PlayBossSkillEvent", "Boss2GravityLocalPull", "ChromaticRequiemUIEvent",
@@ -84,7 +83,7 @@ local allRemoteEvents = {
 	-- ========== PROFILE/STATS ==========
 	"ProfileDataEvent", "ProfileUpdateEvent",
 	"AchievementEvent", "AchievementUnlockEvent", "AchievementUpdateEvent",
-	"MissionEvent", "MissionProgressEvent", "MissionUpdateEvent", "MissionsReset",
+	"MissionEvent", "MissionProgressEvent", "MissionUpdateEvent", "MissionsReset", "MissionProgressUpdated",
 	"SkillEvent", "SkillUnlockEvent", "SkillUpdateEvent",
 	"InventoryEvent", "InventoryUpdateEvent",
 	
@@ -152,7 +151,7 @@ local allRemoteFunctions = {
 -- === ALL BINDABLE EVENTS ===
 local allBindableEvents = {
 	-- ========== ZOMBIE/COMBAT ==========
-	"ZombieDied", "ReportDamageEvent", "ObjectDamaged",
+	"ZombieDied", "ZombieDiedEvent", "ReportDamageEvent", "ObjectDamaged",
 	
 	-- ========== ADMIN COMMANDS ==========
 	"AdminSetWave", "AdminSkipWave", "AdminKillAll",

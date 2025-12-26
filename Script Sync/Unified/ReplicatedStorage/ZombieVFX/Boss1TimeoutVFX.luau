@@ -15,7 +15,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 -- Remote Event Khusus untuk Guncangan Ini
 local ShakeEvent = Instance.new("RemoteEvent")
 ShakeEvent.Name = "Boss1TimeoutShakeEvent_v2"
-ShakeEvent.Parent = ReplicatedStorage.RemoteEvents
+ShakeEvent.Parent = ReplicatedStorage:WaitForChild("RemoteEvents")
 
 -- Logika sisi klien untuk guncangan & efek layar
 if RunService:IsClient() then

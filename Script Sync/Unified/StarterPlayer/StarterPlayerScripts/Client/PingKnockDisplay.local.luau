@@ -7,7 +7,7 @@ if game.PlaceId ~= ACT1_PLACE_ID then return end
 -- Script Place: ACT 1: Village
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local PingKnockedPlayerEvent = ReplicatedStorage.RemoteEvents:WaitForChild("PingKnockedPlayerEvent")
+local PingKnockedPlayerEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("PingKnockedPlayerEvent")
 
 local PING_SOUND_ID = "rbxassetid://152222467" -- Example sound, will replace with a better one
 local PING_DURATION = 3

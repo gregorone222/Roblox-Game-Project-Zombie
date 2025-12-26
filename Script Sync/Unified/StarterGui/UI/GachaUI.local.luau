@@ -22,12 +22,12 @@ local ModuleScriptReplicated = ReplicatedStorage:WaitForChild("ModuleScript")
 local WeaponModule = require(ModuleScriptReplicated:WaitForChild("WeaponModule"))
 local ModelPreviewModule = require(ModuleScriptReplicated:WaitForChild("ModelPreviewModule"))
 
-local GachaRollEvent = ReplicatedStorage.RemoteEvents:WaitForChild("GachaRollEvent")
-local GachaMultiRollEvent = ReplicatedStorage.RemoteEvents:WaitForChild("GachaMultiRollEvent")
-local GachaFreeRollEvent = ReplicatedStorage.RemoteEvents:WaitForChild("GachaFreeRollEvent")
-local GetGachaConfig = ReplicatedStorage.RemoteFunctions:WaitForChild("GetGachaConfig")
-local GetGachaStatus = ReplicatedStorage.RemoteFunctions:WaitForChild("GetGachaStatus")
-local CoinsUpdateEvent = ReplicatedStorage.RemoteEvents:WaitForChild("CoinsUpdateEvent")
+local GachaRollEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("GachaRollEvent")
+local GachaMultiRollEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("GachaMultiRollEvent")
+local GachaFreeRollEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("GachaFreeRollEvent")
+local GetGachaConfig = ReplicatedStorage:WaitForChild("RemoteFunctions"):WaitForChild("GetGachaConfig")
+local GetGachaStatus = ReplicatedStorage:WaitForChild("RemoteFunctions"):WaitForChild("GetGachaStatus")
+local CoinsUpdateEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("CoinsUpdateEvent")
 
 -- ================== THEME CONSTANTS ==================
 local THEME = {
@@ -590,5 +590,5 @@ end
 
 task.spawn(setupPrompt)
 
-print("GachaUI (CRT Theme) Initialized.")
+-- print removed
 return {}

@@ -17,9 +17,9 @@ local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
 -- RemoteEvents
-local UpdateSettingsEvent = ReplicatedStorage.RemoteEvents:WaitForChild("UpdateSettingsEvent")
-local LoadSettingsEvent = ReplicatedStorage.RemoteEvents:WaitForChild("LoadSettingsEvent")
-local BindableEvents = ReplicatedStorage.BindableEvents
+local UpdateSettingsEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("UpdateSettingsEvent")
+local LoadSettingsEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("LoadSettingsEvent")
+local BindableEvents = ReplicatedStorage:WaitForChild("BindableEvents")
 
 -- ============================================================================
 -- 1. CONSTANTS & THEME
@@ -84,7 +84,6 @@ local layoutEditorOriginalVisibility = {}
 local screenGui = Instance.new("ScreenGui", playerGui); screenGui.Name = "GameSettingsUI"; screenGui.ResetOnSpawn = false; screenGui.IgnoreGuiInset = false
 local screenGui2 = Instance.new("ScreenGui", playerGui); screenGui2.Name = "GameSettingsUI2"; screenGui2.ResetOnSpawn = false; screenGui2.IgnoreGuiInset = false; screenGui2.DisplayOrder = 100; screenGui2.ScreenInsets= Enum.ScreenInsets.TopbarSafeInsets
 
-print("GameSettingsUI: Loading Button...")
 
 -- Open Button (Gear) - Changed to TextButton for guaranteed visibility
 local gearBtn = Instance.new("TextButton", screenGui2)

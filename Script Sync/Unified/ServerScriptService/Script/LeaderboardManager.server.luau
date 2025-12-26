@@ -108,4 +108,3 @@ task.spawn(function()
 	end
 end)
 
-print("LeaderboardService.lua: Loaded successfully with a global countdown.")

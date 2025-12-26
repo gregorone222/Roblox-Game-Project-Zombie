@@ -123,4 +123,3 @@ end
 Players.PlayerAdded:Connect(onPlayerAdded)
 for _, p in ipairs(Players:GetPlayers()) do onPlayerAdded(p) end
 
-print("LobbyManager & Remotes Initialized.")

@@ -10,10 +10,10 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Debris = game:GetService("Debris")
 local TweenService = game:GetService("TweenService")
 
-local RemoteEvents = game.ReplicatedStorage.RemoteEvents
+local RemoteEvents = game.ReplicatedStorage:WaitForChild("RemoteEvents")
 
-local TracerEvent = ReplicatedStorage.RemoteEvents:WaitForChild("TracerEvent")
-local TracerBroadcast = ReplicatedStorage.RemoteEvents:WaitForChild("TracerBroadcast")
+local TracerEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("TracerEvent")
+local TracerBroadcast = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("TracerBroadcast")
 
 local TRACER_COLOR = Color3.fromRGB(255, 200, 50)
 local TRACER_WIDTH = 0.1

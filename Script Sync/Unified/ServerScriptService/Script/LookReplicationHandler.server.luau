@@ -104,4 +104,3 @@ for _, player in ipairs(Players:GetPlayers()) do
 	end)
 end
 
-print("[LookReplicationHandler] Initialized")

@@ -106,4 +106,3 @@ end)
 -- Initial update
 updateClock()
 
-print("UTCClockUI: Clock display initialized")

@@ -12,7 +12,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 
 -- Tunggu RemoteEvent
-local GachaSkinWonEvent = ReplicatedStorage.RemoteEvents:WaitForChild("GachaSkinWonEvent")
+local GachaSkinWonEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("GachaSkinWonEvent")
 
 -- ================== PEMBUATAN UI ==================
 local announcerGui = Instance.new("ScreenGui")
@@ -70,4 +70,4 @@ end
 -- Event listener untuk menerima pengumuman
 GachaSkinWonEvent.OnClientEvent:Connect(showAnnouncement)
 
-print("GachaAnnouncerUI.lua loaded for player.")
+-- print removed

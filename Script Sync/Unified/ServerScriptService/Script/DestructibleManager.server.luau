@@ -91,4 +91,3 @@ ObjectDamagedEvent.Event:Connect(function(hitModel, damageAmount, hitPosition)
 	end
 end)
 
-print("DestructibleManager: Initialized.")

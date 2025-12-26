@@ -248,4 +248,3 @@ end
 -- This ensures our code runs AFTER Roblox's default character scripts
 RunService:BindToRenderStep("TrueFPSUpdate", Enum.RenderPriority.Camera.Value + 1, onRenderStepped)
 
-print("[TrueFPSController] Initialized - Distance-based hiding active")

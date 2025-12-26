@@ -53,7 +53,6 @@ for _, group in ipairs(groups) do
 end
 
 
-print("Custom collision groups and rules have been successfully set up.")
 
 -- =================================================================
 -- STEP 2: ASSIGN OBJECTS TO COLLISION GROUPS

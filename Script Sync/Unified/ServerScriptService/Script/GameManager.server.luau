@@ -97,11 +97,10 @@ if #Players:GetPlayers() > 0 then
 	end
 end
 
-print("GameManager loaded. Waiting for player to initialize game mode...")
 
 
-local BindableEvents = game.ReplicatedStorage.BindableEvents
-local RemoteEvents = game.ReplicatedStorage.RemoteEvents
+local BindableEvents = game.ReplicatedStorage:WaitForChild("BindableEvents")
+local RemoteEvents = game.ReplicatedStorage:WaitForChild("RemoteEvents")
 
 -- Pastikan MissionCompleteEvent ada
 if not RemoteEvents:FindFirstChild(Constants.Events.MISSION_COMPLETE) then
@@ -597,7 +596,7 @@ local function startGameLoop()
 					-- Apply beautiful golden hour victory lighting
 					LightingManager.ApplyVictoryLighting(5)
 					
-					local missionCompleteEvent = ReplicatedStorage.RemoteEvents:FindFirstChild(Constants.Events.MISSION_COMPLETE)
+					local missionCompleteEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):FindFirstChild(Constants.Events.MISSION_COMPLETE)
 					if missionCompleteEvent then
 						missionCompleteEvent:FireAllClients()
 					end

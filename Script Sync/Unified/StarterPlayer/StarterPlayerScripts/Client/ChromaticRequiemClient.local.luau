@@ -11,7 +11,7 @@ local Players = game:GetService("Players")
 
 local localPlayer = Players.LocalPlayer
 
-local RemoteEvents = game.ReplicatedStorage.RemoteEvents
+local RemoteEvents = game.ReplicatedStorage:WaitForChild("RemoteEvents")
 
 local uiEvent = RemoteEvents:WaitForChild("ChromaticRequiemUIEvent")
 

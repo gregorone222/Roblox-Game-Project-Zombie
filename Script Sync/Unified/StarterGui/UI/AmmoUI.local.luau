@@ -15,7 +15,7 @@ local TweenService = game:GetService("TweenService")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
-local RemoteEvents = game.ReplicatedStorage.RemoteEvents
+local RemoteEvents = game.ReplicatedStorage:WaitForChild("RemoteEvents")
 local AmmoUpdateEvent = RemoteEvents:WaitForChild("AmmoUpdateEvent")
 
 -- Remove existing UI

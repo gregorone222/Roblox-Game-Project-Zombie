@@ -13,7 +13,7 @@ local Players = game:GetService("Players")
 local ServerScriptService = game:GetService("ServerScriptService")
 
 local RemoteEvents = game.ReplicatedStorage:WaitForChild("RemoteEvents")
-local RemoteFunctions = ReplicatedStorage.RemoteFunctions
+local RemoteFunctions = ReplicatedStorage:WaitForChild("RemoteFunctions")
 local ModuleScriptReplicatedStorage = ReplicatedStorage.ModuleScript
 local ModuleScriptServerScriptService = ServerScriptService.ModuleScript
 

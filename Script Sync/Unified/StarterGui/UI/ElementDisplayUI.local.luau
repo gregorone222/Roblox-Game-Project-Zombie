@@ -17,7 +17,7 @@ local HttpService = game:GetService("HttpService")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
-local RemoteEvents = game.ReplicatedStorage.RemoteEvents
+local RemoteEvents = game.ReplicatedStorage:WaitForChild("RemoteEvents")
 
 local ElementActivated      = RemoteEvents:WaitForChild("ElementActivated")
 local ElementDeactivated    = RemoteEvents:WaitForChild("ElementDeactivated")

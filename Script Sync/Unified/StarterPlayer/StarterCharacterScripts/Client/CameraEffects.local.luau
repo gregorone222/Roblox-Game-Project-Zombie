@@ -179,4 +179,3 @@ end
 
 --hum.Died:Once(reset)
 
-print("[CameraEffects] Dynamic camera disabled for True FPS compatibility")

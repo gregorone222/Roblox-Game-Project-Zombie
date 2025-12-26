@@ -522,4 +522,4 @@ local function createHUD()
 end
 
 createHUD()
-print("DailyRewardUI (Field Calendar) Initialized")
+-- print removed

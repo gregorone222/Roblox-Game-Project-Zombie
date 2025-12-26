@@ -10,8 +10,8 @@ local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
-local RemoteEvents = game.ReplicatedStorage.RemoteEvents
-local BindableEvents = game.ReplicatedStorage.BindableEvents
+local RemoteEvents = game.ReplicatedStorage:WaitForChild("RemoteEvents")
+local BindableEvents = game.ReplicatedStorage:WaitForChild("BindableEvents")
 local ModuleScriptReplicatedStorage = ReplicatedStorage.ModuleScript
 local ModuleScriptServerScriptService = ServerScriptService.ModuleScript
 
@@ -52,13 +52,13 @@ local HitmarkerEvent = RemoteEvents:WaitForChild("HitmarkerEvent")
 local BulletholeEvent = RemoteEvents:WaitForChild("BulletholeEvent")
 local ExplosionEvent = RemoteEvents:FindFirstChild("ExplosionEvent") or Instance.new("RemoteEvent", RemoteEvents)
 ExplosionEvent.Name = "ExplosionEvent"
-local DamageDisplayEvent = ReplicatedStorage.RemoteEvents:FindFirstChild("DamageDisplayEvent") or Instance.new("RemoteEvent", ReplicatedStorage.RemoteEvents)
+local DamageDisplayEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):FindFirstChild("DamageDisplayEvent") or Instance.new("RemoteEvent", ReplicatedStorage:WaitForChild("RemoteEvents"))
 DamageDisplayEvent.Name = "DamageDisplayEvent"
 
-local PlayGunshotSoundEvent = ReplicatedStorage.RemoteEvents:FindFirstChild("PlayGunshotSoundEvent") or Instance.new("RemoteEvent", ReplicatedStorage.RemoteEvents)
+local PlayGunshotSoundEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):FindFirstChild("PlayGunshotSoundEvent") or Instance.new("RemoteEvent", ReplicatedStorage:WaitForChild("RemoteEvents"))
 PlayGunshotSoundEvent.Name = "PlayGunshotSoundEvent"
 
-local PlayLocalGunshotSoundEvent = ReplicatedStorage.RemoteEvents:FindFirstChild("PlayLocalGunshotSoundEvent") or Instance.new("RemoteEvent", ReplicatedStorage.RemoteEvents)
+local PlayLocalGunshotSoundEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):FindFirstChild("PlayLocalGunshotSoundEvent") or Instance.new("RemoteEvent", ReplicatedStorage:WaitForChild("RemoteEvents"))
 PlayLocalGunshotSoundEvent.Name = "PlayLocalGunshotSoundEvent"
 
 -- Anti-spam tembak: catat waktu tembak terakhir per-player per-senjata
@@ -449,7 +449,7 @@ ShootEvent.OnServerEvent:Connect(function(player, tool, cameraDirection, isAimin
 
 					-- DESTUCTIBLE COVER LOGIC FOR PELLETS
 				elseif hitModel and hitModel:GetAttribute("Destructible") then
-					local ObjectDamagedEvent = ReplicatedStorage.BindableEvents:FindFirstChild("ObjectDamaged")
+					local ObjectDamagedEvent = ReplicatedStorage:WaitForChild("BindableEvents"):FindFirstChild("ObjectDamaged")
 					if ObjectDamagedEvent then
 						-- Calculate base damage for prop
 						local instanceLevel = tool:GetAttribute("UpgradeLevel") or 0
@@ -564,7 +564,7 @@ ShootEvent.OnServerEvent:Connect(function(player, tool, cameraDirection, isAimin
 
 				-- DESTUCTIBLE COVER LOGIC (No Humanoid)
 			elseif hitModel and hitModel:GetAttribute("Destructible") then
-				local ObjectDamagedEvent = ReplicatedStorage.BindableEvents:FindFirstChild("ObjectDamaged")
+				local ObjectDamagedEvent = ReplicatedStorage:WaitForChild("BindableEvents"):FindFirstChild("ObjectDamaged")
 				if ObjectDamagedEvent then
 					-- Calculate base damage for prop
 					local instanceLevel = tool:GetAttribute("UpgradeLevel") or 0

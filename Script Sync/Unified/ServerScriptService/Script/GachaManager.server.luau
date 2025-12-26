@@ -16,9 +16,9 @@ local GachaConfig = require(ServerScriptService.ModuleScript:WaitForChild("Gacha
 
 -- Mencari RemoteFunction untuk mengambil konfigurasi
 local getConfigFuncName = "GetGachaConfig"
-local GetGachaConfig = ReplicatedStorage.RemoteFunctions:FindFirstChild(getConfigFuncName)
+local GetGachaConfig = ReplicatedStorage:WaitForChild("RemoteFunctions"):FindFirstChild(getConfigFuncName)
 if not GetGachaConfig then
-	GetGachaConfig = Instance.new("RemoteFunction", ReplicatedStorage.RemoteFunctions)
+	GetGachaConfig = Instance.new("RemoteFunction", ReplicatedStorage:WaitForChild("RemoteFunctions"))
 	GetGachaConfig.Name = getConfigFuncName
 end
 
@@ -30,9 +30,9 @@ end
 
 -- Mencari RemoteEvent untuk komunikasi gacha
 local gachaEventName = "GachaRollEvent"
-local GachaRollEvent = ReplicatedStorage.RemoteEvents:FindFirstChild(gachaEventName)
+local GachaRollEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):FindFirstChild(gachaEventName)
 if not GachaRollEvent then
-	GachaRollEvent = Instance.new("RemoteEvent", ReplicatedStorage.RemoteEvents)
+	GachaRollEvent = Instance.new("RemoteEvent", ReplicatedStorage:WaitForChild("RemoteEvents"))
 	GachaRollEvent.Name = gachaEventName
 end
 
@@ -58,9 +58,9 @@ GachaRollEvent.OnServerEvent:Connect(onGachaRollRequested)
 
 -- Endpoint untuk Multi-Roll
 local gachaMultiRollEventName = "GachaMultiRollEvent"
-local GachaMultiRollEvent = ReplicatedStorage.RemoteEvents:FindFirstChild(gachaMultiRollEventName)
+local GachaMultiRollEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):FindFirstChild(gachaMultiRollEventName)
 if not GachaMultiRollEvent then
-	GachaMultiRollEvent = Instance.new("RemoteEvent", ReplicatedStorage.RemoteEvents)
+	GachaMultiRollEvent = Instance.new("RemoteEvent", ReplicatedStorage:WaitForChild("RemoteEvents"))
 	GachaMultiRollEvent.Name = gachaMultiRollEventName
 end
 
@@ -84,9 +84,9 @@ GachaMultiRollEvent.OnServerEvent:Connect(onGachaMultiRollRequested)
 
 -- Endpoint untuk Free Daily Roll
 local gachaFreeRollEventName = "GachaFreeRollEvent"
-local GachaFreeRollEvent = ReplicatedStorage.RemoteEvents:FindFirstChild(gachaFreeRollEventName)
+local GachaFreeRollEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):FindFirstChild(gachaFreeRollEventName)
 if not GachaFreeRollEvent then
-	GachaFreeRollEvent = Instance.new("RemoteEvent", ReplicatedStorage.RemoteEvents)
+	GachaFreeRollEvent = Instance.new("RemoteEvent", ReplicatedStorage:WaitForChild("RemoteEvents"))
 	GachaFreeRollEvent.Name = gachaFreeRollEventName
 end
 
@@ -111,9 +111,9 @@ GachaFreeRollEvent.OnServerEvent:Connect(onGachaFreeRollRequested)
 
 -- RemoteFunction untuk mendapatkan status gacha pemain
 local getGachaStatusFuncName = "GetGachaStatus"
-local GetGachaStatus = ReplicatedStorage.RemoteFunctions:FindFirstChild(getGachaStatusFuncName)
+local GetGachaStatus = ReplicatedStorage:WaitForChild("RemoteFunctions"):FindFirstChild(getGachaStatusFuncName)
 if not GetGachaStatus then
-	GetGachaStatus = Instance.new("RemoteFunction", ReplicatedStorage.RemoteFunctions)
+	GetGachaStatus = Instance.new("RemoteFunction", ReplicatedStorage:WaitForChild("RemoteFunctions"))
 	GetGachaStatus.Name = getGachaStatusFuncName
 end
 
@@ -135,4 +135,3 @@ end
 -- local gachaShopPart = Workspace:WaitForChild("GachaShopSkin")
 -- ... proximityPrompt.Triggered:Connect(...)
 
-print("GachaManager.lua now correctly listening to GachaRollEvent from the client.")

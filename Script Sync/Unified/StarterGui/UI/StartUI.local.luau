@@ -33,7 +33,7 @@ local THEME = {
 }
 
 local SELECT_ACTION = "StartConfirm_Arrows"
-local RemoteEvents = game.ReplicatedStorage.RemoteEvents
+local RemoteEvents = game.ReplicatedStorage:WaitForChild("RemoteEvents")
 
 local StartGameEvent = RemoteEvents:WaitForChild("StartGameEvent")
 local PlayerCountEvent = RemoteEvents:WaitForChild("PlayerCountEvent")

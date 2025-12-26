@@ -378,4 +378,4 @@ DetailRefs.EquipBtn.MouseButton1Click:Connect(function()
 end)
 
 SetupCategories()
-print("InventoryUI (Compliance Checked) Loaded")
+-- print removed

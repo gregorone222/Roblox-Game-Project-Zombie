@@ -19,8 +19,8 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 --[[ CONSTANTS & CONFIG ]]--
 local LOBBY_PLACE_ID = 101319079083908
--- Check place ID if strict, otherwise loose for testing
--- if game.PlaceId ~= LOBBY_PLACE_ID then script:Destroy() return end
+-- PlaceId Guard: Only run in Lobby
+if game.PlaceId ~= LOBBY_PLACE_ID then return end
 
 local THEME = {
 	Colors = {
@@ -588,4 +588,4 @@ create("Frame", {
 hudBtn.MouseButton1Click:Connect(toggle)
 gui.Enabled = true -- Ensure HUD is visible, main folder starts off-screen/hidden logic
 
-print("ProfileUI (Confidential Dossier) Loaded")
+-- print removed

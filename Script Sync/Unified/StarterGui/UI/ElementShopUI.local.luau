@@ -763,7 +763,7 @@ closeButton.MouseButton1Click:Connect(closeElementShop)
 
 -- Setup Prompt Connection
 local function setupPrompt()
-	print("Setup Prompt...")
+	-- print removed
 	if workspace:WaitForChild("Elements") then
 		local attachment = workspace.Elements:FindFirstChild("Attachment")
 		if attachment then

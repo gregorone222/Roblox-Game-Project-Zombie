@@ -40,9 +40,9 @@ function BuildingManager.LoadMap(mapName)
 	if Workspace:FindFirstChild("Map_Village") then Workspace.Map_Village:Destroy() end
 
 	if mapName == "Lobby" then
-		if LobbyBuilder then LobbyBuilder.Build() end
+		if LobbyBuilder and LobbyBuilder.Build then LobbyBuilder.Build() end
 	elseif mapName == "Village" or mapName == "ACT 1: Village" then
-		if VillageBuilder then VillageBuilder.Build() end
+		if VillageBuilder and VillageBuilder.Build then VillageBuilder.Build() end
 	else
 		warn("Unknown Map: " .. mapName)
 	end

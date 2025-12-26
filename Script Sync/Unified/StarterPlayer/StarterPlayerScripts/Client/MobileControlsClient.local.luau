@@ -14,8 +14,8 @@ local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
-local RemoteEvents = game.ReplicatedStorage.RemoteEvents
-local BindableEvents = game.ReplicatedStorage.BindableEvents
+local RemoteEvents = game.ReplicatedStorage:WaitForChild("RemoteEvents")
+local BindableEvents = game.ReplicatedStorage:WaitForChild("BindableEvents")
 
 -- Pastikan BindableEvent untuk refresh UI ada
 local refreshMobileButtonsEvent = BindableEvents:FindFirstChild("RefreshMobileButtons")
