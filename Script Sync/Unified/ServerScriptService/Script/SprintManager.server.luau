@@ -63,6 +63,21 @@ Players.PlayerAdded:Connect(function(player)
 		char:SetAttribute("IsSprinting", false)
 		-- Inisialisasi stamina dengan memperhitungkan semua bonus
 		playerData[player].stamina = calculateMaxStamina(player)
+
+		-- Listen for weapon equip to stop sprint if weapon doesn't allow it
+		char.ChildAdded:Connect(function(child)
+			if child:IsA("Tool") then
+				local weaponStats = WeaponModule.Weapons[child.Name]
+				if weaponStats and weaponStats.CanSprint == false then
+					-- Force stop sprint when equipping non-sprintable weapon
+					local data = playerData[player]
+					if data and data.isSprinting then
+						data.isSprinting = false
+						char:SetAttribute("IsSprinting", false)
+					end
+				end
+			end
+		end)
 	end)
 end)
 

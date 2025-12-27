@@ -147,6 +147,17 @@ updateEvent.OnServerEvent:Connect(function(player, modifierName, value)
 		end
 	elseif modifierName == "sprint" then
 		if value then
+			-- Check if equipped weapon allows sprinting
+			local char = player.Character
+			local tool = char and char:FindFirstChildOfClass("Tool")
+			if tool then
+				local weaponStats = WeaponModule.Weapons[tool.Name]
+				if weaponStats and weaponStats.CanSprint == false then
+					-- Weapon prevents sprinting (e.g. Minigun) - ignore request
+					WalkSpeedManager.remove_modifier(player, "sprint")
+					return
+				end
+			end
 			-- Fix: Server-authoritative sprint speed (ignoring client value)
 			WalkSpeedManager.add_modifier(player, modifierName, 6)
 		else

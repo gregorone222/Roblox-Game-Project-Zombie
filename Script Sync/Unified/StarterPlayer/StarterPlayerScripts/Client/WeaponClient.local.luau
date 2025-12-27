@@ -307,6 +307,34 @@ local function setupWeapon(tool)
 	viewmodel = HybridViewmodel.new(tool, player, weaponName, WeaponModule)
 	viewmodel:createViewmodel()
 
+	-- Disable default tool hold animation
+	tool.ManualActivationOnly = true
+	if player.Character then
+		local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+		if humanoid then
+			-- Stop any currently playing tool animations from Animate script
+			local animator = humanoid:FindFirstChildOfClass("Animator")
+			if animator then
+				for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+					local name = track.Name:lower()
+					if name:find("tool") or name:find("hold") then
+						track:Stop(0)
+					end
+				end
+			end
+		end
+		-- Clear toolAnim StringValue to prevent Animate script from playing tool animations
+		local animate = player.Character:FindFirstChild("Animate")
+		if animate then
+			local toolAnim = animate:FindFirstChild("toolnone")
+			if toolAnim then toolAnim:Destroy() end
+			local toolAnim2 = animate:FindFirstChild("toolslash")
+			if toolAnim2 then toolAnim2:Destroy() end
+			local toolAnim3 = animate:FindFirstChild("toollunge")
+			if toolAnim3 then toolAnim3:Destroy() end
+		end
+	end
+
 	local function applySkinClient()
 		if not weaponStats or not weaponStats.Skins then return end
 
@@ -487,6 +515,16 @@ local function handleReloadRequest()
 		isAiming = false
 		aimStatusChangedEvent:Fire(false) -- Fire status update
 		UpdateWalkSpeedModifierEvent:FireServer("aim", false)
+
+		-- FIX: Reset FOV back to normal when reload cancels ADS
+		stopFovTween()
+		fovTween = TweenService:Create(camera, TweenInfo.new(adsTransitionTime), {FieldOfView = originalFoV})
+		fovTween:Play()
+
+		-- Release camera lock
+		if player.Character then
+			player.Character:SetAttribute("CameraLock", false)
+		end
 	end
 
 	currentWeapon:SetAttribute("IsAiming", false)
