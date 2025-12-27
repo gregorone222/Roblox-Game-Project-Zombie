@@ -237,60 +237,87 @@ Sinyal darurat terdeteksi dari desa terpencil. Tim Survivor dikirim untuk invest
 |:-----|:-----------|:--------------|
 | **1** | Radio Transmission | *"Sinyal darurat terdeteksi. Evakuasi kemungkinan gagal. Hati-hati, Survivor."* |
 | **5** | Discovery | Surat terakhir warga: *"Mereka sakit sejak minggu lalu... aku tidak tahu apa yang terjadi."* |
-| **8** | Objective Wave | **Scavenge Mission:** Mengumpulkan Gas Canisters untuk generator |
-| **10** | **BOSS WAVE** | **Plague Titan** muncul. |
-| **12** | Audio Log | *"Siapapun yang menemukan ini... tolong beritahu keluargaku..."* |
-| **15** | Environmental | Menemukan bunker warga yang terkunci (tidak bisa masuk). |
-| **20** | Radio | Alexander: *"Tidak ada survivor. Tapi bagaimana wabah ini dimulai?"* |
-| **22** | Objective Wave | **Defend Mission:** Mempertahankan Radio Tower |
+| **10** | **OBJECTIVE** | **Scavenge Mission:** Mengumpulkan Fuel Cans untuk generator |
+| **15** | **BOSS WAVE** | **Plague Titan** muncul. |
+| **18** | Audio Log | *"Siapapun yang menemukan ini... tolong beritahu keluargaku..."* |
+| **20** | **OBJECTIVE** | **Defend Mission:** Mempertahankan Radio Tower |
 | **25** | Discovery | Foto keluarga, mainan anak-anak - kenangan yang ditinggalkan. |
 | **30** | **BOSS WAVE** | **The Hive Mother** muncul. |
-| **35** | Audio Log | *"Aku dengar suara dari hutan... seperti ada yang memanggil..."* |
-| **38** | Objective Wave | **Retrieve Mission:** Mengambil catatan medis dari klinik desa |
-| **45** | Radio | Alexander: *"Ada sesuatu yang aneh di sini. Kita perlu bukti lebih."* |
+| **35** | **OBJECTIVE** | **Escort Mission:** Mengantar survivor terluka ke safety |
+| **40** | Radio | Alexander: *"Tidak ada survivor lain. Tapi bagaimana wabah ini dimulai?"* |
+| **45** | **OBJECTIVE** | **Retrieve Mission:** Mengambil catatan medis dari klinik desa |
 | **50** | **FINAL BOSS** | **The Blighted Alchemist** muncul. |
 
 > **End of ACT 1:** Player selesai tapi masih **tidak tahu penyebab wabah**. Pertanyaan terbuka untuk ACT 2-3.
 
 ### Boss Profiles
 
-#### Boss 1: Plague Titan (Wave 10-15)
+> **⚠️ HALF-ZOMBIE CONCEPT:** Bosses are not fully transformed zombies. They are **hybrid mutations** - stronger than regular infected, but still **partially conscious**. They remember fragments of their past life and can speak, but cannot control their actions. Killing them is a **mercy kill**.
+
+---
+
+#### Boss 1: Plague Titan (Wave 15)
 **True Identity:** Dr. Marcus Webb, Lead Scientist  
 **HP:** 75,000  
 **Signature:** Radiation Aura, Corrosive Slam
 
-**Lore:**
-> Marcus percaya eksperimennya akan menyelamatkan dunia. Ketika virus bermutasi, dia menyuntikkan dirinya dengan serum prototipe. Tubuhnya berubah, pikirannya sudah lama mati.
+**Half-Zombie State:**
+- 🧠 **Consciousness:** 40% - Speaks in broken sentences, recognizes surroundings
+- 🧬 **Mutation:** Massive size, radiation-emitting tissue, fused lab equipment
 
-**Death Quote:** *"I was... so close... to saving... them..."*
+**Lore:**
+> Marcus was the first to realize something was wrong. When the outbreak started, he tried to create a counter-serum. He tested it on himself. It didn't cure him—it mutated him into something between man and monster, fully aware of what he's become.
+
+**Mid-Fight Dialogue:**
+- *"I can... see you... but I can't... stop..."*
+- *"Run... please... I don't want... to hurt..."*
+
+**Death Quote:** *"Thank... you... Tell my daughter... daddy tried..."*
 
 ---
 
-#### Boss 2: The Hive Mother (Wave 30-35)
+#### Boss 2: The Hive Mother (Wave 30)
 **True Identity:** Dr. Elena Voss, Chief Biologist  
 **HP:** 100,000  
-**Signature:** Spawn Larva, Acid Spit, Toxic Cloud
+**Signature:** Spawn Larva, Acid Spit, Protective Cocoon
+
+**Half-Zombie State:**
+- 🧠 **Consciousness:** 25% - Maternal instincts dominate, mistakes players for threats to "children"
+- 🧬 **Mutation:** Egg sacs fused to body, larva production glands, protective shell
 
 **Lore:**
-> Elena kehilangan dua anaknya dalam outbreak awal. Dalam keputusasaan, dia mencoba "evolusi paksa". Hasilnya? Dia menjadi sarang untuk "anak-anak" terakhirnya.
+> Elena lost her two children in the first wave. In her grief, she continued researching, hoping to "bring them back." The mutation gave her new "children"—the larva she spawns. She protects them with her life, not understanding they're monsters.
 
-**Death Quote:** *"My children... I just wanted... to protect them..."*
+**Mid-Fight Dialogue:**
+- *"Stay away... from my babies..."*
+- *"They're just... children... don't hurt them..."*
 
-> ⚠️ **Note:** Visual in-game adalah monster tanpa fitur manusia yang jelas (sesuai content rules).
+**Death Quote:** *"My children... I just wanted... to see them... one more time..."*
+
+> ⚠️ **Note:** Visual in-game adalah monster stylized tanpa fitur manusia yang jelas (sesuai content rules).
 
 ---
 
-#### Boss 3: The Blighted Alchemist (Wave 50)
-**True Identity:** Victor Crane, Project Director  
+#### Boss 3: The Blighted Alchemist (Wave 50 - FINAL)
+**True Identity:** Victor Crane, Village Doctor  
 **HP:** 125,000  
 **Signature:** Syringe Volley, Plague Bomb, Formula Switching
 
+**Half-Zombie State:**
+- 🧠 **Consciousness:** 60% - Most aware of all bosses, remembers his "mission"
+- 🧬 **Mutation:** Syringes fused to arms, chemical glands, unstable formulas in body
+
 **Lore:**
-> Victor terobsesi dengan "evolusi manusia sempurna". Dia menggunakan laboratorium desa untuk eksperimen ilegal. Baginya, wabah adalah "langkah pertama menuju spesies yang lebih kuat."
+> Victor wasn't evil—he was desperate. When the infection spread, he experimented on himself to find a cure. Each formula made him worse, but also stronger. Now he believes spreading the infection is "evolution" and continues his work, half-conscious of his madness.
 
-**Death Quote:** *"You think this ends here? The research... will continue..."*
+**Mid-Fight Dialogue:**
+- *"You don't understand... this is... progress..."*
+- *"I'm so close... just need... more subjects..."*
+- *"Part of me... knows this is wrong... but I can't stop..."*
 
-**Post-Death:** Koordinat mengarah ke kota besar - **The Silent City**.
+**Death Quote:** *"The formula... is in my blood... you can't... destroy it..."*
+
+**Post-Death:** A hidden note reveals coordinates to **The Silent City** - the source of the original infection.
 
 ---
 
