@@ -36,14 +36,14 @@ local FieldKitConfig = {
 
 -- Gacha Rewards Pool (for display)
 local RewardsPool = {
-	{ Type = "Coins", Name = "100-500 Credits", Rarity = "Common", Chance = "60%" },
-	{ Type = "Coins", Name = "500-1000 Credits", Rarity = "Uncommon", Chance = "20%" },
-	{ Type = "FieldKit", Name = "Starting Funds", Rarity = "Common", Chance = "8%" },
-	{ Type = "FieldKit", Name = "Ammo Stockpile", Rarity = "Uncommon", Chance = "5%" },
-	{ Type = "FieldKit", Name = "Body Armor", Rarity = "Rare", Chance = "3%" },
-	{ Type = "FieldKit", Name = "Mystery Loadout", Rarity = "Epic", Chance = "2%" },
-	{ Type = "FieldKit", Name = "Commander's Authority", Rarity = "Legendary", Chance = "1%" },
-	{ Type = "Skin", Name = "Weapon Skin", Rarity = "Legendary", Chance = "1%" },
+	{ Type = "Coins", Name = "100-500 Credits", Rarity = "Common", Chance = "60%", Desc = "In-game currency for purchases" },
+	{ Type = "Coins", Name = "500-1000 Credits", Rarity = "Uncommon", Chance = "20%", Desc = "Bonus currency for your account" },
+	{ Type = "FieldKit", Name = "Starting Funds", Key = "StarterPoints", Rarity = "Common", Chance = "8%" },
+	{ Type = "FieldKit", Name = "Ammo Stockpile", Key = "AmmoCache", Rarity = "Uncommon", Chance = "5%" },
+	{ Type = "FieldKit", Name = "Body Armor", Key = "StartingShield", Rarity = "Rare", Chance = "3%" },
+	{ Type = "FieldKit", Name = "Mystery Loadout", Key = "LegionsLegacy", Rarity = "Epic", Chance = "2%" },
+	{ Type = "FieldKit", Name = "Commander's Authority", Key = "CommanderBuff", Rarity = "Legendary", Chance = "1%" },
+	{ Type = "Skin", Name = "Weapon Skin", Rarity = "Legendary", Chance = "1%", Desc = "Exclusive cosmetic for selected weapon" },
 }
 
 -- ================== THEME CONSTANTS ==================
@@ -77,6 +77,8 @@ local state = {
 	coins = 0,
 	freeRollAvailable = false,
 	isRolling = false,
+	selectedWeapon = nil,
+	weaponsList = {},
 	gachaConfig = {
 		costs = { roll1 = 1500, roll10 = 15000 },
 	},
@@ -148,11 +150,11 @@ local function handleRoll(rollType)
 	if ui.overlay then ui.overlay.Visible = true end
 	
 	if rollType == "single" then
-		GachaRollEvent:FireServer()
+		GachaRollEvent:FireServer(state.selectedWeapon)
 	elseif rollType == "multi" then
-		GachaMultiRollEvent:FireServer()
+		GachaMultiRollEvent:FireServer(state.selectedWeapon)
 	else
-		GachaFreeRollEvent:FireServer()
+		GachaFreeRollEvent:FireServer(state.selectedWeapon)
 	end
 end
 
@@ -319,6 +321,79 @@ updateMainUI = function()
 	end
 end
 
+-- ================== POPULATE WEAPON LIST ==================
+
+local function populateWeaponList()
+	if not ui.weaponList then return end
+	
+	-- Clear existing
+	for _, c in ipairs(ui.weaponList:GetChildren()) do
+		if c:IsA("TextButton") then c:Destroy() end
+	end
+	
+	-- Get weapons from WeaponModule
+	local ModuleScriptReplicated = ReplicatedStorage:FindFirstChild("ModuleScript")
+	local WeaponModule = ModuleScriptReplicated and require(ModuleScriptReplicated:WaitForChild("WeaponModule", 5))
+	
+	state.weaponsList = {}
+	if WeaponModule and WeaponModule.Weapons then
+		for name, data in pairs(WeaponModule.Weapons) do
+			if data.Skins and next(data.Skins) then
+				table.insert(state.weaponsList, { name = name, data = data })
+			end
+		end
+	end
+	table.sort(state.weaponsList, function(a, b) return a.name < b.name end)
+	
+	-- Auto-select first if nothing selected
+	if not state.selectedWeapon and #state.weaponsList > 0 then
+		state.selectedWeapon = state.weaponsList[1].name
+	end
+	
+	for _, weapon in ipairs(state.weaponsList) do
+		local isSelected = (state.selectedWeapon == weapon.name)
+		
+		local btn = create("TextButton", {
+			Name = weapon.name,
+			Size = UDim2.new(1, -8, 0, 35),
+			BackgroundColor3 = isSelected and COLORS.ACCENT_GOLD or COLORS.BG_ROOT,
+			Text = "",
+			Parent = ui.weaponList
+		})
+		addCorner(btn, 4)
+		if isSelected then addStroke(btn, COLORS.ACCENT_GOLD, 2) end
+		
+		create("TextLabel", {
+			Name = "Label",
+			Text = weapon.name:upper(),
+			Size = UDim2.new(1, -10, 1, 0),
+			Position = UDim2.new(0, 5, 0, 0),
+			Font = FONTS.Header,
+			TextSize = 11,
+			TextColor3 = isSelected and COLORS.BG_ROOT or COLORS.TEXT_MAIN,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			BackgroundTransparency = 1,
+			Parent = btn
+		})
+		
+		btn.MouseButton1Click:Connect(function()
+			state.selectedWeapon = weapon.name
+			populateWeaponList()
+			-- Update label
+			if ui.selectedWeaponLabel then
+				ui.selectedWeaponLabel.Text = "Rolling for: " .. weapon.name
+			end
+		end)
+	end
+	
+	ui.weaponList.CanvasSize = UDim2.new(0, 0, 0, #state.weaponsList * 39)
+	
+	-- Update label
+	if ui.selectedWeaponLabel and state.selectedWeapon then
+		ui.selectedWeaponLabel.Text = "Rolling for: " .. state.selectedWeapon
+	end
+end
+
 -- ================== POPULATE REWARDS LIST ==================
 
 local function populateRewardsList()
@@ -331,8 +406,17 @@ local function populateRewardsList()
 	for _, reward in ipairs(RewardsPool) do
 		local color = getRarityColor(reward.Rarity)
 		
+		-- Get description
+		local description = reward.Desc or ""
+		if reward.Type == "FieldKit" and reward.Key then
+			local fkData = FieldKitConfig[reward.Key]
+			if fkData then
+				description = fkData.Description or ""
+			end
+		end
+		
 		local card = create("Frame", {
-			Size = UDim2.new(1, -10, 0, 60),
+			Size = UDim2.new(1, -10, 0, 75),
 			BackgroundColor3 = COLORS.BG_PANEL,
 			Parent = ui.rewardsList
 		})
@@ -341,25 +425,23 @@ local function populateRewardsList()
 		
 		-- Icon or type indicator
 		local iconFrame = create("Frame", {
-			Size = UDim2.new(0, 50, 0, 50),
-			Position = UDim2.new(0, 5, 0.5, 0),
+			Size = UDim2.new(0, 55, 0, 55),
+			Position = UDim2.new(0, 8, 0.5, 0),
 			AnchorPoint = Vector2.new(0, 0.5),
 			BackgroundColor3 = COLORS.BG_ROOT,
 			Parent = card
 		})
-		addCorner(iconFrame, 25)
+		addCorner(iconFrame, 27)
 		addStroke(iconFrame, color, 2)
 		
 		local iconText = "🪙"
 		if reward.Type == "FieldKit" then
 			local fk = nil
-			for key, data in pairs(FieldKitConfig) do
-				if data.Name == reward.Name then fk = data break end
-			end
+			if reward.Key then fk = FieldKitConfig[reward.Key] end
 			if fk and fk.Icon then
 				create("ImageLabel", {
-					Size = UDim2.new(0.8, 0, 0.8, 0),
-					Position = UDim2.new(0.1, 0, 0.1, 0),
+					Size = UDim2.new(0.75, 0, 0.75, 0),
+					Position = UDim2.new(0.125, 0, 0.125, 0),
 					BackgroundTransparency = 1,
 					Image = fk.Icon,
 					Parent = iconFrame
@@ -370,7 +452,7 @@ local function populateRewardsList()
 					Size = UDim2.new(1, 0, 1, 0),
 					BackgroundTransparency = 1,
 					Text = iconText,
-					TextSize = 24,
+					TextSize = 26,
 					Parent = iconFrame
 				})
 			end
@@ -380,7 +462,7 @@ local function populateRewardsList()
 				Size = UDim2.new(1, 0, 1, 0),
 				BackgroundTransparency = 1,
 				Text = iconText,
-				TextSize = 24,
+				TextSize = 26,
 				Parent = iconFrame
 			})
 		else
@@ -388,7 +470,7 @@ local function populateRewardsList()
 				Size = UDim2.new(1, 0, 1, 0),
 				BackgroundTransparency = 1,
 				Text = iconText,
-				TextSize = 24,
+				TextSize = 26,
 				Parent = iconFrame
 			})
 		end
@@ -396,10 +478,10 @@ local function populateRewardsList()
 		-- Name
 		create("TextLabel", {
 			Text = reward.Name:upper(),
-			Size = UDim2.new(0.5, 0, 0.5, 0),
-			Position = UDim2.new(0, 65, 0, 5),
+			Size = UDim2.new(0.5, 0, 0, 20),
+			Position = UDim2.new(0, 72, 0, 8),
 			Font = FONTS.Header,
-			TextSize = 14,
+			TextSize = 13,
 			TextColor3 = COLORS.TEXT_MAIN,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			BackgroundTransparency = 1,
@@ -409,23 +491,39 @@ local function populateRewardsList()
 		-- Rarity
 		create("TextLabel", {
 			Text = reward.Rarity:upper(),
-			Size = UDim2.new(0.3, 0, 0.4, 0),
-			Position = UDim2.new(0, 65, 0.55, 0),
+			Size = UDim2.new(0.2, 0, 0, 14),
+			Position = UDim2.new(0, 72, 0, 28),
 			Font = FONTS.Mono,
-			TextSize = 11,
+			TextSize = 10,
 			TextColor3 = color,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			BackgroundTransparency = 1,
 			Parent = card
 		})
 		
+		-- Description
+		if description ~= "" then
+			create("TextLabel", {
+				Text = description,
+				Size = UDim2.new(0.55, 0, 0, 22),
+				Position = UDim2.new(0, 72, 0, 45),
+				Font = FONTS.Body,
+				TextSize = 10,
+				TextColor3 = COLORS.TEXT_DIM,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextWrapped = true,
+				BackgroundTransparency = 1,
+				Parent = card
+			})
+		end
+		
 		-- Chance
 		create("TextLabel", {
 			Text = reward.Chance,
-			Size = UDim2.new(0.2, -10, 1, 0),
-			Position = UDim2.new(0.8, 0, 0, 0),
+			Size = UDim2.new(0.15, -5, 1, 0),
+			Position = UDim2.new(0.85, 0, 0, 0),
 			Font = FONTS.Mono,
-			TextSize = 16,
+			TextSize = 15,
 			TextColor3 = color,
 			TextXAlignment = Enum.TextXAlignment.Right,
 			BackgroundTransparency = 1,
@@ -433,7 +531,7 @@ local function populateRewardsList()
 		})
 	end
 	
-	ui.rewardsList.CanvasSize = UDim2.new(0, 0, 0, #RewardsPool * 68)
+	ui.rewardsList.CanvasSize = UDim2.new(0, 0, 0, #RewardsPool * 83)
 end
 
 -- ================== TAB SWITCHING ==================
@@ -456,7 +554,9 @@ local function switchTab(tabName)
 		if lbl then lbl.TextColor3 = (tabName == "Rewards") and COLORS.BG_ROOT or COLORS.TEXT_DIM end
 	end
 	
-	if tabName == "Rewards" then
+	if tabName == "Roll" then
+		populateWeaponList()
+	elseif tabName == "Rewards" then
 		populateRewardsList()
 	end
 end
@@ -641,41 +741,80 @@ createUI = function()
 		Parent = contentArea
 	})
 
-	-- Big Gacha Display
-	local gachaDisplay = create("Frame", {
-		Size = UDim2.new(1, 0, 0.55, 0),
+	-- Left: Weapon Selector
+	local weaponPanel = create("Frame", {
+		Size = UDim2.new(0.35, -5, 1, 0),
 		BackgroundColor3 = COLORS.BG_PANEL,
 		Parent = ui.rollPanel
+	})
+	addCorner(weaponPanel, 8)
+	addStroke(weaponPanel, COLORS.TEXT_DIM, 1)
+
+	create("TextLabel", {
+		Text = "🔫 SELECT WEAPON",
+		Size = UDim2.new(1, 0, 0, 30),
+		Position = UDim2.new(0, 0, 0, 5),
+		Font = FONTS.Header,
+		TextSize = 13,
+		TextColor3 = COLORS.ACCENT_GOLD,
+		BackgroundTransparency = 1,
+		Parent = weaponPanel
+	})
+
+	ui.weaponList = create("ScrollingFrame", {
+		Size = UDim2.new(1, -10, 1, -45),
+		Position = UDim2.new(0, 5, 0, 38),
+		BackgroundTransparency = 1,
+		ScrollBarThickness = 4,
+		ScrollBarImageColor3 = COLORS.ACCENT_GOLD,
+		CanvasSize = UDim2.new(0, 0, 0, 0),
+		Parent = weaponPanel
+	})
+	create("UIListLayout", { Padding = UDim.new(0, 4), Parent = ui.weaponList })
+
+	-- Right: Roll Area
+	local rollArea = create("Frame", {
+		Size = UDim2.new(0.65, -5, 1, 0),
+		Position = UDim2.new(0.35, 5, 0, 0),
+		BackgroundTransparency = 1,
+		Parent = ui.rollPanel
+	})
+
+	-- Gacha Display
+	local gachaDisplay = create("Frame", {
+		Size = UDim2.new(1, 0, 0.5, 0),
+		BackgroundColor3 = COLORS.BG_PANEL,
+		Parent = rollArea
 	})
 	addCorner(gachaDisplay, 8)
 	addStroke(gachaDisplay, COLORS.ACCENT_GOLD, 2)
 
 	create("TextLabel", {
 		Text = "🎰",
-		Size = UDim2.new(1, 0, 0.6, 0),
-		Position = UDim2.new(0, 0, 0, 10),
-		TextSize = 80,
+		Size = UDim2.new(1, 0, 0.45, 0),
+		Position = UDim2.new(0, 0, 0.05, 0),
+		TextSize = 60,
 		BackgroundTransparency = 1,
 		Parent = gachaDisplay
 	})
 
-	create("TextLabel", {
-		Text = "Try your luck!",
+	ui.selectedWeaponLabel = create("TextLabel", {
+		Text = "Select a weapon to roll for skins",
 		Size = UDim2.new(1, 0, 0.2, 0),
-		Position = UDim2.new(0, 0, 0.65, 0),
+		Position = UDim2.new(0, 0, 0.5, 0),
 		Font = FONTS.Header,
-		TextSize = 20,
+		TextSize = 16,
 		TextColor3 = COLORS.ACCENT_GOLD,
 		BackgroundTransparency = 1,
 		Parent = gachaDisplay
 	})
 
 	create("TextLabel", {
-		Text = "Win Field Kits, Credits, and rare Weapon Skins!",
-		Size = UDim2.new(1, 0, 0.15, 0),
-		Position = UDim2.new(0, 0, 0.82, 0),
+		Text = "Win Field Kits, Credits, or Skins!",
+		Size = UDim2.new(1, 0, 0.18, 0),
+		Position = UDim2.new(0, 0, 0.72, 0),
 		Font = FONTS.Body,
-		TextSize = 14,
+		TextSize = 12,
 		TextColor3 = COLORS.TEXT_DIM,
 		BackgroundTransparency = 1,
 		Parent = gachaDisplay
@@ -683,10 +822,10 @@ createUI = function()
 
 	-- Buttons Area
 	local btnArea = create("Frame", {
-		Size = UDim2.new(1, 0, 0.4, -10),
-		Position = UDim2.new(0, 0, 0.6, 10),
+		Size = UDim2.new(1, 0, 0.45, 0),
+		Position = UDim2.new(0, 0, 0.52, 0),
 		BackgroundTransparency = 1,
-		Parent = ui.rollPanel
+		Parent = rollArea
 	})
 
 	local function createRollButton(name, text, cost, posX)
