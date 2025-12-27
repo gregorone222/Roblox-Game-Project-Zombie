@@ -1,6 +1,6 @@
 # 🏚️ ACT 1 - The Cursed Village
 
-Ground Zero - Lokasi eksperimen awal. Desa yang pernah damai, sekarang dikuasai oleh tanaman liar dan kenangan yang ditinggalkan.
+Desa misterius yang menjadi lokasi pertama wabah. Tidak ada yang tahu bagaimana ini dimulai.
 
 > 📎 Lihat juga: [Story](../story/story.md) | [Characters](../entities/characters.md) | [Asset Checklist](../design/asset-checklist.md)
 

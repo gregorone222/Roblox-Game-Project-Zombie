@@ -222,31 +222,35 @@ Farm ini dulunya milik **Keluarga Miller** - petani yang selamat di awal wabah. 
 
 ## 🏚️ ACT 1: The Cursed Village
 
-**Setting:** Desa terpencil yang menjadi lokasi eksperimen rahasia  
-**Theme:** Discovery, Horror of Science Gone Wrong  
+**Setting:** Desa terpencil yang misterius  
+**Theme:** Survival Horror, Mystery  
 **Boss Count:** 3
 
 ### Story Summary
-Sinyal anomali terdeteksi dari desa terpencil. Tim Survivor dikirim untuk investigasi. Mereka menemukan bahwa desa ini adalah **Ground Zero** - lokasi eksperimen pertama yang menyebabkan wabah.
+Sinyal darurat terdeteksi dari desa terpencil. Tim Survivor dikirim untuk investigasi dan evakuasi. Mereka menemukan desa sudah dikuasai zombie - tapi **tidak ada petunjuk penyebabnya**. Fokus: bertahan hidup.
+
+> **NOTE:** ACT 1 sengaja tidak memberikan petunjuk tentang Zenith. Player hanya tahu ada wabah, bukan siapa penyebabnya.
 
 ### Wave-by-Wave Story Beats
 
 | Wave | Event Type | Story Content |
 |:-----|:-----------|:--------------|
-| **1** | Radio Transmission | *"Sinyal anomali terdeteksi. Ini Ground Zero. Hati-hati, Survivor."* |
-| **5** | Discovery | Lab notes: "Subject showing unexpected mutations. Proceeding with Phase 2." |
+| **1** | Radio Transmission | *"Sinyal darurat terdeteksi. Evakuasi kemungkinan gagal. Hati-hati, Survivor."* |
+| **5** | Discovery | Surat terakhir warga: *"Mereka sakit sejak minggu lalu... aku tidak tahu apa yang terjadi."* |
 | **8** | Objective Wave | **Scavenge Mission:** Mengumpulkan Gas Canisters untuk generator |
 | **10** | **BOSS WAVE** | **Plague Titan** muncul. |
-| **12** | Audio Log | *"Mereka bilang ini untuk kebaikan umat manusia..."* |
-| **15** | Environmental | Menemukan lab bawah tanah tersembunyi. |
-| **20** | Radio | Alexander: *"Data ini... lebih buruk dari yang kuduga."* |
+| **12** | Audio Log | *"Siapapun yang menemukan ini... tolong beritahu keluargaku..."* |
+| **15** | Environmental | Menemukan bunker warga yang terkunci (tidak bisa masuk). |
+| **20** | Radio | Alexander: *"Tidak ada survivor. Tapi bagaimana wabah ini dimulai?"* |
 | **22** | Objective Wave | **Defend Mission:** Mempertahankan Radio Tower |
-| **25** | Discovery | Foto evidence di lab |
+| **25** | Discovery | Foto keluarga, mainan anak-anak - kenangan yang ditinggalkan. |
 | **30** | **BOSS WAVE** | **The Hive Mother** muncul. |
-| **35** | Audio Log | *"Subject 47 memanggil nama anaknya..."* (HINT plot twist) |
-| **38** | Objective Wave | **Retrieve Mission:** Mengambil sampel virus |
-| **45** | Radio | Alexander: *"Ada satu lagi. Otak di balik semua ini."* |
+| **35** | Audio Log | *"Aku dengar suara dari hutan... seperti ada yang memanggil..."* |
+| **38** | Objective Wave | **Retrieve Mission:** Mengambil catatan medis dari klinik desa |
+| **45** | Radio | Alexander: *"Ada sesuatu yang aneh di sini. Kita perlu bukti lebih."* |
 | **50** | **FINAL BOSS** | **The Blighted Alchemist** muncul. |
+
+> **End of ACT 1:** Player selesai tapi masih **tidak tahu penyebab wabah**. Pertanyaan terbuka untuk ACT 2-3.
 
 ### Boss Profiles
 
@@ -402,9 +406,9 @@ Hidden text di game menggunakan cipher sederhana yang bisa di-decode:
 
 | ACT | Title | Setting | Theme | Revelation | Twist/Climax |
 |:----|:------|:--------|:------|:-----------|:-------------|
-| **1** | The Cursed Village | Desa terpencil | Ground Zero | "Lab misterius" | Boss: Blighted Alchemist |
-| **2** | The Silent City | Kota metropolitan | Urban nightmare | "Logo Zenith ditemukan" | Zenith HQ discovered |
-| **3** | The Underground | Bunker network | Survivors & secrets | "Whistleblower evidence" | Hidden community |
+| **1** | The Cursed Village | Desa terpencil | Survival Horror | "Tidak ada petunjuk" | Boss: Blighted Alchemist |
+| **2** | The Silent City | Kota metropolitan | Urban nightmare | "Logo aneh ditemukan" | Petunjuk pertama |
+| **3** | The Underground | Bunker network | Secrets revealed | **"Lab Zenith ditemukan"** | Mulai curiga |
 | **4** | The Corporation | Zenith HQ | Follow the money | "Internal memo leaked" | Zenith confirmed |
 | **5** | The Cover-Up | Government facility | Conspiracy depth | **"MEREKA TAHU DARI AWAL"** | **MAJOR TWIST** |
 | **6** | The Betrayal | Safe zone | Trust broken | "Ada spy di antara kita" | **ARC 2 CLIMAX** |

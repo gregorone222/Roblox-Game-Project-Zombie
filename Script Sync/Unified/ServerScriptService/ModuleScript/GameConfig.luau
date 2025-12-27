@@ -104,15 +104,8 @@ local config = {
 			-- Rasio konversi kerusakan menjadi koin. Formula: Kerusakan / Rasio.
 			-- Rasio ini akan dikalikan dengan HealthMultiplier tingkat kesulitan untuk menyeimbangkan.
 			DamageToCoinConversionRatio = 20,
-			-- Pengganda hadiah koin berdasarkan tingkat kesulitan. Diterapkan SETELAH perhitungan dasar.
-			DifficultyCoinMultipliers = {
-				Easy = 1,
-				Normal = 1.2,
-				Hard = 1.5,
-				Expert = 2,
-				Hell = 2.5,
-				Crazy = 3,
-			}
+		-- NOTE: Tidak ada multiplier per difficulty karena coins otomatis scaling
+			-- dengan HP zombie (lebih banyak damage = lebih banyak coins)
 		},
 
 		-- Pengaturan Ekonomi XP (Progresi Level)
@@ -121,33 +114,16 @@ local config = {
 			WaveCompleteXPBonus = 100,
 			-- Rasio konversi kerusakan menjadi XP.
 			DamageToXPConversionRatio = 5,
-			-- Pengganda hadiah XP berdasarkan tingkat kesulitan.
-			DifficultyXPMultipliers = {
-				Easy = 1,
-				Normal = 1.2,
-				Hard = 1.5,
-				Expert = 2,
-				Hell = 2.2,
-				Crazy = 2.5,
-			}
+		-- NOTE: Tidak ada multiplier per difficulty karena XP otomatis scaling
+			-- dengan HP zombie (lebih banyak damage = lebih banyak XP)
 		}
 	},
 
 	-- Pengaturan Tingkat Kesulitan
 	Difficulty = {
-		Easy = {
+		Normal = {
 			HealthMultiplier = 1,
 			DamageMultiplier = 1,
-			Rules = {
-				FriendlyFire = false,
-				IncreaseRandomWeaponCost = false,
-				MaxPerks = 3,
-				AllowRevive = true,
-			}
-		},
-		Normal = {
-			HealthMultiplier = 1.5,
-			DamageMultiplier = 1.5,
 			Rules = {
 				FriendlyFire = false,
 				IncreaseRandomWeaponCost = false,
@@ -176,8 +152,8 @@ local config = {
 			}
 		},
 		Hell = {
-			HealthMultiplier = 5,
-			DamageMultiplier = 5,
+			HealthMultiplier = 4,
+			DamageMultiplier = 4,
 			Rules = {
 				FriendlyFire = true,
 				IncreaseRandomWeaponCost = true,
@@ -186,8 +162,8 @@ local config = {
 			}
 		},
 		Crazy = {
-			HealthMultiplier = 10,
-			DamageMultiplier = 10,
+			HealthMultiplier = 5,
+			DamageMultiplier = 5,
 			Rules = {
 				FriendlyFire = true,
 				IncreaseRandomWeaponCost = true,
