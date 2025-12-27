@@ -47,9 +47,9 @@ function HybridViewmodel.new(tool, player, weaponName, weaponModule)
 	local weaponStats = self.WeaponModule.Weapons[self.weaponName] or {}
 	self.weaponStats = weaponStats
 	self.swayIntensity = weaponStats.SwayIntensity or 0.5
-	self.swaySmoothing = weaponStats.SwaySmoothing or 10
+	self.swaySmoothing = weaponStats.SwaySmoothing or 15 -- Increased for smoother sway
 	self.bobIntensity = weaponStats.BobIntensity or 0.3
-	self.bobSmoothing = weaponStats.BobSmoothing or 10
+	self.bobSmoothing = weaponStats.BobSmoothing or 12 -- Increased for smoother bob
 	self.bobFrequency = weaponStats.BobFrequency or 8
 
 	-- NEW: Breath effect (merged from ViewmodelModule)
@@ -260,16 +260,19 @@ function HybridViewmodel:updateViewmodel(dt, isAiming)
 
 	self.isAiming = isAiming or false
 
-	-- Calculate sway from mouse movement
+	-- Calculate sway from mouse movement (SMOOTHED to prevent jitter)
 	local cameraDelta = self.camera.CFrame:ToObjectSpace(self.lastCameraCFrame)
-	self.lastCameraCFrame = self.camera.CFrame
+	self.lastCameraCFrame = self.lastCameraCFrame:Lerp(self.camera.CFrame, math.min(dt * 30, 1)) -- Smooth camera tracking
 
 	local swayAmount = self.swayIntensity
 	if self.isAiming then swayAmount = swayAmount * 0.3 end
 
 	local rx, ry, rz = cameraDelta:ToOrientation()
+	-- Clamp rotation deltas to prevent sudden jumps
+	rx = math.clamp(rx, -0.1, 0.1)
+	ry = math.clamp(ry, -0.1, 0.1)
 	self.targetSway = CFrame.Angles(ry * swayAmount * 0.5, -rx * swayAmount, rx * swayAmount * 0.2)
-	self.currentSway = self.currentSway:Lerp(self.targetSway, dt * self.swaySmoothing)
+	self.currentSway = self.currentSway:Lerp(self.targetSway, math.min(dt * self.swaySmoothing, 1))
 
 	-- Calculate bob from movement (ENHANCED from ViewmodelModule)
 	local char = self.player.Character
