@@ -117,43 +117,80 @@ Props dengan environmental storytelling (sama seperti Lobby tapi scattered):
 
 ---
 
-## 🎯 WAVE OBJECTIVES
+## 🎯 WAVE OBJECTIVES (4 per ACT)
 
-### Wave 8: Scavenge Mission
-**Objective:** Collect Gas Canisters  
-**Spawn Points:** Inside houses (Spawn_Gas attachments)
+> **Note:** Setiap ACT memiliki 4 objectives yang tersebar merata untuk variasi gameplay.
+
+### Wave 10: Scavenge Mission
+**Objective:** Collect Fuel Cans & Refuel Generator  
+**Spawn Points:** Inside houses (Spawn_Gas attachments)  
+**Reward:** 500 BP
 
 | Requirement | Value |
 |:------------|:------|
-| Items to collect | 5 Gas Canisters |
-| Time limit | 3 minutes |
+| Items to collect | 3 Fuel Cans |
+| Time limit | 2 minutes |
 | Location | Random houses |
+| Delivery | Generator di Village Square |
 
 ---
 
-### Wave 22: Defend Mission
-**Objective:** Defend Radio Tower during data upload  
-**Zone:** Village Square center (Zone_Defend attachment)
+### Wave 20: Defend Mission
+**Objective:** Defend Radio Tower during signal boost  
+**Zone:** Village Square center (Zone_Defend attachment)  
+**Reward:** 750 BP
 
 | Requirement | Value |
 |:------------|:------|
-| Defend time | 2 minutes |
+| Defend time | 90 seconds |
 | Zone radius | ~20 studs from tower |
-| Fail condition | All players leave zone |
+| Bonus | +10% speed per extra player in zone |
 
 ---
 
-### Wave 38: Retrieve Mission
-**Objective:** Retrieve virus sample from forest  
-**Spawn Points:** Near trees (Spawn_Sample attachments)
+### Wave 35: Escort Mission (NEW)
+**Objective:** Escort injured survivor to safe zone  
+**Start:** Forest edge (Spawn_Survivor attachment)  
+**Reward:** 1000 BP
 
 | Requirement | Value |
 |:------------|:------|
-| Items to collect | 1 Sample Container |
-| Time limit | 4 minutes |
-| Location | Random forest area |
+| NPC Health | 500 HP (must survive) |
+| Destination | Radio Tower |
+| NPC Speed | 50% player speed |
+| Fail condition | NPC dies |
+
+**Mechanic:**
+- Survivor NPC follows closest player
+- Zombies will prioritize attacking NPC
+- Players must protect while guiding to safety
 
 ---
+
+### Wave 45: Retrieve Mission
+**Objective:** Retrieve medical records from village clinic  
+**Spawn Points:** Village clinic building (Spawn_Records attachment)  
+**Reward:** 1250 BP
+
+| Requirement | Value |
+|:------------|:------|
+| Items to collect | 1 Medical Records Box |
+| Hold duration | 4 seconds (interruptible) |
+| Time limit | 3 minutes |
+| Location | Inside locked building (door opens on objective start) |
+
+---
+
+## 📊 Objectives Summary
+
+| Wave | Type | Difficulty | Reward |
+|:-----|:-----|:-----------|:-------|
+| 10 | SCAVENGE | Easy | 500 BP |
+| 20 | DEFEND | Medium | 750 BP |
+| 35 | ESCORT | Hard | 1000 BP |
+| 45 | RETRIEVE | Medium | 1250 BP |
+
+**Total Objective Rewards:** 3,500 BP
 
 ## 👹 BOSS ENCOUNTERS
 
