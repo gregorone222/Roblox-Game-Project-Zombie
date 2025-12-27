@@ -1,5 +1,5 @@
--- CoinsUI.lua (LocalScript)
--- Path: StarterGui/CoinsUI.lua
+-- SurvivalCoinsUI.local.luau (LocalScript)
+-- Path: StarterGui/UI/SurvivalCoinsUI.local.luau
 -- Script Place: Lobby
 -- Revisi: Peningkatan Visual
 
@@ -14,11 +14,11 @@ local TweenService = game:GetService("TweenService") -- Tambahkan TweenService
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
-local CoinsUpdateEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("CoinsUpdateEvent")
+local SurvivalCoinsUpdateEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("SurvivalCoinsUpdateEvent")
 
 -- Hapus UI lama jika ada untuk mencegah duplikasi
-if playerGui:FindFirstChild("CoinsUI") then
-	playerGui.CoinsUI:Destroy()
+if playerGui:FindFirstChild("SurvivalCoinsUI") then
+	playerGui.SurvivalCoinsUI:Destroy()
 end
 
 -- ======================================================
@@ -26,7 +26,7 @@ end
 -- ======================================================
 
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "CoinsUI"
+screenGui.Name = "SurvivalCoinsUI"
 screenGui.Parent = playerGui
 screenGui.IgnoreGuiInset = true
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
@@ -65,7 +65,7 @@ local coinsLabel = Instance.new("TextLabel")
 coinsLabel.Name = "CoinsLabel"
 coinsLabel.Size = UDim2.new(1, 0, 1, 0)
 coinsLabel.Position = UDim2.new(0, 0, 0, 0) 
-coinsLabel.Text = "?? Blood Coins: ..."
+coinsLabel.Text = "💰 Survival Coins: ..."
 coinsLabel.TextColor3 = Color3.fromRGB(255, 255, 255) -- Warna merah muda terang
 coinsLabel.Font = Enum.Font.GothamMedium -- Font lebih modern
 coinsLabel.TextSize = 18 -- Ukuran teks spesifik
@@ -108,13 +108,13 @@ local function updateCoinsUI(newCoins)
 	-- Update teks label setiap frame selama tween berjalan
 	local connection
 	connection = tweenValue:GetPropertyChangedSignal("Value"):Connect(function()
-		coinsLabel.Text = string.format("Blood Coins: %d", math.floor(tweenValue.Value + 0.5))
+		coinsLabel.Text = string.format("Survival Coins: %d", math.floor(tweenValue.Value + 0.5))
 	end)
 
 	-- Setelah tween selesai
 	countTween.Completed:Connect(function()
 		if connection then connection:Disconnect() end
-		coinsLabel.Text = string.format("??Blood Coins: %d", newCoins) -- Pastikan nilai akhir benar
+		coinsLabel.Text = string.format("💰Survival Coins: %d", newCoins) -- Pastikan nilai akhir benar
 		currentCoins = newCoins -- Update nilai saat ini
 		tweenValue:Destroy() -- Hapus NumberValue sementara
 	end)
@@ -133,7 +133,7 @@ local function updateCoinsUI(newCoins)
 end
 
 -- Dengarkan event dari server
-CoinsUpdateEvent.OnClientEvent:Connect(updateCoinsUI)
+SurvivalCoinsUpdateEvent.OnClientEvent:Connect(updateCoinsUI)
 
 -- Muat nilai awal (jika diperlukan)
 -- Anda bisa menggunakan RemoteFunction untuk meminta nilai awal saat pemain masuk
@@ -142,4 +142,4 @@ CoinsUpdateEvent.OnClientEvent:Connect(updateCoinsUI)
 -- local initialCoins = getInitialCoins:InvokeServer()
 -- updateCoinsUI(initialCoins)
 -- Note: Pastikan RemoteFunction GetInitialCoins dibuat di server.
--- Untuk saat ini, kita anggap nilai awal akan dikirim oleh server via CoinsUpdateEvent.
+-- Untuk saat ini, kita anggap nilai awal akan dikirim oleh server via SurvivalCoinsUpdateEvent.

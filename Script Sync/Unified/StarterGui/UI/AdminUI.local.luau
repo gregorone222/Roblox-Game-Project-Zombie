@@ -28,7 +28,7 @@ local function CreateAdminUI()
 				{ Name = "TotalRevives", Path = "stats" }
 			},
 			["Ekonomi"] = {
-				{ Name = "TotalCoins", Path = "stats" }
+				{ Name = "TotalSurvivalCoins", Path = "stats" }
 			},
 		},
 		Inventory = {
@@ -240,7 +240,7 @@ local function CreateAdminUI()
 		-- [[ PERBAIKAN BUG: Path sekarang adalah path ke tabel (e.g., "/leveling"), key adalah nama field (e.g., "Level") ]]
 
 		-- Fields that should be read-only
-		local readOnlyKeys = {"TotalKills", "TotalCoins", "TotalRevives", "TotalKnocks", "Skins", "Owned", "Active"}
+		local readOnlyKeys = {"TotalKills", "TotalSurvivalCoins", "TotalRevives", "TotalKnocks", "Skins", "Owned", "Active"}
 		local isReadOnly = table.find(readOnlyKeys, tostring(key)) or false
 
 		if type(value) == "table" then

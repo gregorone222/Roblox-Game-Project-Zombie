@@ -14,7 +14,7 @@ local RemoteEvents = game.ReplicatedStorage:WaitForChild("RemoteEvents")
 local RemoteFunctions = ReplicatedStorage:WaitForChild("RemoteFunctions")
 local ModuleScriptServerScriptService = ServerScriptService.ModuleScript
 
-local PointsSystem = require(ModuleScriptServerScriptService:WaitForChild("PointsModule"))
+local PointsSystem = require(ModuleScriptServerScriptService:WaitForChild("CombatPointsModule"))
 local ElementModule = require(ModuleScriptServerScriptService:WaitForChild("ElementConfigModule"))
 local BoosterModule = require(ModuleScriptServerScriptService:WaitForChild("BoosterModule"))
 

@@ -20,7 +20,7 @@ Tactical Boosts adalah **consumable upgrades** yang dibeli per-wave dan memberik
 
 ## 🎯 Tactical Boosts List
 
-### Tier 1 (Cost: 1500 BP)
+### Tier 1 (Cost: 1500 CP)
 
 | Internal Key | Display Name | Effect | Duration |
 |:-------------|:-------------|:-------|:---------|
@@ -31,13 +31,13 @@ Tactical Boosts adalah **consumable upgrades** yang dibeli per-wave dan memberik
 | `Wind` | **Concussion Blast** | Push enemies back (knockback only) | 10s |
 | `Earth` | **Hardened Armor** | 20% damage reduction | 10s |
 
-### Tier 2 (Cost: 3000 BP)
+### Tier 2 (Cost: 3000 CP)
 
 | Internal Key | Display Name | Effect | Duration |
 |:-------------|:-------------|:-------|:---------|
 | `Light` | **Stimpack** | Complete invincibility | 3s |
 
-### Tier 3 (Cost: 5000 BP)
+### Tier 3 (Cost: 5000 CP)
 
 | Internal Key | Display Name | Effect | Duration |
 |:-------------|:-------------|:-------|:---------|

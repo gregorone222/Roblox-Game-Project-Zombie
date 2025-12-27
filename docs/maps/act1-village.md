@@ -124,7 +124,7 @@ Props dengan environmental storytelling (sama seperti Lobby tapi scattered):
 ### Wave 10: Scavenge Mission
 **Objective:** Collect Fuel Cans & Refuel Generator  
 **Spawn Points:** Inside houses (Spawn_Gas attachments)  
-**Reward:** 500 BP
+**Reward:** 500 CP
 
 | Requirement | Value |
 |:------------|:------|
@@ -138,7 +138,7 @@ Props dengan environmental storytelling (sama seperti Lobby tapi scattered):
 ### Wave 20: Defend Mission
 **Objective:** Defend Radio Tower during signal boost  
 **Zone:** Village Square center (Zone_Defend attachment)  
-**Reward:** 750 BP
+**Reward:** 750 CP
 
 | Requirement | Value |
 |:------------|:------|
@@ -151,7 +151,7 @@ Props dengan environmental storytelling (sama seperti Lobby tapi scattered):
 ### Wave 35: Escort Mission (NEW)
 **Objective:** Escort injured survivor to safe zone  
 **Start:** Forest edge (Spawn_Survivor attachment)  
-**Reward:** 1000 BP
+**Reward:** 1000 CP
 
 | Requirement | Value |
 |:------------|:------|
@@ -170,7 +170,7 @@ Props dengan environmental storytelling (sama seperti Lobby tapi scattered):
 ### Wave 45: Retrieve Mission
 **Objective:** Retrieve medical records from village clinic  
 **Spawn Points:** Village clinic building (Spawn_Records attachment)  
-**Reward:** 1250 BP
+**Reward:** 1250 CP
 
 | Requirement | Value |
 |:------------|:------|
@@ -185,12 +185,12 @@ Props dengan environmental storytelling (sama seperti Lobby tapi scattered):
 
 | Wave | Type | Difficulty | Reward |
 |:-----|:-----|:-----------|:-------|
-| 10 | SCAVENGE | Easy | 500 BP |
-| 20 | DEFEND | Medium | 750 BP |
-| 35 | ESCORT | Hard | 1000 BP |
-| 45 | RETRIEVE | Medium | 1250 BP |
+| 10 | SCAVENGE | Easy | 500 CP |
+| 20 | DEFEND | Medium | 750 CP |
+| 35 | ESCORT | Hard | 1000 CP |
+| 45 | RETRIEVE | Medium | 1250 CP |
 
-**Total Objective Rewards:** 3,500 BP
+**Total Objective Rewards:** 3,500 CP
 
 ## 👹 BOSS ENCOUNTERS
 

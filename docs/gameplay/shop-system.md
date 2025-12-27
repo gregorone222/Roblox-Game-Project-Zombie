@@ -1,23 +1,23 @@
 # 🛒 In-Game Shop System
 
-Dokumentasi sistem pembelian dalam game menggunakan **BP (Battle Points)**.
+Dokumentasi sistem pembelian dalam game menggunakan **CP (Combat Points)**.
 
 > **IMPORTANT:** Shop ini hanya tersedia saat gameplay (ACT 1 dan seterusnya), TIDAK di Lobby.
 
 ---
 
-## 💰 Mata Uang: BP (Battle Points)
+## 💰 Mata Uang: CP (Combat Points)
 
-BP adalah mata uang utama dalam game yang didapat dari:
+CP adalah mata uang utama dalam game yang didapat dari:
 
-| Sumber | BP Earned |
+| Sumber | CP Earned |
 |:-------|:----------|
-| Kill zombie biasa | ~10-50 BP |
-| Kill special zombie | ~50-100 BP |
-| Kill boss | ~500-1000 BP |
-| Complete wave objective | ~200-500 BP |
+| Kill zombie biasa | ~10-50 CP |
+| Kill special zombie | ~50-100 CP |
+| Kill boss | ~500-1000 CP |
+| Complete wave objective | ~200-500 CP |
 
-> BP **RESET setiap game session** (tidak tersimpan antar game)
+> CP **RESET setiap game session** (tidak tersimpan antar game)
 
 ---
 
@@ -91,16 +91,16 @@ BP adalah mata uang utama dalam game yang didapat dari:
 
 **Tier Structure:**
 ```
-UTILITY (2,000 BP)
+UTILITY (2,000 CP)
 ├── Humanity (RevivePlus)
 └── Field Medic (Medic)
 
-CORE (4,000 BP)
+CORE (4,000 CP)
 ├── Iron Will (HPPlus)
 ├── Second Wind (StaminaPlus)
 └── Dexterity (ReloadPlus)
 
-ELITE (6,000 BP)
+ELITE (6,000 CP)
 └── Adrenaline (RateBoost)
 ```
 
@@ -119,9 +119,9 @@ ELITE (6,000 BP)
 **Cost Scaling:**
 | Purchase # | Cost |
 |:-----------|:-----|
-| 1st | 1,000 BP |
-| 2nd | 2,000 BP |
-| 3rd | 3,000 BP |
+| 1st | 1,000 CP |
+| 2nd | 2,000 CP |
+| 3rd | 3,000 CP |
 | 4th+ | +1,000 per purchase |
 
 **Weapon Pool:**
@@ -207,11 +207,11 @@ Player selects item and clicks Buy
 Client fires RemoteFunction: Purchase[Item]
     ↓
 Server validates:
-    - Enough BP?
+    - Enough CP?
     - Already owned? (for perks)
     - Near shop?
     ↓
-Server deducts BP, grants item
+Server deducts CP, grants item
     ↓
 Server fires update events to Client
 ```
@@ -235,7 +235,7 @@ Field Kits (formerly Boosters) memberikan advantage di awal game. **TIDAK dijual
 
 | Kit | Effect | Interaksi dengan Shop |
 |:----|:-------|:----------------------|
-| Starting Funds | +1,500 BP | Lebih banyak uang untuk belanja |
+| Starting Funds | +1,500 CP | Lebih banyak uang untuk belanja |
 | Ammo Stockpile | +50% max ammo | Tidak berpengaruh ke shop |
 | Body Armor | 50% bonus shield | Tidak berpengaruh ke shop |
 | Mystery Loadout | Random starting weapon | Tidak berpengaruh ke shop |
@@ -245,11 +245,11 @@ Field Kits (formerly Boosters) memberikan advantage di awal game. **TIDAK dijual
 
 ## 📊 Economy Balance Notes
 
-**Target BP per Wave:**
-- Wave 1-10: ~500-1,500 BP
-- Wave 11-25: ~2,000-4,000 BP
-- Wave 26-40: ~5,000-8,000 BP
-- Wave 41-50: ~8,000-15,000 BP
+**Target CP per Wave:**
+- Wave 1-10: ~500-1,500 CP
+- Wave 11-25: ~2,000-4,000 CP
+- Wave 26-40: ~5,000-8,000 CP
+- Wave 41-50: ~8,000-15,000 CP
 
 **Spending Priority (Recommended):**
 1. **Early Game (Wave 1-15):** Random Weapon → Upgrade

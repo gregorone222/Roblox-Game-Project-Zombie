@@ -155,7 +155,7 @@ function StatsModule.AddKill(player, amount)
 end
 
 function StatsModule.AddCoin(player, amount)
-	IncrementStat(player, "TotalCoins", amount)
+	IncrementStat(player, "TotalSurvivalCoins", amount)
 end
 
 function StatsModule.AddKnock(player, amount)

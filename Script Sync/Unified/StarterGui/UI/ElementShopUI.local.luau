@@ -706,7 +706,7 @@ end
 
 -- Fetch Balance Logic
 local function fetchBalance()
-	-- Try to get balance from a likely module (CoinsModule or PointsModule)
+	-- Try to get balance from a likely module (CoinsModule or CombatPointsModule)
 	-- For client side, usually we check attributes or leaderstats
 	local leaderstats = player:FindFirstChild("leaderstats")
 	local coins = 0

@@ -8,14 +8,14 @@ Sistem mata uang dan kemajuan pemain.
 
 | Currency | Type | Source | Usage | Handler |
 |:---------|:-----|:-------|:------|:--------|
-| **Coins** | Permanen | Wave Clear & Damage | Skin/Item permanen, Gacha | `CoinsModule.luau` |
-| **BP (Battle Points)** | Sesi | In-game kills/objectives | In-game shops | `PointsModule.luau` |
+| **Survival Coins** | Permanen | Wave Clear & Damage | Skin/Item permanen, Gacha | `CoinsModule.luau` |
+| **CP (Combat Points)** | Sesi | In-game kills/objectives | In-game shops | `PointsModule.luau` |
 | **AP (Achievement Points)** | Permanen | Achievements | AP Shop items | `StatsModule.luau` |
 | **MP (Mission Points)** | Permanen | Missions | MP Shop items | `MissionPointsModule.luau` |
 
 ---
 
-## 💵 Coins (Permanent Currency)
+## 💵 Survival Coins (Permanent Currency)
 
 ### Formula
 **Base Ratio:** 20 Damage = 1 Coin
@@ -35,23 +35,24 @@ Sistem mata uang dan kemajuan pemain.
 
 ---
 
-## ⚔️ BP (Battle Points) - Session Currency
+## ⚔️ CP (Combat Points) - Session Currency
 
-BP is earned during gameplay and **resets every session**.
+CP is earned during gameplay and **resets every session**.
 
-### Earning BP
-| Source | BP Earned |
+### Earning CP
+| Source | CP Earned |
 |:-------|:----------|
-| Kill zombie | 10-50 BP |
-| Kill special zombie | 50-100 BP |
-| Kill boss | 500-1000 BP |
-| Wave objective complete | 200-500 BP |
+| Kill zombie | 10-50 CP |
+| Kill special zombie | 50-100 CP |
+| Kill boss | 500-1000 CP |
+| Wave objective complete | 200-500 CP |
 
-### Spending BP
-- Tactical Boosts (1,500-5,000 BP)
-- Perks (2,000-6,000 BP)
-- Random Weapon (1,000+ BP, scaling)
+### Spending CP
+- Tactical Boosts (1,500-5,000 CP)
+- Perks (2,000-6,000 CP)
+- Random Weapon (1,000+ CP, scaling)
 - Weapon Upgrade (varies)
+
 
 ---
 

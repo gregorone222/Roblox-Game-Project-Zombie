@@ -183,7 +183,7 @@ end
 
 Commands["points"] = function(player, args)
 	local amount = tonumber(args[1]) or 1000
-	local PointsModule = require(ModuleScriptFolder:WaitForChild("PointsModule"))
+	local PointsModule = require(ModuleScriptFolder:WaitForChild("CombatPointsModule"))
 	if PointsModule and PointsModule.AddPoints then
 		PointsModule.AddPoints(player, amount)
 		print(player.Name .. " received " .. amount .. " points")

@@ -1,5 +1,5 @@
--- CoinsModule.lua (ModuleScript)
--- Path: ServerScriptService/ModuleScript/CoinsModule.lua
+-- SurvivalCoinsModule.luau (ModuleScript)
+-- Path: ServerScriptService/ModuleScript/SurvivalCoinsModule.luau
 -- Script Place: Lobby & ACT 1: Village
 
 local Players = game:GetService("Players")
@@ -10,20 +10,20 @@ local DataStoreManager = require(script.Parent:WaitForChild("DataStoreManager"))
 local StatsModule = require(script.Parent:WaitForChild("StatsModule"))
 local WeaponModule = require(ReplicatedStorage.ModuleScript:WaitForChild("WeaponModule"))
 
-local CoinsManager = {}
+local SurvivalCoinsManager = {}
 
 -- RemoteEvent (wait for SharedEventsSetup to create folders)
 local RemoteEvents = ReplicatedStorage:WaitForChild("RemoteEvents")
-local CoinsUpdateEvent = RemoteEvents:WaitForChild("CoinsUpdateEvent")
+local SurvivalCoinsUpdateEvent = RemoteEvents:WaitForChild("SurvivalCoinsUpdateEvent")
 
 -- =============================================================================
 -- FUNGSI INTI
 -- =============================================================================
 
-function CoinsManager.GetData(player)
+function SurvivalCoinsManager.GetData(player)
 	local playerData = DataStoreManager:GetOrWaitForPlayerData(player)
 	if not playerData or not playerData.data then
-		warn("[CoinsManager] Gagal mendapatkan data untuk pemain: " .. player.Name)
+		warn("[SurvivalCoinsManager] Gagal mendapatkan data untuk pemain: " .. player.Name)
 		return {} -- Kembalikan tabel kosong untuk mencegah error
 	end
 
@@ -60,7 +60,7 @@ function CoinsManager.GetData(player)
 	return inventory
 end
 
-function CoinsManager.SaveData(player, inventoryData)
+function SurvivalCoinsManager.SaveData(player, inventoryData)
 	local playerData = DataStoreManager:GetPlayerData(player)
 	if not playerData or not playerData.data then return end
 
@@ -72,53 +72,52 @@ end
 -- API PUBLIK
 -- =============================================================================
 
-function CoinsManager.AddCoins(player, amount)
+function SurvivalCoinsManager.AddCoins(player, amount)
 	if not player or type(amount) ~= "number" or amount <= 0 then return end
-	local data = CoinsManager.GetData(player)
-	data.Coins += amount
-	CoinsManager.SaveData(player, data)
-	CoinsUpdateEvent:FireClient(player, data.Coins)
+	local data = SurvivalCoinsManager.GetData(player)
+	data.SurvivalCoins += amount
+	SurvivalCoinsManager.SaveData(player, data)
+	SurvivalCoinsUpdateEvent:FireClient(player, data.SurvivalCoins)
 	StatsModule.AddCoin(player, amount)
-	return data.Coins
+	return data.SurvivalCoins
 end
 
-function CoinsManager.SubtractCoins(player, amount)
+function SurvivalCoinsManager.SubtractCoins(player, amount)
 	if not player or type(amount) ~= "number" or amount <= 0 then return false end
-	local data = CoinsManager.GetData(player)
-	if data.Coins < amount then return false end
-	data.Coins -= amount
-	CoinsManager.SaveData(player, data)
-	CoinsUpdateEvent:FireClient(player, data.Coins)
+	local data = SurvivalCoinsManager.GetData(player)
+	if data.SurvivalCoins < amount then return false end
+	data.SurvivalCoins -= amount
+	SurvivalCoinsManager.SaveData(player, data)
+	SurvivalCoinsUpdateEvent:FireClient(player, data.SurvivalCoins)
 	return true
 end
 
-function CoinsManager.AddSkin(player, weaponName, skinName)
+function SurvivalCoinsManager.AddSkin(player, weaponName, skinName)
 	if not player or not weaponName or not skinName then return false end
-	local data = CoinsManager.GetData(player)
+	local data = SurvivalCoinsManager.GetData(player)
 	if table.find(data.Skins.Owned[weaponName], skinName) then return false end
 	table.insert(data.Skins.Owned[weaponName], skinName)
-	CoinsManager.SaveData(player, data)
+	SurvivalCoinsManager.SaveData(player, data)
 	return true
 end
 
-function CoinsManager.UpdatePityCount(player, newCount)
+function SurvivalCoinsManager.UpdatePityCount(player, newCount)
 	if not player or type(newCount) ~= "number" then return false end
-	local data = CoinsManager.GetData(player)
+	local data = SurvivalCoinsManager.GetData(player)
 	data.PityCount = newCount
-	CoinsManager.SaveData(player, data)
+	SurvivalCoinsManager.SaveData(player, data)
 	return true
 end
 
-function CoinsManager.UpdateLastFreeGachaClaim(player, timestamp)
+function SurvivalCoinsManager.UpdateLastFreeGachaClaim(player, timestamp)
 	if not player or type(timestamp) ~= "number" then return false end
-	local data = CoinsManager.GetData(player)
+	local data = SurvivalCoinsManager.GetData(player)
 	data.LastFreeGachaClaimUTC = timestamp
-	CoinsManager.SaveData(player, data)
+	SurvivalCoinsManager.SaveData(player, data)
 	return true
 end
 
 -- =============================================================================
--- =-===========================================================================
 -- KONEKSI EVENT
 -- =============================================================================
 
@@ -126,8 +125,8 @@ local function onPlayerAdded(player)
 	-- Memulai inisialisasi dalam thread baru.
 	-- GetData akan secara internal menunggu data dimuat.
 	task.spawn(function()
-		local data = CoinsManager.GetData(player)
-		CoinsUpdateEvent:FireClient(player, data.Coins)
+		local data = SurvivalCoinsManager.GetData(player)
+		SurvivalCoinsUpdateEvent:FireClient(player, data.SurvivalCoins)
 	end)
 end
 
@@ -137,4 +136,4 @@ for _, player in ipairs(Players:GetPlayers()) do
 	onPlayerAdded(player)
 end
 
-return CoinsManager
+return SurvivalCoinsManager

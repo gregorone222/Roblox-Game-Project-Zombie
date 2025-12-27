@@ -26,7 +26,7 @@ DEFAULT_PLAYER_DATA = {
 
     -- === STATS (Permanent, tracked for leaderboards) ===
     stats = {
-        TotalCoins = 0,           -- Lifetime coins earned
+        TotalSurvivalCoins = 0,           -- Lifetime survival coins earned
         TotalDamageDealt = 0,     -- Lifetime damage dealt
         TotalKills = 0,           -- Lifetime zombie kills
         TotalRevives = 0,         -- Players revived
@@ -71,7 +71,7 @@ DEFAULT_PLAYER_DATA = {
 
     -- === INVENTORY ===
     inventory = {
-        Coins = 0,              -- Current spendable coins
+        SurvivalCoins = 0,              -- Current spendable survival coins
         Skins = {
             Owned = {},         -- { [WeaponName] = {"Skin1", "Skin2"} }
             Equipped = {}       -- { [WeaponName] = "SkinName" }
@@ -133,7 +133,17 @@ DEFAULT_PLAYER_DATA = {
 Field yang boleh diubah oleh admin:
 - **Leveling:** `Level`, `XP`
 - **Resources:** `SkillPoints`, `MissionPoints`, `AchievementPoints`
-- **Inventory:** `Coins`, `PityCount`
+- **Inventory:** `SurvivalCoins`, `PityCount`
 
 > [!CAUTION]
 > **DILARANG:** Statistik inti seperti `TotalKills` atau `WeaponStats` dikunci untuk menjaga integritas Leaderboard.
+
+## Data Recovery
+
+Jika terjadi kehilangan data, gunakan `DataRecoveryAdmin.luau` untuk:
+- Melihat version history (30 hari)
+- Preview data dari versi lama
+- Restore ke versi tertentu
+
+> 📎 Panduan lengkap: [Disaster Recovery](disaster-recovery.md)
+

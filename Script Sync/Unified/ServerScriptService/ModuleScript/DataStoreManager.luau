@@ -26,7 +26,7 @@ local DEFAULT_PLAYER_DATA = {
 	version = 1,
 	lastSaveTimestamp = 0,
 	stats = {
-		TotalCoins = 0,
+		TotalSurvivalCoins = 0,
 		TotalDamageDealt = 0,
 		TotalKills = 0,
 		TotalRevives = 0,
@@ -53,7 +53,7 @@ local DEFAULT_PLAYER_DATA = {
 		EquippedTitle = ""
 	},
 	inventory = {
-		Coins = 0,
+		SurvivalCoins = 0,
 		Skins = {
 			Owned = {},
 			Equipped = {}

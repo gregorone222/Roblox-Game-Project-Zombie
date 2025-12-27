@@ -58,6 +58,7 @@ local allRemoteEvents = {
 	
 	-- ========== POINTS/CURRENCY ==========
 	"PointsUpdate", "PointsUpdateEvent", "CoinsUpdate", "CoinsUpdateEvent", "SetPlayerStats",
+	"SurvivalCoinsUpdateEvent", "CombatPointsUpdate", -- New currency events
 	
 	-- ========== PERKS/ELEMENTS ==========
 	"PerkActivatedEvent", "PerkDeactivatedEvent", "PerkActivated", "PerkDeactivated", "ActivatePerkEvent", "PerkPurchased",

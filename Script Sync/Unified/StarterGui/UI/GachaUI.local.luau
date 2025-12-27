@@ -23,11 +23,11 @@ local GachaMultiRollEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitF
 local GachaFreeRollEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("GachaFreeRollEvent")
 local GetGachaConfig = ReplicatedStorage:WaitForChild("RemoteFunctions"):WaitForChild("GetGachaConfig")
 local GetGachaStatus = ReplicatedStorage:WaitForChild("RemoteFunctions"):WaitForChild("GetGachaStatus")
-local CoinsUpdateEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("CoinsUpdateEvent")
+local SurvivalCoinsUpdateEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("SurvivalCoinsUpdateEvent")
 
 -- ================== REWARD CONFIG ==================
 local FieldKitConfig = {
-	StarterPoints = { Name = "Starting Funds", Icon = "rbxassetid://115097892301473", Rarity = "Common", Description = "Start with 1,500 bonus BP" },
+	StarterPoints = { Name = "Starting Funds", Icon = "rbxassetid://115097892301473", Rarity = "Common", Description = "Start with 1,500 bonus CP" },
 	AmmoCache = { Name = "Ammo Stockpile", Icon = "rbxassetid://133597625207661", Rarity = "Uncommon", Description = "Begin with extra ammo reserves" },
 	StartingShield = { Name = "Body Armor", Icon = "rbxassetid://118302588106310", Rarity = "Rare", Description = "Start with protective armor" },
 	LegionsLegacy = { Name = "Mystery Loadout", Icon = "rbxassetid://117164757148539", Rarity = "Epic", Description = "Random legendary weapon loadout" },
@@ -1026,7 +1026,7 @@ end
 -- ================== INIT ==================
 
 local function initializeGachaData()
-	CoinsUpdateEvent.OnClientEvent:Connect(function(newAmount)
+	SurvivalCoinsUpdateEvent.OnClientEvent:Connect(function(newAmount)
 		state.coins = newAmount
 		if ui.screen and ui.screen.Enabled then updateMainUI() end
 	end)
@@ -1037,7 +1037,7 @@ local function initializeGachaData()
 
 		local status = GetGachaStatus:InvokeServer()
 		if status then
-			state.coins = status.Coins or 0
+			state.coins = status.SurvivalCoins or 0
 			state.freeRollAvailable = status.FreeRollAvailable or false
 		end
 	end)

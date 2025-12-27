@@ -20,7 +20,7 @@ local ModuleScriptServerScriptService = ServerScriptService.ModuleScript
 local WeaponModule = require(ModuleScriptReplicatedStorage:WaitForChild("WeaponModule"))
 local RandomConfig = require(ModuleScriptServerScriptService:WaitForChild("RandomWeaponConfig"))
 local SessionDataManager = require(ModuleScriptServerScriptService:WaitForChild("SessionDataManager"))
-local PointsSystem = require(ModuleScriptServerScriptService:WaitForChild("PointsModule"))
+local PointsSystem = require(ModuleScriptServerScriptService:WaitForChild("CombatPointsModule"))
 local InventoryManager = require(ModuleScriptServerScriptService:WaitForChild("InventoryManager"))
 local BoosterModule = require(ModuleScriptServerScriptService:WaitForChild("BoosterModule"))
 

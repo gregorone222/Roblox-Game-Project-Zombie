@@ -2,8 +2,8 @@
 local ACT1_PLACE_ID = 91523772574713
 if game.PlaceId ~= ACT1_PLACE_ID then return end
 
--- PointsUI.lua (LocalScript)
--- Path: StarterGui/PointsUI.lua
+-- CombatPointsUI.local.luau (LocalScript)
+-- Path: StarterGui/UI/CombatPointsUI.local.luau
 -- Script Place: ACT 1: Village
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -16,18 +16,18 @@ local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
 local RemoteEvents = ReplicatedStorage:WaitForChild("RemoteEvents")
-local PointsUpdate = RemoteEvents:WaitForChild("PointsUpdate")
+local CombatPointsUpdate = RemoteEvents:WaitForChild("CombatPointsUpdate")
 
 -- cleanup old UI if exists
 for _, old in ipairs(playerGui:GetChildren()) do
-	if old.Name == "PointsUI" then
+	if old.Name == "CombatPointsUI" then
 		old:Destroy()
 	end
 end
 
 -- Create main ScreenGui
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "PointsUI"
+screenGui.Name = "CombatPointsUI"
 screenGui.IgnoreGuiInset = true
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
@@ -96,12 +96,12 @@ iconStroke.Thickness = 1.5
 iconStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 iconStroke.Parent = iconContainer
 
--- Icon (Unicode Blood Drop)
+-- Icon (Unicode Combat/Sword)
 local iconLabel = Instance.new("TextLabel")
 iconLabel.Name = "Icon"
 iconLabel.Size = UDim2.new(1, 0, 1, 0)
 iconLabel.BackgroundTransparency = 1
-iconLabel.Text = "🩸" -- Unicode Drop
+iconLabel.Text = "⚔️" -- Unicode Combat/Sword
 iconLabel.TextColor3 = Color3.fromRGB(252, 165, 165) -- Light Red
 iconLabel.TextSize = 24
 iconLabel.Font = Enum.Font.Gotham
@@ -122,12 +122,12 @@ listLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 listLayout.Padding = UDim.new(0, -2)
 listLayout.Parent = contentFrame
 
--- Label "BLOOD POINTS"
+-- Label "COMBAT POINTS"
 local labelText = Instance.new("TextLabel")
 labelText.Name = "Label"
 labelText.BackgroundTransparency = 1
 labelText.Size = UDim2.new(1, 0, 0, 14)
-labelText.Text = "BLOOD POINTS"
+labelText.Text = "COMBAT POINTS"
 labelText.TextColor3 = COLORS.TextLabel
 labelText.TextXAlignment = Enum.TextXAlignment.Left
 labelText.Font = FONTS.Label
@@ -341,13 +341,13 @@ local function animateTo(newValue)
 end
 
 -- Event Listener
-PointsUpdate.OnClientEvent:Connect(function(points)
+CombatPointsUpdate.OnClientEvent:Connect(function(points)
 	animateTo(points)
 end)
 
 -- Initial Hide/Show Logic
 card.Visible = false
-PointsUpdate.OnClientEvent:Connect(function()
+CombatPointsUpdate.OnClientEvent:Connect(function()
 	if not card.Visible then
 		card.Visible = true
 	end

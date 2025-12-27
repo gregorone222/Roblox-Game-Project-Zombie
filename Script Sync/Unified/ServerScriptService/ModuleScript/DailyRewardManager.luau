@@ -10,7 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
 local DailyRewardConfig = require(ReplicatedStorage.ModuleScript:WaitForChild("DailyRewardConfig"))
-local CoinsModule = require(ServerScriptService.ModuleScript:WaitForChild("CoinsModule"))
+local CoinsModule = require(ServerScriptService.ModuleScript:WaitForChild("SurvivalCoinsModule"))
 local FieldKitModule = require(ServerScriptService.ModuleScript:WaitForChild("FieldKitModule"))
 local SkinManager = require(ServerScriptService.ModuleScript:WaitForChild("SkinManager"))
 local StatsModule = require(ServerScriptService.ModuleScript:WaitForChild("StatsModule"))

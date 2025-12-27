@@ -12,7 +12,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 -- Memuat modul yang diperlukan
 local DataStoreManager = require(ServerScriptService.ModuleScript:WaitForChild("DataStoreManager"))
 local InventoryManager = require(ServerScriptService.ModuleScript:WaitForChild("InventoryManager"))
-local CoinsManager = require(ServerScriptService.ModuleScript:WaitForChild("CoinsModule"))
+local CoinsManager = require(ServerScriptService.ModuleScript:WaitForChild("SurvivalCoinsModule"))
 local WeaponModule = require(ReplicatedStorage.ModuleScript:WaitForChild("WeaponModule"))
 
 local SkinManager = {}

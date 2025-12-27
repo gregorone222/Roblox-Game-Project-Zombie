@@ -10,7 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
 -- Memuat modul yang diperlukan
-local CoinsManager = require(ServerScriptService.ModuleScript:WaitForChild("CoinsModule"))
+local CoinsManager = require(ServerScriptService.ModuleScript:WaitForChild("SurvivalCoinsModule"))
 local InventoryManager = require(ServerScriptService.ModuleScript:WaitForChild("InventoryManager"))
 local GachaConfig = require(ServerScriptService.ModuleScript:WaitForChild("GachaConfig"))
 local WeaponModule = require(ReplicatedStorage.ModuleScript:WaitForChild("WeaponModule"))
@@ -126,11 +126,11 @@ function GachaModule.Roll(player, weaponName)
 	local playerData = CoinsManager.GetData(player)
 
 	if playerData.Coins < GachaConfig.GACHA_COST then
-		return { Success = false, Message = "BloodCoins tidak cukup." }
+		return { Success = false, Message = "Survival Coins tidak cukup." }
 	end
 
 	if not CoinsManager.SubtractCoins(player, GachaConfig.GACHA_COST) then
-		return { Success = false, Message = "Gagal mengurangi BloodCoins." }
+		return { Success = false, Message = "Gagal mengurangi Survival Coins." }
 	end
 
 	StatsModule.IncrementStat(player, "GachaSpins", 1)
@@ -151,11 +151,11 @@ function GachaModule.RollMultiple(player, weaponName)
 	local totalCost = GachaConfig.GACHA_COST * GachaConfig.MULTI_ROLL_COST_MULTIPLIER
 
 	if playerData.Coins < totalCost then
-		return { Success = false, Message = "BloodCoins tidak cukup untuk 10+1 roll." }
+		return { Success = false, Message = "Survival Coins tidak cukup untuk 10+1 roll." }
 	end
 
 	if not CoinsManager.SubtractCoins(player, totalCost) then
-		return { Success = false, Message = "Gagal mengurangi BloodCoins." }
+		return { Success = false, Message = "Gagal mengurangi Survival Coins." }
 	end
 
 	StatsModule.IncrementStat(player, "GachaSpins", GachaConfig.MULTI_ROLL_COUNT)

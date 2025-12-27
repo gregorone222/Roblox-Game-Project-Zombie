@@ -26,7 +26,7 @@ local openEv = RemoteEvents:WaitForChild("OpenPerkShop")
 local perkUpdateEv = RemoteEvents:WaitForChild("PerkUpdate")
 local requestOpenEvent = RemoteEvents:WaitForChild("RequestOpenPerkShop")
 local closeShopEvent = RemoteEvents:WaitForChild("ClosePerkShop")
-local pointsUpdateEv = RemoteEvents:WaitForChild("PointsUpdate")
+local pointsUpdateEv = RemoteEvents:WaitForChild("CombatPointsUpdate")
 
 local purchaseRF = RemoteFunctions:WaitForChild("PurchasePerk")
 

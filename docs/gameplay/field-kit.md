@@ -10,7 +10,7 @@ Pre-mission supplies yang didapat dari **Daily Reward** dan **Gacha** saja.
 
 | Kit | Name | Icon | Rarity | Effect |
 |:----|:-----|:-----|:-------|:-------|
-| `StarterPoints` | Starting Funds | 💰 | Common | +1,500 BP di awal game |
+| `StarterPoints` | Starting Funds | 💰 | Common | +1,500 CP di awal game |
 | `AmmoCache` | Ammo Stockpile | 🔋 | Uncommon | +50% max ammo di awal game |
 | `StartingShield` | Body Armor | 🛡️ | Rare | 50% bonus shield di awal |
 | `LegionsLegacy` | Mystery Loadout | 🎁 | Epic | Replace M1911 dengan random weapon |

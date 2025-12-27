@@ -2,11 +2,11 @@
 local ACT1_PLACE_ID = 91523772574713
 if game.PlaceId ~= ACT1_PLACE_ID then return {} end
 
--- PointsModule.lua (ModuleScript)
--- Path: ServerScriptService/ModuleScript/PointsModule.lua
+-- CombatPointsModule.luau (ModuleScript)
+-- Path: ServerScriptService/ModuleScript/CombatPointsModule.luau
 -- Script Place: ACT 1: Village
 
-local PointsSystem = {}
+local CombatPointsSystem = {}
 
 local playerPoints = {}
 
@@ -14,7 +14,7 @@ local playerPoints = {}
 local ServerScriptService = game:GetService("ServerScriptService")
 local LevelManager = require(ServerScriptService.ModuleScript:WaitForChild("LevelModule"))
 
-function PointsSystem.SetupPlayer(player)
+function CombatPointsSystem.SetupPlayer(player)
 	-- simpan poin internal
 	playerPoints[player] = 100000
 
@@ -40,14 +40,14 @@ function PointsSystem.SetupPlayer(player)
 		end
 
 		-- Buat atau reset semua stats yang diperlukan
-		createOrResetStat("BP", 0)
+		createOrResetStat("CP", 0)
 		createOrResetStat("TotalDamage", 0)
 		createOrResetStat("Kills", 0)
 		createOrResetStat("Knock", 0)
 	end
 end
 
-function PointsSystem.RemovePlayer(player)
+function CombatPointsSystem.RemovePlayer(player)
 	playerPoints[player] = nil
 	-- bersihkan leaderstats bila ada
 	if player and player:FindFirstChild("leaderstats") then
@@ -55,7 +55,7 @@ function PointsSystem.RemovePlayer(player)
 	end
 end
 
-function PointsSystem.AddPoints(player, amount)
+function CombatPointsSystem.AddPoints(player, amount)
 	if not playerPoints[player] then return false end
 
 	-- Jika ini adalah pengurangan (pembelian), periksa apakah poin cukup
@@ -67,30 +67,30 @@ function PointsSystem.AddPoints(player, amount)
 
 	playerPoints[player] += amount
 
-	-- update leaderstats BP bila ada
+	-- update leaderstats CP bila ada
 	if player and player:FindFirstChild("leaderstats") then
-		local bpVal = player.leaderstats:FindFirstChild("BP")
-		if bpVal then
-			bpVal.Value = playerPoints[player] or 0
+		local cpVal = player.leaderstats:FindFirstChild("CP")
+		if cpVal then
+			cpVal.Value = playerPoints[player] or 0
 		end
 	end
 
 	-- update ke client (UI)
 	local ReplicatedStorage = game:GetService("ReplicatedStorage")
-	local PointsUpdate = ReplicatedStorage:WaitForChild("RemoteEvents"):FindFirstChild("PointsUpdate")
-	if PointsUpdate then
-		PointsUpdate:FireClient(player, playerPoints[player])
+	local CombatPointsUpdate = ReplicatedStorage:WaitForChild("RemoteEvents"):FindFirstChild("CombatPointsUpdate")
+	if CombatPointsUpdate then
+		CombatPointsUpdate:FireClient(player, playerPoints[player])
 	end
 
 	return true
 end
 
-function PointsSystem.GetPoints(player)
+function CombatPointsSystem.GetPoints(player)
 	return playerPoints[player] or 0
 end
 
 -- increment kills leaderstat (dipanggil dari ZombieModule saat ada killer)
-function PointsSystem.AddKill(player)
+function CombatPointsSystem.AddKill(player)
 	if not player or not player:IsA("Player") then return end
 	local ls = player:FindFirstChild("leaderstats")
 	if ls then
@@ -100,7 +100,7 @@ function PointsSystem.AddKill(player)
 end
 
 -- increment knock leaderstat (dipanggil saat player knock)
-function PointsSystem.AddKnock(player)
+function CombatPointsSystem.AddKnock(player)
 	if not player or not player:IsA("Player") then return end
 	local ls = player:FindFirstChild("leaderstats")
 	if ls then
@@ -109,7 +109,7 @@ function PointsSystem.AddKnock(player)
 	end
 end
 
-function PointsSystem.AddDamage(player, damageAmount)
+function CombatPointsSystem.AddDamage(player, damageAmount)
 	if not player or not player:IsA("Player") then return end
 	local ls = player:FindFirstChild("leaderstats")
 	if ls then
@@ -121,4 +121,4 @@ function PointsSystem.AddDamage(player, damageAmount)
 
 end
 
-return PointsSystem
+return CombatPointsSystem

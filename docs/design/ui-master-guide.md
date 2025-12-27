@@ -15,7 +15,7 @@ Master list semua UI yang dibutuhkan untuk game.
 | ✅ | Ammo Counter | AmmoUI | Current/Max ammo |
 | ✅ | Crosshair | CrosshairUI | Dynamic crosshair |
 | ✅ | Wave Counter | WaveCounterUI | Current wave display |
-| ✅ | Points Display | PointsUI | BP counter |
+| ✅ | Points Display | PointsUI | CP counter |
 | ✅ | Coins Display | CoinsUI | Permanent currency |
 | ✅ | Hitmarker | HitmarkerUI | Hit feedback |
 | ✅ | Damage Flash | DamageFlashUI | Screen flash on hit |

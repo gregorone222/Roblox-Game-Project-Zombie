@@ -420,7 +420,7 @@ local function updateStats()
 		{"MISSIONS COMPLETED", data.TotalWins},
 		{"TIMES INCAPACITATED", data.TotalKnocks},
 		{"SQUAD REVIVES", data.TotalRevives},
-		{"COINS SECURED", data.TotalCoins},
+		{"SURVIVAL COINS SECURED", data.TotalSurvivalCoins},
 	}
 
 	for _, item in ipairs(map) do

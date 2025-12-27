@@ -57,3 +57,14 @@ Aturan baku pengembangan untuk menjaga kualitas kode dan konsistensi.
 | **Display Text** | **STRICTLY ENGLISH** |
 | **Code Comments** | Indonesia atau English |
 | **Variable Names** | English (camelCase) |
+
+---
+
+## 6. Protected Files (DO NOT MODIFY)
+
+> [!CAUTION]
+> File-file berikut adalah **third-party libraries** atau **core system files** yang **DILARANG KERAS** untuk dimodifikasi. Perubahan apapun dapat menyebabkan kerusakan sistem yang tidak dapat diperbaiki.
+
+| File | Alasan |
+|:-----|:-------|
+| `ProfileStore.luau` | Library pihak ketiga by loleris. Jangan ubah apapun yang terjadi. |

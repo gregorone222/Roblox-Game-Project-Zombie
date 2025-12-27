@@ -22,7 +22,7 @@ function ProfileModule.GetProfileData(player)
 		Name = player.Name,
 		Level = levelData.Level,
 		XP = levelData.XP,
-		TotalCoins = statsData.TotalCoins,
+		TotalSurvivalCoins = statsData.TotalSurvivalCoins,
 		LifetimeAP = statsData.AchievementPoints or 0, -- Tambahkan Lifetime AP
 		LifetimeMP = missionPoints or 0, -- Tambahkan Lifetime MP
 		TotalKills = statsData.TotalKills,

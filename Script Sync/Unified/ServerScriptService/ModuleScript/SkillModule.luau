@@ -7,7 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
 local StatsModule = require(ServerScriptService.ModuleScript:WaitForChild("StatsModule"))
-local CoinsModule = require(ServerScriptService.ModuleScript:WaitForChild("CoinsModule"))
+local CoinsModule = require(ServerScriptService.ModuleScript:WaitForChild("SurvivalCoinsModule"))
 -- Memuat konfigurasi skill dari modul terpusat
 local SkillConfig = require(ReplicatedStorage.ModuleScript:WaitForChild("SkillConfig"))
 

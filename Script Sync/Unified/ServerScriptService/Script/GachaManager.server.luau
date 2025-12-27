@@ -118,7 +118,7 @@ if not GetGachaStatus then
 end
 
 GetGachaStatus.OnServerInvoke = function(player)
-	local playerData = require(ServerScriptService.ModuleScript:WaitForChild("CoinsModule")).GetData(player)
+	local playerData = require(ServerScriptService.ModuleScript:WaitForChild("SurvivalCoinsModule")).GetData(player)
 	if playerData then
 		return {
 			Coins = playerData.Coins,
