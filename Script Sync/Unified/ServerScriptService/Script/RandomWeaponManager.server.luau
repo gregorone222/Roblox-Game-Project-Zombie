@@ -140,20 +140,12 @@ purchaseRF.OnServerInvoke = function(player)
 		cost = GameConfig.RandomWeapon.BaseCost
 	end
 
-	local hasDiscount = false
-	local boosterData = BoosterModule.GetData(player)
-	if boosterData and boosterData.Active == "CouponDiscount" then
-		hasDiscount = true
-		cost = math.floor(cost / 2)
-	end
-
 	if PointsSystem.GetPoints(player) < cost then
 		return {success=false, message="Not enough points"}
 	end
 
 	PointsSystem.AddPoints(player, -cost)
 	SessionDataManager:IncrementRandomWeaponPurchases(player)
-	if hasDiscount then BoosterModule.UseActiveBooster(player) end
 
 	local pool = RandomConfig.AvailableWeapons
 	if #pool == 0 then return {success=false, message="No weapons configured"} end

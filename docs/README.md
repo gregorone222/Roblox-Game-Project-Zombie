@@ -20,26 +20,26 @@ Target audiens utama adalah pemain berusia <13 tahun, dengan visual yang ramah a
 |:---------|:------------|
 | [Wave System](gameplay/wave-system.md) | Wave mechanics, special events, boss spawns |
 | [Combat System](gameplay/combat-system.md) | Weapons, perks, tactical boosts, damage |
-| [Economy](gameplay/economy.md) | Coins, BP, progression, leveling |
+| [Economy](gameplay/economy.md) | Coins, BP, AP, MP, progression, leveling |
 | [Shop System](gameplay/shop-system.md) | In-game BP shops (Tactical Boost, Perk, Weapon, Upgrade) |
 | [Tactical Boosts](gameplay/tactical-boosts.md) | Combat boost items (formerly Elements) |
 | [Field Kit](gameplay/field-kit.md) | Pre-mission supplies (rewards only) |
 | [Difficulty Modes](gameplay/difficulty-modes.md) | Easy → Crazy settings |
+| [Title System](gameplay/title-system.md) | Player title progression |
 
 ### 🎨 Design
 | Document | Description |
 |:---------|:------------|
-| [Art Direction](design/art-direction.md) | Visual style guidelines |
-| [Asset Checklist](design/asset-checklist.md) | Master asset tracking list |
-| [Environment Art Guide](design/environment-art-guide.md) | Environment asset creation |
-| [Weapon Art Guide](design/weapon-art-guide.md) | Weapon asset creation |
-| [UI Design System](design/ui-design-system.md) | Colors, fonts, sizing standards |
+| [Asset Master Guide](design/asset-master-guide.md) | Master asset creation guidelines |
+| [UI Master Guide](design/ui-master-guide.md) | UI design system & standards |
+| [Sound Master Guide](design/sound-master-guide.md) | Audio design guidelines |
+| [VFX Master Guide](design/vfx-master-guide.md) | Visual effects guidelines |
 
 ### 🛠️ Technical
 | Document | Description |
 |:---------|:------------|
-| [Architecture](technical/architecture.md) | Service-Manager pattern |
-| [DataStore](technical/datastore.md) | ProfileStore, schema |
+| [Architecture](technical/architecture.md) | Service-Manager pattern, module list |
+| [DataStore](technical/datastore.md) | ProfileStore, full data schema |
 | [Remote Events API](technical/remote-events-api.md) | RemoteEvents & RemoteFunctions reference |
 | [Deprecated API](technical/deprecated-api.md) | Usang API & solusi |
 
@@ -54,7 +54,7 @@ Target audiens utama adalah pemain berusia <13 tahun, dengan visual yang ramah a
 |:---------|:------------|
 | [Characters](entities/characters.md) | NPCs, Bosses, Player character |
 | [Zombies](entities/zombies.md) | Enemy types & behavior |
-| [Bosses](entities/bosses.md) | Boss mechanics |
+| [Zombie Progression](entities/zombie-progression.md) | Enemy scaling per wave |
 
 ### 📜 Story
 | Document | Description |

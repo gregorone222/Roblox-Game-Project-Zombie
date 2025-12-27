@@ -134,13 +134,6 @@ purchasePerkRF.OnServerInvoke = function(player, perkName)
 		return {Success = false, Message = "Perk cost not found"}
 	end
 
-	local hasDiscount = false
-	local boosterData = BoosterModule.GetData(player)
-	if boosterData and boosterData.Active == "CouponDiscount" then
-		hasDiscount = true
-		cost = math.floor(cost / 2)
-	end
-
 	local points = PointsSystem.GetPoints(player) or 0
 	if points < cost then
 		return {Success = false, Message = "Not enough points"}
@@ -153,11 +146,6 @@ purchasePerkRF.OnServerInvoke = function(player, perkName)
 
 	-- Potong points
 	PointsSystem.AddPoints(player, -cost)
-
-	-- Jika ada diskon, gunakan booster
-	if hasDiscount then
-		BoosterModule.UseActiveBooster(player)
-	end
 
 	-- Kirim update ke client
 	perkUpdateEvent:FireClient(player, getPlayerPerks(player))
@@ -220,12 +208,6 @@ end
 -- Handler untuk membuka UI shop perk
 requestOpenPerkShopEvent.OnServerEvent:Connect(function(player)
 	if isPlayerNearPerkMachine(player) then
-		local hasDiscount = false
-		local boosterData = BoosterModule.GetData(player)
-		if boosterData and boosterData.Active == "CouponDiscount" then
-			hasDiscount = true
-		end
-
 		-- Create a new table to send to the client, merging perk details and costs
 		local perksForClient = {}
 		for perkName, perkDetails in pairs(PerkConfig.Perks) do

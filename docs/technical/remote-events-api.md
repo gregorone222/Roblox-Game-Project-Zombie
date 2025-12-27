@@ -368,4 +368,4 @@ Dokumentasi lengkap semua RemoteEvents dan RemoteFunctions di proyek.
 
 ---
 
-*Generated: 2025-12-25*
+*Generated: 2025-12-27*

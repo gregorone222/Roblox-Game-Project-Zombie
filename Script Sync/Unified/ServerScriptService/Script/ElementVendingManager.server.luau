@@ -53,13 +53,7 @@ local function requestOpenShop(player)
 		return false
 	end
 
-	local hasDiscount = false
-	local boosterData = BoosterModule.GetData(player)
-	if boosterData and boosterData.Active == "CouponDiscount" then
-		hasDiscount = true
-	end
-
-	OpenElementShopEvent:FireClient(player, ElementModule.GetConfig(), hasDiscount)
+	OpenElementShopEvent:FireClient(player, ElementModule.GetConfig())
 	return true
 end
 
@@ -93,12 +87,6 @@ purchaseRF.OnServerInvoke = function(player, elementName)
 	end
 
 	local cost = cfg.Cost
-	local hasDiscount = false
-	local boosterData = BoosterModule.GetData(player)
-	if boosterData and boosterData.Active == "CouponDiscount" then
-		hasDiscount = true
-		cost = math.floor(cost / 2)
-	end
 
 	local currentPoints = PointsSystem.GetPoints(player) or 0
 	if currentPoints < cost then
@@ -121,11 +109,6 @@ purchaseRF.OnServerInvoke = function(player, elementName)
 
 	-- Baru kemudian kurangi poin
 	PointsSystem.AddPoints(player, -cost)
-
-	-- Jika ada diskon, gunakan booster
-	if hasDiscount then
-		BoosterModule.UseActiveBooster(player)
-	end
 
 	-- Kirim event ke client bahwa element berhasil dibeli
 	local ElementPurchased = ReplicatedStorage:FindFirstChild("RemoteEvents") and ReplicatedStorage:WaitForChild("RemoteEvents"):FindFirstChild("ElementPurchased")

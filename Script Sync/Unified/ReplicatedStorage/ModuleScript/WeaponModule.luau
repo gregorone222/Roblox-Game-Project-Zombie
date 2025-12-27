@@ -1191,7 +1191,7 @@ WeaponModule.Weapons = {
 		VisualRecoilKick = -0.7,
 		VisualRecoilRecovery = 15
 	},
-	["MG42"] = {
+	["MG-42"] = {
 		DisplayName = "MG42",
 		Category = "LMG",
 		Damage = 32,
@@ -1214,6 +1214,24 @@ WeaponModule.Weapons = {
 			Fire = "Weapons.LMG.Fire",
 			Reload = "Weapons.LMG.Reload",
 			Empty = "Weapons.Empty"
+		},
+		Animations = {
+			-- Per-animation viewmodel positions (R15 animations)
+			Idle = {
+				Id = "rbxassetid://81024085813610",
+				Position = Vector3.new(0.117, -1.563, -0.250),
+				Rotation = Vector3.new(5, 353, 0)
+			},
+			Run = {
+				Id = "rbxassetid://107977795656514",
+				Position = Vector3.new(0.100, -1.650, -0.750),
+				Rotation = Vector3.new(6, 0, -7)
+			},
+			ADS = {
+				Id = "rbxassetid://120564764455850",
+				Position = Vector3.new(-0.365, -1.698, 0.329),
+				Rotation = Vector3.new(0, -8, 0)
+			}
 		},
 		UpgradeConfig = {
 			BaseCost = 320,

@@ -235,9 +235,11 @@ Field Kits (formerly Boosters) memberikan advantage di awal game. **TIDAK dijual
 
 | Kit | Effect | Interaksi dengan Shop |
 |:----|:-------|:----------------------|
-| Bargain Pass | 50% discount | Berlaku di semua 4 shop |
 | Starting Funds | +1,500 BP | Lebih banyak uang untuk belanja |
-| Body Armor | Bonus shield | Tidak berpengaruh ke shop |
+| Ammo Stockpile | +50% max ammo | Tidak berpengaruh ke shop |
+| Body Armor | 50% bonus shield | Tidak berpengaruh ke shop |
+| Mystery Loadout | Random starting weapon | Tidak berpengaruh ke shop |
+| Commander's Authority | +10% team damage | Tidak berpengaruh ke shop |
 
 ---
 

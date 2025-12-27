@@ -87,13 +87,6 @@ upgradeRF.OnServerInvoke = function(player, tool)
 	if nextLevel > cfg.MaxLevel then return { success = false, message = "Sudah level maksimal" } end
 
 	local cost = WeaponUpgradeModule.CalculateCost(weaponName, nextLevel)
-	local hasDiscount = false
-	local boosterData = BoosterModule.GetData(player)
-	if boosterData and boosterData.Active == "CouponDiscount" then
-		hasDiscount = true
-		cost = math.floor(cost / 2)
-	end
-
 	local points = PointsSystem.GetPoints(player) or 0
 	-- Check removed to allow UI to open even if insufficient points
 
@@ -103,7 +96,6 @@ upgradeRF.OnServerInvoke = function(player, tool)
 		currentLevel = currentLevel,
 		nextLevel = nextLevel,
 		cost = cost,
-		hasDiscount = hasDiscount,
 		message = "Konfirmasi upgrade?"
 	}
 end
@@ -130,22 +122,11 @@ confirmUpgradeEvent.OnServerEvent:Connect(function(player, tool, confirm)
 	local nextLevel = currentLevel + 1
 
 	local cost = WeaponUpgradeModule.CalculateCost(weaponName, nextLevel)
-	local hasDiscount = false
-	local boosterData = BoosterModule.GetData(player)
-	if boosterData and boosterData.Active == "CouponDiscount" then
-		hasDiscount = true
-		cost = math.floor(cost / 2)
-	end
 
-	-- Panggil AttemptUpgrade dengan biaya yang sudah didiskon
+	-- Panggil AttemptUpgrade dengan biaya
 	local ok, _, newLevel, _ = WeaponUpgradeModule.AttemptUpgrade(player, weaponId, weaponName, cost)
 	if ok then
 		tool:SetAttribute("UpgradeLevel", newLevel)
-
-		if hasDiscount then
-			BoosterModule.UseActiveBooster(player)
-		end
-
 		upgradeEvent:FireClient(player, weaponName, newLevel)
 	end
 end)
