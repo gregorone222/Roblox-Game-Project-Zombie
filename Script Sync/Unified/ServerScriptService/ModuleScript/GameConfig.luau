@@ -121,6 +121,16 @@ local config = {
 
 	-- Pengaturan Tingkat Kesulitan
 	Difficulty = {
+		Easy = {
+			HealthMultiplier = 0.7,
+			DamageMultiplier = 0.7,
+			Rules = {
+				FriendlyFire = false,
+				IncreaseRandomWeaponCost = false,
+				MaxPerks = 3,
+				AllowRevive = true,
+			}
+		},
 		Normal = {
 			HealthMultiplier = 1,
 			DamageMultiplier = 1,
