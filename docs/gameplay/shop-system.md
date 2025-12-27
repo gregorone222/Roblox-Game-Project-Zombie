@@ -16,8 +16,6 @@ BP adalah mata uang utama dalam game yang didapat dari:
 | Kill special zombie | ~50-100 BP |
 | Kill boss | ~500-1000 BP |
 | Complete wave objective | ~200-500 BP |
-| Assist kills | ~5-25 BP |
-| Revive teammate | ~100 BP |
 
 > BP **RESET setiap game session** (tidak tersimpan antar game)
 
@@ -57,7 +55,7 @@ BP adalah mata uang utama dalam game yang didapat dari:
 | Ice | Cryo Compound | 1,500 | 20s | 30% slow |
 | Poison | Toxic Agent | 1,500 | 10s | 5 DPS poison |
 | Shock | EMP Burst | 1,500 | 10s | Chain damage |
-| Wind | Concussion Blast | 1,500 | 10s | Pushback + speed |
+| Wind | Concussion Blast | 1,500 | 10s | Knockback only |
 | Earth | Hardened Armor | 1,500 | 10s | 20% damage reduction |
 | Light | Stimpack | 3,000 | 3s | Invincibility |
 | Dark | Adrenaline Serum | 5,000 | 5s | 10% lifesteal |
@@ -71,7 +69,7 @@ BP adalah mata uang utama dalam game yang didapat dari:
 
 ### 2️⃣ Perk Shop
 
-**Objek:** Perk Machine (model khusus dengan tampilan sci-fi)  
+**Objek:** Perk Machine (model khusus dengan tampilan stylized/cartoon)  
 **Trigger:** Proximity Prompt "E"
 
 | Perk | Display Name | Cost | Effect |
@@ -129,7 +127,7 @@ ELITE (6,000 BP)
 **Weapon Pool:**
 - Semua senjata yang tersedia di game
 - Rarity/tier tidak mempengaruhi chance (equal weight)
-- Bisa dapat senjata yang sama (duplicate = discard/replace)
+- Tidak bisa dapat senjata yang sudah dimiliki (no duplicates)
 
 **Rules:**
 - Max 2 weapons per player
@@ -179,7 +177,7 @@ UpgradeConfig = {
 
 | Shop | Objek | Location | Access |
 |:-----|:------|:---------|:-------|
-| Tactical Boosts | Vending Machine | Town Square area | Prompt "E" |
+| Tactical Boosts | Vending Machine | Village Square area | Prompt "E" |
 | Perk | Perk Machine | Map corner | Prompt "E" |
 | Random Weapon | Mystery Cache | Map opposite corner | Prompt "E" |
 | Upgrade | Workbench | Near spawn | Prompt "E" |

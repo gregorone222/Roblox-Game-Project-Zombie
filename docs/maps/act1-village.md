@@ -50,7 +50,7 @@ Ground Zero - Lokasi eksperimen awal. Desa yang pernah damai, sekarang dikuasai 
 
 ## 🏗️ AREAS (Detail)
 
-### 1. Town Square (Center)
+### 1. Village Square (Center)
 **Location:** Map center (0, 0, 0)  
 **Size:** 80 x 80 studs
 
@@ -67,7 +67,7 @@ Ground Zero - Lokasi eksperimen awal. Desa yang pernah damai, sekarang dikuasai 
 ---
 
 ### 2. Residential Ruins (Ring)
-**Location:** Ring sekitar Town Square (radius ~70 studs)  
+**Location:** Ring sekitar Village Square (radius ~70 studs)  
 **Count:** 12 houses
 
 **House Features:**
@@ -133,7 +133,7 @@ Props dengan environmental storytelling (sama seperti Lobby tapi scattered):
 
 ### Wave 22: Defend Mission
 **Objective:** Defend Radio Tower during data upload  
-**Zone:** Town Square center (Zone_Defend attachment)
+**Zone:** Village Square center (Zone_Defend attachment)
 
 | Requirement | Value |
 |:------------|:------|
@@ -158,7 +158,7 @@ Props dengan environmental storytelling (sama seperti Lobby tapi scattered):
 ## 👹 BOSS ENCOUNTERS
 
 ### Wave 10-15: Plague Titan
-**Spawn:** Town Square edge  
+**Spawn:** Village Square edge  
 **HP:** 75,000
 
 **Arena Setup:**
@@ -184,7 +184,7 @@ Props dengan environmental storytelling (sama seperti Lobby tapi scattered):
 **HP:** 125,000
 
 **Arena Setup:**
-- Town Square becomes arena
+- Village Square becomes arena
 - Chemical hazards throughout
 - Tower becomes tactical point
 
@@ -197,15 +197,15 @@ ACT 1 menggunakan **Progressive Day Cycle** yang berubah seiring wave:
 | Wave Range | Time of Day | ClockTime | Atmosphere |
 |:-----------|:------------|:----------|:-----------|
 | 1-10 | Morning | 6-8 | Warm, hopeful, clear |
-| 11-25 | Afternoon | 8-14 | Bright, energetic |
-| 26-40 | Golden Hour | 14-17 | Warm sunset, nostalgic |
-| 41-50 | Dusk/Night | 17-20 | Darker, tense, final |
+| 11-25 | Afternoon | 8-12 | Bright, energetic |
+| 26-40 | Late Afternoon | 12-15 | Warming up, tension |
+| 41-50 | Golden Hour | 15-18 | Sunset glow, triumphant finish |
 
 ### Light Sources
 
 | Source | Location | Color |
 |:-------|:---------|:------|
-| Street Lamps (4) | Around Town Square | Warm orange |
+| Street Lamps (4) | Around Village Square | Warm orange |
 | Radio Tower Blinker | Top of tower | Red (blinking) |
 | House Windows | Scattered | Faint warm glow |
 
@@ -213,7 +213,7 @@ ACT 1 menggunakan **Progressive Day Cycle** yang berubah seiring wave:
 
 | Effect | Description |
 |:-------|:------------|
-| **Falling Leaves** | 5 emitters across map, green-yellow-brown |
+| **Falling Leaves** | 5 emitters di area Forest Ring, tidak sampai tengah |
 | **Morning Fog** | Light, start 20 end 400 |
 | **Golden Hour Fog** | Warm tinted, thicker late game |
 
@@ -234,7 +234,7 @@ ACT 1 menggunakan **Progressive Day Cycle** yang berubah seiring wave:
 ## 📐 SCALE REFERENCE
 
 ```
-Town Square:    80W x 80D studs
+Village Square:    80W x 80D studs
 Houses:         15-25W x 15-25D x 12H studs per house (varies)
 Radio Tower:    8W x 8D x 45H studs
 Trees:          Height 12-20 studs, canopy 8-12 diameter
@@ -247,7 +247,7 @@ Map Total:      400 x 400 studs
 ## 📋 ACT 1 ASSET CHECKLIST
 
 ### Structures
-- [x] Town Square pavement
+- [x] Village Square pavement
 - [x] Radio Tower
 - [x] Ruined Houses (12)
 - [x] Street Lamps (4)

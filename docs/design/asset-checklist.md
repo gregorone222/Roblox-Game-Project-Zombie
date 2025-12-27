@@ -137,7 +137,7 @@ Master list semua asset yang dibutuhkan untuk game.
 
 ## 🏛️ ACT 1 Structures
 
-### Town Square
+### Village Square
 | Status | Asset | Notes |
 |:------:|:------|:------|
 | ✅ | Radio Tower | Zone_Defend |

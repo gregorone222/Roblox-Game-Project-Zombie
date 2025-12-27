@@ -28,7 +28,7 @@ Tactical Boosts adalah **consumable upgrades** yang dibeli per-wave dan memberik
 | `Ice` | **Cryo Compound** | Slow enemies 30% for 4s | 20s |
 | `Poison` | **Toxic Agent** | 5 DPS poison for 6s | 10s |
 | `Shock` | **EMP Burst** | Chain 50% damage to enemies within 6 studs | 10s |
-| `Wind` | **Concussion Blast** | Push enemies back + 50% speed boost | 10s |
+| `Wind` | **Concussion Blast** | Push enemies back (knockback only) | 10s |
 | `Earth` | **Hardened Armor** | 20% damage reduction | 10s |
 
 ### Tier 2 (Cost: 3000 BP)

@@ -25,7 +25,7 @@ Prosedur standar untuk membangun dunia (Level Design & Atmosphere).
 Technology = "Future" atau "ShadowMap"
 OutdoorAmbient = Color3.fromRGB(80, 70, 100)
 Brightness = 2
-ClockTime = 17.5
+ClockTime = os.time() -- Lobby: Dynamic UTC, ACT: 17.5 fixed
 
 -- Effects
 Atmosphere.Haze = 2.0  -- High for volumetric

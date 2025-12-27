@@ -97,33 +97,61 @@ Referensi visual: **Fortnite, Overwatch, Gravity Falls** - bukan The Last of Us 
 
 > **Kenapa judulnya "Zombie?" dengan tanda tanya?**
 
-Sepanjang ACT 1-2, pemain percaya mereka melawan zombie hasil eksperimen virus. Tapi ada petunjuk-petunjuk kecil yang menunjukkan sesuatu yang berbeda:
+Sepanjang ACT 1-3, pemain percaya wabah zombie hanyalah bencana alam atau kecelakaan. Tapi petunjuk-petunjuk kecil mengarah ke sesuatu yang lebih gelap:
 
-**Hints di ACT 1:**
-- Zombie kadang berhenti sejenak, seperti sedang mengingat sesuatu
-- Lab notes menyebut "reversible mutation"
-- Audio log: *"Subject menunjukkan tanda kesadaran... memanggil nama anaknya..."*
+**Hints di ACT 1-2:**
+- Lab notes dengan logo korporasi misterius
+- Internal memo: *"Lanjutkan testing meskipun ada gejala..."*
+- Dokumen terhapus tentang "Project Genesis"
 
-**Hints di ACT 2:**
-- Ada "zombie" yang tidak menyerang
-- Ditemukan catatan tentang "cure prototype"
-- Alexander mulai ragu: *"Apakah kita... membunuh monster, atau membunuh korban?"*
+**Hints di ACT 3-4:**
+- Ditemukan bunker dengan fasilitas mewah
+- Whistleblower letter yang tidak pernah terkirim
+- Alexander: *"Ini bukan kecelakaan... seseorang menyebabkan ini."*
 
-### The Truth (ACT 3 Reveal)
+---
 
-> **Mereka bukan zombie. Mereka masih manusia.**
+## 🏢 The Conspiracy: Zenith Pharmaceuticals
 
-Mutasinya **reversible**. Virus mengubah tubuh dan menekan kesadaran, tapi tidak menghancurkannya. Dengan antidote yang tepat, mereka bisa kembali.
+### The Corporation
 
-Setiap "zombie" yang pemain bunuh... bisa saja diselamatkan.
+| Aspek | Detail |
+|:------|:-------|
+| **Nama** | Zenith Pharmaceuticals |
+| **Bidang** | Pharmaceutical & Biotech |
+| **Slogan** | "Advancing Human Potential" |
+| **CEO** | Dr. Heinrich Kessler |
+| **HQ** | Kota metropolitan (ACT 2 setting) |
+
+### What Happened
+
+> **Zenith mengembangkan "Genesis Serum" - eksperimen enhancement manusia untuk dijual ke militer.**
+
+Serum gagal dan menyebabkan mutasi. Alih-alih menghentikan dan melaporkan, Zenith:
+- Menyembunyikan bukti
+- Melanjutkan testing di desa terpencil (ACT 1)
+- Menyiapkan bunker mewah untuk eksekutif
+
+**Zombie adalah korban. Zenith adalah penjahat.**
+
+### The Truth (ACT 5 Reveal)
+
+> **Wabah ini bukan kecelakaan. Ini corporate negligence.**
 
 **Emotional Weight:**
-- Reframe seluruh game experience
-- Player guilt
-- Alexander breakdown: *"Berapa banyak... yang bisa kita selamatkan?"*
+- Rage terhadap sistem yang korup
+- *"Mereka TAHU dan tetap lanjut..."*
+- Alexander: *"Berapa nyawa yang mereka korbankan demi profit?"*
 
-**ACT 3 Goal:** 
-Bukan lagi membunuh semua musuh, tapi **menemukan cure** dan memilih siapa yang bisa diselamatkan.
+### Key Evidence (Collectibles)
+
+| Item | Location | Content |
+|:-----|:---------|:--------|
+| **Internal Memo** | ACT 1 Lab | "Subject showing symptoms. Proceed anyway." |
+| **Whistleblower Letter** | ACT 3 | "I tried to stop them... they silenced me." |
+| **Board Meeting Recording** | ACT 5 | "Acceptable losses for market potential." |
+| **CEO Video** | ACT 7 | Old interview: "We care about humanity." (ironic) |
+| **Evacuation Order** | ACT 8 | "Priority: Executive extraction only." |
 
 ---
 
@@ -169,11 +197,25 @@ Farm ini dulunya milik **Keluarga Miller** - petani yang selamat di awal wabah. 
 ```
 [LOBBY] Farmhouse Basecamp
     ↓
-[ACT 1] The Cursed Village - Ground Zero
+┌─── ARC 1: THE OUTBREAK ───┐
+│ [ACT 1] Cursed Village    │
+│ [ACT 2] Silent City       │
+│ [ACT 3] Underground       │
+└───────────────────────────┘
     ↓
-[ACT 2] The Silent City - Urban Nightmare
+┌─── ARC 2: THE CONSPIRACY ─┐
+│ [ACT 4] Zenith Complex    │
+│ [ACT 5] Cover-Up ★TWIST   │
+│ [ACT 6] Betrayal          │
+└───────────────────────────┘
     ↓
-[ACT 3] The Cure - The Truth Revealed
+┌─── ARC 3: THE RECKONING ──┐
+│ [ACT 7] The Spread        │
+│ [ACT 8] The Alliance      │
+│ [ACT 9] The Reckoning     │
+└───────────────────────────┘
+    ↓
+[ACT 10] The New Dawn - Healing Begins
 ```
 
 ---
@@ -185,13 +227,13 @@ Farm ini dulunya milik **Keluarga Miller** - petani yang selamat di awal wabah. 
 **Boss Count:** 3
 
 ### Story Summary
-Sinyal anomali terdeteksi dari desa terpencil. Tim Operator dikirim untuk investigasi. Mereka menemukan bahwa desa ini adalah **Ground Zero** - lokasi eksperimen pertama yang menyebabkan wabah.
+Sinyal anomali terdeteksi dari desa terpencil. Tim Survivor dikirim untuk investigasi. Mereka menemukan bahwa desa ini adalah **Ground Zero** - lokasi eksperimen pertama yang menyebabkan wabah.
 
 ### Wave-by-Wave Story Beats
 
 | Wave | Event Type | Story Content |
 |:-----|:-----------|:--------------|
-| **1** | Radio Transmission | *"Sinyal anomali terdeteksi. Ini Ground Zero. Hati-hati, Operator."* |
+| **1** | Radio Transmission | *"Sinyal anomali terdeteksi. Ini Ground Zero. Hati-hati, Survivor."* |
 | **5** | Discovery | Lab notes: "Subject showing unexpected mutations. Proceeding with Phase 2." |
 | **8** | Objective Wave | **Scavenge Mission:** Mengumpulkan Gas Canisters untuk generator |
 | **10** | **BOSS WAVE** | **Plague Titan** muncul. |
@@ -255,23 +297,23 @@ Sinyal anomali terdeteksi dari desa terpencil. Tim Operator dikirim untuk invest
 
 **Story Hints:**
 - Boss baru berbasis mutasi lanjutan
-- Ditemukan "zombie" yang tidak menyerang (plot twist hint)
-- Alexander: *"Berapa banyak dari mereka yang... masih di dalam sana?"*
+- Ditemukan dokumen Zenith yang tersembunyi
+- Alexander: *"Ini bukan kebetulan... ada yang menyebabkan semua ini."*
 
 ---
 
-## 💊 ACT 3: The Cure (Concept)
+## 💊 ACT 3: The Underground (Concept)
 
-**Setting:** Research facility utama  
-**Theme:** Redemption, moral choices, the truth  
+**Setting:** Bunker network bawah tanah  
+**Theme:** Survivors, secrets, whistleblower evidence  
 
-**The Revelation:**
-> Mereka bukan zombie. Mereka masih manusia di dalam.
+**The Discovery:**
+> Bukti pertama bahwa Zenith terlibat langsung.
 
-**Gameplay Shift:**
-- Tidak semua musuh harus dibunuh
-- "Cure grenades" untuk menyelamatkan beberapa
-- Pilihan moral: selamatkan siapa?
+**Gameplay Features:**
+- Underground survival mechanics
+- Meet hidden survivor community
+- Collect whistleblower documents
 
 ---
 
@@ -315,9 +357,11 @@ Hidden text di game menggunakan cipher sederhana yang bisa di-decode:
 
 | ACT | Hidden Message | Decoded Meaning |
 |:----|:---------------|:----------------|
-| **1** | Lab wall: "GUHB DUH VWLOO LQ WKHUH" | "THEY ARE STILL IN THERE" (Plot twist hint) |
-| **2** | Radio static: "ERUC VLIBWRWBSRI" | "CURE PROTOTYPE" (Atbash) |
-| **3** | Memorial: "19-1-22-5 20-8-5-13" | "SAVE THEM" (A1Z26) |
+| **1** | Lab wall: "CHQLWK GLG WKLV" | "ZENITH DID THIS" (Caesar +3) |
+| **2** | Poster: "XLEVH FI GSV GIFGS" | "COVER UP THE TRUTH" (Atbash) |
+| **3** | Document: "20-8-5-25 11-14-5-23" | "THEY KNEW" (A1Z26) |
+| **4** | Server room: "SISENEGDETCHAP" | "PATCHED GENESIS" (Reverse) |
+| **5** | Evidence vault: "SURMLW VQ GHQLVHG" | "PROFITS IN DENIED" (Caesar +3) |
 
 ### Environmental Secrets
 
@@ -341,44 +385,59 @@ Hidden text di game menggunakan cipher sederhana yang bisa di-decode:
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │  ARC 1: THE OUTBREAK (ACT 1-3)                                  │
-│  Discovery → Spread → The Truth Revealed                        │
+│  Discovery → Urban Spread → Underground Secrets                  │
 ├─────────────────────────────────────────────────────────────────┤
-│  ARC 2: THE ORGANIZATION (ACT 4-6)                              │
-│  Who did this? → Corporate conspiracy → The real enemy          │
+│  ARC 2: THE CONSPIRACY (ACT 4-6)                                │
+│  Zenith exposed → Government cover-up → Betrayal                 │
 ├─────────────────────────────────────────────────────────────────┤
-│  ARC 3: THE GLOBAL CRISIS (ACT 7-9)                             │
-│  Worldwide spread → International cooperation → Final push      │
+│  ARC 3: THE RECKONING (ACT 7-9)                                 │
+│  Global outbreak → Alliance formed → Final assault               │
 ├─────────────────────────────────────────────────────────────────┤
-│  FINALE: THE CURE (ACT 10)                                      │
-│  Ultimate conclusion - World begins healing                      │
+│  FINALE: THE NEW DAWN (ACT 10)                                  │
+│  Justice served - World begins healing                           │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ### ACT Overview Table
 
-| ACT | Title | Setting | Theme | Twist/Climax |
-|:----|:------|:--------|:------|:-------------|
-| **1** | The Cursed Village | Desa terpencil | Ground Zero discovery | Boss: Blighted Alchemist |
-| **2** | The Silent City | Kota metropolitan | Urban nightmare | First "non-hostile zombie" |
-| **3** | The Cure | Research facility | The truth revealed | **MAJOR TWIST: They're still human** |
-| **4** | The Corporation | Corporate HQ | Follow the money | Mega-corp involvement |
-| **5** | The Underground | Secret bunker network | Survivors & secrets | Hidden survivor community |
-| **6** | The Betrayal | [TBD] | Trust broken | **ARC 2 CLIMAX** |
-| **7** | The Spread | Multi-location | Global outbreak | International stakes |
-| **8** | The Alliance | [TBD] | Unite factions | Building coalition |
-| **9** | The Final Push | [TBD] | All or nothing | **ARC 3 CLIMAX** |
-| **10** | The New Dawn | [TBD] | Conclusion | **SATISFYING ENDING** |
+| ACT | Title | Setting | Theme | Revelation | Twist/Climax |
+|:----|:------|:--------|:------|:-----------|:-------------|
+| **1** | The Cursed Village | Desa terpencil | Ground Zero | "Lab misterius" | Boss: Blighted Alchemist |
+| **2** | The Silent City | Kota metropolitan | Urban nightmare | "Logo Zenith ditemukan" | Zenith HQ discovered |
+| **3** | The Underground | Bunker network | Survivors & secrets | "Whistleblower evidence" | Hidden community |
+| **4** | The Corporation | Zenith HQ | Follow the money | "Internal memo leaked" | Zenith confirmed |
+| **5** | The Cover-Up | Government facility | Conspiracy depth | **"MEREKA TAHU DARI AWAL"** | **MAJOR TWIST** |
+| **6** | The Betrayal | Safe zone | Trust broken | "Ada spy di antara kita" | **ARC 2 CLIMAX** |
+| **7** | The Spread | Multi-location | Global outbreak | "Zenith punya cabang global" | International stakes |
+| **8** | The Alliance | Resistance base | Unite factions | "Kita tidak sendirian" | Coalition formed |
+| **9** | The Reckoning | Zenith bunker | Justice | "CEO masih hidup" | **ARC 3 CLIMAX** |
+| **10** | The New Dawn | Aftermath | Healing begins | "Dunia mulai pulih" | **SATISFYING ENDING** |
+
+### 🗺️ Map Overview per ACT
+
+| ACT | Map Name | Biome/Type | Visual Style | Key Landmarks |
+|:----|:---------|:-----------|:-------------|:--------------|
+| **1** | Cursed Village | Rural/Forest | Abandoned countryside, overgrown | Radio Tower, Ruined Houses, Lab Basement |
+| **2** | Silent City | Urban | Empty metropolis, cars abandoned | Zenith HQ Tower, Hospital, Subway |
+| **3** | Underground Bunker | Subterranean | Concrete tunnels, emergency lights | Survivor Camp, Armory, Water Treatment |
+| **4** | Zenith Complex | Industrial | Sterile labs, corporate offices | Board Room, Research Labs, Server Room |
+| **5** | Government Facility | Military | Fenced compound, guard towers | Command Center, Quarantine Zone, Evidence Vault |
+| **6** | Safe Haven | Mixed | Fortified community, makeshift walls | Town Hall, Barracks, Radio Station |
+| **7** | Port District | Coastal/Industrial | Shipping containers, docks | Cargo Ship, Warehouse, Lighthouse |
+| **8** | Resistance Base | Mountain/Forest | Hidden camp, natural caves | War Room, Training Ground, Armory Cave |
+| **9** | Zenith Bunker | Luxury Underground | Opulent shelter, marble & gold | CEO Suite, Escape Tunnel, Control Room |
+| **10** | Reclaimed City | Urban/Restored | Signs of rebuilding, gardens | Memorial Plaza, New Hospital, Sunrise Point |
 
 ### Arc Details
 
 #### ARC 1: THE OUTBREAK (ACT 1-3)
-**Theme:** Discovery and revelation
+**Theme:** Discovery and growing suspicion
 
-- **ACT 1:** Player thinks they're killing zombies (standard gameplay)
-- **ACT 2:** First doubts - some zombies act strange
-- **ACT 3:** **TWIST** - They're not zombies, they're still human inside
+- **ACT 1:** Player fights zombies, finds mysterious lab
+- **ACT 2:** Zenith logo discovered, first corporate hints
+- **ACT 3:** Whistleblower evidence found in bunker
 
-**Emotional Arc:** Confident → Confused → Guilty
+**Emotional Arc:** Confident → Curious → Suspicious
 
 ---
 
@@ -405,10 +464,10 @@ Hidden text di game menggunakan cipher sederhana yang bisa di-decode:
 ---
 
 #### FINALE: ACT 10 - THE NEW DAWN
-**Theme:** Resolution and healing
+**Theme:** Justice and healing
 
-- Cure is synthesized
-- Player choice: Who gets saved?
+- Zenith leadership defeated
+- Evidence broadcast worldwide
 - World begins recovery
 - **Bittersweet but hopeful ending**
 
@@ -441,7 +500,7 @@ Hidden text di game menggunakan cipher sederhana yang bisa di-decode:
 - [ ] Last Words voice lines
 - [ ] Cipher/hidden text system
 - [ ] ACT 2 development
-- [ ] ACT 3 plot twist implementation
+- [ ] ACT 5 Zenith conspiracy reveal
 
 ---
 

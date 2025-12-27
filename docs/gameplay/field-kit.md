@@ -10,11 +10,11 @@ Pre-mission supplies yang didapat dari **Daily Reward** dan **Gacha** saja.
 
 | Kit | Name | Icon | Rarity | Effect |
 |:----|:-----|:-----|:-------|:-------|
-| `SelfRevive` | Second Chance | 💚 | Rare | Auto-revive saat knock 1x |
 | `StarterPoints` | Starting Funds | 💰 | Common | +1,500 BP di awal game |
-| `CouponDiscount` | Bargain Pass | 🏷️ | Common | 50% off next shop purchase |
+| `AmmoCache` | Ammo Stockpile | 🔋 | Uncommon | +50% max ammo di awal game |
 | `StartingShield` | Body Armor | 🛡️ | Rare | 50% bonus shield di awal |
 | `LegionsLegacy` | Mystery Loadout | 🎁 | Epic | Replace M1911 dengan random weapon |
+| `CommanderBuff` | Commander's Authority | ⭐ | Legendary | Semua ally dapat +10% damage untuk seluruh game |
 
 ---
 
@@ -25,16 +25,18 @@ Pre-mission supplies yang didapat dari **Daily Reward** dan **Gacha** saja.
 | Day | Reward |
 |:----|:-------|
 | Day 3 | Starting Funds |
-| Day 5 | Bargain Pass |
-| Day 7 | Second Chance |
+| Day 5 | Ammo Stockpile |
+| Day 7 | Body Armor |
 
 ### Gacha
 
-| Rarity | Kits |
-|:-------|:-----|
-| Common | Starting Funds, Bargain Pass |
-| Rare | Second Chance, Body Armor |
-| Epic | Mystery Loadout |
+| Rarity | Color | Kits | Drop Rate |
+|:-------|:------|:-----|:----------|
+| Common | Abu-abu | Starting Funds | 40% |
+| Uncommon | Hijau | Ammo Stockpile | 30% |
+| Rare | Biru | Body Armor | 20% |
+| Epic | Ungu | Mystery Loadout | 8% |
+| Legendary | Emas | Commander's Authority | 2% |
 
 ---
 

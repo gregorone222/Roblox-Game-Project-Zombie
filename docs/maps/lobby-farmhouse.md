@@ -215,7 +215,7 @@ Props dengan lore significance:
 ## 💡 LIGHTING
 
 ### Time of Day
-- **ClockTime:** 17.5 (Sunset/Golden Hour)
+- **ClockTime:** Dynamic (mengikuti UTC Time)
 - **Mood:** Warm, nostalgic, safe feeling
 
 ### Light Sources

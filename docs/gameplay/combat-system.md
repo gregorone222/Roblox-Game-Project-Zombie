@@ -47,7 +47,7 @@ Upgrade sementara untuk senjata/pemain (dibeli per-wave):
 - **Cryo Compound** - Slow enemies
 - **Toxic Agent** - DOT poison
 - **EMP Burst** - Chain damage
-- **Concussion Blast** - Knockback + speed
+- **Concussion Blast** - Knockback only
 - **Hardened Armor** - Defense buff
 - **Stimpack** - Brief invincibility
 - **Adrenaline Serum** - Life steal

@@ -33,7 +33,7 @@ Sesuai [Content Rules](../story/story.md#-content-rules):
 
 **Personality:**
 - Tenang di luar, broken di dalam
-- Memanggil player "Operator" (jarak emosional)
+- Memanggil player "Survivor" (hangat, inklusif)
 - Formal tapi hangat
 - Menyembunyikan rasa bersalah (mantan guru)
 
@@ -42,7 +42,7 @@ Sesuai [Content Rules](../story/story.md#-content-rules):
 
 **Sample Dialogues:**
 ```
-"Selamat datang, Operator. Senang melihatmu masih berdiri."
+"Selamat datang, Survivor. Senang melihatmu masih berdiri."
 
 "Dulu saya mengajar anak-anak bagaimana membaca...
 Sekarang saya mengajar orang dewasa bagaimana bertahan."
@@ -222,13 +222,13 @@ Duduklah sebentar. Api masih menyala."
 
 ## 🎮 Player Character
 
-### "The Operator"
+### "The Survivor"
 **Type:** Silent protagonist  
 **Customization:** Appearance via cosmetics
 
 **Design Philosophy:**
 - Player adalah "blank slate" untuk projecting
-- Alexander memanggil semua player "Operator"
+- Alexander memanggil semua player "Survivor"
 - Tidak ada backstory spesifik (player bisa imagine sendiri)
 - Visual: Tactical survivor gear, customizable
 
