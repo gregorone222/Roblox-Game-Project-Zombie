@@ -612,6 +612,90 @@ local function buildNostalgicProps(parent, origin)
 	return props
 end
 
+local function buildGachaMachine(parent, origin)
+	local machine = Instance.new("Model")
+	machine.Name = "Gacha"
+	machine.Parent = parent
+	
+	local floorY = origin.Y
+	
+	-- Main body (retro vending machine style)
+	local bodyWidth, bodyDepth, bodyHeight = 6, 4, 10
+	
+	-- Base platform
+	createPart("GachaBase", Vector3.new(bodyWidth + 2, 1, bodyDepth + 2), 
+		CFrame.new(origin.X, floorY + 0.5, origin.Z), 
+		machine, COLORS.DarkMetal, Enum.Material.Metal)
+	
+	-- Main cabinet - store reference for ProximityPrompt
+	local body = createPart("GachaBody", Vector3.new(bodyWidth, bodyHeight, bodyDepth), 
+		CFrame.new(origin.X, floorY + 1 + bodyHeight/2, origin.Z), 
+		machine, Color3.fromRGB(40, 45, 50), Enum.Material.Metal)
+	
+	-- Glass display front
+	local glass = createPart("GachaGlass", Vector3.new(bodyWidth - 1, bodyHeight - 3, 0.3), 
+		CFrame.new(origin.X, floorY + 1 + bodyHeight/2 + 1, origin.Z - bodyDepth/2 + 0.2), 
+		machine, Color3.fromRGB(100, 200, 200), Enum.Material.Glass)
+	glass.Transparency = 0.5
+	
+	-- Neon accent strips
+	createPart("GachaNeonTop", Vector3.new(bodyWidth + 0.5, 0.3, bodyDepth + 0.5), 
+		CFrame.new(origin.X, floorY + 1 + bodyHeight + 0.2, origin.Z), 
+		machine, Color3.fromRGB(0, 255, 255), Enum.Material.Neon)
+	createPart("GachaNeonMid", Vector3.new(bodyWidth + 0.2, 0.2, 0.2), 
+		CFrame.new(origin.X, floorY + 1 + bodyHeight/2, origin.Z - bodyDepth/2), 
+		machine, Color3.fromRGB(0, 255, 255), Enum.Material.Neon)
+	
+	-- Top decoration (capsule dome)
+	local dome = createPart("GachaDome", Vector3.new(4, 4, 4), 
+		CFrame.new(origin.X, floorY + 1 + bodyHeight + 2.5, origin.Z), 
+		machine, Color3.fromRGB(200, 50, 50), Enum.Material.Glass)
+	dome.Shape = Enum.PartType.Ball
+	dome.Transparency = 0.3
+	
+	-- Light inside dome
+	createLight(dome, Vector3.new(0, 0, 0), Color3.fromRGB(255, 100, 100), 15, 1.5)
+	
+	-- Interior light (cyan glow)
+	local interiorLight = createPart("InteriorGlow", Vector3.new(1, 1, 1), 
+		CFrame.new(origin.X, floorY + 1 + bodyHeight/2, origin.Z), 
+		machine, Color3.fromRGB(0, 255, 255), Enum.Material.Neon)
+	interiorLight.Transparency = 1
+	createLight(interiorLight, Vector3.new(0, 0, 0), Color3.fromRGB(0, 255, 255), 12, 1)
+	
+	-- Text sign
+	local sign = createPart("GachaSign", Vector3.new(5, 2, 0.2), 
+		CFrame.new(origin.X, floorY + 1 + bodyHeight - 1.5, origin.Z - bodyDepth/2 - 0.5), 
+		machine, Color3.fromRGB(20, 25, 30), Enum.Material.SmoothPlastic)
+	
+	local signGui = Instance.new("SurfaceGui")
+	signGui.Face = Enum.NormalId.Back
+	signGui.Parent = sign
+	
+	local signText = Instance.new("TextLabel")
+	signText.Size = UDim2.new(1, 0, 1, 0)
+	signText.BackgroundTransparency = 1
+	signText.Text = "GACHA"
+	signText.TextColor3 = Color3.fromRGB(0, 255, 255)
+	signText.Font = Enum.Font.Arcade
+	signText.TextScaled = true
+	signText.Parent = signGui
+	
+	-- Proximity Prompt - attach to GachaBody Part (ProximityPrompt requires BasePart parent)
+	local prompt = Instance.new("ProximityPrompt")
+	prompt.Name = "GachaPrompt"
+	prompt.ObjectText = "Gacha Machine"
+	prompt.ActionText = "Open"
+	prompt.HoldDuration = 0
+	prompt.RequiresLineOfSight = false
+	prompt.MaxActivationDistance = 10
+	prompt.Parent = body -- Attach to GachaBody Part
+	
+	print("[LobbyBuilder] Gacha machine built with ProximityPrompt on " .. body:GetFullName())
+	
+	return machine
+end
+
 -- === MAIN BUILD FUNCTION ===
 
 function LobbyBuilder.Build()
@@ -708,6 +792,9 @@ function LobbyBuilder.Build()
 	createInteraction("BoosterShop", CFrame.new(tentOrigin.X, tentOrigin.Y + 2, tentOrigin.Z), Vector3.new(10, 6, 8), "Medical Supplies", env)
 	createInteraction("APShop", CFrame.new(barnOrigin.X - 5, barnOrigin.Y + 2, barnOrigin.Z), Vector3.new(6, 6, 6), "Achievement Exchange", env)
 	createInteraction("MPShop", CFrame.new(barnOrigin.X + 5, barnOrigin.Y + 2, barnOrigin.Z), Vector3.new(6, 6, 6), "Mission Exchange", env)
+	
+	-- Gacha Machine (near leaderboard area)
+	local gachaMachine = buildGachaMachine(env, Vector3.new(lbOrigin.X + 35, GROUND_LEVEL + 0.5, lbOrigin.Z))
 
 	-- StartPart for voting system
 	local startPart = createPart("StartPart", Vector3.new(5, 5, 5), alexPos, env, Color3.new(1, 0, 0), Enum.Material.Neon)

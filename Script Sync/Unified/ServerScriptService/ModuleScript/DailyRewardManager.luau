@@ -11,7 +11,7 @@ local ServerScriptService = game:GetService("ServerScriptService")
 
 local DailyRewardConfig = require(ReplicatedStorage.ModuleScript:WaitForChild("DailyRewardConfig"))
 local CoinsModule = require(ServerScriptService.ModuleScript:WaitForChild("CoinsModule"))
-local BoosterModule = require(ServerScriptService.ModuleScript:WaitForChild("BoosterModule"))
+local FieldKitModule = require(ServerScriptService.ModuleScript:WaitForChild("FieldKitModule"))
 local SkinManager = require(ServerScriptService.ModuleScript:WaitForChild("SkinManager"))
 local StatsModule = require(ServerScriptService.ModuleScript:WaitForChild("StatsModule"))
 
@@ -62,7 +62,7 @@ function DailyRewardManager:ClaimReward(player)
 	end
 
 	if reward.Type == "Coins" then CoinsModule.AddCoins(player, reward.Value)
-	elseif reward.Type == "Booster" then BoosterModule.AddBooster(player, reward.Value, 1)
+	elseif reward.Type == "FieldKit" or reward.Type == "Booster" then FieldKitModule.AddFieldKit(player, reward.Value, 1)
 	elseif reward.Type == "Skin" then SkinManager.GiveRandomSkin(player) end
 
 	-- Simpan Data

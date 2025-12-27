@@ -14,7 +14,7 @@ local CoinsManager = require(ServerScriptService.ModuleScript:WaitForChild("Coin
 local InventoryManager = require(ServerScriptService.ModuleScript:WaitForChild("InventoryManager"))
 local GachaConfig = require(ServerScriptService.ModuleScript:WaitForChild("GachaConfig"))
 local WeaponModule = require(ReplicatedStorage.ModuleScript:WaitForChild("WeaponModule"))
-local BoosterModule = require(ServerScriptService.ModuleScript:WaitForChild("BoosterModule"))
+local FieldKitModule = require(ServerScriptService.ModuleScript:WaitForChild("FieldKitModule"))
 local StatsModule = require(ServerScriptService.ModuleScript:WaitForChild("StatsModule"))
 
 local GachaModule = {}
@@ -88,9 +88,28 @@ local function performSingleRoll(player, playerData, weaponName)
 		GachaSkinWonEvent:FireAllClients(player, prize.Skin)
 		return { Type = "Skin", WeaponName = prize.Weapon, SkinName = prize.Skin }
 	elseif chosenRarity == "Booster" then
-		local boosterPrize = "SelfRevive"
-		BoosterModule.AddBooster(player, boosterPrize, 1)
-		return { Type = "Booster", Name = boosterPrize, Amount = 1 }
+		-- Pick random Field Kit based on rarity weights (favor lower rarities)
+		local fieldKitList = {
+			{name = "StarterPoints", weight = 40},   -- Common: 40%
+			{name = "AmmoCache", weight = 30},       -- Uncommon: 30%
+			{name = "StartingShield", weight = 20},  -- Rare: 20%
+			{name = "LegionsLegacy", weight = 8},    -- Epic: 8%
+			{name = "CommanderBuff", weight = 2},    -- Legendary: 2%
+		}
+		local totalWeight = 0
+		for _, kit in ipairs(fieldKitList) do totalWeight = totalWeight + kit.weight end
+		local roll = math.random(1, totalWeight)
+		local cumulative = 0
+		local fieldKitPrize = "StarterPoints" -- fallback
+		for _, kit in ipairs(fieldKitList) do
+			cumulative = cumulative + kit.weight
+			if roll <= cumulative then
+				fieldKitPrize = kit.name
+				break
+			end
+		end
+		FieldKitModule.AddFieldKit(player, fieldKitPrize, 1)
+		return { Type = "FieldKit", Name = fieldKitPrize, Amount = 1 }
 	else -- Common
 		local prizeAmount = math.random(GachaConfig.COMMON_REWARD_RANGE.Min, GachaConfig.COMMON_REWARD_RANGE.Max)
 		CoinsManager.AddCoins(player, prizeAmount)

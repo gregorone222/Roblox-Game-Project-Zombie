@@ -597,7 +597,7 @@ WeaponModule.Weapons = {
 		VisualRecoilKick = -0.7,
 		VisualRecoilRecovery = 15
 	},
-	["KRISS-Vector"] = {
+	["Kriss-Vector"] = {
 		DisplayName = "KRISS Vector",
 		Category = "SMG",
 		Damage = 24,

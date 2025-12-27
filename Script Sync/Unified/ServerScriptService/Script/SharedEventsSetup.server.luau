@@ -79,6 +79,7 @@ local allRemoteEvents = {
 	"APShopEvent", "APShopBuyEvent", "APUpdateEvent",
 	"MPShopEvent", "MPShopBuyEvent", "MPUpdateEvent",
 	"BoosterBuyEvent", "BoosterUpdateEvent", "UpdatePlayerBoosterStatusEvent", "ActivateBoosterEvent",
+	"FieldKitBuyEvent", "FieldKitUpdateEvent", "UpdatePlayerFieldKitStatusEvent", "ActivateFieldKitEvent",
 	
 	-- ========== PROFILE/STATS ==========
 	"ProfileDataEvent", "ProfileUpdateEvent",
@@ -129,8 +130,9 @@ local allRemoteFunctions = {
 	-- ========== DAILY REWARDS ==========
 	"GetDailyRewardInfo", "ClaimDailyReward",
 	
-	-- ========== BOOSTERS ==========
+	-- ========== FIELD KITS (formerly BOOSTERS) ==========
 	"GetActiveBooster", "ActivateBooster",
+	"GetActiveFieldKit", "ActivateFieldKit",
 	
 	-- ========== SKILLS ==========
 	"GetSkillData", "UnlockSkill",

@@ -1,27 +1,23 @@
 -- PlaceId Guard: Only run in Lobby
 local LOBBY_PLACE_ID = 101319079083908
-if game.PlaceId ~= LOBBY_PLACE_ID then return end
+if game.PlaceId ~= LOBBY_PLACE_ID then 
+	return 
+end
 
 -- GachaUI.lua (LocalScript)
 -- Path: StarterGui/GachaUI.lua
 -- Script Place: Lobby
--- Theme: Glitchy CRT / Vending Machine Interface (Retro-Futuristic, Cyberpunk Decay)
+-- Theme: Military Record / Medal Case (Matching APShopUI/MPShopUI)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
-local RunService = game:GetService("RunService")
-local Lighting = game:GetService("Lighting")
 
 local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
 
--- ================== MODULE & EVENT REFERENCES ==================
-local ModuleScriptReplicated = ReplicatedStorage:WaitForChild("ModuleScript")
-local WeaponModule = require(ModuleScriptReplicated:WaitForChild("WeaponModule"))
-local ModelPreviewModule = require(ModuleScriptReplicated:WaitForChild("ModelPreviewModule"))
-
+-- ================== EVENT REFERENCES ==================
 local GachaRollEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("GachaRollEvent")
 local GachaMultiRollEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("GachaMultiRollEvent")
 local GachaFreeRollEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("GachaFreeRollEvent")
@@ -29,257 +25,148 @@ local GetGachaConfig = ReplicatedStorage:WaitForChild("RemoteFunctions"):WaitFor
 local GetGachaStatus = ReplicatedStorage:WaitForChild("RemoteFunctions"):WaitForChild("GetGachaStatus")
 local CoinsUpdateEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("CoinsUpdateEvent")
 
--- ================== THEME CONSTANTS ==================
-local THEME = {
-	Colors = {
-		CRT_BG = Color3.fromRGB(10, 15, 20),      -- Dark Screen
-		CRT_GLOW = Color3.fromRGB(0, 255, 255),   -- Cyan Phosphor
-		CRT_DIM = Color3.fromRGB(0, 80, 80),      -- Dim Cyan
-		CRT_ALERT = Color3.fromRGB(255, 0, 50),   -- Error Red
-		CRT_GOLD = Color3.fromRGB(255, 200, 0),   -- Legendary Gold
-		Scanline = Color3.fromRGB(0, 0, 0),
-		Frame = Color3.fromRGB(40, 40, 50)        -- Machine Casing
-	},
-	Fonts = {
-		Main = Enum.Font.Code,                -- Retro Terminal
-		Header = Enum.Font.Arcade,            -- Blocky Header
-		Label = Enum.Font.RobotoMono          -- Readable Tech
-	}
+-- ================== REWARD CONFIG ==================
+local FieldKitConfig = {
+	StarterPoints = { Name = "Starting Funds", Icon = "rbxassetid://115097892301473", Rarity = "Common", Description = "Start with 1,500 bonus BP" },
+	AmmoCache = { Name = "Ammo Stockpile", Icon = "rbxassetid://133597625207661", Rarity = "Uncommon", Description = "Begin with extra ammo reserves" },
+	StartingShield = { Name = "Body Armor", Icon = "rbxassetid://118302588106310", Rarity = "Rare", Description = "Start with protective armor" },
+	LegionsLegacy = { Name = "Mystery Loadout", Icon = "rbxassetid://117164757148539", Rarity = "Epic", Description = "Random legendary weapon loadout" },
+	CommanderBuff = { Name = "Commander's Authority", Icon = "rbxassetid://78698774904955", Rarity = "Legendary", Description = "All team members get stat buff" },
 }
 
--- ================== STATE MANAGEMENT ==================
+-- Gacha Rewards Pool (for display)
+local RewardsPool = {
+	{ Type = "Coins", Name = "100-500 Credits", Rarity = "Common", Chance = "60%" },
+	{ Type = "Coins", Name = "500-1000 Credits", Rarity = "Uncommon", Chance = "20%" },
+	{ Type = "FieldKit", Name = "Starting Funds", Rarity = "Common", Chance = "8%" },
+	{ Type = "FieldKit", Name = "Ammo Stockpile", Rarity = "Uncommon", Chance = "5%" },
+	{ Type = "FieldKit", Name = "Body Armor", Rarity = "Rare", Chance = "3%" },
+	{ Type = "FieldKit", Name = "Mystery Loadout", Rarity = "Epic", Chance = "2%" },
+	{ Type = "FieldKit", Name = "Commander's Authority", Rarity = "Legendary", Chance = "1%" },
+	{ Type = "Skin", Name = "Weapon Skin", Rarity = "Legendary", Chance = "1%" },
+}
+
+-- ================== THEME CONSTANTS ==================
+local COLORS = {
+	BG_ROOT = Color3.fromRGB(20, 20, 20),
+	BG_PANEL = Color3.fromRGB(35, 35, 40),
+	BG_HEADER = Color3.fromRGB(45, 45, 50),
+	
+	TEXT_MAIN = Color3.fromRGB(240, 240, 230),
+	TEXT_DIM = Color3.fromRGB(160, 160, 165),
+	
+	ACCENT_GOLD = Color3.fromRGB(218, 165, 32),
+	ACCENT_SUCCESS = Color3.fromRGB(100, 200, 100),
+	ACCENT_FAIL = Color3.fromRGB(200, 80, 80),
+	
+	RARITY_COMMON = Color3.fromRGB(180, 180, 180),
+	RARITY_UNCOMMON = Color3.fromRGB(100, 200, 100),
+	RARITY_RARE = Color3.fromRGB(100, 150, 255),
+	RARITY_EPIC = Color3.fromRGB(200, 80, 255),
+	RARITY_LEGENDARY = Color3.fromRGB(255, 215, 0),
+}
+
+local FONTS = {
+	Header = Enum.Font.SpecialElite,
+	Body = Enum.Font.GothamMedium,
+	Mono = Enum.Font.Code
+}
+
+-- ================== STATE ==================
 local state = {
 	coins = 0,
-	currentWeaponId = nil,
-	currentSkinId = nil,
 	freeRollAvailable = false,
 	isRolling = false,
-	pityCount = 0,
-	pityThreshold = 50, 
 	gachaConfig = {
 		costs = { roll1 = 1500, roll10 = 15000 },
-		rarities = { legendary = 5, booster = 10, common = 85 },
 	},
-	blurEffect = nil -- Blur Effect Reference
+	blurEffect = nil,
+	currentTab = "Roll" -- "Roll" or "Rewards"
 }
 
--- ================== UI ELEMENT REFERENCES ==================
 local ui = {}
-local createUI, toggleGachaUI, updateMainUI, populateWeaponSelector
+local createUI, toggleGachaUI, updateMainUI
 
--- ================== HELPER FUNCTIONS ==================
+-- ================== HELPERS ==================
 
-local function create(instanceType, properties)
-	local inst = Instance.new(instanceType)
-	for prop, value in pairs(properties) do
-		if prop == "BackgroundColor" then
-			inst.BackgroundColor3 = value
+local function create(className, properties)
+	local instance = Instance.new(className)
+	for k, v in pairs(properties) do
+		if k == "BackgroundColor" then
+			instance.BackgroundColor3 = v
 		else
-			inst[prop] = value
+			instance[k] = v
 		end
 	end
-	return inst
+	return instance
 end
 
-local function addScanlines(parent)
-	local scan = create("ImageLabel", {
-		Name = "Scanlines",
-		Parent = parent,
-		Size = UDim2.new(1, 0, 1, 0),
-		BackgroundTransparency = 1,
-		Image = "rbxassetid://7357494639", -- Scanline texture
-		ImageColor3 = Color3.new(0,0,0),
-		ImageTransparency = 0.8,
-		ScaleType = Enum.ScaleType.Tile,
-		TileSize = UDim2.new(0, 0, 0, 4),
-		ZIndex = 100 -- Top layer
-	})
-	return scan
+local function addCorner(parent, radius)
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, radius or 8)
+	corner.Parent = parent
+	return corner
 end
 
-local function addCRTFlicker(frame)
-	task.spawn(function()
-		while frame and frame.Parent do
-			local flicker = math.random()
-			if flicker > 0.95 then
-				frame.ImageTransparency = 0.5
-				task.wait(0.05)
-				frame.ImageTransparency = 0.8
-			end
-			task.wait(0.1)
-		end
-	end)
+local function addStroke(parent, color, thickness)
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = color or COLORS.TEXT_DIM
+	stroke.Thickness = thickness or 1
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	stroke.Parent = parent
+	return stroke
 end
 
-local function showButtonFeedback(button, message)
-	local originalText = button.Text
-	local originalColor = button.BackgroundColor3
-
-	button.Text = "ERR: " .. message
-	button.BackgroundColor3 = THEME.Colors.CRT_ALERT
-
-	task.wait(1)
-
-	if button and button.Parent then
-		button.Text = originalText
-		button.BackgroundColor3 = originalColor
-	end
+local function formatNumber(n)
+	return tostring(math.floor(n or 0)):reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^,", "")
 end
+
+local function getRarityColor(rarity)
+	if rarity == "Legendary" then return COLORS.RARITY_LEGENDARY end
+	if rarity == "Epic" then return COLORS.RARITY_EPIC end
+	if rarity == "Rare" then return COLORS.RARITY_RARE end
+	if rarity == "Uncommon" then return COLORS.RARITY_UNCOMMON end
+	return COLORS.RARITY_COMMON
+end
+
+-- ================== ROLL HANDLERS ==================
 
 local function handleRoll(rollType)
-	if state.isRolling or not state.currentWeaponId then return end
-
+	if state.isRolling then return end
+	
 	local cost = 0
-	local canAfford = false
-	local remoteEvent = nil
-	local isFree = false
-
-	if rollType == "single" then
-		cost = state.gachaConfig.costs.roll1
-		canAfford = state.coins >= cost
-		remoteEvent = GachaRollEvent
-	elseif rollType == "multi" then
-		cost = state.gachaConfig.costs.roll10
-		canAfford = state.coins >= cost
-		remoteEvent = GachaMultiRollEvent
-	elseif rollType == "free" then
-		canAfford = state.freeRollAvailable
-		remoteEvent = GachaFreeRollEvent
-		isFree = true
+	if rollType == "single" then cost = state.gachaConfig.costs.roll1
+	elseif rollType == "multi" then cost = state.gachaConfig.costs.roll10
+	elseif rollType == "free" and not state.freeRollAvailable then return
 	end
-
-	if not canAfford then
-		local button
-		if rollType == "single" then button = ui.rollButton1
-		elseif rollType == "multi" then button = ui.rollButton10
-		else button = ui.freeRollButton end
-		showButtonFeedback(button, "INSUFFICIENT FUNDS")
-		return
-	end
-
+	
+	if rollType ~= "free" and state.coins < cost then return end
+	
 	state.isRolling = true
-	if not isFree then
-		state.coins = state.coins - cost
-	else
-		state.freeRollAvailable = false
-	end
 	updateMainUI()
-
-	remoteEvent:FireServer(state.currentWeaponId)
-end
-
--- ================== VISUAL LOGIC ==================
-
-updateMainUI = function()
-	if not state.currentWeaponId or not ui.screen then return end
-
-	local weaponData = WeaponModule.Weapons[state.currentWeaponId]
-	if not weaponData then return end
-
-	-- Update Text
-	ui.headerText.Text = "> TARGET: " .. string.upper(weaponData.Name or "Unknown")
-
-	ui.statsLabel.Text = string.format("DMG:%s\nAMMO:%s/%s\nRPM:%s", 
-		weaponData.Damage or "ERR", 
-		weaponData.MaxAmmo or "ERR", 
-		weaponData.ReserveAmmo or "ERR",
-		weaponData.FireRate or "ERR"
-	)
-
-	-- Update Viewport
-	if ui.viewport then
-		ui.viewport:ClearAllChildren()
-		local firstSkinName = next(weaponData.Skins)
-		local firstSkinData = firstSkinName and weaponData.Skins[firstSkinName]
-		if firstSkinData then
-			local preview = ModelPreviewModule.create(ui.viewport, weaponData, firstSkinData)
-			ModelPreviewModule.startRotation(preview, 2)
-		end
-	end
-
-	-- Update Buttons
-	ui.rollButton1.Interactable = not state.isRolling
-	ui.rollButton10.Interactable = not state.isRolling
-	ui.freeRollButton.Interactable = not state.isRolling
-
-	local cost1 = state.gachaConfig.costs.roll1 or 1500
-	local cost10 = state.gachaConfig.costs.roll10 or 15000
-
-	ui.rollButton1.Text = string.format("[ DISPENSE x1 ]\n%s CR", cost1)
-	ui.rollButton10.Text = string.format("[ BATCH x10 ]\n%s CR", cost10)
-
-	if state.freeRollAvailable and not state.isRolling then
-		ui.freeRollButton.Text = "FREE SAMPLE\n[ READY ]"
-		ui.freeRollButton.TextColor3 = THEME.Colors.CRT_GLOW
+	
+	if ui.overlay then ui.overlay.Visible = true end
+	
+	if rollType == "single" then
+		GachaRollEvent:FireServer()
+	elseif rollType == "multi" then
+		GachaMultiRollEvent:FireServer()
 	else
-		ui.freeRollButton.Text = "FREE SAMPLE\n[ COOLDOWN ]"
-		ui.freeRollButton.TextColor3 = THEME.Colors.CRT_DIM
-	end
-
-	ui.coinsLabel.Text = "CREDITS: " .. state.coins
-
-	local pityRemaining = math.max(0, state.pityThreshold - state.pityCount)
-	ui.pityLabel.Text = string.format("PITY_COUNTER: %02d", pityRemaining)
-end
-
-populateWeaponSelector = function()
-	if not ui.weaponList then return end
-	for _, c in ipairs(ui.weaponList:GetChildren()) do
-		if c:IsA("TextButton") then c:Destroy() end
-	end
-
-	local gachaWeapons = {}
-	for weaponName, weaponData in pairs(WeaponModule.Weapons) do
-		if next(weaponData.Skins or {}) then
-			table.insert(gachaWeapons, {name = weaponName, data = weaponData})
-		end
-	end
-	table.sort(gachaWeapons, function(a, b) return a.name < b.name end)
-
-	if not state.currentWeaponId and #gachaWeapons > 0 then
-		state.currentWeaponId = gachaWeapons[1].name
-	end
-
-	for _, weapon in ipairs(gachaWeapons) do
-		local btn = create("TextButton", { 
-			Name = weapon.name, 
-			Parent = ui.weaponList, 
-			Size = UDim2.new(1, 0, 0, 40), 
-			Text = " > " .. string.upper(weapon.name), 
-			Font = THEME.Fonts.Main, 
-			TextColor3 = (state.currentWeaponId == weapon.name) and THEME.Colors.CRT_GLOW or THEME.Colors.CRT_DIM,
-			BackgroundColor = (state.currentWeaponId == weapon.name) and THEME.Colors.CRT_DIM or THEME.Colors.CRT_BG,
-			BackgroundTransparency = 0.5,
-			TextXAlignment = Enum.TextXAlignment.Left, 
-			TextSize = 14
-		})
-
-		btn.MouseButton1Click:Connect(function()
-			state.currentWeaponId = weapon.name
-			populateWeaponSelector() -- Re-render to update highlights
-			updateMainUI()
-		end)
+		GachaFreeRollEvent:FireServer()
 	end
 end
 
--- Animation for result
-local function showRollAnimation(onComplete)
-	ui.overlay.Visible = true
-	-- Access child StatusText safely
-	local txt = ui.overlay:FindFirstChild("StatusText")
-	if txt then
-		txt.Text = "INITIALIZING..."
-
-		local steps = {"CONNECTING...", "DOWNLOADING...", "DECRYPTING...", "FINALIZING..."}
-		for _, s in ipairs(steps) do
-			txt.Text = s
-			task.wait(0.2)
-		end
+local function showRollAnimation(callback)
+	if ui.overlay then
+		local statusText = ui.overlay:FindFirstChild("StatusText")
+		if statusText then statusText.Text = "PROCESSING REQUISITION..." end
+		task.wait(0.8)
 	end
-
-	ui.overlay.Visible = false
-	if onComplete then onComplete() end
+	if callback then callback() end
+	if ui.overlay then ui.overlay.Visible = false end
 end
+
+-- ================== RESULT DISPLAY ==================
 
 local function showResultModal(prize)
 	if not prize then 
@@ -290,263 +177,716 @@ local function showResultModal(prize)
 
 	local name = prize.SkinName or prize.Name or "Unknown"
 	local rarity = "COMMON"
-	local color = THEME.Colors.CRT_GLOW
+	local color = COLORS.TEXT_MAIN
+	local iconAsset = nil
 
 	if prize.Type == "Skin" then
-		rarity = "LEGENDARY ITEM"
-		color = THEME.Colors.CRT_GOLD
-	elseif prize.Type == "Booster" then
-		rarity = "RARE ITEM"
-		color = Color3.fromRGB(200, 100, 255)
+		rarity = "LEGENDARY SKIN"
+		color = COLORS.RARITY_LEGENDARY
+	elseif prize.Type == "FieldKit" or prize.Type == "Booster" then
+		local fieldKitData = FieldKitConfig[prize.Name]
+		if fieldKitData then
+			name = fieldKitData.Name
+			iconAsset = fieldKitData.Icon
+			rarity = (fieldKitData.Rarity or "Common"):upper() .. " FIELD KIT"
+			color = getRarityColor(fieldKitData.Rarity or "Common")
+		end
 	else
-		name = (prize.Amount or 0) .. " CREDITS"
+		name = formatNumber(prize.Amount or 0) .. " CREDITS"
+		rarity = "CURRENCY"
+		color = COLORS.ACCENT_GOLD
 	end
 
-	ui.resultModal.Visible = true
+	if ui.resultModal then
+		ui.resultModal.Visible = true
+		local title = ui.resultModal:FindFirstChild("Title")
+		if title then title.Text = "ACQUISITION CONFIRMED" end
 
-	-- FIX: Access Title properly
-	local title = ui.resultModal:FindFirstChild("Title")
-	if title then title.Text = "ACQUISITION SUCCESSFUL" end
+		local itemName = ui.resultModal:FindFirstChild("ItemName")
+		if itemName then 
+			itemName.Text = name:upper()
+			itemName.TextColor3 = color
+		end
 
-	ui.resultModal.ItemName.Text = string.upper(name)
-	ui.resultModal.ItemName.TextColor3 = color
-	ui.resultModal.Rarity.Text = rarity
-	ui.resultModal.Rarity.TextColor3 = color
+		local rarityLabel = ui.resultModal:FindFirstChild("Rarity")
+		if rarityLabel then 
+			rarityLabel.Text = rarity
+			rarityLabel.TextColor3 = color
+		end
+
+		local iconImage = ui.resultModal:FindFirstChild("IconImage")
+		if iconImage then
+			if iconAsset then
+				iconImage.Image = iconAsset
+				iconImage.Visible = true
+			else
+				iconImage.Visible = false
+			end
+		end
+	end
 
 	state.isRolling = false
 	updateMainUI()
 end
 
 local function showMultiResultModal(prizes)
-	-- Populate grid
-	for _, c in ipairs(ui.multiGrid:GetChildren()) do if c:IsA("Frame") then c:Destroy() end end
+	if ui.multiGrid then
+		for _, c in ipairs(ui.multiGrid:GetChildren()) do 
+			if c:IsA("Frame") then c:Destroy() end 
+		end
 
-	for _, prize in ipairs(prizes or {}) do
-		local name = prize.SkinName or prize.Name or ((prize.Amount or 0).." CR")
-		local color = THEME.Colors.CRT_GLOW
-		if prize.Type == "Skin" then color = THEME.Colors.CRT_GOLD end
+		for _, prize in ipairs(prizes or {}) do
+			local name = prize.SkinName or prize.Name or ((prize.Amount or 0).." CR")
+			local color = COLORS.TEXT_MAIN
+			local iconAsset = nil
+			
+			if prize.Type == "Skin" then 
+				color = COLORS.RARITY_LEGENDARY 
+			elseif prize.Type == "FieldKit" or prize.Type == "Booster" then
+				local fieldKitData = FieldKitConfig[prize.Name]
+				if fieldKitData then
+					name = fieldKitData.Name
+					color = getRarityColor(fieldKitData.Rarity or "Common")
+					iconAsset = fieldKitData.Icon
+				end
+			elseif prize.Type == "Coins" then
+				color = COLORS.ACCENT_GOLD
+			end
 
-		local frame = create("Frame", {
-			Parent = ui.multiGrid, BackgroundColor = Color3.fromRGB(20, 30, 40), BorderSizePixel = 1, BorderColor3 = color
-		})
-		create("TextLabel", {
-			Parent = frame, Size = UDim2.new(1,0,1,0), BackgroundTransparency = 1,
-			Text = name, TextColor3 = color, TextWrapped = true, Font = THEME.Fonts.Main, TextSize = 12
-		})
+			local frame = create("Frame", {
+				Parent = ui.multiGrid, 
+				BackgroundColor3 = COLORS.BG_PANEL, 
+				BorderSizePixel = 0
+			})
+			addCorner(frame, 4)
+			addStroke(frame, color, 2)
+			
+			if iconAsset then
+				create("ImageLabel", {
+					Parent = frame, Size = UDim2.new(0.8, 0, 0.55, 0), Position = UDim2.new(0.1, 0, 0.05, 0),
+					BackgroundTransparency = 1, Image = iconAsset, ScaleType = Enum.ScaleType.Fit
+				})
+				create("TextLabel", {
+					Parent = frame, Size = UDim2.new(1, 0, 0.35, 0), Position = UDim2.new(0, 0, 0.62, 0),
+					BackgroundTransparency = 1, Text = name, TextColor3 = color, TextWrapped = true, 
+					Font = FONTS.Body, TextSize = 10, TextScaled = true
+				})
+			else
+				create("TextLabel", {
+					Parent = frame, Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1,
+					Text = name, TextColor3 = color, TextWrapped = true, Font = FONTS.Body, TextSize = 12
+				})
+			end
+		end
 	end
 
-	ui.multiModal.Visible = true
+	if ui.multiModal then ui.multiModal.Visible = true end
 	state.isRolling = false
 	updateMainUI()
+end
+
+-- ================== UI UPDATE ==================
+
+updateMainUI = function()
+	if not ui.screen or not ui.screen.Enabled then return end
+	
+	if ui.coinsLabel then
+		ui.coinsLabel.Text = formatNumber(state.coins)
+	end
+	
+	local function updateButton(btn, cost, available)
+		if not btn then return end
+		local canAfford = state.coins >= cost
+		local enabled = canAfford and not state.isRolling and (available == nil or available)
+		
+		btn.BackgroundColor3 = enabled and COLORS.ACCENT_GOLD or COLORS.BG_PANEL
+		local label = btn:FindFirstChild("Label")
+		if label then
+			label.TextColor3 = enabled and COLORS.BG_ROOT or COLORS.TEXT_DIM
+		end
+	end
+	
+	updateButton(ui.rollButton1, state.gachaConfig.costs.roll1)
+	updateButton(ui.rollButton10, state.gachaConfig.costs.roll10)
+	
+	if ui.freeRollButton then
+		local enabled = state.freeRollAvailable and not state.isRolling
+		ui.freeRollButton.BackgroundColor3 = enabled and COLORS.ACCENT_SUCCESS or COLORS.BG_PANEL
+		local label = ui.freeRollButton:FindFirstChild("Label")
+		if label then
+			label.TextColor3 = enabled and COLORS.BG_ROOT or COLORS.TEXT_DIM
+		end
+	end
+end
+
+-- ================== POPULATE REWARDS LIST ==================
+
+local function populateRewardsList()
+	if not ui.rewardsList then return end
+	
+	for _, c in ipairs(ui.rewardsList:GetChildren()) do
+		if c:IsA("Frame") then c:Destroy() end
+	end
+	
+	for _, reward in ipairs(RewardsPool) do
+		local color = getRarityColor(reward.Rarity)
+		
+		local card = create("Frame", {
+			Size = UDim2.new(1, -10, 0, 60),
+			BackgroundColor3 = COLORS.BG_PANEL,
+			Parent = ui.rewardsList
+		})
+		addCorner(card, 6)
+		addStroke(card, color, 1)
+		
+		-- Icon or type indicator
+		local iconFrame = create("Frame", {
+			Size = UDim2.new(0, 50, 0, 50),
+			Position = UDim2.new(0, 5, 0.5, 0),
+			AnchorPoint = Vector2.new(0, 0.5),
+			BackgroundColor3 = COLORS.BG_ROOT,
+			Parent = card
+		})
+		addCorner(iconFrame, 25)
+		addStroke(iconFrame, color, 2)
+		
+		local iconText = "🪙"
+		if reward.Type == "FieldKit" then
+			local fk = nil
+			for key, data in pairs(FieldKitConfig) do
+				if data.Name == reward.Name then fk = data break end
+			end
+			if fk and fk.Icon then
+				create("ImageLabel", {
+					Size = UDim2.new(0.8, 0, 0.8, 0),
+					Position = UDim2.new(0.1, 0, 0.1, 0),
+					BackgroundTransparency = 1,
+					Image = fk.Icon,
+					Parent = iconFrame
+				})
+			else
+				iconText = "📦"
+				create("TextLabel", {
+					Size = UDim2.new(1, 0, 1, 0),
+					BackgroundTransparency = 1,
+					Text = iconText,
+					TextSize = 24,
+					Parent = iconFrame
+				})
+			end
+		elseif reward.Type == "Skin" then
+			iconText = "🎨"
+			create("TextLabel", {
+				Size = UDim2.new(1, 0, 1, 0),
+				BackgroundTransparency = 1,
+				Text = iconText,
+				TextSize = 24,
+				Parent = iconFrame
+			})
+		else
+			create("TextLabel", {
+				Size = UDim2.new(1, 0, 1, 0),
+				BackgroundTransparency = 1,
+				Text = iconText,
+				TextSize = 24,
+				Parent = iconFrame
+			})
+		end
+		
+		-- Name
+		create("TextLabel", {
+			Text = reward.Name:upper(),
+			Size = UDim2.new(0.5, 0, 0.5, 0),
+			Position = UDim2.new(0, 65, 0, 5),
+			Font = FONTS.Header,
+			TextSize = 14,
+			TextColor3 = COLORS.TEXT_MAIN,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			BackgroundTransparency = 1,
+			Parent = card
+		})
+		
+		-- Rarity
+		create("TextLabel", {
+			Text = reward.Rarity:upper(),
+			Size = UDim2.new(0.3, 0, 0.4, 0),
+			Position = UDim2.new(0, 65, 0.55, 0),
+			Font = FONTS.Mono,
+			TextSize = 11,
+			TextColor3 = color,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			BackgroundTransparency = 1,
+			Parent = card
+		})
+		
+		-- Chance
+		create("TextLabel", {
+			Text = reward.Chance,
+			Size = UDim2.new(0.2, -10, 1, 0),
+			Position = UDim2.new(0.8, 0, 0, 0),
+			Font = FONTS.Mono,
+			TextSize = 16,
+			TextColor3 = color,
+			TextXAlignment = Enum.TextXAlignment.Right,
+			BackgroundTransparency = 1,
+			Parent = card
+		})
+	end
+	
+	ui.rewardsList.CanvasSize = UDim2.new(0, 0, 0, #RewardsPool * 68)
+end
+
+-- ================== TAB SWITCHING ==================
+
+local function switchTab(tabName)
+	state.currentTab = tabName
+	
+	if ui.rollPanel then ui.rollPanel.Visible = (tabName == "Roll") end
+	if ui.rewardsPanel then ui.rewardsPanel.Visible = (tabName == "Rewards") end
+	
+	if ui.tabRoll then
+		ui.tabRoll.BackgroundColor3 = (tabName == "Roll") and COLORS.ACCENT_GOLD or COLORS.BG_PANEL
+		local lbl = ui.tabRoll:FindFirstChild("Label")
+		if lbl then lbl.TextColor3 = (tabName == "Roll") and COLORS.BG_ROOT or COLORS.TEXT_DIM end
+	end
+	
+	if ui.tabRewards then
+		ui.tabRewards.BackgroundColor3 = (tabName == "Rewards") and COLORS.ACCENT_GOLD or COLORS.BG_PANEL
+		local lbl = ui.tabRewards:FindFirstChild("Label")
+		if lbl then lbl.TextColor3 = (tabName == "Rewards") and COLORS.BG_ROOT or COLORS.TEXT_DIM end
+	end
+	
+	if tabName == "Rewards" then
+		populateRewardsList()
+	end
 end
 
 -- ================== UI CREATION ==================
 
 createUI = function()
-	if player.PlayerGui:FindFirstChild("GachaUI") then player.PlayerGui.GachaUI:Destroy() end
+	if playerGui:FindFirstChild("GachaUI") then 
+		playerGui.GachaUI:Destroy() 
+	end
 
-	ui.screen = create("ScreenGui", { Name = "GachaUI", Parent = player.PlayerGui, ResetOnSpawn = false, IgnoreGuiInset = true, Enabled = false })
-
-	-- Initialize Blur Effect
-	local camera = workspace.CurrentCamera
-	state.blurEffect = create("BlurEffect", {Parent = camera, Size = 0, Enabled = false})
-
-	-- Dark Background
-	create("Frame", { Parent=ui.screen, Size=UDim2.new(1,0,1,0), BackgroundColor=Color3.new(0,0,0), BackgroundTransparency=0.2 })
-
-	-- Main CRT Monitor Frame
-	local monitor = create("Frame", {
-		Name = "Monitor", Parent = ui.screen,
-		Size = UDim2.new(0, 900, 0, 600), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5),
-		BackgroundColor = THEME.Colors.Frame
+	ui.screen = create("ScreenGui", { 
+		Name = "GachaUI", 
+		Parent = playerGui, 
+		ResetOnSpawn = false, 
+		IgnoreGuiInset = false, 
+		Enabled = false 
 	})
-	create("UICorner", {Parent=monitor, CornerRadius=UDim.new(0, 16)})
 
-	-- Screen Area
-	local screenArea = create("Frame", {
-		Name = "Screen", Parent = monitor,
-		Size = UDim2.new(0.95, 0, 0.95, 0), Position = UDim2.new(0.025, 0, 0.025, 0),
-		BackgroundColor = THEME.Colors.CRT_BG, ClipsDescendants = true
+	state.blurEffect = create("BlurEffect", {
+		Parent = workspace.CurrentCamera, 
+		Size = 15, 
+		Enabled = false
 	})
-	create("UICorner", {Parent=screenArea, CornerRadius=UDim.new(0, 8)})
-	create("UIStroke", {Parent=screenArea, Color=THEME.Colors.CRT_GLOW, Thickness=2, Transparency=0.5})
 
-	-- Scanlines Overlay
-	local sl = addScanlines(screenArea)
-	addCRTFlicker(sl)
+	-- Background Dim
+	create("Frame", {
+		Size = UDim2.new(1, 0, 1, 0),
+		BackgroundColor3 = Color3.new(0, 0, 0),
+		BackgroundTransparency = 0.4,
+		Parent = ui.screen
+	})
+
+	-- Main Panel
+	local mainPanel = create("Frame", {
+		Name = "MainPanel",
+		Size = UDim2.new(0, 700, 0, 550),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5, 0, 0.5, 0),
+		BackgroundColor3 = COLORS.BG_ROOT,
+		BorderSizePixel = 0,
+		Parent = ui.screen
+	})
+	addCorner(mainPanel, 8)
+	addStroke(mainPanel, COLORS.BG_HEADER, 4)
+
+	-- Header
+	local header = create("Frame", {
+		Size = UDim2.new(1, 0, 0, 55),
+		BackgroundColor3 = COLORS.BG_HEADER,
+		Parent = mainPanel
+	})
+	addCorner(header, 8)
+	create("Frame", {
+		Size = UDim2.new(1, 0, 0, 10),
+		Position = UDim2.new(0, 0, 1, -10),
+		BackgroundColor3 = COLORS.BG_HEADER,
+		BorderSizePixel = 0,
+		Parent = header
+	})
+
+	create("TextLabel", {
+		Text = "🎰 SUPPLY DROP",
+		Size = UDim2.new(0.4, 0, 1, 0),
+		Position = UDim2.new(0, 20, 0, 0),
+		Font = FONTS.Header,
+		TextSize = 22,
+		TextColor3 = COLORS.ACCENT_GOLD,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		BackgroundTransparency = 1,
+		Parent = header
+	})
+
+	-- Coins Badge
+	local coinsBadge = create("Frame", {
+		Size = UDim2.new(0, 150, 0, 35),
+		Position = UDim2.new(1, -170, 0.5, 0),
+		AnchorPoint = Vector2.new(0, 0.5),
+		BackgroundColor3 = COLORS.BG_ROOT,
+		Parent = header
+	})
+	addCorner(coinsBadge, 18)
+	addStroke(coinsBadge, COLORS.ACCENT_GOLD, 1)
+
+	ui.coinsLabel = create("TextLabel", {
+		Text = "0",
+		Size = UDim2.new(1, -35, 1, 0),
+		Position = UDim2.new(0, 8, 0, 0),
+		Font = FONTS.Mono,
+		TextSize = 16,
+		TextColor3 = COLORS.TEXT_MAIN,
+		TextXAlignment = Enum.TextXAlignment.Right,
+		BackgroundTransparency = 1,
+		Parent = coinsBadge
+	})
+
+	create("TextLabel", {
+		Text = "🪙",
+		Size = UDim2.new(0, 25, 1, 0),
+		Position = UDim2.new(1, -25, 0, 0),
+		TextSize = 18,
+		BackgroundTransparency = 1,
+		Parent = coinsBadge
+	})
 
 	-- Close Button
 	local closeBtn = create("TextButton", {
-		Parent = screenArea, Size = UDim2.new(0, 30, 0, 30), Position = UDim2.new(1, -10, 0, 10), AnchorPoint = Vector2.new(1, 0),
-		Text = "X", TextColor3 = THEME.Colors.CRT_ALERT, BackgroundTransparency = 1, Font = THEME.Fonts.Header, TextSize = 24, ZIndex=200
+		Text = "X",
+		Size = UDim2.new(0, 32, 0, 32),
+		Position = UDim2.new(1, -18, 0, -16),
+		BackgroundColor3 = COLORS.ACCENT_FAIL,
+		TextColor3 = COLORS.TEXT_MAIN,
+		Font = FONTS.Body,
+		TextSize = 16,
+		Parent = mainPanel
 	})
+	addCorner(closeBtn, 16)
+	addStroke(closeBtn, COLORS.TEXT_MAIN, 2)
 	closeBtn.MouseButton1Click:Connect(function() toggleGachaUI(false) end)
 
-	-- Header
-	ui.headerText = create("TextLabel", {
-		Parent = screenArea, Size = UDim2.new(1, -50, 0, 40), Position = UDim2.new(0, 20, 0, 10),
-		Text = "> SYSTEM READY", Font = THEME.Fonts.Header, TextSize = 28,
-		TextColor3 = THEME.Colors.CRT_GLOW, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
+	-- Tab Buttons
+	local tabContainer = create("Frame", {
+		Size = UDim2.new(1, -20, 0, 40),
+		Position = UDim2.new(0, 10, 0, 60),
+		BackgroundTransparency = 1,
+		Parent = mainPanel
 	})
 
-	-- Left Column: Weapon List
-	local leftCol = create("Frame", {
-		Parent = screenArea, Size = UDim2.new(0.3, 0, 0.8, 0), Position = UDim2.new(0.02, 0, 0.15, 0),
-		BackgroundColor = Color3.fromRGB(0, 20, 30), BackgroundTransparency = 0.5
+	ui.tabRoll = create("TextButton", {
+		Size = UDim2.new(0.5, -5, 1, 0),
+		Position = UDim2.new(0, 0, 0, 0),
+		BackgroundColor3 = COLORS.ACCENT_GOLD,
+		Text = "",
+		Parent = tabContainer
 	})
-	create("UIStroke", {Parent=leftCol, Color=THEME.Colors.CRT_DIM, Thickness=1})
-
-	ui.weaponList = create("ScrollingFrame", {
-		Parent = leftCol, Size = UDim2.new(1, -10, 1, -10), Position = UDim2.new(0, 5, 0, 5),
-		BackgroundTransparency = 1, ScrollBarThickness = 4, ScrollBarImageColor3 = THEME.Colors.CRT_GLOW
+	addCorner(ui.tabRoll, 6)
+	create("TextLabel", {
+		Name = "Label",
+		Text = "🎲 ROLL",
+		Size = UDim2.new(1, 0, 1, 0),
+		Font = FONTS.Header,
+		TextSize = 16,
+		TextColor3 = COLORS.BG_ROOT,
+		BackgroundTransparency = 1,
+		Parent = ui.tabRoll
 	})
-	create("UIListLayout", {Parent=ui.weaponList, Padding=UDim.new(0,2)})
+	ui.tabRoll.MouseButton1Click:Connect(function() switchTab("Roll") end)
 
-	-- Right Column: Preview & Actions
-	local rightCol = create("Frame", {
-		Parent = screenArea, Size = UDim2.new(0.65, 0, 0.8, 0), Position = UDim2.new(0.33, 0, 0.15, 0),
-		BackgroundTransparency = 1
+	ui.tabRewards = create("TextButton", {
+		Size = UDim2.new(0.5, -5, 1, 0),
+		Position = UDim2.new(0.5, 5, 0, 0),
+		BackgroundColor3 = COLORS.BG_PANEL,
+		Text = "",
+		Parent = tabContainer
+	})
+	addCorner(ui.tabRewards, 6)
+	create("TextLabel", {
+		Name = "Label",
+		Text = "📋 REWARDS",
+		Size = UDim2.new(1, 0, 1, 0),
+		Font = FONTS.Header,
+		TextSize = 16,
+		TextColor3 = COLORS.TEXT_DIM,
+		BackgroundTransparency = 1,
+		Parent = ui.tabRewards
+	})
+	ui.tabRewards.MouseButton1Click:Connect(function() switchTab("Rewards") end)
+
+	-- Content Area
+	local contentArea = create("Frame", {
+		Size = UDim2.new(1, -20, 1, -115),
+		Position = UDim2.new(0, 10, 0, 105),
+		BackgroundTransparency = 1,
+		Parent = mainPanel
 	})
 
-	-- Viewport (Grid Background)
-	local viewFrame = create("Frame", {
-		Parent = rightCol, Size = UDim2.new(1, 0, 0.5, 0), BackgroundColor = Color3.fromRGB(0, 10, 10)
-	})
-	create("UIStroke", {Parent=viewFrame, Color=THEME.Colors.CRT_GLOW, Thickness=1})
-
-	create("ImageLabel", { -- Grid
-		Parent = viewFrame, Size = UDim2.new(1,0,1,0), BackgroundTransparency = 1,
-		Image = "rbxassetid://4801088331", ImageColor3 = THEME.Colors.CRT_DIM, ScaleType = Enum.ScaleType.Tile, TileSize = UDim2.new(0, 32, 0, 32)
+	-- ========== ROLL PANEL ==========
+	ui.rollPanel = create("Frame", {
+		Size = UDim2.new(1, 0, 1, 0),
+		BackgroundTransparency = 1,
+		Visible = true,
+		Parent = contentArea
 	})
 
-	ui.viewport = create("ViewportFrame", {
-		Parent = viewFrame, Size = UDim2.new(1,0,1,0), BackgroundTransparency = 1
+	-- Big Gacha Display
+	local gachaDisplay = create("Frame", {
+		Size = UDim2.new(1, 0, 0.55, 0),
+		BackgroundColor3 = COLORS.BG_PANEL,
+		Parent = ui.rollPanel
+	})
+	addCorner(gachaDisplay, 8)
+	addStroke(gachaDisplay, COLORS.ACCENT_GOLD, 2)
+
+	create("TextLabel", {
+		Text = "🎰",
+		Size = UDim2.new(1, 0, 0.6, 0),
+		Position = UDim2.new(0, 0, 0, 10),
+		TextSize = 80,
+		BackgroundTransparency = 1,
+		Parent = gachaDisplay
 	})
 
-	-- Info Panel below viewport
-	local infoPanel = create("Frame", {
-		Parent = rightCol, Size = UDim2.new(1, 0, 0.2, 0), Position = UDim2.new(0, 0, 0.52, 0),
-		BackgroundColor = Color3.fromRGB(0, 20, 30), BackgroundTransparency = 0.5
+	create("TextLabel", {
+		Text = "Try your luck!",
+		Size = UDim2.new(1, 0, 0.2, 0),
+		Position = UDim2.new(0, 0, 0.65, 0),
+		Font = FONTS.Header,
+		TextSize = 20,
+		TextColor3 = COLORS.ACCENT_GOLD,
+		BackgroundTransparency = 1,
+		Parent = gachaDisplay
 	})
 
-	ui.statsLabel = create("TextLabel", {
-		Parent = infoPanel, Size = UDim2.new(0.5, 0, 1, 0), Position = UDim2.new(0.05, 0, 0, 0),
-		Text = "STATS_NULL", Font = THEME.Fonts.Main, TextSize = 14, TextColor3 = THEME.Colors.CRT_GLOW,
-		TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
-	})
-
-	ui.pityLabel = create("TextLabel", {
-		Parent = infoPanel, Size = UDim2.new(0.4, 0, 1, 0), Position = UDim2.new(0.55, 0, 0, 0),
-		Text = "PITY: 00", Font = THEME.Fonts.Header, TextSize = 20, TextColor3 = THEME.Colors.CRT_ALERT,
-		TextXAlignment = Enum.TextXAlignment.Right, BackgroundTransparency = 1
+	create("TextLabel", {
+		Text = "Win Field Kits, Credits, and rare Weapon Skins!",
+		Size = UDim2.new(1, 0, 0.15, 0),
+		Position = UDim2.new(0, 0, 0.82, 0),
+		Font = FONTS.Body,
+		TextSize = 14,
+		TextColor3 = COLORS.TEXT_DIM,
+		BackgroundTransparency = 1,
+		Parent = gachaDisplay
 	})
 
 	-- Buttons Area
 	local btnArea = create("Frame", {
-		Parent = rightCol, Size = UDim2.new(1, 0, 0.25, 0), Position = UDim2.new(0, 0, 0.75, 0),
-		BackgroundTransparency = 1
+		Size = UDim2.new(1, 0, 0.4, -10),
+		Position = UDim2.new(0, 0, 0.6, 10),
+		BackgroundTransparency = 1,
+		Parent = ui.rollPanel
 	})
 
-	ui.rollButton1 = create("TextButton", {
-		Parent = btnArea, Size = UDim2.new(0.3, 0, 0.8, 0), Position = UDim2.new(0, 0, 0.1, 0),
-		BackgroundColor = THEME.Colors.CRT_DIM, TextColor3 = THEME.Colors.CRT_GLOW, Font = THEME.Fonts.Label, TextSize = 14
-	})
-	ui.rollButton10 = create("TextButton", {
-		Parent = btnArea, Size = UDim2.new(0.3, 0, 0.8, 0), Position = UDim2.new(0.35, 0, 0.1, 0),
-		BackgroundColor = THEME.Colors.CRT_DIM, TextColor3 = THEME.Colors.CRT_GLOW, Font = THEME.Fonts.Label, TextSize = 14
-	})
-	ui.freeRollButton = create("TextButton", {
-		Parent = btnArea, Size = UDim2.new(0.3, 0, 0.8, 0), Position = UDim2.new(0.7, 0, 0.1, 0),
-		BackgroundColor = Color3.fromRGB(0, 40, 40), TextColor3 = THEME.Colors.CRT_DIM, Font = THEME.Fonts.Label, TextSize = 14
-	})
+	local function createRollButton(name, text, cost, posX)
+		local btn = create("TextButton", {
+			Name = name,
+			Size = UDim2.new(0.3, -10, 0.8, 0),
+			Position = UDim2.new(posX, 5, 0.1, 0),
+			BackgroundColor3 = COLORS.ACCENT_GOLD,
+			Text = "",
+			Parent = btnArea
+		})
+		addCorner(btn, 8)
+		addStroke(btn, COLORS.BG_ROOT, 2)
 
-	-- Footer info
-	ui.coinsLabel = create("TextLabel", {
-		Parent = screenArea, Size = UDim2.new(0.3, 0, 0.05, 0), Position = UDim2.new(0.02, 0, 0.95, 0),
-		Text = "CREDITS: 0", Font = THEME.Fonts.Main, TextColor3 = THEME.Colors.CRT_GLOW, BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left
-	})
+		create("TextLabel", {
+			Name = "Label",
+			Text = text,
+			Size = UDim2.new(1, 0, 0.5, 0),
+			Font = FONTS.Header,
+			TextSize = 18,
+			TextColor3 = COLORS.BG_ROOT,
+			BackgroundTransparency = 1,
+			Parent = btn
+		})
 
-	-- Overlays
-	ui.overlay = create("Frame", {
-		Name = "LoadingOverlay", Parent = screenArea, Size = UDim2.new(1,0,1,0), BackgroundColor = Color3.new(0,0,0), BackgroundTransparency = 0.1, Visible = false, ZIndex=150
-	})
+		if cost then
+			create("TextLabel", {
+				Text = formatNumber(cost) .. " 🪙",
+				Size = UDim2.new(1, 0, 0.4, 0),
+				Position = UDim2.new(0, 0, 0.55, 0),
+				Font = FONTS.Mono,
+				TextSize = 13,
+				TextColor3 = COLORS.BG_HEADER,
+				BackgroundTransparency = 1,
+				Parent = btn
+			})
+		else
+			create("TextLabel", {
+				Text = "Daily Free",
+				Size = UDim2.new(1, 0, 0.4, 0),
+				Position = UDim2.new(0, 0, 0.55, 0),
+				Font = FONTS.Mono,
+				TextSize = 11,
+				TextColor3 = COLORS.BG_HEADER,
+				BackgroundTransparency = 1,
+				Parent = btn
+			})
+		end
 
-	-- FIX: Removed assigning to ui.overlay.StatusText. Just create it as a child.
-	create("TextLabel", {
-		Name = "StatusText",
-		Parent = ui.overlay, Size = UDim2.new(1,0,0.2,0), Position = UDim2.new(0,0,0.4,0),
-		Text = "PROCESSING...", Font = THEME.Fonts.Header, TextColor3 = THEME.Colors.CRT_GLOW, TextSize = 36, BackgroundTransparency = 1
-	})
+		return btn
+	end
 
-	ui.resultModal = create("Frame", {
-		Name = "ResultModal", Parent = screenArea, Size = UDim2.new(0.6, 0, 0.4, 0), Position = UDim2.new(0.2, 0, 0.3, 0),
-		BackgroundColor = Color3.fromRGB(0, 20, 25), Visible = false, ZIndex=160
-	})
-	create("UIStroke", {Parent=ui.resultModal, Color=THEME.Colors.CRT_GLOW, Thickness=2})
+	ui.rollButton1 = createRollButton("Roll1", "ROLL x1", state.gachaConfig.costs.roll1, 0)
+	ui.rollButton10 = createRollButton("Roll10", "ROLL x10", state.gachaConfig.costs.roll10, 0.33)
+	ui.freeRollButton = createRollButton("FreeRoll", "FREE ROLL", nil, 0.66)
+	ui.freeRollButton.BackgroundColor3 = COLORS.ACCENT_SUCCESS
 
-	-- Store references in a separate table or just create them
-	create("TextLabel", { Name="Title", Parent=ui.resultModal, Size=UDim2.new(1,0,0.2,0), Text="SUCCESS", Font=THEME.Fonts.Header, TextColor3=THEME.Colors.CRT_GLOW, TextSize=24, BackgroundTransparency=1 })
-	create("TextLabel", { Name="ItemName", Parent=ui.resultModal, Size=UDim2.new(1,0,0.3,0), Position=UDim2.new(0,0,0.3,0), Text="ITEM", Font=THEME.Fonts.Main, TextColor3=THEME.Colors.CRT_GLOW, TextSize=20, BackgroundTransparency=1 })
-	create("TextLabel", { Name="Rarity", Parent=ui.resultModal, Size=UDim2.new(1,0,0.2,0), Position=UDim2.new(0,0,0.6,0), Text="COMMON", Font=THEME.Fonts.Label, TextColor3=THEME.Colors.CRT_DIM, TextSize=14, BackgroundTransparency=1 })
-
-	local resOk = create("TextButton", { Parent=ui.resultModal, Size=UDim2.new(0.4,0,0.2,0), Position=UDim2.new(0.3,0,0.8,0), Text="ACKNOWLEDGE", BackgroundColor=THEME.Colors.CRT_DIM, TextColor3=THEME.Colors.CRT_GLOW, Font=THEME.Fonts.Main })
-	resOk.MouseButton1Click:Connect(function() ui.resultModal.Visible = false end)
-
-	ui.multiModal = create("Frame", {
-		Name = "MultiModal", Parent = screenArea, Size = UDim2.new(0.8, 0, 0.8, 0), Position = UDim2.new(0.1, 0, 0.1, 0),
-		BackgroundColor = Color3.fromRGB(0, 20, 25), Visible = false, ZIndex=160
-	})
-	create("UIStroke", {Parent=ui.multiModal, Color=THEME.Colors.CRT_GLOW, Thickness=2})
-	ui.multiGrid = create("ScrollingFrame", { Parent=ui.multiModal, Size=UDim2.new(0.9,0,0.8,0), Position=UDim2.new(0.05,0,0.05,0), BackgroundTransparency=1, BorderSizePixel=0 })
-	create("UIGridLayout", {Parent=ui.multiGrid, CellSize=UDim2.new(0,100,0,100), CellPadding=UDim2.new(0,10,0,10)})
-
-	local multiOk = create("TextButton", { Parent=ui.multiModal, Size=UDim2.new(0.3,0,0.1,0), Position=UDim2.new(0.35,0,0.88,0), Text="ACCEPT BATCH", BackgroundColor=THEME.Colors.CRT_DIM, TextColor3=THEME.Colors.CRT_GLOW, Font=THEME.Fonts.Main })
-	multiOk.MouseButton1Click:Connect(function() ui.multiModal.Visible = false end)
-
-	-- Events
 	ui.rollButton1.MouseButton1Click:Connect(function() handleRoll("single") end)
 	ui.rollButton10.MouseButton1Click:Connect(function() handleRoll("multi") end)
 	ui.freeRollButton.MouseButton1Click:Connect(function() handleRoll("free") end)
 
+	-- ========== REWARDS PANEL ==========
+	ui.rewardsPanel = create("Frame", {
+		Size = UDim2.new(1, 0, 1, 0),
+		BackgroundTransparency = 1,
+		Visible = false,
+		Parent = contentArea
+	})
+
+	create("TextLabel", {
+		Text = "POSSIBLE REWARDS",
+		Size = UDim2.new(1, 0, 0, 30),
+		Font = FONTS.Header,
+		TextSize = 18,
+		TextColor3 = COLORS.ACCENT_GOLD,
+		BackgroundTransparency = 1,
+		Parent = ui.rewardsPanel
+	})
+
+	ui.rewardsList = create("ScrollingFrame", {
+		Size = UDim2.new(1, 0, 1, -40),
+		Position = UDim2.new(0, 0, 0, 35),
+		BackgroundTransparency = 1,
+		ScrollBarThickness = 5,
+		ScrollBarImageColor3 = COLORS.ACCENT_GOLD,
+		CanvasSize = UDim2.new(0, 0, 0, 0),
+		Parent = ui.rewardsPanel
+	})
+	create("UIListLayout", { Padding = UDim.new(0, 8), Parent = ui.rewardsList })
+
+	-- ========== OVERLAYS ==========
+	ui.overlay = create("Frame", {
+		Name = "LoadingOverlay",
+		Size = UDim2.new(1, 0, 1, 0),
+		BackgroundColor3 = Color3.new(0, 0, 0),
+		BackgroundTransparency = 0.5,
+		Visible = false,
+		ZIndex = 150,
+		Parent = mainPanel
+	})
+
+	create("TextLabel", {
+		Name = "StatusText",
+		Text = "PROCESSING...",
+		Size = UDim2.new(1, 0, 0.2, 0),
+		Position = UDim2.new(0, 0, 0.4, 0),
+		Font = FONTS.Header,
+		TextColor3 = COLORS.ACCENT_GOLD,
+		TextSize = 28,
+		BackgroundTransparency = 1,
+		Parent = ui.overlay
+	})
+
+	-- Result Modal
+	ui.resultModal = create("Frame", {
+		Name = "ResultModal",
+		Size = UDim2.new(0.6, 0, 0.55, 0),
+		Position = UDim2.new(0.2, 0, 0.22, 0),
+		BackgroundColor3 = COLORS.BG_PANEL,
+		Visible = false,
+		ZIndex = 160,
+		Parent = mainPanel
+	})
+	addCorner(ui.resultModal, 12)
+	addStroke(ui.resultModal, COLORS.ACCENT_GOLD, 3)
+
+	create("TextLabel", { Name = "Title", Text = "ACQUISITION CONFIRMED", Size = UDim2.new(1, 0, 0.12, 0), Position = UDim2.new(0, 0, 0.02, 0), Font = FONTS.Header, TextColor3 = COLORS.ACCENT_GOLD, TextSize = 18, BackgroundTransparency = 1, Parent = ui.resultModal })
+	create("ImageLabel", { Name = "IconImage", Size = UDim2.new(0, 100, 0, 100), Position = UDim2.new(0.5, 0, 0.18, 0), AnchorPoint = Vector2.new(0.5, 0), BackgroundTransparency = 1, Image = "", Visible = false, ZIndex = 161, Parent = ui.resultModal })
+	create("TextLabel", { Name = "ItemName", Text = "ITEM", Size = UDim2.new(1, 0, 0.12, 0), Position = UDim2.new(0, 0, 0.62, 0), Font = FONTS.Header, TextColor3 = COLORS.TEXT_MAIN, TextSize = 20, BackgroundTransparency = 1, Parent = ui.resultModal })
+	create("TextLabel", { Name = "Rarity", Text = "COMMON", Size = UDim2.new(1, 0, 0.1, 0), Position = UDim2.new(0, 0, 0.74, 0), Font = FONTS.Mono, TextColor3 = COLORS.TEXT_DIM, TextSize = 13, BackgroundTransparency = 1, Parent = ui.resultModal })
+
+	local okBtn = create("TextButton", { Name = "OkButton", Text = "", Size = UDim2.new(0.35, 0, 0.1, 0), Position = UDim2.new(0.325, 0, 0.87, 0), BackgroundColor3 = COLORS.ACCENT_GOLD, Parent = ui.resultModal })
+	addCorner(okBtn, 6)
+	create("TextLabel", { Text = "CONFIRM", Size = UDim2.new(1, 0, 1, 0), Font = FONTS.Header, TextSize = 14, TextColor3 = COLORS.BG_ROOT, BackgroundTransparency = 1, Parent = okBtn })
+	okBtn.MouseButton1Click:Connect(function() ui.resultModal.Visible = false end)
+
+	-- Multi Result Modal
+	ui.multiModal = create("Frame", {
+		Name = "MultiModal",
+		Size = UDim2.new(0.9, 0, 0.85, 0),
+		Position = UDim2.new(0.05, 0, 0.075, 0),
+		BackgroundColor3 = COLORS.BG_PANEL,
+		Visible = false,
+		ZIndex = 160,
+		Parent = mainPanel
+	})
+	addCorner(ui.multiModal, 12)
+	addStroke(ui.multiModal, COLORS.ACCENT_GOLD, 3)
+
+	create("TextLabel", { Text = "BATCH RESULTS", Size = UDim2.new(1, 0, 0, 30), Position = UDim2.new(0, 0, 0, 5), Font = FONTS.Header, TextSize = 16, TextColor3 = COLORS.ACCENT_GOLD, BackgroundTransparency = 1, Parent = ui.multiModal })
+
+	ui.multiGrid = create("ScrollingFrame", { Size = UDim2.new(0.95, 0, 0.75, 0), Position = UDim2.new(0.025, 0, 0.08, 0), BackgroundTransparency = 1, ScrollBarThickness = 4, ScrollBarImageColor3 = COLORS.ACCENT_GOLD, Parent = ui.multiModal })
+	create("UIGridLayout", { CellSize = UDim2.new(0, 100, 0, 100), CellPadding = UDim2.new(0, 8, 0, 8), Parent = ui.multiGrid })
+
+	local multiOkBtn = create("TextButton", { Text = "", Size = UDim2.new(0.25, 0, 0.08, 0), Position = UDim2.new(0.375, 0, 0.9, 0), BackgroundColor3 = COLORS.ACCENT_GOLD, Parent = ui.multiModal })
+	addCorner(multiOkBtn, 6)
+	create("TextLabel", { Text = "ACCEPT ALL", Size = UDim2.new(1, 0, 1, 0), Font = FONTS.Header, TextSize = 14, TextColor3 = COLORS.BG_ROOT, BackgroundTransparency = 1, Parent = multiOkBtn })
+	multiOkBtn.MouseButton1Click:Connect(function() ui.multiModal.Visible = false end)
+
+	-- Server Events
 	GachaRollEvent.OnClientEvent:Connect(function(result) showRollAnimation(function() showResultModal(result.Prize) end) end)
 	GachaMultiRollEvent.OnClientEvent:Connect(function(result) showRollAnimation(function() showMultiResultModal(result.Prizes) end) end)
 	GachaFreeRollEvent.OnClientEvent:Connect(function(result) showRollAnimation(function() showResultModal(result.Prize) end) end)
-
 end
 
-
--- ================== INITIALIZATION ==================
+-- ================== TOGGLE UI ==================
 
 toggleGachaUI = function(visible)
 	if visible then
 		if not ui.screen then createUI() end
 		ui.screen.Enabled = true
-		populateWeaponSelector()
+		switchTab("Roll")
 		updateMainUI()
 
-		-- Enable Blur
 		if state.blurEffect then 
 			state.blurEffect.Enabled = true
-			TweenService:Create(state.blurEffect, TweenInfo.new(0.5), {Size=20}):Play()
+			TweenService:Create(state.blurEffect, TweenInfo.new(0.3), {Size = 15}):Play()
 		end
 
-		-- Animation: CRT Turn On
-		local frame = ui.screen.Monitor.Screen
-		frame.Size = UDim2.new(0.95, 0, 0.01, 0)
-		frame:TweenSize(UDim2.new(0.95, 0, 0.95, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Elastic, 0.5, true)
+		local mainPanel = ui.screen:FindFirstChild("MainPanel")
+		if mainPanel then
+			mainPanel.Position = UDim2.new(0.5, 0, 0.6, 0)
+			TweenService:Create(mainPanel, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+				Position = UDim2.new(0.5, 0, 0.5, 0)
+			}):Play()
+		end
 	else
 		if ui.screen then 
 			ui.screen.Enabled = false 
-			-- Disable Blur
 			if state.blurEffect then 
-				TweenService:Create(state.blurEffect, TweenInfo.new(0.5), {Size=0}):Play()
-				task.delay(0.5, function() state.blurEffect.Enabled = false end)
+				TweenService:Create(state.blurEffect, TweenInfo.new(0.3), {Size = 0}):Play()
+				task.delay(0.3, function() if state.blurEffect then state.blurEffect.Enabled = false end end)
 			end
 		end
 	end
 end
 
-initializeGachaData = function()
+-- ================== INIT ==================
+
+local function initializeGachaData()
 	CoinsUpdateEvent.OnClientEvent:Connect(function(newAmount)
 		state.coins = newAmount
 		if ui.screen and ui.screen.Enabled then updateMainUI() end
@@ -559,10 +899,7 @@ initializeGachaData = function()
 		local status = GetGachaStatus:InvokeServer()
 		if status then
 			state.coins = status.Coins or 0
-			state.pityCount = status.PityCount or 0
-			state.pityThreshold = status.PityThreshold or 50
-			local lastClaim = status.LastFreeGachaClaimUTC or 0
-			state.freeRollAvailable = (os.time() - lastClaim) > 86400
+			state.freeRollAvailable = status.FreeRollAvailable or false
 		end
 	end)
 end
@@ -570,25 +907,58 @@ end
 initializeGachaData()
 
 local function setupPrompt()
-	local lobbyEnv = Workspace:WaitForChild("LobbyEnvironment", 10)
-	if not lobbyEnv then return end
+	print("[GachaUI] setupPrompt() starting...")
+	local lobbyEnv = Workspace:WaitForChild("LobbyEnvironment", 15)
+	if not lobbyEnv then 
+		warn("[GachaUI] LobbyEnvironment not found!")
+		return 
+	end
+	print("[GachaUI] Found LobbyEnvironment")
 
-	local shopPart = lobbyEnv:WaitForChild("Gacha", 10)
-	if shopPart then
-		local prompt = shopPart:FindFirstChildOfClass("ProximityPrompt")
+	local gachaMachine = lobbyEnv:WaitForChild("Gacha", 15)
+	if gachaMachine then
+		print("[GachaUI] Found Gacha machine: " .. gachaMachine:GetFullName())
+		
+		-- Wait for ProximityPrompt with retry logic
+		local prompt = nil
+		local retries = 0
+		local maxRetries = 10
+		
+		while not prompt and retries < maxRetries do
+			prompt = gachaMachine:FindFirstChildWhichIsA("ProximityPrompt", true)
+			if not prompt then
+				retries = retries + 1
+				print("[GachaUI] Waiting for ProximityPrompt... attempt " .. retries)
+				task.wait(0.5)
+			end
+		end
+		
 		if prompt then
-			prompt.Triggered:Connect(function()
+			print("[GachaUI] Found ProximityPrompt: " .. prompt:GetFullName())
+			prompt.Triggered:Connect(function(playerWhoTriggered)
+				print("[GachaUI] Prompt triggered by: " .. playerWhoTriggered.Name)
 				if ui.screen and ui.screen.Enabled then
 					toggleGachaUI(false)
 				else
 					toggleGachaUI(true)
 				end
 			end)
+			print("[GachaUI] Connected to prompt successfully!")
+		else
+			warn("[GachaUI] ProximityPrompt not found after " .. maxRetries .. " retries!")
+			-- Debug: list all descendants
+			print("[GachaUI] Gacha machine descendants:")
+			for _, desc in ipairs(gachaMachine:GetDescendants()) do
+				print("  - " .. desc.ClassName .. ": " .. desc.Name)
+			end
 		end
+	else
+		warn("[GachaUI] Gacha machine not found!")
 	end
 end
 
 task.spawn(setupPrompt)
+print("[GachaUI] Script fully loaded!")
 
--- print removed
 return {}
+
