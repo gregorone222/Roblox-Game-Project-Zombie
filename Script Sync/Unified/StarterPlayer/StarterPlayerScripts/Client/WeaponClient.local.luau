@@ -505,6 +505,8 @@ local function onInputBegan(input, gpe)
 
 	-- ADS (Right-click)
 	if input.UserInputType == Enum.UserInputType.MouseButton2 then
+		-- Check if weapon allows ADS
+		if weaponStats.CanADS == false then return end
 		if not reloading and not isKnocked then
 			isAiming = true
 			currentWeapon:SetAttribute("IsAiming", true)
@@ -1115,6 +1117,9 @@ end
 -- Mobile Aim Button Handler
 local function handleToggleAim()
 	if not currentWeapon or not weaponStats or reloading or isKnocked then return end
+
+	-- Check if weapon allows ADS
+	if weaponStats.CanADS == false then return end
 
 	-- Toggle the aiming state
 	isAiming = not isAiming

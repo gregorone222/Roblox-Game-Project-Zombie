@@ -410,6 +410,21 @@ local function startGameLoop()
 							print(plr.Name .. " used StartingShield booster and received a 50% shield.")
 						end
 					end
+				elseif usedBooster == Constants.Strings.AMMO_CACHE_BOOSTER then
+					-- AmmoCache: +50% max ammo pada semua senjata
+					if plr.Character then
+						plr.Character:SetAttribute("AmmoBoost", true)
+					end
+					print(plr.Name .. " used AmmoCache booster and received +50% max ammo.")
+				elseif usedBooster == Constants.Strings.COMMANDER_BUFF_BOOSTER then
+					-- CommanderBuff: +10% damage untuk semua ally
+					for _, ally in ipairs(Players:GetPlayers()) do
+						if ally.Character then
+							local currentBonus = ally.Character:GetAttribute("DamageBonusPct") or 0
+							ally.Character:SetAttribute("DamageBonusPct", currentBonus + 10)
+						end
+					end
+					print(plr.Name .. " used CommanderBuff booster! All allies get +10% damage.")
 				end
 			end
 		end

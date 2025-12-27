@@ -1358,10 +1358,20 @@ WeaponModule.Weapons = {
 		ADS_BlendTimeVM = 0.2,
 		ViewmodelPosition = Vector3.new(1.5, -1, -2.5),
 		ViewmodelRotation = Vector3.new(0, 0, 0),
+		CanSprint = false, -- Minigun terlalu berat untuk lari
+		CanADS = false, -- Minigun tidak punya ironsight
 		Sounds = {
 			Fire = "Weapons.LMG.Fire",
 			Reload = "Weapons.LMG.Reload",
 			Empty = "Weapons.Empty"
+		},
+		Animations = {
+			Idle = {
+				Id = "rbxassetid://117086210494708",
+				Position = Vector3.new(0.117, -1.563, -0.250),
+				Rotation = Vector3.new(5, 353, 0)
+			}
+			-- No Run or ADS animation
 		},
 		UpgradeConfig = {
 			BaseCost = 999999999,

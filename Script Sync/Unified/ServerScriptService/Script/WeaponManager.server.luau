@@ -86,9 +86,19 @@ local function applyDamageAndStats(player, targetHumanoid, hitModel, damage, isH
 	end
 
 	local finalDamage = damage
+
+	-- Apply DamageBonusPct (from CommanderBuff Field Kit)
+	local char = player.Character
+	if char then
+		local damageBonus = char:GetAttribute("DamageBonusPct") or 0
+		if damageBonus > 0 then
+			finalDamage = finalDamage * (1 + (damageBonus / 100))
+		end
+	end
+
 	-- Terapkan efek elemental dan reduksi damage hanya pada zombie
 	if isZombie then
-		finalDamage = ElementModule.OnPlayerHit(player, hitModel, damage) or damage
+		finalDamage = ElementModule.OnPlayerHit(player, hitModel, finalDamage) or finalDamage
 		if hitModel:GetAttribute("Immune") then
 			finalDamage = 0
 		else
@@ -189,6 +199,11 @@ local function setupToolAmmoForPlayer(player, tool)
 
 	local weaponStats = WeaponModule.Weapons[weaponName]
 	local initMax, initReserve = calculateWeaponStats(tool, weaponStats)
+
+	-- Apply AmmoCache booster bonus (+50% reserve ammo)
+	if player.Character and player.Character:GetAttribute("AmmoBoost") then
+		initReserve = math.floor(initReserve * 1.5)
+	end
 
 	if playerAmmo[player][id] == nil then
 		playerAmmo[player][id] = initMax

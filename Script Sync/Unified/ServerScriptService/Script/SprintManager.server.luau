@@ -17,6 +17,7 @@ local ModuleScriptReplicatedStorage = ReplicatedStorage.ModuleScript
 local DebuffManager = require(ModuleScriptServerScriptService:WaitForChild("DebuffModule"))
 local SkillModule = require(ModuleScriptServerScriptService:WaitForChild("SkillModule"))
 local SkillConfig = require(ModuleScriptReplicatedStorage:WaitForChild("SkillConfig"))
+local WeaponModule = require(ModuleScriptReplicatedStorage:WaitForChild("WeaponModule"))
 
 local sprintEvent = RemoteEvents:WaitForChild("SprintEvent")
 local staminaUpdate = RemoteEvents:WaitForChild("StaminaUpdate")
@@ -109,7 +110,7 @@ sprintEvent.OnServerEvent:Connect(function(player, action)
 	local currentMaxStamina = calculateMaxStamina(player)
 
 	if action == "Start" then
-		-- Tambahan: Cek apakah pemain terkena debuff slow
+		-- Cek apakah pemain terkena debuff slow
 		local speedMultiplier = DebuffManager.GetSpeedMultiplier(player)
 		if speedMultiplier < 1 then
 			return -- Jangan izinkan sprint jika sedang diperlambat
@@ -119,6 +120,16 @@ sprintEvent.OnServerEvent:Connect(function(player, action)
 		if not (hum and hum.MoveDirection.Magnitude > 0.1) then
 			return -- jangan set isSprinting kalau belum ada gerakan
 		end
+
+		-- Check if equipped weapon allows sprinting
+		local tool = char and char:FindFirstChildOfClass("Tool")
+		if tool then
+			local weaponStats = WeaponModule.Weapons[tool.Name]
+			if weaponStats and weaponStats.CanSprint == false then
+				return -- Weapon prevents sprinting (e.g. Minigun)
+			end
+		end
+
 		if data.stamina > (MIN_TO_SPRINT * (char:GetAttribute("StaminaBoost") and 1.3 or 1)) and not data.isSprinting then
 			data.isSprinting = true
 			if char then char:SetAttribute("IsSprinting", true) end
