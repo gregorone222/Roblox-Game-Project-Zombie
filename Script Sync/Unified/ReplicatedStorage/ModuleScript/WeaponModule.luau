@@ -919,6 +919,24 @@ WeaponModule.Weapons = {
 			Reload = "Weapons.Shotgun.Reload",
 			Empty = "Weapons.Empty"
 		},
+		Animations = {
+			-- Per-animation viewmodel positions (R15 animations)
+			Idle = {
+				Id = "rbxassetid://119675476115615",
+				Position = Vector3.new(0.117, -1.563, -0.250),
+				Rotation = Vector3.new(5, 353, 0)
+			},
+			Run = {
+				Id = "rbxassetid://72738152181538",
+				Position = Vector3.new(0.100, -1.650, -0.750),
+				Rotation = Vector3.new(6, 0, -7)
+			},
+			ADS = {
+				Id = "rbxassetid://125449482472477",
+				Position = Vector3.new(-0.365, -1.698, 0.329),
+				Rotation = Vector3.new(0, -8, 0)
+			}
+		},
 		UpgradeConfig = {
 			BaseCost = 200,
 			CostMultiplier = 1.5,
@@ -975,6 +993,24 @@ WeaponModule.Weapons = {
 			Reload = "Weapons.Sniper.Reload",
 			Empty = "Weapons.Empty"
 		},
+		Animations = {
+			-- Per-animation viewmodel positions (R15 animations)
+			Idle = {
+				Id = "rbxassetid://73084256588653",
+				Position = Vector3.new(0.117, -1.563, -0.250),
+				Rotation = Vector3.new(5, 353, 0)
+			},
+			Run = {
+				Id = "rbxassetid://74716272041408",
+				Position = Vector3.new(0.100, -1.650, -0.750),
+				Rotation = Vector3.new(6, 0, -7)
+			},
+			ADS = {
+				Id = "rbxassetid://131460503822549",
+				Position = Vector3.new(-0.365, -1.698, 0.329),
+				Rotation = Vector3.new(0, -8, 0)
+			}
+		},
 		UpgradeConfig = {
 			BaseCost = 300,
 			CostMultiplier = 1.8,
@@ -1030,6 +1066,24 @@ WeaponModule.Weapons = {
 			Fire = "Weapons.Sniper.Fire",
 			Reload = "Weapons.Sniper.Reload",
 			Empty = "Weapons.Empty"
+		},
+		Animations = {
+			-- Per-animation viewmodel positions (R15 animations)
+			Idle = {
+				Id = "rbxassetid://71565555918300",
+				Position = Vector3.new(0.117, -1.563, -0.250),
+				Rotation = Vector3.new(5, 353, 0)
+			},
+			Run = {
+				Id = "rbxassetid://90253703014927",
+				Position = Vector3.new(0.100, -1.650, -0.750),
+				Rotation = Vector3.new(6, 0, -7)
+			},
+			ADS = {
+				Id = "rbxassetid://107171463147424",
+				Position = Vector3.new(-0.365, -1.698, 0.329),
+				Rotation = Vector3.new(0, -8, 0)
+			}
 		},
 		UpgradeConfig = {
 			BaseCost = 350,
