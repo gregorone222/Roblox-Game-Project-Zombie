@@ -41,7 +41,7 @@ DataStoreManager:Init()
 -- Game Mode Initialization
 -- Game Initialization
 local gameMode = Constants.Strings.GAME_MODE_STORY -- Default to Story
-local difficulty = Constants.Strings.DIFFICULTY_EASY -- Default difficulty
+local difficulty = Constants.Strings.DIFFICULTY_NORMAL -- Default difficulty
 local gameInitialized = false
 
 local function initializeGameSettings(player)
@@ -52,13 +52,13 @@ local function initializeGameSettings(player)
 
 	if teleportData then
 		gameMode = teleportData.gameMode or Constants.Strings.GAME_MODE_STORY
-		difficulty = teleportData.difficulty or Constants.Strings.DIFFICULTY_EASY
+		difficulty = teleportData.difficulty or Constants.Strings.DIFFICULTY_NORMAL
 		gameInitialized = true
 		print(string.format("Game settings initialized from JoinData. Mode: %s, Difficulty: %s", gameMode, difficulty))
 	else
 		-- Fallback for players joining directly or if data is missing
 		gameInitialized = true
-		print("No JoinData found for game settings. Defaulting to Story and Easy.")
+		print("No JoinData found for game settings. Defaulting to Story and Normal.")
 	end
 
 	-- DEBUG / PREVIEW MODE: Load Act 1 Map immediately if requested

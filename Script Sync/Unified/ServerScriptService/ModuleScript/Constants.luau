@@ -81,7 +81,7 @@ Constants.Attributes = {
 -- String dan Nilai Lainnya
 Constants.Strings = {
 	GAME_MODE_STORY = "Story",
-	DIFFICULTY_EASY = "Easy",
+	DIFFICULTY_NORMAL = "Normal",
 	CHAMS_HIGHLIGHT = "ChamsHighlight",
 	COIN_BOOSTER_1GAME = "COIN_BOOSTER_1GAME",
 	XP_BOOSTER_30MIN = "XP_BOOSTER_30MIN",
