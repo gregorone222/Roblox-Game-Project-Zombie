@@ -48,9 +48,9 @@ end
 local DataStoreManager = require(ServerScriptService.ModuleScript:WaitForChild("DataStoreManager"))
 DataStoreManager:Init()
 local DailyRewardManager = require(ServerScriptService.ModuleScript:WaitForChild("DailyRewardManager"))
-local CoinsManager = require(ServerScriptService.ModuleScript:WaitForChild("CoinsModule"))
 local ProfileModule = require(ServerScriptService.ModuleScript:WaitForChild("ProfileModule"))
 local MissionManager = require(ServerScriptService.ModuleScript:WaitForChild("MissionManager"))
+local InventoryManager = require(ServerScriptService.ModuleScript:WaitForChild("InventoryManager"))
 
 -- === BUILD LOBBY ENVIRONMENT ===
 -- UPDATED: Use Farmhouse lobby (Cozy Apocalypse theme)
@@ -92,7 +92,7 @@ local profileFunc = ensureRemote(RemoteFunctions, "GetProfileData", "RemoteFunct
 profileFunc.OnServerInvoke = function(player) return ProfileModule.GetProfileData(player) end
 
 local invFunc = ensureRemote(RemoteFunctions, "GetInventoryData", "RemoteFunction")
-invFunc.OnServerInvoke = function(player) return CoinsManager.GetData(player) end
+invFunc.OnServerInvoke = function(player) return InventoryManager.GetFullInventory(player) end
 
 -- 3. Missions
 local missionDataFunc = ensureRemote(RemoteFunctions, "GetMissionData", "RemoteFunction")

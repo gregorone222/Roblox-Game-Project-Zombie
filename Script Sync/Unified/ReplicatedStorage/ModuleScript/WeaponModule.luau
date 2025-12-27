@@ -1141,6 +1141,24 @@ WeaponModule.Weapons = {
 			Reload = "Weapons.LMG.Reload",
 			Empty = "Weapons.Empty"
 		},
+		Animations = {
+			-- Per-animation viewmodel positions (R15 animations)
+			Idle = {
+				Id = "rbxassetid://121758187645048",
+				Position = Vector3.new(0.117, -1.563, -0.250),
+				Rotation = Vector3.new(5, 353, 0)
+			},
+			Run = {
+				Id = "rbxassetid://123186347874158",
+				Position = Vector3.new(0.100, -1.650, -0.750),
+				Rotation = Vector3.new(6, 0, -7)
+			},
+			ADS = {
+				Id = "rbxassetid://83607468509793",
+				Position = Vector3.new(-0.365, -1.698, 0.329),
+				Rotation = Vector3.new(0, -8, 0)
+			}
+		},
 		UpgradeConfig = {
 			BaseCost = 280,
 			CostMultiplier = 1.7,
@@ -1252,6 +1270,24 @@ WeaponModule.Weapons = {
 			Fire = "Weapons.LMG.Fire",
 			Reload = "Weapons.LMG.Reload",
 			Empty = "Weapons.Empty"
+		},
+		Animations = {
+			-- Per-animation viewmodel positions (R15 animations)
+			Idle = {
+				Id = "rbxassetid://121454959363022",
+				Position = Vector3.new(0.117, -1.563, -0.250),
+				Rotation = Vector3.new(5, 353, 0)
+			},
+			Run = {
+				Id = "rbxassetid://99603718756982",
+				Position = Vector3.new(0.100, -1.650, -0.750),
+				Rotation = Vector3.new(6, 0, -7)
+			},
+			ADS = {
+				Id = "rbxassetid://101603965159074",
+				Position = Vector3.new(-0.365, -1.698, 0.329),
+				Rotation = Vector3.new(0, -8, 0)
+			}
 		},
 		UpgradeConfig = {
 			BaseCost = 320,

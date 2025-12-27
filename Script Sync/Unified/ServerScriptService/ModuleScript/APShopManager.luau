@@ -14,7 +14,7 @@ local APShopConfig = require(script.Parent:WaitForChild("APShopConfig"))
 local StatsModule = require(script.Parent:WaitForChild("StatsModule"))
 local SkinManager = require(script.Parent:WaitForChild("SkinManager"))
 local WeaponModule = require(ReplicatedStorage:WaitForChild("ModuleScript"):WaitForChild("WeaponModule"))
-local CoinsManager = require(script.Parent:WaitForChild("CoinsModule"))
+local InventoryManager = require(script.Parent:WaitForChild("InventoryManager"))
 
 local APShopManager = {}
 
@@ -77,11 +77,8 @@ function APShopManager:PurchaseSkinWithAP(player, weaponName, skinName)
 	end
 
 	-- Validasi 3: Apakah pemain sudah memiliki skin ini?
-	local inventoryData = CoinsManager.GetData(player)
-	if inventoryData and inventoryData.Skins and inventoryData.Skins.Owned and inventoryData.Skins.Owned[weaponName] then
-		if table.find(inventoryData.Skins.Owned[weaponName], skinName) then
-			return { Success = false, Reason = "Anda sudah memiliki skin ini." }
-		end
+	if InventoryManager.OwnsSkin(player, weaponName, skinName) then
+		return { Success = false, Reason = "Anda sudah memiliki skin ini." }
 	end
 
 	-- Validasi 4: Apakah pemain memiliki cukup Achievement Points?
@@ -98,11 +95,11 @@ function APShopManager:PurchaseSkinWithAP(player, weaponName, skinName)
 	end
 
 	-- Berikan skin kepada pemain
-	local skinAdded = CoinsManager.AddSkin(player, weaponName, skinName)
+	local skinAdded, skinError = InventoryManager.AddSkin(player, weaponName, skinName)
 	if not skinAdded then
 		-- Jika gagal menambahkan skin, kembalikan poin pemain untuk mencegah kerugian
 		StatsModule.AddAchievementPoints(player, cost)
-		return { Success = false, Reason = "Gagal menambahkan skin ke inventaris." }
+		return { Success = false, Reason = skinError or "Gagal menambahkan skin ke inventaris." }
 	end
 
 	print(string.format("%s berhasil membeli skin '%s' untuk '%s' seharga %d AP.", player.Name, skinName, weaponName, cost))

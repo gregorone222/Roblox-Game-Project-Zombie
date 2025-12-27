@@ -11,6 +11,7 @@ local ServerScriptService = game:GetService("ServerScriptService")
 
 -- Memuat modul yang diperlukan
 local CoinsManager = require(ServerScriptService.ModuleScript:WaitForChild("CoinsModule"))
+local InventoryManager = require(ServerScriptService.ModuleScript:WaitForChild("InventoryManager"))
 local GachaConfig = require(ServerScriptService.ModuleScript:WaitForChild("GachaConfig"))
 local WeaponModule = require(ReplicatedStorage.ModuleScript:WaitForChild("WeaponModule"))
 local BoosterModule = require(ServerScriptService.ModuleScript:WaitForChild("BoosterModule"))
@@ -21,8 +22,7 @@ local GachaModule = {}
 -- Fungsi untuk mendapatkan daftar semua skin yang *belum* dimiliki pemain
 -- [MODIFIED] Fungsi untuk mendapatkan daftar skin yang belum dimiliki pemain UNTUK SENJATA TERTENTU
 local function getAvailableSkinsForWeapon(player, weaponName)
-	local inventoryData = CoinsManager.GetData(player)
-	local ownedSkins = inventoryData.Skins.Owned
+	local ownedSkins = InventoryManager.GetOwnedSkins(player)
 	local availableSkins = {}
 
 	-- Validasi apakah nama senjata ada di WeaponModule
@@ -35,18 +35,7 @@ local function getAvailableSkinsForWeapon(player, weaponName)
 	for skinName, _ in pairs(weaponData.Skins) do
 		if skinName ~= "Default Skin" then
 			-- Cek apakah pemain sudah memiliki skin ini
-			local hasSkin = false
-			if ownedSkins[weaponName] then
-				for _, ownedSkinName in ipairs(ownedSkins[weaponName]) do
-					if ownedSkinName == skinName then
-						hasSkin = true
-						break
-					end
-				end
-			end
-
-			-- Jika belum dimiliki, tambahkan ke daftar
-			if not hasSkin then
+			if not InventoryManager.OwnsSkin(player, weaponName, skinName) then
 				table.insert(availableSkins, {Weapon = weaponName, Skin = skinName})
 			end
 		end
@@ -95,7 +84,7 @@ local function performSingleRoll(player, playerData, weaponName)
 	if chosenRarity == "Legendary" then
 		local randomSkinIndex = math.random(1, #availableSkins)
 		local prize = availableSkins[randomSkinIndex]
-		CoinsManager.AddSkin(player, prize.Weapon, prize.Skin)
+		InventoryManager.AddSkin(player, prize.Weapon, prize.Skin)
 		GachaSkinWonEvent:FireAllClients(player, prize.Skin)
 		return { Type = "Skin", WeaponName = prize.Weapon, SkinName = prize.Skin }
 	elseif chosenRarity == "Booster" then

@@ -21,7 +21,7 @@ local WeaponModule = require(ModuleScriptReplicatedStorage:WaitForChild("WeaponM
 local RandomConfig = require(ModuleScriptServerScriptService:WaitForChild("RandomWeaponConfig"))
 local SessionDataManager = require(ModuleScriptServerScriptService:WaitForChild("SessionDataManager"))
 local PointsSystem = require(ModuleScriptServerScriptService:WaitForChild("PointsModule"))
-local CoinsManager = require(ModuleScriptServerScriptService:WaitForChild("CoinsModule"))
+local InventoryManager = require(ModuleScriptServerScriptService:WaitForChild("InventoryManager"))
 local BoosterModule = require(ModuleScriptServerScriptService:WaitForChild("BoosterModule"))
 
 local openReplaceUI = RemoteEvents:WaitForChild("OpenReplaceUI")
@@ -114,12 +114,9 @@ Players.PlayerAdded:Connect(function(player)
 			local clone = template:Clone()
 			clone:SetAttribute("WeaponId", HttpService:GenerateGUID(false))
 
-			local inventoryData = CoinsManager.GetData(player)
-			if inventoryData and inventoryData.Skins and inventoryData.Skins.Equipped then
-				local equippedSkin = inventoryData.Skins.Equipped[clone.Name]
-				if equippedSkin then
-					clone:SetAttribute("EquippedSkin", equippedSkin)
-				end
+			local equippedSkin = InventoryManager.GetEquippedSkin(player, clone.Name)
+			if equippedSkin then
+				clone:SetAttribute("EquippedSkin", equippedSkin)
 			end
 
 			clone.Parent = player:FindFirstChild("Backpack") or player
@@ -171,10 +168,9 @@ purchaseRF.OnServerInvoke = function(player)
 	local newWeaponId = HttpService:GenerateGUID(false)
 	clone:SetAttribute("WeaponId", newWeaponId)
 
-	local inventoryData = CoinsManager.GetData(player)
-	if inventoryData and inventoryData.Skins and inventoryData.Skins.Equipped then
-		local equippedSkin = inventoryData.Skins.Equipped[clone.Name]
-		if equippedSkin then clone:SetAttribute("EquippedSkin", equippedSkin) end
+	local equippedSkin = InventoryManager.GetEquippedSkin(player, clone.Name)
+	if equippedSkin then
+		clone:SetAttribute("EquippedSkin", equippedSkin)
 	end
 
 	local weapons = getPlayerWeapons(player)

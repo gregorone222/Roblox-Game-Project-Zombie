@@ -14,7 +14,7 @@ local MPShopConfig = require(ServerScriptService.ModuleScript:WaitForChild("MPSh
 local MissionPointsModule = require(ServerScriptService.ModuleScript:WaitForChild("MissionPointsModule"))
 local SkinManager = require(ServerScriptService.ModuleScript:WaitForChild("SkinManager"))
 local WeaponModule = require(ReplicatedStorage.ModuleScript:WaitForChild("WeaponModule"))
-local CoinsManager = require(ServerScriptService.ModuleScript:WaitForChild("CoinsModule"))
+local InventoryManager = require(ServerScriptService.ModuleScript:WaitForChild("InventoryManager"))
 
 local MPShopManager = {}
 
@@ -78,11 +78,8 @@ function MPShopManager:PurchaseSkin(player, weaponName, skinName)
 	end
 
 	-- Validasi 3: Apakah pemain sudah memiliki skin ini?
-	local inventoryData = CoinsManager.GetData(player)
-	if inventoryData and inventoryData.Skins and inventoryData.Skins.Owned and inventoryData.Skins.Owned[weaponName] then
-		if table.find(inventoryData.Skins.Owned[weaponName], skinName) then
-			return { Success = false, Reason = "Anda sudah memiliki skin ini." }
-		end
+	if InventoryManager.OwnsSkin(player, weaponName, skinName) then
+		return { Success = false, Reason = "Anda sudah memiliki skin ini." }
 	end
 
 	-- Validasi 4: Apakah pemain memiliki cukup Mission Points?
@@ -99,11 +96,11 @@ function MPShopManager:PurchaseSkin(player, weaponName, skinName)
 	end
 
 	-- Berikan skin kepada pemain
-	local skinAdded = CoinsManager.AddSkin(player, weaponName, skinName)
+	local skinAdded, skinError = InventoryManager.AddSkin(player, weaponName, skinName)
 	if not skinAdded then
 		-- Jika gagal menambahkan skin, kembalikan poin pemain untuk mencegah kerugian
 		MissionPointsModule:AddMissionPoints(player, cost)
-		return { Success = false, Reason = "Gagal menambahkan skin ke inventaris." }
+		return { Success = false, Reason = skinError or "Gagal menambahkan skin ke inventaris." }
 	end
 
 	print(string.format("%s berhasil membeli skin '%s' untuk '%s' seharga %d MP.", player.Name, skinName, weaponName, cost))

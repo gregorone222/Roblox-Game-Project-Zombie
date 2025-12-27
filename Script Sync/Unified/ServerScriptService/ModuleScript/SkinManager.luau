@@ -11,6 +11,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- Memuat modul yang diperlukan
 local DataStoreManager = require(ServerScriptService.ModuleScript:WaitForChild("DataStoreManager"))
+local InventoryManager = require(ServerScriptService.ModuleScript:WaitForChild("InventoryManager"))
 local CoinsManager = require(ServerScriptService.ModuleScript:WaitForChild("CoinsModule"))
 local WeaponModule = require(ReplicatedStorage.ModuleScript:WaitForChild("WeaponModule"))
 
@@ -29,13 +30,7 @@ end
 -- Fungsi untuk mendapatkan skin yang sedang dipakai pemain untuk senjata tertentu
 function SkinManager.GetEquippedSkin(player, weaponName)
 	if not player or not weaponName then return nil end
-
-	local inventoryData = SkinManager.GetInventoryData(player)
-	if inventoryData and inventoryData.Skins and inventoryData.Skins.Equipped then
-		return inventoryData.Skins.Equipped[weaponName]
-	end
-
-	return nil
+	return InventoryManager.GetEquippedSkin(player, weaponName)
 end
 
 -- Fungsi untuk mengganti skin yang dipakai pemain
@@ -44,35 +39,20 @@ function SkinManager.EquipSkin(player, weaponName, skinName)
 		return {Success = false, Message = "Argumen tidak valid."}
 	end
 
-	local playerData = DataStoreManager:GetOrWaitForPlayerData(player)
-	if not playerData or not playerData.data then
-		return {Success = false, Message = "Gagal mengambil data pemain."}
+	local success, message = InventoryManager.EquipSkin(player, weaponName, skinName)
+	if success then
+		print(player.Name .. " berhasil menggunakan skin '" .. skinName .. "' untuk senjata '" .. weaponName .. "'.")
+		return {Success = true, Message = "Skin berhasil digunakan!"}
+	else
+		return {Success = false, Message = message or "Gagal menggunakan skin."}
 	end
-
-	local inventoryData = playerData.data.inventory
-	local weaponConfig = WeaponModule.Weapons[weaponName]
-
-	if not weaponConfig or not weaponConfig.Skins[skinName] then
-		return {Success = false, Message = "Skin atau senjata tidak valid."}
-	end
-
-	local ownedSkins = inventoryData.Skins.Owned[weaponName]
-	if not table.find(ownedSkins, skinName) then
-		return {Success = false, Message = "Anda tidak memiliki skin ini."}
-	end
-
-	inventoryData.Skins.Equipped[weaponName] = skinName
-	DataStoreManager:UpdatePlayerData(player, playerData.data) -- Simpan seluruh data pemain
-
-	print(player.Name .. " berhasil menggunakan skin '" .. skinName .. "' untuk senjata '" .. weaponName .. "'.")
-	return {Success = true, Message = "Skin berhasil digunakan!"}
 end
 
 -- Fungsi untuk memberikan skin acak (logika tidak berubah)
 function SkinManager.GiveRandomSkin(player)
 	if not player then return {Success = false, Message = "Player tidak valid."} end
 
-	local inventoryData = SkinManager.GetInventoryData(player)
+	local ownedSkins = InventoryManager.GetOwnedSkins(player)
 	local allWeapons = WeaponModule.Weapons
 	local allPossibleSkins = {}
 	for weaponName, weaponData in pairs(allWeapons) do
@@ -85,8 +65,7 @@ function SkinManager.GiveRandomSkin(player)
 
 	local unownedSkins = {}
 	for _, possibleSkin in ipairs(allPossibleSkins) do
-		local ownedSkinsForWeapon = inventoryData.Skins.Owned[possibleSkin.Weapon] or {}
-		if not table.find(ownedSkinsForWeapon, possibleSkin.Skin) then
+		if not InventoryManager.OwnsSkin(player, possibleSkin.Weapon, possibleSkin.Skin) then
 			table.insert(unownedSkins, possibleSkin)
 		end
 	end
@@ -97,7 +76,7 @@ function SkinManager.GiveRandomSkin(player)
 	end
 
 	local chosenReward = unownedSkins[math.random(#unownedSkins)]
-	local success = CoinsManager.AddSkin(player, chosenReward.Weapon, chosenReward.Skin)
+	local success = InventoryManager.AddSkin(player, chosenReward.Weapon, chosenReward.Skin)
 	if success then
 		return {Success = true, Weapon = chosenReward.Weapon, Skin = chosenReward.Skin}
 	else
