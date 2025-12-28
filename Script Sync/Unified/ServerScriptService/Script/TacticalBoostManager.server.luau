@@ -2,8 +2,8 @@
 local ACT1_PLACE_ID = 91523772574713
 if game.PlaceId ~= ACT1_PLACE_ID then return end
 
--- ElementVendingManager.lua (Script)
--- Path: ServerScriptService/Script/ElementVendingManager.lua
+-- TacticalBoostManager.lua (Script)
+-- Path: ServerScriptService/Script/TacticalBoostManager.lua
 -- Script Place: ACT 1: Village
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -14,14 +14,14 @@ local RemoteEvents = game.ReplicatedStorage:WaitForChild("RemoteEvents")
 local RemoteFunctions = ReplicatedStorage:WaitForChild("RemoteFunctions")
 local ModuleScriptServerScriptService = ServerScriptService.ModuleScript
 
-local PointsSystem = require(ModuleScriptServerScriptService:WaitForChild("CombatPointsModule"))
-local ElementModule = require(ModuleScriptServerScriptService:WaitForChild("ElementConfigModule"))
+local PointsSystem = require(ModuleScriptServerScriptService:WaitForChild("ValorModule"))
+local TacticalBoostModule = require(ModuleScriptServerScriptService:WaitForChild("TacticalBoostModule"))
 local BoosterModule = require(ModuleScriptServerScriptService:WaitForChild("BoosterModule"))
 
-local OpenElementShopEvent = RemoteEvents:WaitForChild("OpenElementShop")
-local CloseElementShopEvent = RemoteEvents:WaitForChild("CloseElementShop")
+local OpenTacticalBoostShopEvent = RemoteEvents:WaitForChild("OpenTacticalBoostShop")
+local CloseTacticalBoostShopEvent = RemoteEvents:WaitForChild("CloseTacticalBoostShop")
 
-local purchaseRF = RemoteFunctions:WaitForChild("PurchaseElement")
+local purchaseRF = RemoteFunctions:WaitForChild("PurchaseTacticalBoost")
 
 -- Hapus proximity prompt lama
 local vending = workspace:FindFirstChild("Elements")
@@ -53,25 +53,25 @@ local function requestOpenShop(player)
 		return false
 	end
 
-	OpenElementShopEvent:FireClient(player, ElementModule.GetConfig())
+	OpenTacticalBoostShopEvent:FireClient(player, TacticalBoostModule.GetConfig())
 	return true
 end
 
 -- Handler untuk request buka shop
-local RequestOpenElementShop = ReplicatedStorage:WaitForChild("RemoteEvents"):FindFirstChild("RequestOpenElementShop")
-if not RequestOpenElementShop then
-	RequestOpenElementShop = Instance.new("RemoteEvent")
-	RequestOpenElementShop.Name = "RequestOpenElementShop"
-	RequestOpenElementShop.Parent = ReplicatedStorage:WaitForChild("RemoteEvents")
+local RequestOpenTacticalBoostShop = ReplicatedStorage:WaitForChild("RemoteEvents"):FindFirstChild("RequestOpenTacticalBoostShop")
+if not RequestOpenTacticalBoostShop then
+	RequestOpenTacticalBoostShop = Instance.new("RemoteEvent")
+	RequestOpenTacticalBoostShop.Name = "RequestOpenTacticalBoostShop"
+	RequestOpenTacticalBoostShop.Parent = ReplicatedStorage:WaitForChild("RemoteEvents")
 end
 
-RequestOpenElementShop.OnServerEvent:Connect(function(player)
+RequestOpenTacticalBoostShop.OnServerEvent:Connect(function(player)
 	requestOpenShop(player)
 end)
 
 -- Purchase RemoteFunction implementation
 purchaseRF.OnServerInvoke = function(player, elementName)
-	local cfg = ElementModule.GetConfig()[elementName]
+	local cfg = TacticalBoostModule.GetConfig()[elementName]
 	if not cfg then return false, "Element not found" end
 
 	-- security: check proximity to vending part
@@ -80,8 +80,8 @@ purchaseRF.OnServerInvoke = function(player, elementName)
 	end
 
 	-- Cek apakah player sudah memiliki purchased element atau active element di wave ini?
-	local purchased = ElementModule.GetPurchasedElement(player)
-	local activeElements = ElementModule.GetActiveElements(player)
+	local purchased = TacticalBoostModule.GetPurchasedElement(player)
+	local activeElements = TacticalBoostModule.GetActiveElements(player)
 	if purchased or next(activeElements) ~= nil then
 		return false, "Already have an element this wave"
 	end
@@ -95,14 +95,14 @@ purchaseRF.OnServerInvoke = function(player, elementName)
 
 	-- PERBAIKAN: Cek ulang kondisi sebelum mengurangi poin
 	-- Pastikan tidak ada purchased element atau active element
-	local purchasedCheck = ElementModule.GetPurchasedElement(player)
-	local activeElementsCheck = ElementModule.GetActiveElements(player)
+	local purchasedCheck = TacticalBoostModule.GetPurchasedElement(player)
+	local activeElementsCheck = TacticalBoostModule.GetActiveElements(player)
 	if purchasedCheck or next(activeElementsCheck) ~= nil then
 		return false, "Already have an element this wave"
 	end
 
 	-- Grant element terlebih dahulu sebelum mengurangi poin
-	local success, message = ElementModule.GrantElement(player, elementName)
+	local success, message = TacticalBoostModule.GrantElement(player, elementName)
 	if not success then
 		return false, message
 	end
@@ -111,9 +111,9 @@ purchaseRF.OnServerInvoke = function(player, elementName)
 	PointsSystem.AddPoints(player, -cost)
 
 	-- Kirim event ke client bahwa element berhasil dibeli
-	local ElementPurchased = ReplicatedStorage:FindFirstChild("RemoteEvents") and ReplicatedStorage:WaitForChild("RemoteEvents"):FindFirstChild("ElementPurchased")
-	if ElementPurchased then
-		ElementPurchased:FireClient(player, elementName)
+	local TacticalBoostPurchased = ReplicatedStorage:FindFirstChild("RemoteEvents") and ReplicatedStorage:WaitForChild("RemoteEvents"):FindFirstChild("TacticalBoostPurchased")
+	if TacticalBoostPurchased then
+		TacticalBoostPurchased:FireClient(player, elementName)
 	end
 
 	return true, "Purchased "..elementName
@@ -122,5 +122,5 @@ end
 -- Cleanup ketika player meninggalkan game
 Players.PlayerRemoving:Connect(function(player)
 	-- Tutup UI shop jika terbuka
-	CloseElementShopEvent:FireClient(player)
+	CloseTacticalBoostShopEvent:FireClient(player)
 end)

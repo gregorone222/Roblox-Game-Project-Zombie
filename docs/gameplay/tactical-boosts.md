@@ -20,7 +20,7 @@ Tactical Boosts adalah **consumable upgrades** yang dibeli per-wave dan memberik
 
 ## 🎯 Tactical Boosts List
 
-### Tier 1 (Cost: 1500 CP)
+### Tier 1 (Cost: 1500 Valor)
 
 | Internal Key | Display Name | Effect | Duration |
 |:-------------|:-------------|:-------|:---------|
@@ -31,13 +31,13 @@ Tactical Boosts adalah **consumable upgrades** yang dibeli per-wave dan memberik
 | `Wind` | **Concussion Blast** | Push enemies back (knockback only) | 10s |
 | `Earth` | **Hardened Armor** | 20% damage reduction | 10s |
 
-### Tier 2 (Cost: 3000 CP)
+### Tier 2 (Cost: 3000 Valor)
 
 | Internal Key | Display Name | Effect | Duration |
 |:-------------|:-------------|:-------|:---------|
 | `Light` | **Stimpack** | Complete invincibility | 3s |
 
-### Tier 3 (Cost: 5000 CP)
+### Tier 3 (Cost: 5000 Valor)
 
 | Internal Key | Display Name | Effect | Duration |
 |:-------------|:-------------|:-------|:---------|
@@ -63,7 +63,7 @@ Tactical Boosts adalah **consumable upgrades** yang dibeli per-wave dan memberik
 ### VFX Modules (Unchanged internally)
 ```
 ReplicatedStorage/
-└── ElementVFX/
+└── TacticalBoostVFX/
     ├── FireVFXModule.lua     → Incendiary visuals
     ├── IceVFXModule.lua      → Cryo visuals
     ├── PoisonVFXModule.lua   → Toxic visuals

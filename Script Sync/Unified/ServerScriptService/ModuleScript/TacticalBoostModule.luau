@@ -2,39 +2,39 @@
 local ACT1_PLACE_ID = 91523772574713
 if game.PlaceId ~= ACT1_PLACE_ID then return {} end
 
--- ElementConfigModule.lua (ModuleScript)
--- Path: ServerScriptService/ModuleScript/ElementConfigModule.lua
+-- TacticalBoostModule.luau (ModuleScript)
+-- Path: ServerScriptService/ModuleScript/TacticalBoostModule.luau
 -- Script Place: ACT 1: Village
 
-local ElementModule = {}
+local TacticalBoostModule = {}
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players           = game:GetService("Players")
 
 local RemoteEvents = game.ReplicatedStorage:WaitForChild("RemoteEvents")
 local ModuleScriptReplicatedStorage = ReplicatedStorage.ModuleScript
-local ElementVFX = ReplicatedStorage.ElementVFX
+local TacticalBoostVFX = ReplicatedStorage.TacticalBoostVFX
 
 local AudioManager      = require(ModuleScriptReplicatedStorage:WaitForChild("AudioManager"))
 
 --// VFX Module
-local LightVFXModule = require(ElementVFX.LightVFXModule)
-local EarthVFXModule = require(ElementVFX.EarthVFXModule)
-local FireVFXModule = require(ElementVFX.FireVFXModule)
-local ShockVFXModule = require(ElementVFX.ShockVFXModule)
-local PoisonVFXModule = require(ElementVFX.PoisonVFXModule)
-local IceVFXModule = require(ElementVFX.IceVFXModule)
-local WindVFXModule = require(ElementVFX.WindVFXModule)
-local DarkVFXModule = require(ElementVFX.DarkVFXModule)
+local LightVFXModule = require(TacticalBoostVFX.LightVFXModule)
+local EarthVFXModule = require(TacticalBoostVFX.EarthVFXModule)
+local FireVFXModule = require(TacticalBoostVFX.FireVFXModule)
+local ShockVFXModule = require(TacticalBoostVFX.ShockVFXModule)
+local PoisonVFXModule = require(TacticalBoostVFX.PoisonVFXModule)
+local IceVFXModule = require(TacticalBoostVFX.IceVFXModule)
+local WindVFXModule = require(TacticalBoostVFX.WindVFXModule)
+local DarkVFXModule = require(TacticalBoostVFX.DarkVFXModule)
 
-local ElementActivated     = RemoteEvents:WaitForChild("ElementActivated")
-local ElementDeactivated   = RemoteEvents:WaitForChild("ElementDeactivated")
-local ActivateElementEvent = RemoteEvents:WaitForChild("ActivateElementEvent")
+local TacticalBoostActivated     = RemoteEvents:WaitForChild("TacticalBoostActivated")
+local TacticalBoostDeactivated   = RemoteEvents:WaitForChild("TacticalBoostDeactivated")
+local ActivateTacticalBoostEvent = RemoteEvents:WaitForChild("ActivateTacticalBoostEvent")
 local InvincibilityEffectEvent = RemoteEvents:WaitForChild("InvincibilityEffectEvent")
 
---// Config Elements (REFLAVORED: Tactical Survival Theme)
+--// Config TacticalBoosts (Tactical Survival Theme)
 -- Internal keys kept for code compatibility, DisplayName for UI
-local ElementsConfig = {
+local TacticalBoostsConfig = {
 	-- INCENDIARY ROUNDS: Fire damage + burn effect
 	Fire   = {
 		DisplayName = "Incendiary Rounds",
@@ -135,12 +135,12 @@ local function getRemaining(player, name)
 	return remaining
 end
 
-function ElementModule.GetConfig()
-	return ElementsConfig
+function TacticalBoostModule.GetConfig()
+	return TacticalBoostsConfig
 end
 
 -- Returns primary active element name (or nil)
-function ElementModule.GetActiveElement(player)
+function TacticalBoostModule.GetActiveElement(player)
 	local p = active[player]
 	if not p or not p.last then return nil end
 	-- validate expiry
@@ -157,7 +157,7 @@ function ElementModule.GetActiveElement(player)
 	return p.last
 end
 
-function ElementModule.GetActiveElements(player)
+function TacticalBoostModule.GetActiveElements(player)
 	local out = {}
 	local p = active[player]
 	if not p then return out end
@@ -168,18 +168,18 @@ function ElementModule.GetActiveElements(player)
 	return out
 end
 
-function ElementModule.GetPurchasedElement(player)
+function TacticalBoostModule.GetPurchasedElement(player)
 	return purchasedElements[player]
 end
 
-function ElementModule.IsPlayerInvincible(player)
+function TacticalBoostModule.IsPlayerInvincible(player)
 	return invinciblePlayers[player] == true
 end
 
-function ElementModule.ApplyDamageReduction(player, damage)
-	local activeElement = ElementModule.GetActiveElement(player)
+function TacticalBoostModule.ApplyDamageReduction(player, damage)
+	local activeElement = TacticalBoostModule.GetActiveElement(player)
 	if activeElement == "Earth" then
-		local cfg = ElementsConfig.Earth
+		local cfg = TacticalBoostsConfig.Earth
 		EarthVFXModule.SpawnDefenseEffect(player)
 		return damage * (1 - cfg.DamageReduction)
 	end
@@ -187,7 +187,7 @@ function ElementModule.ApplyDamageReduction(player, damage)
 end
 
 --// Helper functions
-function ElementModule.GetMainPart(model: Model)
+function TacticalBoostModule.GetMainPart(model: Model)
 	return model.PrimaryPart
 		or model:FindFirstChild("HumanoidRootPart")
 		or model:FindFirstChild("Torso")
@@ -195,13 +195,13 @@ function ElementModule.GetMainPart(model: Model)
 end
 
 --// ===== Purchase & Activate flow =====
-function ElementModule.ActivateElement(player, elementName)
+function TacticalBoostModule.ActivateElement(player, elementName)
 	-- Must be purchased for this wave
 	if purchasedElements[player] ~= elementName then
 		return false, "Element not purchased or already activated"
 	end
 
-	local cfg = ElementsConfig[elementName]
+	local cfg = TacticalBoostsConfig[elementName]
 	if not cfg then return false, "Unknown element" end
 
 	if not active[player] then
@@ -254,7 +254,7 @@ function ElementModule.ActivateElement(player, elementName)
 	-- notify client about activation (UI)
 	local remaining = p.elements[elementName] - tick()
 	pcall(function()
-		ElementActivated:FireClient(player, elementName, math.ceil(remaining))
+		TacticalBoostActivated:FireClient(player, elementName, math.ceil(remaining))
 	end)
 
 	-- lifetime watcher -> notify deactivated (UI)
@@ -262,7 +262,7 @@ function ElementModule.ActivateElement(player, elementName)
 		while true do
 			local rem = getRemaining(player, elementName)
 			if not rem then
-				pcall(function() ElementDeactivated:FireClient(player, elementName) end)
+				pcall(function() TacticalBoostDeactivated:FireClient(player, elementName) end)
 				break
 			end
 			-- FIX: ensure rem is treated as number, even though logic guarantees not nil here
@@ -273,9 +273,9 @@ function ElementModule.ActivateElement(player, elementName)
 	return true, "Element activated"
 end
 
-function ElementModule.GrantElement(player, name)
+function TacticalBoostModule.GrantElement(player, name)
 	if not player or not player:IsA("Player") then return false, "Invalid player" end
-	local cfg = ElementsConfig[name]
+	local cfg = TacticalBoostsConfig[name]
 	if not cfg then return false, "Unknown element" end
 
 	if boughtThisWave[player] or purchasedElements[player] then
@@ -287,7 +287,7 @@ function ElementModule.GrantElement(player, name)
 	return true, "Element purchased"
 end
 
-function ElementModule.ClearPurchasedElements(player)
+function TacticalBoostModule.ClearPurchasedElements(player)
 	if player then
 		purchasedElements[player] = nil
 		boughtThisWave[player]    = nil
@@ -298,13 +298,13 @@ function ElementModule.ClearPurchasedElements(player)
 end
 
 --// ===== Weapon hit hooks =====
-function ElementModule.OnPlayerHit(player, hitModel, baseDamage)
+function TacticalBoostModule.OnPlayerHit(player, hitModel, baseDamage)
 	-- FIX: Default baseDamage to avoid type errors
 	baseDamage = tonumber(baseDamage) or 0
 
-	local name = ElementModule.GetActiveElement(player)
+	local name = TacticalBoostModule.GetActiveElement(player)
 	if not name then return baseDamage end
-	local cfg = ElementsConfig[name]
+	local cfg = TacticalBoostsConfig[name]
 	if not cfg then return baseDamage end
 
 	if name == "Fire" then
@@ -314,7 +314,7 @@ function ElementModule.OnPlayerHit(player, hitModel, baseDamage)
 		local burnDmg = math.max(1, math.floor(baseDamage * cfg.BurnPercentPerTick))
 		-- Spawn a fiery impact effect at the hit target and play crackling sound
 		do
-			local mp = ElementModule.GetMainPart(hitModel)
+			local mp = TacticalBoostModule.GetMainPart(hitModel)
 			if mp then
 				-- short-lived burst of flame at the impact
 				FireVFXModule.SpawnImpact(mp, 0.5)
@@ -326,8 +326,8 @@ function ElementModule.OnPlayerHit(player, hitModel, baseDamage)
 			end
 		end
 		-- Apply damage over time via burn debuff
-		if ElementModule._applyBurnToZombie then
-			ElementModule._applyBurnToZombie(
+		if TacticalBoostModule._applyBurnToZombie then
+			TacticalBoostModule._applyBurnToZombie(
 				hitModel,
 				burnDmg,
 				cfg.BurnTicks,
@@ -338,21 +338,21 @@ function ElementModule.OnPlayerHit(player, hitModel, baseDamage)
 
 	elseif name == "Ice" then
 		-- Spawn ice impact VFX and play sound
-		local mp = ElementModule.GetMainPart(hitModel)
+		local mp = TacticalBoostModule.GetMainPart(hitModel)
 		if mp then
 			IceVFXModule.SpawnImpact(mp, 0.5)
 			IceVFXModule.PlaySound(mp, cfg.SFX_SoundId, cfg.SFX_Volume, cfg.SFX_Pitch)
 		end
 		-- Apply slow effect with VFX
-		if ElementModule._applyIceSlow then
-			ElementModule._applyIceSlow(hitModel, cfg.SlowPercent, cfg.SlowDuration)
+		if TacticalBoostModule._applyIceSlow then
+			TacticalBoostModule._applyIceSlow(hitModel, cfg.SlowPercent, cfg.SlowDuration)
 		end
 		return baseDamage
 
 	elseif name == "Poison" then
 		-- Spawn visual and sound effects for poison upon impact
 		do
-			local mp = ElementModule.GetMainPart(hitModel)
+			local mp = TacticalBoostModule.GetMainPart(hitModel)
 			if mp then
 				PoisonVFXModule.SpawnImpact(mp, 0.5)
 				PoisonVFXModule.AttachEffect(hitModel, cfg.PoisonDuration)
@@ -360,27 +360,27 @@ function ElementModule.OnPlayerHit(player, hitModel, baseDamage)
 			end
 		end
 		-- Apply poison damage over time
-		if ElementModule._applyPoison then
-			ElementModule._applyPoison(hitModel, cfg.PoisonDPS, cfg.PoisonDuration)
+		if TacticalBoostModule._applyPoison then
+			TacticalBoostModule._applyPoison(hitModel, cfg.PoisonDPS, cfg.PoisonDuration)
 		end
 		return baseDamage
 
 	elseif name == "Shock" then
-		if ElementModule._applyShockChain then
-			ElementModule._applyShockChain(hitModel, baseDamage, cfg.ChainRange, cfg.ChainDamageMultiplier)
+		if TacticalBoostModule._applyShockChain then
+			TacticalBoostModule._applyShockChain(hitModel, baseDamage, cfg.ChainRange, cfg.ChainDamageMultiplier)
 		end
 		return baseDamage
 
 	elseif name == "Wind" then
 		-- try to spawn a push effect on the hit zombie
-		local mp = ElementModule.GetMainPart(hitModel)
+		local mp = TacticalBoostModule.GetMainPart(hitModel)
 		-- read push parameters from config or use defaults
 		local pushSpeed = cfg.PushSpeed or cfg.SpeedMultiplier and (cfg.SpeedMultiplier * 40) or 60
 		local pushDur   = cfg.PushDuration or 0.35
 
-		if mp and ElementModule._applyWindPush then
+		if mp and TacticalBoostModule._applyWindPush then
 			-- apply push away from the player who hit
-			ElementModule._applyWindPush(hitModel, player, pushSpeed, pushDur)
+			TacticalBoostModule._applyWindPush(hitModel, player, pushSpeed, pushDur)
 			-- Add wind VFX and SFX
 			WindVFXModule.SpawnImpact(mp, 1.0)
 			WindVFXModule.PlaySound(mp, cfg.SFX_SoundId, cfg.SFX_Volume, cfg.SFX_Pitch)
@@ -389,7 +389,7 @@ function ElementModule.OnPlayerHit(player, hitModel, baseDamage)
 
 	elseif name == "Earth" then
 		-- Spawn earth impact VFX and play sound
-		local mp = ElementModule.GetMainPart(hitModel)
+		local mp = TacticalBoostModule.GetMainPart(hitModel)
 		if mp then
 			EarthVFXModule.SpawnImpact(mp, 0.5)
 			EarthVFXModule.PlaySoundAt(mp, cfg.SFX_SoundId, cfg.SFX_Volume, cfg.SFX_Pitch)
@@ -414,7 +414,7 @@ function ElementModule.OnPlayerHit(player, hitModel, baseDamage)
 		end
 
 		-- Add dark impact VFX
-		local mp = ElementModule.GetMainPart(hitModel)
+		local mp = TacticalBoostModule.GetMainPart(hitModel)
 		if mp then
 			DarkVFXModule.SpawnImpact(mp, 0.5)
 			DarkVFXModule.PlaySoundAt(mp, cfg.SFX_SoundId, cfg.SFX_Volume, cfg.SFX_Pitch)
@@ -427,7 +427,7 @@ function ElementModule.OnPlayerHit(player, hitModel, baseDamage)
 end
 
 --// ===== Zombie debuff helpers =====
-ElementModule._applyBurnToZombie = function(zombieModel, damagePerTick, ticks, interval)
+TacticalBoostModule._applyBurnToZombie = function(zombieModel, damagePerTick, ticks, interval)
 	local humanoid = zombieModel and zombieModel:FindFirstChild("Humanoid")
 	if not humanoid or humanoid.Health <= 0 then return end
 	local tag = zombieModel:FindFirstChild("Element_Burn")
@@ -459,7 +459,7 @@ ElementModule._applyBurnToZombie = function(zombieModel, damagePerTick, ticks, i
 	end)
 end
 
-ElementModule._applyPoison = function(zombieModel, dps, duration)
+TacticalBoostModule._applyPoison = function(zombieModel, dps, duration)
 	local humanoid = zombieModel and (zombieModel:FindFirstChild("Humanoid"))
 	if not humanoid or humanoid.Health then return end
 	local tag = zombieModel:FindFirstChild("Element_Poison")
@@ -477,7 +477,7 @@ ElementModule._applyPoison = function(zombieModel, dps, duration)
 end
 
 -- Push zombie away when hit by Wind element
-ElementModule._applyWindPush = function(zombieModel, player, speed, dur)
+TacticalBoostModule._applyWindPush = function(zombieModel, player, speed, dur)
 	local humanoid = zombieModel and zombieModel:FindFirstChild("Humanoid")
 	if not humanoid or humanoid.Health <= 0 then return end
 
@@ -522,7 +522,7 @@ ElementModule._applyWindPush = function(zombieModel, player, speed, dur)
 	end)
 end
 
-ElementModule._applyIceSlow = function(zombieModel, percent, dur)
+TacticalBoostModule._applyIceSlow = function(zombieModel, percent, dur)
 	local humanoid = zombieModel and zombieModel:FindFirstChild("Humanoid")
 	if not humanoid or humanoid.Health <= 0 then return end
 	local tag = zombieModel:FindFirstChild("Element_IceSlow")
@@ -540,7 +540,7 @@ ElementModule._applyIceSlow = function(zombieModel, percent, dur)
 			humanoid.WalkSpeed = original
 			-- Add ice break effect when slow ends
 			if humanoid.Health > 0 then
-				local mp = ElementModule.GetMainPart(zombieModel)
+				local mp = TacticalBoostModule.GetMainPart(zombieModel)
 				if mp then
 					IceVFXModule.SpawnBreak(mp, 0.3)  -- Use new ice break effect
 				end
@@ -551,23 +551,23 @@ ElementModule._applyIceSlow = function(zombieModel, percent, dur)
 end
 
 -- ===== UPDATED: Shock now with realistic VFX (server-side) =====
-ElementModule._applyShockChain = function(zombieModel, baseDamage, chainRange, multiplier)
+TacticalBoostModule._applyShockChain = function(zombieModel, baseDamage, chainRange, multiplier)
 	local humanoid = zombieModel and zombieModel:FindFirstChild("Humanoid")
 	if not humanoid or humanoid.Health <= 0 then return end
 
-	local originPart = ElementModule.GetMainPart(zombieModel)
+	local originPart = TacticalBoostModule.GetMainPart(zombieModel)
 	if not originPart then return end
 
 	-- Origin impact visuals & sound
 	ShockVFXModule.SpawnShockImpact(originPart, 0.18)
 	ShockVFXModule.SpawnBranchArcs(originPart, 0.15)
-	ShockVFXModule.PlayShockSoundAt(originPart, ElementsConfig.Shock.SFX_SoundId, ElementsConfig.Shock.SFX_Volume, ElementsConfig.Shock.SFX_Pitch)
+	ShockVFXModule.PlayShockSoundAt(originPart, TacticalBoostsConfig.Shock.SFX_SoundId, TacticalBoostsConfig.Shock.SFX_Volume, TacticalBoostsConfig.Shock.SFX_Pitch)
 
 	-- Chain to neighbors
 	local originPos = originPart.Position
 	for _, candidate in pairs(workspace:GetChildren()) do
 		if candidate:IsA("Model") and candidate ~= zombieModel and candidate:FindFirstChild("IsZombie") then
-			local part = ElementModule.GetMainPart(candidate)
+			local part = TacticalBoostModule.GetMainPart(candidate)
 			if part and (part.Position - originPos).Magnitude <= chainRange then
 				local hm = candidate:FindFirstChild("Humanoid")
 				if hm and hm.Health > 0 then
@@ -591,8 +591,8 @@ Players.PlayerRemoving:Connect(function(plr)
 end)
 
 -- Allow client to ask activation (server validates purchase)
-ActivateElementEvent.OnServerEvent:Connect(function(player, elementName)
-	ElementModule.ActivateElement(player, elementName)
+ActivateTacticalBoostEvent.OnServerEvent:Connect(function(player, elementName)
+	TacticalBoostModule.ActivateElement(player, elementName)
 end)
 
-return ElementModule
+return TacticalBoostModule

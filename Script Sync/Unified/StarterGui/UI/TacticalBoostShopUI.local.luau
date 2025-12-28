@@ -2,7 +2,7 @@
 local ACT1_PLACE_ID = 91523772574713
 if game.PlaceId ~= ACT1_PLACE_ID then return end
 
--- ElementShopUI.lua (LocalScript)
+-- TacticalBoostShopUI.lua (LocalScript)
 -- Path: StarterGui/AchievementPointsUI.lua
 -- Script Place: ACT 1: Village
 
@@ -17,10 +17,10 @@ local playerGui = player:WaitForChild("PlayerGui")
 local RemoteEvents = ReplicatedStorage:WaitForChild("RemoteEvents")
 local RemoteFunctions = ReplicatedStorage:WaitForChild("RemoteFunctions")
 
-local openEv = RemoteEvents:WaitForChild("OpenElementShop")
-local requestOpenEvent = RemoteEvents:WaitForChild("RequestOpenElementShop")
-local closeShop = RemoteEvents:WaitForChild("CloseElementShop")
-local purchaseRF = RemoteFunctions:WaitForChild("PurchaseElement")
+local openEv = RemoteEvents:WaitForChild("OpenTacticalBoostShop")
+local requestOpenEvent = RemoteEvents:WaitForChild("RequestOpenTacticalBoostShop")
+local closeShop = RemoteEvents:WaitForChild("CloseTacticalBoostShop")
+local purchaseRF = RemoteFunctions:WaitForChild("PurchaseTacticalBoost")
 
 local elementsPrompt
 if workspace:FindFirstChild("Elements") then
@@ -120,7 +120,7 @@ local currentBalance = 0 -- Will be updated
 
 -- --- UI CREATION ---
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "ElementShopUI"
+screenGui.Name = "TacticalBoostShopUI"
 screenGui.Parent = playerGui
 screenGui.Enabled = false
 screenGui.IgnoreGuiInset = true
@@ -706,7 +706,7 @@ end
 
 -- Fetch Balance Logic
 local function fetchBalance()
-	-- Try to get balance from a likely module (CoinsModule or CombatPointsModule)
+	-- Try to get balance from a likely module (CoinsModule or ValorModule)
 	-- For client side, usually we check attributes or leaderstats
 	local leaderstats = player:FindFirstChild("leaderstats")
 	local coins = 0
@@ -743,7 +743,7 @@ buyButton.MouseButton1Click:Connect(function()
 		fetchBalance()
 
 		-- Close shop? Or stay open?
-		-- closeElementShop()
+		-- CloseTacticalBoostShop()
 	else
 		-- Show Failure
 		local oldText = buyText.Text
@@ -754,12 +754,12 @@ buyButton.MouseButton1Click:Connect(function()
 end)
 
 -- Close Logic
-local function closeElementShop()
+local function CloseTacticalBoostShop()
 	screenGui.Enabled = false
 	-- Optional: Blur effect removal
 end
 
-closeButton.MouseButton1Click:Connect(closeElementShop)
+closeButton.MouseButton1Click:Connect(CloseTacticalBoostShop)
 
 -- Setup Prompt Connection
 local function setupPrompt()
@@ -822,7 +822,7 @@ openEv.OnClientEvent:Connect(function()
 	fetchBalance()
 end)
 
-closeShop.OnClientEvent:Connect(closeElementShop)
+closeShop.OnClientEvent:Connect(CloseTacticalBoostShop)
 
 -- Initial Setup
 renderList()

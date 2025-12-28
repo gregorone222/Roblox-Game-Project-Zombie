@@ -16,7 +16,7 @@ local RunService = game:GetService("RunService")
 
 -- Modules
 local Boss2VFXModule = require(ReplicatedStorage.ZombieVFX:WaitForChild("Boss2VFXModule"))
-local ElementModule = require(ServerScriptService.ModuleScript:WaitForChild("ElementConfigModule"))
+local TacticalBoostModule = require(ServerScriptService.ModuleScript:WaitForChild("TacticalBoostModule"))
 local ShieldModule = require(ServerScriptService.ModuleScript:WaitForChild("ShieldModule"))
 -- Note: We avoid requiring SpawnerModule at the top level to prevent cyclic dependency (Spawner -> Boss2 -> Spawner)
 local ZombieModule = require(ServerScriptService.ModuleScript:WaitForChild("ZombieModule"))

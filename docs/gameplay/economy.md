@@ -9,7 +9,7 @@ Sistem mata uang dan kemajuan pemain.
 | Currency | Type | Source | Usage | Handler |
 |:---------|:-----|:-------|:------|:--------|
 | **Survival Coins** | Permanen | Wave Clear & Damage | Skin/Item permanen, Gacha | `CoinsModule.luau` |
-| **CP (Combat Points)** | Sesi | In-game kills/objectives | In-game shops | `PointsModule.luau` |
+| **Valor** | Sesi | In-game kills/objectives | In-game shops | `ValorModule.luau` |
 | **AP (Achievement Points)** | Permanen | Achievements | AP Shop items | `StatsModule.luau` |
 | **MP (Mission Points)** | Permanen | Missions | MP Shop items | `MissionPointsModule.luau` |
 
@@ -35,22 +35,22 @@ Sistem mata uang dan kemajuan pemain.
 
 ---
 
-## ⚔️ CP (Combat Points) - Session Currency
+## ⚔️ Valor - Session Currency
 
-CP is earned during gameplay and **resets every session**.
+Valor is earned during gameplay and **resets every session**.
 
-### Earning CP
-| Source | CP Earned |
+### Earning Valor
+| Source | Valor Earned |
 |:-------|:----------|
-| Kill zombie | 10-50 CP |
-| Kill special zombie | 50-100 CP |
-| Kill boss | 500-1000 CP |
-| Wave objective complete | 200-500 CP |
+| Kill zombie | 10-50 Valor |
+| Kill special zombie | 50-100 Valor |
+| Kill boss | 500-1000 Valor |
+| Wave objective complete | 200-500 Valor |
 
-### Spending CP
-- Tactical Boosts (1,500-5,000 CP)
-- Perks (2,000-6,000 CP)
-- Random Weapon (1,000+ CP, scaling)
+### Spending Valor
+- Tactical Boosts (1,500-5,000 Valor)
+- Perks (2,000-6,000 Valor)
+- Random Weapon (1,000+ Valor, scaling)
 - Weapon Upgrade (varies)
 
 

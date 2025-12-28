@@ -12,7 +12,7 @@ local Workspace = game:GetService("Workspace")
 
 local Boss3VFXModule = require(ReplicatedStorage.ZombieVFX:WaitForChild("Boss3VFXModule"))
 local SyringeVolleyVFX = require(ReplicatedStorage.ZombieVFX:WaitForChild("SyringeVolleyVFX"))
-local ElementModule = require(ServerScriptService.ModuleScript:WaitForChild("ElementConfigModule"))
+local TacticalBoostModule = require(ServerScriptService.ModuleScript:WaitForChild("TacticalBoostModule"))
 local ShieldModule = require(ServerScriptService.ModuleScript:WaitForChild("ShieldModule"))
 local SpawnerModule -- Akan diinisialisasi melalui Init
 

@@ -1,23 +1,23 @@
 # 🛒 In-Game Shop System
 
-Dokumentasi sistem pembelian dalam game menggunakan **CP (Combat Points)**.
+Dokumentasi sistem pembelian dalam game menggunakan **Valor**.
 
 > **IMPORTANT:** Shop ini hanya tersedia saat gameplay (ACT 1 dan seterusnya), TIDAK di Lobby.
 
 ---
 
-## 💰 Mata Uang: CP (Combat Points)
+## 💰 Mata Uang: Valor
 
-CP adalah mata uang utama dalam game yang didapat dari:
+Valor adalah mata uang utama dalam game yang didapat dari:
 
-| Sumber | CP Earned |
+| Sumber | Valor Earned |
 |:-------|:----------|
-| Kill zombie biasa | ~10-50 CP |
-| Kill special zombie | ~50-100 CP |
-| Kill boss | ~500-1000 CP |
-| Complete wave objective | ~200-500 CP |
+| Kill zombie biasa | ~10-50 Valor |
+| Kill special zombie | ~50-100 Valor |
+| Kill boss | ~500-1000 Valor |
+| Complete wave objective | ~200-500 Valor |
 
-> CP **RESET setiap game session** (tidak tersimpan antar game)
+> Valor **RESET setiap game session** (tidak tersimpan antar game)
 
 ---
 
@@ -91,16 +91,16 @@ CP adalah mata uang utama dalam game yang didapat dari:
 
 **Tier Structure:**
 ```
-UTILITY (2,000 CP)
+UTILITY (2,000 Valor)
 ├── Humanity (RevivePlus)
 └── Field Medic (Medic)
 
-CORE (4,000 CP)
+CORE (4,000 Valor)
 ├── Iron Will (HPPlus)
 ├── Second Wind (StaminaPlus)
 └── Dexterity (ReloadPlus)
 
-ELITE (6,000 CP)
+ELITE (6,000 Valor)
 └── Adrenaline (RateBoost)
 ```
 
@@ -119,9 +119,9 @@ ELITE (6,000 CP)
 **Cost Scaling:**
 | Purchase # | Cost |
 |:-----------|:-----|
-| 1st | 1,000 CP |
-| 2nd | 2,000 CP |
-| 3rd | 3,000 CP |
+| 1st | 1,000 Valor |
+| 2nd | 2,000 Valor |
+| 3rd | 3,000 Valor |
 | 4th+ | +1,000 per purchase |
 
 **Weapon Pool:**
@@ -207,11 +207,11 @@ Player selects item and clicks Buy
 Client fires RemoteFunction: Purchase[Item]
     ↓
 Server validates:
-    - Enough CP?
+    - Enough Valor?
     - Already owned? (for perks)
     - Near shop?
     ↓
-Server deducts CP, grants item
+Server deducts Valor, grants item
     ↓
 Server fires update events to Client
 ```
@@ -220,7 +220,7 @@ Server fires update events to Client
 
 | System | UI (Client) | Manager/Config (Server) |
 |:-------|:------------|:------------------------|
-| Tactical | `ElementShopUI.lua` | `ElementConfigModule.lua` |
+| Tactical | `TacticalBoostShopUI.lua` | `TacticalBoostModule.lua` |
 | Perk | `PerkShopUI.lua` | `PerkModule.lua`, `PerkConfig.lua` |
 | Random | `RandomWeaponShopUI.lua` | (logic in manager) |
 | Upgrade | `UpgradeShopUI.lua` | `WeaponModule.lua` (UpgradeConfig) |
@@ -235,7 +235,7 @@ Field Kits (formerly Boosters) memberikan advantage di awal game. **TIDAK dijual
 
 | Kit | Effect | Interaksi dengan Shop |
 |:----|:-------|:----------------------|
-| Starting Funds | +1,500 CP | Lebih banyak uang untuk belanja |
+| Starting Funds | +1,500 Valor | Lebih banyak uang untuk belanja |
 | Ammo Stockpile | +50% max ammo | Tidak berpengaruh ke shop |
 | Body Armor | 50% bonus shield | Tidak berpengaruh ke shop |
 | Mystery Loadout | Random starting weapon | Tidak berpengaruh ke shop |
@@ -245,11 +245,11 @@ Field Kits (formerly Boosters) memberikan advantage di awal game. **TIDAK dijual
 
 ## 📊 Economy Balance Notes
 
-**Target CP per Wave:**
-- Wave 1-10: ~500-1,500 CP
-- Wave 11-25: ~2,000-4,000 CP
-- Wave 26-40: ~5,000-8,000 CP
-- Wave 41-50: ~8,000-15,000 CP
+**Target Valor per Wave:**
+- Wave 1-10: ~500-1,500 Valor
+- Wave 11-25: ~2,000-4,000 Valor
+- Wave 26-40: ~5,000-8,000 Valor
+- Wave 41-50: ~8,000-15,000 Valor
 
 **Spending Priority (Recommended):**
 1. **Early Game (Wave 1-15):** Random Weapon → Upgrade

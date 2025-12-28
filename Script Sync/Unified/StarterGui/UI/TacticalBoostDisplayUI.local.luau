@@ -2,8 +2,8 @@
 local ACT1_PLACE_ID = 91523772574713
 if game.PlaceId ~= ACT1_PLACE_ID then return end
 
--- ElementDisplayUI.lua (LocalScript)
--- Path: StarterGui/ElementDisplayUI.lua
+-- TacticalBoostDisplayUI.lua (LocalScript)
+-- Path: StarterGui/TacticalBoostDisplayUI.lua
 -- Script Place: ACT 1: Village
 
 local Players = game:GetService("Players")
@@ -19,10 +19,10 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 local RemoteEvents = game.ReplicatedStorage:WaitForChild("RemoteEvents")
 
-local ElementActivated      = RemoteEvents:WaitForChild("ElementActivated")
-local ElementDeactivated    = RemoteEvents:WaitForChild("ElementDeactivated")
-local ActivateElementEvent  = RemoteEvents:WaitForChild("ActivateElementEvent")
-local ElementPurchased      = RemoteEvents:WaitForChild("ElementPurchased")
+local TacticalBoostActivated      = RemoteEvents:WaitForChild("TacticalBoostActivated")
+local TacticalBoostDeactivated    = RemoteEvents:WaitForChild("TacticalBoostDeactivated")
+local ActivateTacticalBoostEvent  = RemoteEvents:WaitForChild("ActivateTacticalBoostEvent")
+local TacticalBoostPurchased      = RemoteEvents:WaitForChild("TacticalBoostPurchased")
 local WaveUpdateEvent       = RemoteEvents:WaitForChild("WaveUpdateEvent")
 
 -- Warna dan ikon untuk setiap elemen
@@ -95,7 +95,7 @@ local elementData = {
 
 -- ====== Wadah minimal tanpa header/“Elements” container ======
 local hudGui = Instance.new("ScreenGui")
-hudGui.Name = "ElementDisplayUI"
+hudGui.Name = "TacticalBoostDisplayUI"
 hudGui.IgnoreGuiInset = true
 hudGui.ResetOnSpawn = false
 hudGui.Parent = playerGui
@@ -184,7 +184,7 @@ local function createActiveBuffFrame(name, duration)
 	local elementInfo = getElementData(name)
 
 	local frame = Instance.new("Frame")
-	frame.Name = "ElementActivatePrompt"
+	frame.Name = "TacticalBoostActivatePrompt"
 	-- Terapkan posisi/ukuran tersimpan jika ada
 	applyIfSavedPosition(frame)
 	frame.Size = UDim2.new(0, 200, 0, 70)
@@ -446,7 +446,7 @@ local function createPurchasedBuffFrame(elementName)
 			TweenService:Create(activateButton, TweenInfo.new(0.1), {
 				BackgroundColor3 = Color3.fromRGB(0, 180, 0)
 			}):Play()
-			ActivateElementEvent:FireServer(elementName)
+			ActivateTacticalBoostEvent:FireServer(elementName)
 		end)
 	else
 		local promptLabel = Instance.new("TextLabel")
@@ -521,7 +521,7 @@ local function removeElementFrame(name)
 end
 
 -- ====== Event wiring ======
-ElementActivated.OnClientEvent:Connect(function(name, duration)
+TacticalBoostActivated.OnClientEvent:Connect(function(name, duration)
 	-- Jika sebelumnya ada purchased frame, hapus
 	if elementFrames[name] and elementFrames[name].type == "purchased" then
 		removeElementFrame(name)
@@ -533,27 +533,27 @@ ElementActivated.OnClientEvent:Connect(function(name, duration)
 	purchasedElementName = nil
 
 	-- Efek suara (jika tersedia)
-	if SoundService:FindFirstChild("ElementActivated") then
-		local sound = SoundService.ElementActivated:Clone()
+	if SoundService:FindFirstChild("TacticalBoostActivated") then
+		local sound = SoundService.TacticalBoostActivated:Clone()
 		sound.Parent = frame
 		sound:Play()
 		game:GetService("Debris"):AddItem(sound, sound.TimeLength)
 	end
 end)
 
-ElementDeactivated.OnClientEvent:Connect(function(name)
+TacticalBoostDeactivated.OnClientEvent:Connect(function(name)
 	removeElementFrame(name)
 
 	-- Efek suara (jika tersedia)
-	if SoundService:FindFirstChild("ElementDeactivated") then
-		local sound = SoundService.ElementDeactivated:Clone()
+	if SoundService:FindFirstChild("TacticalBoostDeactivated") then
+		local sound = SoundService.TacticalBoostDeactivated:Clone()
 		sound.Parent = hudGui
 		sound:Play()
 		game:GetService("Debris"):AddItem(sound, sound.TimeLength)
 	end
 end)
 
-ElementPurchased.OnClientEvent:Connect(function(elementName)
+TacticalBoostPurchased.OnClientEvent:Connect(function(elementName)
 	-- Saat beli elemen: tampilkan kontainer kecil "Press F to activate"
 	purchasedElementName = elementName
 
@@ -568,8 +568,8 @@ ElementPurchased.OnClientEvent:Connect(function(elementName)
 	frame.Parent = hudGui
 
 	-- Efek suara (jika tersedia)
-	if SoundService:FindFirstChild("ElementPurchased") then
-		local sound = SoundService.ElementPurchased:Clone()
+	if SoundService:FindFirstChild("TacticalBoostPurchased") then
+		local sound = SoundService.TacticalBoostPurchased:Clone()
 		sound.Parent = frame
 		sound:Play()
 		game:GetService("Debris"):AddItem(sound, sound.TimeLength)
@@ -604,7 +604,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 		TweenService:Create(frame, TweenInfo.new(0.1), {
 			Position = UDim2.new(basePos.X.Scale, basePos.X.Offset, basePos.Y.Scale, basePos.Y.Offset)
 		}):Play()
-		ActivateElementEvent:FireServer(purchasedElementName)
+		ActivateTacticalBoostEvent:FireServer(purchasedElementName)
 	end
 end)
 

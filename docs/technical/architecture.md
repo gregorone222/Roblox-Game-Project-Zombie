@@ -58,7 +58,7 @@ graph TD
 | `PerkModule.luau` | In-game perk system |
 | `SkillModule.luau` | Player skill tree |
 | `BoosterModule.luau` | Field Kit management |
-| `ElementConfigModule.luau` | Tactical Boosts (formerly Elements) |
+| `TacticalBoostModule.luau` | Tactical Boosts (formerly Elements) |
 | `CoinsModule.luau` | Currency management |
 | `TitleManager.luau` | Player title system |
 | `GachaModule.luau` | Gacha/lootbox system |

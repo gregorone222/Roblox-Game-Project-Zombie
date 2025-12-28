@@ -27,7 +27,7 @@ local SurvivalCoinsUpdateEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):
 
 -- ================== REWARD CONFIG ==================
 local FieldKitConfig = {
-	StarterPoints = { Name = "Starting Funds", Icon = "rbxassetid://115097892301473", Rarity = "Common", Description = "Start with 1,500 bonus CP" },
+	StarterPoints = { Name = "Starting Funds", Icon = "rbxassetid://115097892301473", Rarity = "Common", Description = "Start with 1,500 bonus Valor" },
 	AmmoCache = { Name = "Ammo Stockpile", Icon = "rbxassetid://133597625207661", Rarity = "Uncommon", Description = "Begin with extra ammo reserves" },
 	StartingShield = { Name = "Body Armor", Icon = "rbxassetid://118302588106310", Rarity = "Rare", Description = "Start with protective armor" },
 	LegionsLegacy = { Name = "Mystery Loadout", Icon = "rbxassetid://117164757148539", Rarity = "Epic", Description = "Random legendary weapon loadout" },

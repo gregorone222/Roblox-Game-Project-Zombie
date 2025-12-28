@@ -2,8 +2,8 @@
 local ACT1_PLACE_ID = 91523772574713
 if game.PlaceId ~= ACT1_PLACE_ID then return end
 
--- CombatPointsUI.local.luau (LocalScript)
--- Path: StarterGui/UI/CombatPointsUI.local.luau
+-- ValorUI.local.luau (LocalScript)
+-- Path: StarterGui/UI/ValorUI.local.luau
 -- Script Place: ACT 1: Village
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -16,18 +16,18 @@ local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
 local RemoteEvents = ReplicatedStorage:WaitForChild("RemoteEvents")
-local CombatPointsUpdate = RemoteEvents:WaitForChild("CombatPointsUpdate")
+local ValorUpdate = RemoteEvents:WaitForChild("ValorUpdate")
 
 -- cleanup old UI if exists
 for _, old in ipairs(playerGui:GetChildren()) do
-	if old.Name == "CombatPointsUI" then
+	if old.Name == "ValorUI" then
 		old:Destroy()
 	end
 end
 
 -- Create main ScreenGui
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "CombatPointsUI"
+screenGui.Name = "ValorUI"
 screenGui.IgnoreGuiInset = true
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
@@ -54,7 +54,7 @@ local COLORS = {
 
 -- Main Card Container
 local card = Instance.new("Frame")
-card.Name = "PointsCard"
+card.Name = "ValorContainer"
 card.BackgroundColor3 = COLORS.Background
 card.BackgroundTransparency = 0.15
 card.BorderSizePixel = 0
@@ -96,12 +96,12 @@ iconStroke.Thickness = 1.5
 iconStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 iconStroke.Parent = iconContainer
 
--- Icon (Unicode Combat/Sword)
+-- Icon (Unicode Shield/Valor)
 local iconLabel = Instance.new("TextLabel")
 iconLabel.Name = "Icon"
 iconLabel.Size = UDim2.new(1, 0, 1, 0)
 iconLabel.BackgroundTransparency = 1
-iconLabel.Text = "⚔️" -- Unicode Combat/Sword
+iconLabel.Text = "🛡️" -- Unicode Shield for Valor
 iconLabel.TextColor3 = Color3.fromRGB(252, 165, 165) -- Light Red
 iconLabel.TextSize = 24
 iconLabel.Font = Enum.Font.Gotham
@@ -122,12 +122,12 @@ listLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 listLayout.Padding = UDim.new(0, -2)
 listLayout.Parent = contentFrame
 
--- Label "COMBAT POINTS"
+-- Label "VALOR"
 local labelText = Instance.new("TextLabel")
 labelText.Name = "Label"
 labelText.BackgroundTransparency = 1
 labelText.Size = UDim2.new(1, 0, 0, 14)
-labelText.Text = "COMBAT POINTS"
+labelText.Text = "VALOR"
 labelText.TextColor3 = COLORS.TextLabel
 labelText.TextXAlignment = Enum.TextXAlignment.Left
 labelText.Font = FONTS.Label
@@ -341,13 +341,13 @@ local function animateTo(newValue)
 end
 
 -- Event Listener
-CombatPointsUpdate.OnClientEvent:Connect(function(points)
+ValorUpdate.OnClientEvent:Connect(function(points)
 	animateTo(points)
 end)
 
 -- Initial Hide/Show Logic
 card.Visible = false
-CombatPointsUpdate.OnClientEvent:Connect(function()
+ValorUpdate.OnClientEvent:Connect(function()
 	if not card.Visible then
 		card.Visible = true
 	end

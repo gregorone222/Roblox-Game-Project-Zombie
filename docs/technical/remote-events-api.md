@@ -253,7 +253,7 @@ Dokumentasi lengkap semua RemoteEvents dan RemoteFunctions di proyek.
 |:---------|:------|
 | **Direction** | Client → Server |
 | **Parameters** | `elementName: string` |
-| **Handler** | `ElementConfigModule.lua:562` |
+| **Handler** | `TacticalBoostModule.lua:562` |
 | **Description** | Activate purchased tactical boost |
 
 ### ElementActivated
@@ -345,7 +345,7 @@ Dokumentasi lengkap semua RemoteEvents dan RemoteFunctions di proyek.
 |:---------|:------|
 | **Parameters** | `elementName: string` |
 | **Returns** | `{success: boolean}` |
-| **Handler** | `ElementVendingManager.lua` |
+| **Handler** | `TacticalBoostManager.lua` |
 
 ### GetMissionData / ClaimMissionReward / RerollMission
 | Property | Value |

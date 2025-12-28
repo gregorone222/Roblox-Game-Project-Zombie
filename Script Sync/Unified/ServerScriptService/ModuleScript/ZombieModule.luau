@@ -32,8 +32,8 @@ local ZombieConfig = require(ModuleScriptReplicatedStorage:WaitForChild("ZombieC
 
 local SkillConfig = require(ModuleScriptReplicatedStorage:WaitForChild("SkillConfig"))
 local GameConfig = require(ModuleScriptServerScriptService:WaitForChild("GameConfig"))
-local ElementModule = require(ModuleScriptServerScriptService:WaitForChild("ElementConfigModule"))
-local PointsSystem = require(ModuleScriptServerScriptService:WaitForChild("CombatPointsModule"))
+local TacticalBoostModule = require(ModuleScriptServerScriptService:WaitForChild("TacticalBoostModule"))
+local PointsSystem = require(ModuleScriptServerScriptService:WaitForChild("ValorModule"))
 local StatsModule = require(ModuleScriptServerScriptService:WaitForChild("StatsModule"))
 local ShieldModule = require(ModuleScriptServerScriptService:WaitForChild("ShieldModule"))
 local SkillModule = require(ModuleScriptServerScriptService:WaitForChild("SkillModule"))
@@ -273,9 +273,9 @@ function ZombieModule.SpawnZombie(spawnPoint, typeName, playerCount, difficulty,
 							-- Perform the attack damage in a separate thread
 							task.spawn(function()
 								local playerHumanoid = target.Character:FindFirstChildOfClass("Humanoid")
-								if playerHumanoid and not target.Character:FindFirstChild("Knocked") and not ElementModule.IsPlayerInvincible(target) then
+								if playerHumanoid and not target.Character:FindFirstChild("Knocked") and not TacticalBoostModule.IsPlayerInvincible(target) then
 									local damage = zombie:GetAttribute("AttackDamage")
-									damage = ElementModule.ApplyDamageReduction(target, damage)
+									damage = TacticalBoostModule.ApplyDamageReduction(target, damage)
 									local leftoverDamage = ShieldModule.Damage(target, damage)
 									if leftoverDamage > 0 then
 										playerHumanoid:TakeDamage(leftoverDamage)
@@ -402,13 +402,13 @@ function ZombieModule.SpawnZombie(spawnPoint, typeName, playerCount, difficulty,
 
 				for _, player in ipairs(game.Players:GetPlayers()) do
 					local char = player.Character
-					if char and not ElementModule.IsPlayerInvincible(player) then
+					if char and not TacticalBoostModule.IsPlayerInvincible(player) then
 						local hum = char:FindFirstChildOfClass("Humanoid")
 						local hrp = char:FindFirstChild("HumanoidRootPart")
 						if hum and hum.Health > 0 and hrp then
 							if (hrp.Position - explosionPos).Magnitude <= minionConfig.ExplosionRadius then
 								local damage = minionConfig.ExplosionDamage
-								damage = ElementModule.ApplyDamageReduction(player, damage)
+								damage = TacticalBoostModule.ApplyDamageReduction(player, damage)
 								local leftoverDamage = ShieldModule.Damage(player, damage)
 								if leftoverDamage > 0 then
 									hum:TakeDamage(leftoverDamage)

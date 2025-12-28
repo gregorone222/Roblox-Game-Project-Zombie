@@ -316,10 +316,10 @@ function ObjectiveManager:CompleteObjective()
 	end
 	self.ObjectiveObjects = {}
 
-	-- Reward (Bisa integrasi dengan CombatPointsModule)
+	-- Reward (Bisa integrasi dengan ValorModule)
 	for _, plr in ipairs(Players:GetPlayers()) do
 		-- Beri bonus poin
-		local PointsSystem = require(ServerScriptService.ModuleScript:WaitForChild("CombatPointsModule"))
+		local PointsSystem = require(ServerScriptService.ModuleScript:WaitForChild("ValorModule"))
 		PointsSystem.AddPoints(plr, 1000)
 	end
 end

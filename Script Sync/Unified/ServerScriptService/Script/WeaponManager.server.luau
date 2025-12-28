@@ -19,8 +19,8 @@ local ReportDamageEvent = BindableEvents:WaitForChild("ReportDamageEvent")
 local WeaponModule = require(ModuleScriptReplicatedStorage:WaitForChild("WeaponModule"))
 local GameConfig = require(ModuleScriptServerScriptService:WaitForChild("GameConfig"))
 local GameStatus = require(ModuleScriptServerScriptService:WaitForChild("GameStatus"))
-local PointsSystem = require(ModuleScriptServerScriptService:WaitForChild("CombatPointsModule"))
-local ElementModule = require(ModuleScriptServerScriptService:WaitForChild("ElementConfigModule"))
+local PointsSystem = require(ModuleScriptServerScriptService:WaitForChild("ValorModule"))
+local TacticalBoostModule = require(ModuleScriptServerScriptService:WaitForChild("TacticalBoostModule"))
 local CoinsManager = require(ModuleScriptServerScriptService:WaitForChild("SurvivalCoinsModule"))
 local SkillModule = require(ModuleScriptServerScriptService:WaitForChild("SkillModule"))
 local SkillConfig = require(ModuleScriptReplicatedStorage:WaitForChild("SkillConfig"))
@@ -98,7 +98,7 @@ local function applyDamageAndStats(player, targetHumanoid, hitModel, damage, isH
 
 	-- Terapkan efek elemental dan reduksi damage hanya pada zombie
 	if isZombie then
-		finalDamage = ElementModule.OnPlayerHit(player, hitModel, finalDamage) or finalDamage
+		finalDamage = TacticalBoostModule.OnPlayerHit(player, hitModel, finalDamage) or finalDamage
 		if hitModel:GetAttribute("Immune") then
 			finalDamage = 0
 		else

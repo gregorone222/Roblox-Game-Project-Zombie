@@ -15,7 +15,7 @@ local VolatileMinionVFX = require(ReplicatedStorage.ZombieVFX:WaitForChild("Vola
 local BossPhaseTransitionVFX = require(ReplicatedStorage.ZombieVFX:WaitForChild("BossPhaseTransitionVFX"))
 local FissionBarrageVFX = require(ReplicatedStorage.ZombieVFX:WaitForChild("FissionBarrageVFX"))
 local CorrosiveSlamVFX = require(ReplicatedStorage.ZombieVFX:WaitForChild("CorrosiveSlamVFX"))
-local ElementModule = require(ServerScriptService.ModuleScript:WaitForChild("ElementConfigModule"))
+local TacticalBoostModule = require(ServerScriptService.ModuleScript:WaitForChild("TacticalBoostModule"))
 local ShieldModule = require(ServerScriptService.ModuleScript:WaitForChild("ShieldModule"))
 local ZombieConfig = require(ReplicatedStorage.ModuleScript:WaitForChild("ZombieConfig"))
 

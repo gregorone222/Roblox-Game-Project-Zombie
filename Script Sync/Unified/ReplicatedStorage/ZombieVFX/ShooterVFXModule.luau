@@ -13,7 +13,7 @@ local ModuleScriptReplicatedStorage = ReplicatedStorage.ModuleScript
 local ModuleScriptServerScriptService = ServerScriptService.ModuleScript
 
 local AudioManager = require(ModuleScriptReplicatedStorage:WaitForChild("AudioManager"))
-local ElementModule = require(ModuleScriptServerScriptService:WaitForChild("ElementConfigModule"))
+local TacticalBoostModule = require(ModuleScriptServerScriptService:WaitForChild("TacticalBoostModule"))
 local ShieldModule = require(ModuleScriptServerScriptService:WaitForChild("ShieldModule"))
 
 -- === Helpers khusus Shooter ===

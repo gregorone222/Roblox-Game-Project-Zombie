@@ -52,19 +52,19 @@ local allRemoteEvents = {
 	-- ========== SHOPS ==========
 	"UpgradeUIOpen", "ConfirmUpgrade",
 	"PerkShopEvent", "PerkBuyEvent", "OpenPerkShop", "PerkUpdate", "RequestOpenPerkShop", "ClosePerkShop",
-	"ElementShopEvent", "ElementBuyEvent", "OpenElementShop", "ElementUpdate", "RequestOpenElementShop", "CloseElementShop",
+	"TacticalBoostShopEvent", "TacticalBoostBuyEvent", "OpenTacticalBoostShop", "TacticalBoostUpdate", "RequestOpenTacticalBoostShop", "CloseTacticalBoostShop",
 	"RandomWeaponEvent", "BuyRandomWeaponEvent",
 	"OpenReplaceUI", "ReplaceChoice",
 	
 	-- ========== POINTS/CURRENCY ==========
 	"PointsUpdate", "PointsUpdateEvent", "CoinsUpdate", "CoinsUpdateEvent", "SetPlayerStats",
-	"SurvivalCoinsUpdateEvent", "CombatPointsUpdate", -- New currency events
+	"SurvivalCoinsUpdateEvent", "ValorUpdate", -- New currency events
 	
 	-- ========== PERKS/ELEMENTS ==========
 	"PerkActivatedEvent", "PerkDeactivatedEvent", "PerkActivated", "PerkDeactivated", "ActivatePerkEvent", "PerkPurchased",
 	"PerkEquippedEvent", "PerkDisplayUpdate",
-	"ElementActivatedEvent", "ElementDeactivatedEvent", "ElementActivated", "ElementDeactivated", "ActivateElementEvent", "ElementPurchased",
-	"ElementEquippedEvent", "ElementDisplayUpdate", "InvincibilityEffectEvent",
+	"TacticalBoostActivatedEvent", "TacticalBoostDeactivatedEvent", "TacticalBoostActivated", "TacticalBoostDeactivated", "ActivateTacticalBoostEvent", "TacticalBoostPurchased",
+	"TacticalBoostEquippedEvent", "TacticalBoostDisplayUpdate", "InvincibilityEffectEvent",
 	
 	-- ========== BOSS VFX ==========
 	"PlayBossSkillEvent", "Boss2GravityLocalPull", "ChromaticRequiemUIEvent",
@@ -119,7 +119,7 @@ local allRemoteFunctions = {
 	
 	-- ========== PERKS/ELEMENTS ==========
 	"PurchasePerk", "GetOwnedPerks",
-	"PurchaseElement", "GetOwnedElements",
+	"PurchaseTacticalBoost", "GetOwnedTacticalBoosts",
 	
 	-- ========== WEAPONS ==========
 	"PurchaseRandomWeapon", "GetRandomWeaponCost",

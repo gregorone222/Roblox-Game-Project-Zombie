@@ -15,7 +15,7 @@ Master list semua UI yang dibutuhkan untuk game.
 | ✅ | Ammo Counter | AmmoUI | Current/Max ammo |
 | ✅ | Crosshair | CrosshairUI | Dynamic crosshair |
 | ✅ | Wave Counter | WaveCounterUI | Current wave display |
-| ✅ | Points Display | PointsUI | CP counter |
+| ✅ | Points Display | PointsUI | Valor counter |
 | ✅ | Coins Display | CoinsUI | Permanent currency |
 | ✅ | Hitmarker | HitmarkerUI | Hit feedback |
 | ✅ | Damage Flash | DamageFlashUI | Screen flash on hit |
@@ -33,7 +33,7 @@ Master list semua UI yang dibutuhkan untuk game.
 | Status | UI | Script | Notes |
 |:------:|:---|:-------|:------|
 | ✅ | Perk Display | PerkDisplayUI | Active perks |
-| ✅ | Element Display | ElementDisplayUI | Equipped elements |
+| ✅ | Tactical Boost Display | TacticalBoostDisplayUI | Equipped tactical boosts |
 | ✅ | Skill Display | SkillUI | Active skills |
 | ✅ | UTC Clock | UTCClockUI | Time display |
 
@@ -46,7 +46,7 @@ Master list semua UI yang dibutuhkan untuk game.
 | ✅ | Perk Shop | PerkShopUI | Buy perks |
 | ✅ | Random Weapon Shop | RandomWeaponShopUI | Mystery box |
 | ✅ | Upgrade Shop | UpgradeShopUI | Weapon upgrades |
-| ✅ | Element Shop | ElementShopUI | Buy elements |
+| ✅ | Tactical Boost Shop | TacticalBoostShopUI | Buy tactical boosts |
 | ✅ | AP Shop | APShopUI | Achievement Points shop |
 | ✅ | MP Shop | MPShopUI | Mission Points shop |
 | ✅ | Gacha | GachaUI | Gacha system |

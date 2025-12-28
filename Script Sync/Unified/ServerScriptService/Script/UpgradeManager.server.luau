@@ -16,7 +16,7 @@ local ModuleScriptReplicatedStorage = ReplicatedStorage.ModuleScript
 local ModuleScriptServerScriptService = ServerScriptService.ModuleScript
 
 local WeaponModule = require(ModuleScriptReplicatedStorage:WaitForChild("WeaponModule"))
-local PointsSystem = require(ModuleScriptServerScriptService:WaitForChild("CombatPointsModule"))
+local PointsSystem = require(ModuleScriptServerScriptService:WaitForChild("ValorModule"))
 local WeaponUpgradeModule = require(ModuleScriptServerScriptService:WaitForChild("WeaponUpgradeConfigModule"))
 local BoosterModule = require(ModuleScriptServerScriptService:WaitForChild("BoosterModule"))
 

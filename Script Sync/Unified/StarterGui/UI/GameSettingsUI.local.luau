@@ -60,7 +60,7 @@ local SETTINGS_ICONS = {
 
 local TARGET_BUTTON_NAMES = {
 	"MobileReloadButton", "MobileAimButton", "MobileSprintButton", "HPContainer", "StaminaContainer",
-	"AmmoContainer", "ElementActivatePrompt", "PerkDisplayContainer", "WaveContainer", "CombatPointsContainer", "BossTimerContainer"
+	"AmmoContainer", "TacticalBoostActivatePrompt", "PerkDisplayContainer", "WaveContainer", "ValorContainer", "BossTimerContainer"
 }
 
 -- ============================================================================
