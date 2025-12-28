@@ -246,29 +246,29 @@ Dokumentasi lengkap semua RemoteEvents dan RemoteFunctions di proyek.
 
 ## ⚡ Tactical Boost Events
 
-> **Note:** Internal code uses "Element" naming for backwards compatibility.
+> **Note:** Internal code uses "TacticalBoost" naming for backwards compatibility.
 
-### ActivateElementEvent
+### ActivateTacticalBoostEvent
 | Property | Value |
 |:---------|:------|
 | **Direction** | Client → Server |
-| **Parameters** | `elementName: string` |
+| **Parameters** | `TacticalBoostName: string` |
 | **Handler** | `TacticalBoostModule.lua:562` |
 | **Description** | Activate purchased tactical boost |
 
-### ElementActivated
+### TacticalBoostActivated
 | Property | Value |
 |:---------|:------|
 | **Direction** | Server → Client |
-| **Parameters** | `elementName: string`, `duration: number` |
+| **Parameters** | `TacticalBoostName: string`, `duration: number` |
 | **Handler** | Client UI |
 | **Description** | Notify tactical boost activation |
 
-### ElementDeactivated
+### TacticalBoostDeactivated
 | Property | Value |
 |:---------|:------|
 | **Direction** | Server → Client |
-| **Parameters** | `elementName: string` |
+| **Parameters** | `TacticalBoostName: string` |
 | **Handler** | Client UI |
 | **Description** | Notify tactical boost expiration |
 
@@ -340,10 +340,10 @@ Dokumentasi lengkap semua RemoteEvents dan RemoteFunctions di proyek.
 | **Returns** | `{success: boolean}` |
 | **Handler** | `PerkModule.lua` |
 
-### PurchaseTacticalBoost (PurchaseElement)
+### PurchaseTacticalBoost (PurchaseTacticalBoost)
 | Property | Value |
 |:---------|:------|
-| **Parameters** | `elementName: string` |
+| **Parameters** | `TacticalBoostName: string` |
 | **Returns** | `{success: boolean}` |
 | **Handler** | `TacticalBoostManager.lua` |
 
