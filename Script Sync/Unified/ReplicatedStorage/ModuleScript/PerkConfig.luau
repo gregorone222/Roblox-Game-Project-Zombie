@@ -16,18 +16,18 @@ PerkConfig.Perks = {
 		Icon = "🏃"
 	},
 	ReloadPlus = {
-		DisplayName = "Dexterity",
+		DisplayName = "Quick Hands",
 		Description = "Trained hands Reload 30% faster.",
 		Icon = "✋"
 	},
 	RevivePlus = {
-		DisplayName = "Humanity",
-		Description = "Sense of humanity speeds up Ally Revive by 50%.",
+		DisplayName = "Battle Bond",
+		Description = "Strong bond speeds up Ally Revive by 50%.",
 		Icon = "🤝"
 	},
 	RateBoost = {
-		DisplayName = "Adrenaline",
-		Description = "Adrenaline boosts Fire Rate by 30%.",
+		DisplayName = "Rapid Fire",
+		Description = "Quick trigger boosts Fire Rate by 30%.",
 		Icon = "🔥"
 	},
 	Medic = {

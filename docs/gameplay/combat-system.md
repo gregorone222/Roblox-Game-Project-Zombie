@@ -33,9 +33,9 @@ Holographic Data Chips yang memberikan upgrade permanen.
 |:---|:-------------|:-------|
 | **HP Plus** | Iron Will ❤️ | Max Health +30% |
 | **Stamina Plus** | Second Wind 🏃 | Max Stamina +30% |
-| **Reload Plus** | Dexterity ✋ | Reload speed +30% |
-| **RateBoost** | Adrenaline 🔥 | Fire Rate +30% |
-| **Revive Plus** | Humanity 🤝 | Revive 50% faster |
+| **Reload Plus** | Quick Hands ✋ | Reload speed +30% |
+| **RateBoost** | Rapid Fire 🔥 | Fire Rate +30% |
+| **Revive Plus** | Battle Bond 🤝 | Revive 50% faster |
 | **Medic** | Field Medic 💚 | Revived allies get 30% HP |
 
 ---
