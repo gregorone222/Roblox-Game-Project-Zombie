@@ -47,18 +47,6 @@ local hitmarkerGui = nil
 local currentWeaponAnimations = nil
 local currentAnimTrack = nil
 
--- Handles for visual positioning (REMOVED - WYSIWYG mode)
--- local showHandles = false
--- local moveHandles = nil
--- local rotateHandles = nil
--- local handlesPart = nil -- Invisible part for handles to attach
-
--- ViewportFrame Preview (REMOVED - WYSIWYG mode)
--- local viewportFrame = nil
--- local viewportCamera = nil
--- local viewportModel = nil
--- local viewportAnimator = nil
--- local viewportAnimTrack = nil
 
 -- Mobile Aspect Ratio Overlay
 local mobileOverlayGui = nil
@@ -749,29 +737,6 @@ local function updateViewportPosition()
 end
 
 -- Workspace Rig System (for 3D editing)
-local workspaceRig = nil
-local cameraRefPart = nil
-local workspaceHandles = nil
-local workspaceArcHandles = nil
-
--- [REDACTED] Workspace Rig Functions removed for WYSIWYG
-local function clearWorkspaceRig()
-	-- No-op
-end
-
-local function loadWorkspaceRig(tool)
-	-- No-op
-end
-
-local function loadViewportModel(tool)
-	-- No-op
-end
-
-local function playViewportAnimation(animId)
-	-- [REMOVED] No longer needed in WYSIWYG mode
-	-- Animation is handled by the game's HybridViewmodel system
-end
-
 -- Helper function to load position from current animation
 local function loadAnimationPosition()
 	if not currentWeaponAnimations then return end
@@ -1030,7 +995,33 @@ RunService.RenderStepped:Connect(function()
 			return
 		end
 
-		-- Sync Attributes
+		-- Check if a weapon is selected
+		if not currentTool or not currentWeaponName then
+			return -- No weapon selected, don't process
+		end
+
+		-- Process keyboard input for WYSIWYG editing
+		local shift = UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) or UserInputService:IsKeyDown(Enum.KeyCode.RightShift)
+		local delta = shift and STEP_SIZE * FINE_MULT or STEP_SIZE
+		local rotDelta = shift and ROT_STEP * FINE_MULT or ROT_STEP
+
+		-- Position Adjustments (Arrow Keys + W/S for Z)
+		if UserInputService:IsKeyDown(Enum.KeyCode.Up) then posY = posY + delta; ui.PosY.SetValue(posY) end
+		if UserInputService:IsKeyDown(Enum.KeyCode.Down) then posY = posY - delta; ui.PosY.SetValue(posY) end
+		if UserInputService:IsKeyDown(Enum.KeyCode.Right) then posX = posX + delta; ui.PosX.SetValue(posX) end
+		if UserInputService:IsKeyDown(Enum.KeyCode.Left) then posX = posX - delta; ui.PosX.SetValue(posX) end
+		if UserInputService:IsKeyDown(Enum.KeyCode.W) then posZ = posZ - delta; ui.PosZ.SetValue(posZ) end
+		if UserInputService:IsKeyDown(Enum.KeyCode.S) then posZ = posZ + delta; ui.PosZ.SetValue(posZ) end
+
+		-- Rotation Adjustments
+		if UserInputService:IsKeyDown(Enum.KeyCode.E) then rotX = rotX + rotDelta; ui.RotX.SetValue(rotX) end
+		if UserInputService:IsKeyDown(Enum.KeyCode.Q) then rotX = rotX - rotDelta; ui.RotX.SetValue(rotX) end
+		if UserInputService:IsKeyDown(Enum.KeyCode.C) then rotY = rotY + rotDelta; ui.RotY.SetValue(rotY) end
+		if UserInputService:IsKeyDown(Enum.KeyCode.Z) then rotY = rotY - rotDelta; ui.RotY.SetValue(rotY) end
+		if UserInputService:IsKeyDown(Enum.KeyCode.T) then rotZ = rotZ + rotDelta; ui.RotZ.SetValue(rotZ) end
+		if UserInputService:IsKeyDown(Enum.KeyCode.R) then rotZ = rotZ - rotDelta; ui.RotZ.SetValue(rotZ) end
+
+		-- Sync Attributes to HybridViewmodel
 		local cam = workspace.CurrentCamera
 		if cam then
 			local vm = cam:FindFirstChild("HybridViewmodel")
@@ -1038,77 +1029,11 @@ RunService.RenderStepped:Connect(function()
 				vm:SetAttribute("Editor_AnimPos", Vector3.new(posX, posY, posZ))
 				vm:SetAttribute("Editor_AnimRot", Vector3.new(rotX, rotY, rotZ))
 				vm:SetAttribute("Editor_AnimState", selectedAnimState)
-				-- ui.StatusLabel.Text = "Live Editing: " .. selectedAnimState
 			end
 		end
 	end
 end)
 
--- [NEW] Keyboard Input Handler for WYSIWYG - HOLD MODE
--- Process held keys every frame for continuous movement
-local function processKeyboardInput()
-	if not isActive then return end
-	if not RunService:IsRunning() then return end -- Only working in Play Mode
-
-	local shift = UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) or UserInputService:IsKeyDown(Enum.KeyCode.RightShift)
-	local delta = shift and STEP_SIZE * FINE_MULT or STEP_SIZE
-	local rotDelta = shift and ROT_STEP * FINE_MULT or ROT_STEP
-
-	-- Position Adjustments (Arrow Keys + W/S for Z)
-	if UserInputService:IsKeyDown(Enum.KeyCode.Up) then
-		posY = posY + delta
-		ui.PosY.SetValue(posY)
-	end
-	if UserInputService:IsKeyDown(Enum.KeyCode.Down) then
-		posY = posY - delta
-		ui.PosY.SetValue(posY)
-	end
-	if UserInputService:IsKeyDown(Enum.KeyCode.Right) then
-		posX = posX + delta
-		ui.PosX.SetValue(posX)
-	end
-	if UserInputService:IsKeyDown(Enum.KeyCode.Left) then
-		posX = posX - delta
-		ui.PosX.SetValue(posX)
-	end
-	if UserInputService:IsKeyDown(Enum.KeyCode.W) then -- Z Forward (closer)
-		posZ = posZ - delta
-		ui.PosZ.SetValue(posZ)
-	end
-	if UserInputService:IsKeyDown(Enum.KeyCode.S) then -- Z Backward (farther)
-		posZ = posZ + delta
-		ui.PosZ.SetValue(posZ)
-	end
-
-	-- Rotation Adjustments
-	if UserInputService:IsKeyDown(Enum.KeyCode.E) then -- Pitch Up
-		rotX = rotX + rotDelta
-		ui.RotX.SetValue(rotX)
-	end
-	if UserInputService:IsKeyDown(Enum.KeyCode.Q) then -- Pitch Down
-		rotX = rotX - rotDelta
-		ui.RotX.SetValue(rotX)
-	end
-	if UserInputService:IsKeyDown(Enum.KeyCode.C) then -- Yaw Right
-		rotY = rotY + rotDelta
-		ui.RotY.SetValue(rotY)
-	end
-	if UserInputService:IsKeyDown(Enum.KeyCode.Z) then -- Yaw Left
-		rotY = rotY - rotDelta
-		ui.RotY.SetValue(rotY)
-	end
-	if UserInputService:IsKeyDown(Enum.KeyCode.T) then -- Roll Right
-		rotZ = rotZ + rotDelta
-		ui.RotZ.SetValue(rotZ)
-	end
-	if UserInputService:IsKeyDown(Enum.KeyCode.R) then -- Roll Left
-		rotZ = rotZ - rotDelta
-		ui.RotZ.SetValue(rotZ)
-	end
-end
-
--- Run keyboard input processing every frame
-RunService.RenderStepped:Connect(processKeyboardInput)
 -- Find game viewmodel from camera (created by HybridViewmodel)
 local function findGameViewmodel()
 	local camera = workspace.CurrentCamera
@@ -1314,25 +1239,47 @@ ui.ApplyButton.MouseButton1Click:Connect(function()
 		local animBlock = weaponBlock:sub(animStart, animBlockEnd)
 		local afterAnim = weaponBlock:sub(animBlockEnd + 1)
 
-		print("[ViewmodelEditor] animBlock length:", #animBlock)
-		print("[ViewmodelEditor] animBlock content:", animBlock:sub(1, 200)) -- First 200 chars
-
 		-- Replace Position and Rotation in animation block
 		local newBlock, count
 
+		-- Try to replace existing Position
 		newBlock, count = replaceVector3(animBlock, "Position", posX, posY, posZ, false)
-		print("[ViewmodelEditor] Position replacement count:", count)
-		if count > 0 then animBlock = newBlock; replaced = replaced + count end
+		if count > 0 then 
+			animBlock = newBlock
+			replaced = replaced + count 
+		else
+			-- Position not found, insert after Id line or at start of block
+			local insertPos = animBlock:find("Id%s*=%s*[\"'][^\"']+[\"']%s*,?")
+			if insertPos then
+				local idEnd = animBlock:find("\n", insertPos) or animBlock:find(",", insertPos)
+				if idEnd then
+					animBlock = animBlock:sub(1, idEnd) .. "\n\t\tPosition = Vector3.new(" .. string.format("%.3f, %.3f, %.3f", posX, posY, posZ) .. ")," .. animBlock:sub(idEnd + 1)
+					replaced = replaced + 1
+				end
+			end
+		end
 
+		-- Try to replace existing Rotation
 		newBlock, count = replaceVector3(animBlock, "Rotation", rotX, rotY, rotZ, true)
-		print("[ViewmodelEditor] Rotation replacement count:", count)
-		if count > 0 then animBlock = newBlock; replaced = replaced + count end
-
-		print("[ViewmodelEditor] Total replaced:", replaced)
+		if count > 0 then 
+			animBlock = newBlock
+			replaced = replaced + count 
+		else
+			-- Rotation not found, insert after Position line
+			local insertPos = animBlock:find("Position%s*=%s*Vector3%.new%([^%)]+%)")
+			if insertPos then
+				local posEnd = animBlock:find("\n", insertPos) or animBlock:find(",", insertPos)
+				if posEnd then
+					animBlock = animBlock:sub(1, posEnd) .. "\n\t\tRotation = Vector3.new(" .. string.format("%.0f, %.0f, %.0f", rotX, rotY, rotZ) .. ")," .. animBlock:sub(posEnd + 1)
+					replaced = replaced + 1
+				end
+			end
+		end
 
 		weaponBlock = beforeAnim .. animBlock .. afterAnim
 	else
-		ui.StatusLabel.Text = "Warning: Animation '" .. selectedAnimState .. "' not found in Animations!"
+		ui.SetStatus("Animation '" .. selectedAnimState .. "' not found! Create it first.", "error")
+		return
 	end
 
 	source = beforeWeapon .. weaponBlock .. afterWeapon

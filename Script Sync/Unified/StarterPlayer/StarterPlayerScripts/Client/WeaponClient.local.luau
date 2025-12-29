@@ -958,7 +958,7 @@ local function onStepped(dt)
 		return
 	end
 
-	if currentAmmo <= 0 then isMouseDown = false end
+	if currentAmmo and currentAmmo <= 0 then isMouseDown = false end
 
 	if not UserInputService.TouchEnabled and isMouseDown and canShoot and not reloading and not isKnocked then
 		if player.Character and player.Character:GetAttribute("IsSprinting") == true then return end
@@ -1134,6 +1134,11 @@ local function onCharacterAdded(character)
 	-- Ketika ada objek baru di dalam karakter (bisa berupa Tool)
 	character.ChildAdded:Connect(function(child)
 		if child:IsA("Tool") and WeaponModule.Weapons[child.Name] then
+			-- Skip melee weapons (handled by separate MeleeClient)
+			local weaponData = WeaponModule.Weapons[child.Name]
+			if weaponData and weaponData.IsMelee then
+				return
+			end
 			if isGameOver or isKnocked then
 				humanoid:UnequipTools()
 				return

@@ -342,7 +342,7 @@ local function ResetGame()
 	restoreLighting() -- pastikan lighting balik normal saat reset
 	ClearChams()
 	-- Reset purchased elements
-	ElementModule.ClearPurchasedElements()
+	TacticalBoostModule.ClearPurchasedElements()
 
 	-- Reset Objectives
 	ObjectiveManager:Reset()
@@ -453,17 +453,6 @@ local function startGameLoop()
 
 			print("Wave " .. wave .. " dimulai! Jumlah Pemain: " .. activePlayers)
 			WaveUpdateEvent:FireAllClients(wave, activePlayers)
-
-			-- === PROGRESSIVE DAY CYCLE ===
-			if GameConfig.DayCycle and GameConfig.DayCycle.Enabled then
-				local clockTime = LightingManager.CalculateTimeForWave(
-					wave,
-					GameConfig.DayCycle.StartTime,
-					GameConfig.DayCycle.EndTime,
-					GameConfig.DayCycle.TotalWaves
-				)
-				LightingManager.SetTimeOfDay(clockTime, GameConfig.DayCycle.TransitionDuration)
-			end
 
 			local waveModifiers = {}
 
@@ -667,7 +656,7 @@ local function startGameLoop()
 							coinsFromDamage = math.floor(totalDamage / adjustedRatio)
 						end
 						local baseReward = coinConfig.WaveCompleteBonus + coinsFromDamage
-						local difficultyMultiplier = coinConfig.DifficultyCoinMultipliers[difficulty] or 1
+						local difficultyMultiplier = (coinConfig.DifficultyCoinMultipliers and coinConfig.DifficultyCoinMultipliers[difficulty]) or 1
 						local finalCoinReward = math.floor(baseReward * difficultyMultiplier)
 						if BoosterManager.IsBoosterActive(player, Constants.Strings.COIN_BOOSTER_1GAME) then
 							finalCoinReward = math.floor(finalCoinReward * 1.5)
@@ -687,7 +676,7 @@ local function startGameLoop()
 							xpFromDamage = math.floor(totalDamage / adjustedRatio)
 						end
 						local baseReward = xpConfig.WaveCompleteXPBonus + xpFromDamage
-						local difficultyMultiplier = xpConfig.DifficultyXPMultipliers[difficulty] or 1
+						local difficultyMultiplier = (xpConfig.DifficultyXPMultipliers and xpConfig.DifficultyXPMultipliers[difficulty]) or 1
 						local finalXPReward = math.floor(baseReward * difficultyMultiplier)
 						if BoosterManager.IsBoosterActive(player, Constants.Strings.XP_BOOSTER_30MIN) then
 							finalXPReward = finalXPReward * 2
@@ -743,6 +732,20 @@ local function startGameLoop()
 			-- NOTE: DarkWave prediction removed - day cycle is now continuous
 			-- No need to predict or transition to dark settings
 
+			-- === PROGRESSIVE DAY CYCLE (during countdown) ===
+			-- Start transition now so it happens during 10-second countdown
+			local nextWave = wave + 1
+			if GameConfig.DayCycle and GameConfig.DayCycle.Enabled then
+				local clockTime = LightingManager.CalculateTimeForWave(
+					nextWave,
+					GameConfig.DayCycle.StartTime,
+					GameConfig.DayCycle.EndTime,
+					GameConfig.DayCycle.TotalWaves
+				)
+				-- Transition takes 10 seconds (same as countdown)
+				LightingManager.SetTimeOfDay(clockTime, 10)
+			end
+
 			for count = 10, 1, -1 do
 				if (myToken ~= runToken) or (not gameStarted) then break end
 				WaveCountdownEvent:FireAllClients(count)
@@ -751,7 +754,7 @@ local function startGameLoop()
 			WaveCountdownEvent:FireAllClients(0)
 			task.wait(0.1)
 
-			ElementModule.ClearPurchasedElements()
+			TacticalBoostModule.ClearPurchasedElements()
 			updatePlayerCount()
 			wave += 1
 		end

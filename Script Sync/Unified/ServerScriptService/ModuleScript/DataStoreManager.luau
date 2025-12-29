@@ -59,7 +59,8 @@ local DEFAULT_PLAYER_DATA = {
 			Equipped = {}
 		},
 		PityCount = 0,
-		LastFreeGachaClaimUTC = 0
+		LastFreeGachaClaimUTC = 0,
+		EquippedMelee = "Crowbar"
 	},
 	achievements = {
 		Completed = {},

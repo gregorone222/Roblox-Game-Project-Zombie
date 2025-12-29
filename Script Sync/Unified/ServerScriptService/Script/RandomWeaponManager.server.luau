@@ -69,6 +69,45 @@ Players.PlayerAdded:Connect(function(player)
 		local backpack = player:FindFirstChild("Backpack")
 		if not backpack then return end
 
+		-- ═══════════════════════════════════════════════════════════════
+		-- MELEE WEAPON (Slot 1 - Always given, cannot be replaced)
+		-- ═══════════════════════════════════════════════════════════════
+		local hasMelee = false
+		for _, tool in pairs(backpack:GetChildren()) do
+			if tool:IsA("Tool") then
+				local weaponData = WeaponModule.Weapons[tool.Name]
+				if weaponData and weaponData.IsMelee then
+					hasMelee = true
+					break
+				end
+			end
+		end
+		if char:FindFirstChildOfClass("Tool") then
+			local equippedTool = char:FindFirstChildOfClass("Tool")
+			local weaponData = WeaponModule.Weapons[equippedTool.Name]
+			if weaponData and weaponData.IsMelee then
+				hasMelee = true
+			end
+		end
+
+		if not hasMelee then
+			-- Get player's equipped melee from inventory (default: Crowbar)
+			local equippedMelee = InventoryManager.GetEquippedMelee(player)
+			local meleeTemplate = findWeaponTemplate(equippedMelee)
+			if meleeTemplate then
+				local meleeClone = meleeTemplate:Clone()
+				meleeClone:SetAttribute("WeaponId", HttpService:GenerateGUID(false))
+				meleeClone:SetAttribute("IsMeleeSlot", true) -- Mark as melee slot
+				meleeClone.Parent = backpack
+				print(player.Name .. " received melee weapon: " .. equippedMelee)
+			else
+				warn("Melee template not found: " .. tostring(equippedMelee))
+			end
+		end
+
+		-- ═══════════════════════════════════════════════════════════════
+		-- RANGED WEAPON (Slot 2+ - Starter weapon)
+		-- ═══════════════════════════════════════════════════════════════
 		-- Cek apakah sudah punya senjata awal atau senjata apapun
 		local hasStarter = false
 		for _, tool in pairs(backpack:GetChildren()) do
@@ -77,8 +116,13 @@ Players.PlayerAdded:Connect(function(player)
 				break
 			end
 		end
-		if char:FindFirstChildOfClass("Tool") then
-			hasStarter = true
+		-- Check equipped tool (ignore melee)
+		local equippedTool = char:FindFirstChildOfClass("Tool")
+		if equippedTool then
+			local weaponData = WeaponModule.Weapons[equippedTool.Name]
+			if weaponData and not weaponData.IsMelee then
+				hasStarter = true
+			end
 		end
 
 		if hasStarter then return end

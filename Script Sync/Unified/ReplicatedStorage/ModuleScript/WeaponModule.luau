@@ -1404,6 +1404,136 @@ WeaponModule.Weapons = {
 		VisualRecoilIntensity = -0.5,
 		VisualRecoilKick = -0.7,
 		VisualRecoilRecovery = 15
+	},
+
+	-- ═══════════════════════════════════════════════════════════════════════════════
+	-- MELEE WEAPONS (Tool Slot 1 - Cannot be replaced in-game)
+	-- ═══════════════════════════════════════════════════════════════════════════════
+
+	["Crowbar"] = {
+		DisplayName = "Crowbar",
+		Category = "Melee",
+		IsMelee = true,
+		Damage = 45,
+		HeadshotMultiplier = 1.5,
+		AttackSpeed = 0.8,
+		Range = 5,
+		StaminaCost = 5,
+		Use_Skin = "Default Skin",
+		Sounds = {
+			Swing = "Weapons.Melee.Swing",
+			Hit = "Weapons.Melee.Hit"
+		},
+		Animations = {
+			Hold = {
+				Id = "rbxassetid://138935160413870",
+				Position = Vector3.new(0.2, -1.5, -0.3),
+				Rotation = Vector3.new(0, 0, 0)
+			},
+			Attack = {
+				Id = "rbxassetid://102809461040910",
+				Position = Vector3.new(0.2, -1.5, -0.3),
+				Rotation = Vector3.new(0, 0, 0)
+			}
+		},
+		Skins = {
+			["Default Skin"] = {
+				MeshId = "rbxassetid://97573329768699",
+				TextureId = "rbxassetid://90733729787742"
+			}
+		},
+		ShowCrosshair = false,
+		SwayIntensity = 0.3,
+		SwaySmoothing = 12,
+		BobIntensity = 0.4,
+		BobSmoothing = 10,
+		BobFrequency = 10,
+		BreathIntensity = 0.05,
+		BreathSpeed = 2
+	},
+
+	["Bat"] = {
+		DisplayName = "Baseball Bat",
+		Category = "Melee",
+		IsMelee = true,
+		Damage = 35,
+		HeadshotMultiplier = 1.5,
+		AttackSpeed = 0.5,
+		Range = 4.5,
+		StaminaCost = 4,
+		Use_Skin = "Default Skin",
+		Sounds = {
+			Swing = "Weapons.Melee.Swing",
+			Hit = "Weapons.Melee.Hit"
+		},
+		Animations = {
+			Hold = {
+				Id = "rbxassetid://112614643724193",
+				Position = Vector3.new(0.2, -1.5, -0.3),
+				Rotation = Vector3.new(0, 0, 0)
+			},
+			Attack = {
+				Id = "rbxassetid://90802294449535",
+				Position = Vector3.new(0.2, -1.5, -0.3),
+				Rotation = Vector3.new(0, 0, 0)
+			}
+		},
+		Skins = {
+			["Default Skin"] = {
+				MeshId = "rbxassetid://140341708045272",
+				TextureId = "rbxassetid://115104815118400"
+			}
+		},
+		ShowCrosshair = false,
+		SwayIntensity = 0.3,
+		SwaySmoothing = 12,
+		BobIntensity = 0.4,
+		BobSmoothing = 10,
+		BobFrequency = 10,
+		BreathIntensity = 0.05,
+		BreathSpeed = 2
+	},
+
+	["Machete"] = {
+		DisplayName = "Machete",
+		Category = "Melee",
+		IsMelee = true,
+		Damage = 55,
+		HeadshotMultiplier = 1.5,
+		AttackSpeed = 1.0,
+		Range = 5.5,
+		StaminaCost = 6,
+		Use_Skin = "Default Skin",
+		Sounds = {
+			Swing = "Weapons.Melee.Swing",
+			Hit = "Weapons.Melee.Hit"
+		},
+		Animations = {
+			Hold = {
+				Id = "rbxassetid://82232796218764",
+				Position = Vector3.new(0.2, -1.5, -0.3),
+				Rotation = Vector3.new(0, 0, 0)
+			},
+			Attack = {
+				Id = "rbxassetid://90990293014339",
+				Position = Vector3.new(0.2, -1.5, -0.3),
+				Rotation = Vector3.new(0, 0, 0)
+			}
+		},
+		Skins = {
+			["Default Skin"] = {
+				MeshId = "rbxassetid://116058160565130",
+				TextureId = "rbxassetid://110495399083937"
+			}
+		},
+		ShowCrosshair = false,
+		SwayIntensity = 0.3,
+		SwaySmoothing = 12,
+		BobIntensity = 0.4,
+		BobSmoothing = 10,
+		BobFrequency = 10,
+		BreathIntensity = 0.05,
+		BreathSpeed = 2
 	}
 }
 

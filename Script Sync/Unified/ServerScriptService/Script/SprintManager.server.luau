@@ -166,3 +166,40 @@ jumpEvent.OnServerEvent:Connect(function(player)
 		data.stamina = data.stamina - 5
 	end
 end)
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- MELEE STAMINA API (Used by MeleeManager)
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+local BindableEvents = ReplicatedStorage:WaitForChild("BindableEvents")
+
+-- Create DeductStamina BindableEvent if not exist
+local DeductStaminaEvent = BindableEvents:FindFirstChild("DeductStamina")
+if not DeductStaminaEvent then
+	DeductStaminaEvent = Instance.new("BindableEvent")
+	DeductStaminaEvent.Name = "DeductStamina"
+	DeductStaminaEvent.Parent = BindableEvents
+end
+
+-- Create GetStamina BindableFunction if not exist
+local GetStaminaFunction = BindableEvents:FindFirstChild("GetStamina")
+if not GetStaminaFunction then
+	GetStaminaFunction = Instance.new("BindableFunction")
+	GetStaminaFunction.Name = "GetStamina"
+	GetStaminaFunction.Parent = BindableEvents
+end
+
+-- Deduct stamina from a player
+DeductStaminaEvent.Event:Connect(function(player, amount)
+	local data = playerData[player]
+	if not data then return end
+	
+	data.stamina = math.max(0, data.stamina - amount)
+end)
+
+-- Get current stamina of a player
+GetStaminaFunction.OnInvoke = function(player)
+	local data = playerData[player]
+	if not data then return 0 end
+	return data.stamina
+end

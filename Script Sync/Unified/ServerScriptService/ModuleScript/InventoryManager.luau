@@ -260,10 +260,49 @@ function InventoryManager.GetFullInventory(player)
 			Weapons = {},
 			Skins = { Owned = {}, Equipped = {} },
 			Boosters = {},
-			Items = {}
+			Items = {},
+			MeleeWeapons = InventoryManager.GetAllMeleeWeapons(),
+			EquippedMelee = "Crowbar"
 		}
 	end
+	
+	-- Inject melee weapons (always owned by all players)
+	inventory.MeleeWeapons = InventoryManager.GetAllMeleeWeapons()
+	inventory.EquippedMelee = inventory.EquippedMelee or "Crowbar"
+	
 	return inventory
+end
+
+-- =============================================================================
+-- MELEE WEAPONS API
+-- =============================================================================
+
+-- All players own all melee weapons by default (no unlock required)
+local ALL_MELEE_WEAPONS = {"Crowbar", "Bat", "Machete"}
+local DEFAULT_MELEE = "Crowbar"
+
+function InventoryManager.GetAllMeleeWeapons()
+	return ALL_MELEE_WEAPONS
+end
+
+function InventoryManager.GetEquippedMelee(player)
+	local inventory = getPlayerInventory(player)
+	if not inventory then return DEFAULT_MELEE end
+	return inventory.EquippedMelee or DEFAULT_MELEE
+end
+
+function InventoryManager.EquipMelee(player, meleeName)
+	if not player or not meleeName then return false, "Invalid arguments" end
+	if not table.find(ALL_MELEE_WEAPONS, meleeName) then
+		return false, "Invalid melee weapon"
+	end
+	
+	local inventory, fullData = getPlayerInventory(player)
+	if not inventory then return false, "Failed to get inventory" end
+	
+	inventory.EquippedMelee = meleeName
+	savePlayerInventory(player, inventory, fullData)
+	return true, "Melee equipped successfully"
 end
 
 return InventoryManager

@@ -7,12 +7,29 @@ Sistem pertempuran dan senjata.
 ### Classification
 | Type | Weapons |
 |:-----|:--------|
+| **Melee** | Crowbar, Baseball Bat, Machete |
 | **Pistol** | M1911, Desert-Eagle, Glock-19 |
 | **SMG** | P90, MP5, KRISS-Vector |
 | **Assault Rifle** | AK-47, SCAR, M4A1 |
 | **Shotgun** | M590A1, Benelli-M4, Remington-870 |
 | **Sniper** | L115A1, DSR, Barrett-M82 |
 | **LMG** | RPD, MG42, M249, Minigun |
+
+### Melee Weapons (Tool Slot 1)
+
+Melee weapons adalah senjata permanen di slot 1 yang tidak bisa diganti selama gameplay.
+
+> [!NOTE]
+> Semua player **otomatis memiliki** ketiga melee weapons dari awal game. Default equipped: **Crowbar**.
+> Pilih melee weapon di Inventory untuk mengganti.
+
+| Weapon | Damage | Attack Speed | DPS | Range | Stamina Cost |
+|:-------|:------:|:------------:|:---:|:-----:|:------------:|
+| **Baseball Bat** | 35 | 0.5s | 70 | 4.5 | 4 |
+| **Crowbar** | 45 | 0.8s | 56 | 5.0 | 5 |
+| **Machete** | 55 | 1.0s | 55 | 5.5 | 6 |
+
+
 
 ### Acquisition
 - **Mystery Box (Gacha):** Senjata acak dari Digital Fabricator

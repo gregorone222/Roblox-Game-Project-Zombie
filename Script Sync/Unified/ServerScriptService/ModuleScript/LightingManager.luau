@@ -125,8 +125,18 @@ end
 
 function LightingManager.Init()
 	setupEffects()
-	LightingManager.ApplySettings(LightingManager.BaseSettings, 0)
-	-- print removed
+	-- Start at morning (6 AM) for wave 1
+	local morningSettings = {
+		ClockTime = 6, -- 6 AM (Morning/Sunrise)
+		Brightness = LightingManager.TimePresets.Morning.Brightness,
+		Ambient = LightingManager.TimePresets.Morning.Ambient,
+		OutdoorAmbient = LightingManager.TimePresets.Morning.OutdoorAmbient,
+		FogColor = LightingManager.TimePresets.Morning.FogColor,
+		FogStart = LightingManager.TimePresets.Morning.FogStart,
+		FogEnd = LightingManager.TimePresets.Morning.FogEnd
+	}
+	LightingManager.ApplySettings(morningSettings, 0)
+	print("LightingManager: Initialized at 6 AM (Morning)")
 end
 
 function LightingManager.ApplySettings(settings, duration)

@@ -43,11 +43,11 @@ ZombieConfig.Types = {
 	Tank = {
 		MaxHealth = 10000,
 		WalkSpeed = 6,
-		AttackDamage = 1,
+		AttackDamage = 15,
 		AttackCooldown = 2.5,
 		Chance = 0.90,
 		AttackRange = 5, -- Ditambahkan
-		MinWave = 1, -- Ditambahkan: mulai muncul di wave 9
+		MinWave = 9, -- Ditambahkan: mulai muncul di wave 9
 		AttackAnimations = {
 			"rbxassetid://90804907609507",
 			"rbxassetid://90804907609507",
