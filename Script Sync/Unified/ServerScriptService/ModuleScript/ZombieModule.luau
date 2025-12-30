@@ -153,6 +153,55 @@ function ZombieModule.SpawnZombie(spawnPoint, typeName, playerCount, difficulty,
 	local CollisionUtil = require(ServerScriptService.ModuleScript:WaitForChild("CollisionUtil"))
 	CollisionUtil.SetGroupRecursive(zombie, CollisionUtil.ZOMBIE_GROUP)
 
+	-- Setup custom walk animation if defined in config
+	if cfg.WalkAnimation and humanoid then
+		local animator = humanoid:FindFirstChildOfClass("Animator")
+		if not animator then
+			animator = Instance.new("Animator")
+			animator.Parent = humanoid
+		end
+		
+		local walkAnim = Instance.new("Animation")
+		walkAnim.AnimationId = cfg.WalkAnimation
+		
+		local success, walkTrack = pcall(function()
+			return animator:LoadAnimation(walkAnim)
+		end)
+		
+		if success and walkTrack then
+			walkTrack.Priority = Enum.AnimationPriority.Movement
+			walkTrack.Looped = true
+			
+			humanoid.Running:Connect(function(speed)
+				if speed > 0.1 then
+					if not walkTrack.IsPlaying then walkTrack:Play() end
+				else
+					if walkTrack.IsPlaying then walkTrack:Stop() end
+				end
+			end)
+		end
+	end
+
+	-- Setup Attack Animations
+	local loadedAttackTracks = {}
+	if cfg.AttackAnimations and humanoid then
+		local animator = humanoid:FindFirstChildOfClass("Animator")
+		if not animator then
+			animator = Instance.new("Animator")
+			animator.Parent = humanoid
+		end
+		
+		for _, animId in ipairs(cfg.AttackAnimations) do
+			local anim = Instance.new("Animation")
+			anim.AnimationId = animId
+			local success, track = pcall(function() return animator:LoadAnimation(anim) end)
+			if success and track then
+				track.Priority = Enum.AnimationPriority.Action
+				table.insert(loadedAttackTracks, track)
+			end
+		end
+	end
+
 	-- specific behaviours
 	if typeName == "Runner" then
 		-- faster chase handled by WalkSpeed; keep standard attack
@@ -272,6 +321,12 @@ function ZombieModule.SpawnZombie(spawnPoint, typeName, playerCount, difficulty,
 
 							-- Perform the attack damage in a separate thread
 							task.spawn(function()
+								-- Play attack animation if available
+								if #loadedAttackTracks > 0 then
+									local track = loadedAttackTracks[math.random(1, #loadedAttackTracks)]
+									track:Play()
+								end
+
 								local playerHumanoid = target.Character:FindFirstChildOfClass("Humanoid")
 								if playerHumanoid and not target.Character:FindFirstChild("Knocked") and not TacticalBoostModule.IsPlayerInvincible(target) then
 									local damage = zombie:GetAttribute("AttackDamage")
