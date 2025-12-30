@@ -453,7 +453,7 @@ local function watchZombie(zombie)
 
 	if humanoid then
 		humanoid.Died:Connect(function()
-			-- jangan drop dari boss; boss punya drop khusus (BP)
+			-- jangan drop dari boss; boss punya drop khusus (Valor)
 			if zombie:FindFirstChild("IsBoss") then return end
 
 			-- coba drop berdasarkan chance

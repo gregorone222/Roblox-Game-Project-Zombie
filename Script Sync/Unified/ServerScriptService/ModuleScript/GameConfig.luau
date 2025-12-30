@@ -88,14 +88,14 @@ local config = {
 
 	-- Pengaturan Senjata Acak
 	RandomWeapon = {
-		BaseCost = 750,
-		CostIncrease = 50, -- Jumlah kenaikan harga setiap pembelian
+		BaseCost = 1000,
+		CostIncrease = 1000, -- Jumlah kenaikan harga setiap pembelian
 	},
 
 	-- Pengaturan Ekonomi
 	Economy = {
-		-- Pengganda untuk menghitung BP yang didapat dari kerusakan (misal: 1 damage * 0.5 = 0.5 BP)
-		BP_Per_Damage_Multiplier = 0.5,
+		-- Pengganda untuk menghitung Valor yang didapat dari kerusakan (misal: 1 damage * 0.5 = 0.5 Valor)
+		Valor_Per_Damage_Multiplier = 0.5,
 
 		-- Pengaturan Ekonomi Koin (Mata Uang Permanen)
 		Coins = {
@@ -121,16 +121,6 @@ local config = {
 
 	-- Pengaturan Tingkat Kesulitan
 	Difficulty = {
-		Easy = {
-			HealthMultiplier = 0.7,
-			DamageMultiplier = 0.7,
-			Rules = {
-				FriendlyFire = false,
-				IncreaseRandomWeaponCost = false,
-				MaxPerks = 3,
-				AllowRevive = true,
-			}
-		},
 		Normal = {
 			HealthMultiplier = 1,
 			DamageMultiplier = 1,

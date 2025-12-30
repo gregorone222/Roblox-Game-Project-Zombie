@@ -433,8 +433,8 @@ ShootEvent.OnServerEvent:Connect(function(player, tool, cameraDirection, isAimin
 					if finalDamage and finalDamage > 0 then
 						-- Logika Poin & Misi per Pellet
 						if not immune then
-							local bpMultiplier = GameConfig.Economy and GameConfig.Economy.BP_Per_Damage_Multiplier or 0
-							PointsSystem.AddPoints(player, math.floor(finalDamage * bpMultiplier))
+							local valorMultiplier = GameConfig.Economy and GameConfig.Economy.Valor_Per_Damage_Multiplier or 0
+							PointsSystem.AddPoints(player, math.floor(finalDamage * valorMultiplier))
 						end
 
 						if isHeadshotPellet then
@@ -563,8 +563,8 @@ ShootEvent.OnServerEvent:Connect(function(player, tool, cameraDirection, isAimin
 
 				-- Berikan poin berdasarkan damage jika target bukan immune
 				if finalDamage and finalDamage > 0 and isZombie and not hitModel:GetAttribute("Immune") then
-					local bpMultiplier = GameConfig.Economy and GameConfig.Economy.BP_Per_Damage_Multiplier or 0
-					PointsSystem.AddPoints(player, math.floor(finalDamage * bpMultiplier))
+					local valorMultiplier = GameConfig.Economy and GameConfig.Economy.Valor_Per_Damage_Multiplier or 0
+					PointsSystem.AddPoints(player, math.floor(finalDamage * valorMultiplier))
 				end
 
 				-- Update Misi

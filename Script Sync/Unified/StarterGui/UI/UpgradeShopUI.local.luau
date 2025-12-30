@@ -431,7 +431,7 @@ local costLabel = Instance.new("TextLabel")
 costLabel.Size = UDim2.new(0.5, 0, 1, 0)
 costLabel.Position = UDim2.new(0, 16, 0, 0)
 costLabel.BackgroundTransparency = 1
-costLabel.Text = "UPGRADE COST (BP)"
+costLabel.Text = "UPGRADE COST (Valor)"
 costLabel.TextColor3 = COLORS.TextDim
 costLabel.TextSize = 10
 costLabel.Font = FONTS.Bold
@@ -745,18 +745,18 @@ local function performUpgrade()
 	if not currentTool or not upgradeData then return end
 	if isUpgrading then return end
 
-	-- Check BP
-	local currentBP = 0
-	if player:FindFirstChild("leaderstats") and player.leaderstats:FindFirstChild("BP") then
-		currentBP = player.leaderstats.BP.Value
+	-- Check Valor
+	local currentValor = 0
+	if player:FindFirstChild("leaderstats") and player.leaderstats:FindFirstChild("Valor") then
+		currentValor = player.leaderstats.Valor.Value
 	end
 
-	if currentBP < upgradeData.cost then
+	if currentValor < upgradeData.cost then
 		-- Feedback
 		feedbackToken = feedbackToken + 1
 		local myToken = feedbackToken
 
-		confirmButton.Text = "NOT ENOUGH BP"
+		confirmButton.Text = "NOT ENOUGH VALOR"
 		confirmButton.TextColor3 = COLORS.Danger
 		confirmButton.BackgroundColor3 = Color3.fromRGB(50, 20, 20)
 

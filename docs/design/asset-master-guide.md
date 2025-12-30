@@ -77,12 +77,12 @@ Master list semua asset yang dibutuhkan untuk game beserta panduan Art Direction
 ## 🪑 Furniture
 | Status | Asset |
 |:------:|:------|
-| ❌ | Rocking Chair |
-| ❌ | Workbench |
-| ❌ | Hay Bales |
-| ❌ | Stretcher/Cot |
+| ✅ | Rocking Chair |
+| ✅ | Workbench |
+| ✅ | Hay Bales |
+| ✅ | Stretcher/Cot |
 | ✅ | Fire Pit |
-| ❌ | Log Benches |
+| ✅ | Log Benches |
 | ❌ | Strategy Table |
 | ❌ | Radio Set |
 
@@ -301,11 +301,11 @@ sunset orange brown tones. Isometric 3/4 view, black background.
 | Enemies | 5 | 5 | 100% |
 | Bosses | 3 | 3 | 100% |
 | Weapons | 18 | 19 | 95% |
-| Furniture | 15 | 25 | 60% |
+| Furniture | 20 | 22 | 91% |
 | Props | 9 | 15 | 60% |
 | VFX | 4 | 8 | 50% |
 | Audio | 1 | 4 | 25% |
 | Decals | 0 | 7 | 0% |
-| **TOTAL** | **60** | **92** | **65%** |
+| **TOTAL** | **65** | **89** | **73%** |
 
 > ✅ = Done | ❌ = Todo | ⏳ = Future

@@ -53,8 +53,8 @@ Pre-mission supplies yang didapat dari **Daily Reward** dan **Gacha** saja.
 
 | Purpose | File |
 |:--------|:-----|
-| Config | `BoosterConfig.lua` |
-| Logic | `BoosterModule.lua` |
+| Config | `FieldKitConfig.luau` |
+| Logic | `FieldKitModule.luau` |
 | Display | (UI inventory di lobby) |
 
 > **DELETED:** `BoosterShopUI.lua`, `BoosterShopManager.lua`

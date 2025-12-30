@@ -606,8 +606,8 @@ openEv.OnClientEvent:Connect(function(config, hasDiscount)
 
 	hideCoreGui()
 
-	if player:FindFirstChild("leaderstats") and player.leaderstats:FindFirstChild("BP") then
-		currentPlayerPoints = player.leaderstats.BP.Value
+	if player:FindFirstChild("leaderstats") and player.leaderstats:FindFirstChild("Valor") then
+		currentPlayerPoints = player.leaderstats.Valor.Value
 	end
 	buildShop()
 	if #perkList > 0 then selectPerk(1) end

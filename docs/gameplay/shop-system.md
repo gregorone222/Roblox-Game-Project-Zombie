@@ -74,17 +74,17 @@ Valor adalah mata uang utama dalam game yang didapat dari:
 
 | Perk | Display Name | Cost | Effect |
 |:-----|:-------------|:-----|:-------|
-| RevivePlus | Humanity | 2,000 | Revive ally 50% faster |
+| RevivePlus | Battle Bond | 2,000 | Revive ally 50% faster |
 | Medic | Field Medic | 2,000 | +30% HP saat revive |
 | HPPlus | Iron Will | 4,000 | Max HP +30% (130 HP) |
 | StaminaPlus | Second Wind | 4,000 | Max Stamina +30% |
-| ReloadPlus | Dexterity | 4,000 | Reload 30% faster |
-| RateBoost | Adrenaline | 6,000 | Fire Rate +30% |
+| ReloadPlus | Quick Hands | 4,000 | Reload 30% faster |
+| RateBoost | Rapid Fire | 6,000 | Fire Rate +30% |
 
 **Rules:**
 - Perks **PERMANEN** untuk seluruh sesi game
 - Limit jumlah perk berdasarkan **difficulty**:
-  - Easy/Normal/Hard/Expert: Max 3
+  - Normal/Hard/Expert: Max 3
   - Hell: Max 2
   - Crazy: Max 1
 - Tidak bisa beli perk yang sama dua kali
@@ -92,16 +92,16 @@ Valor adalah mata uang utama dalam game yang didapat dari:
 **Tier Structure:**
 ```
 UTILITY (2,000 Valor)
-├── Humanity (RevivePlus)
+├── Battle Bond (RevivePlus)
 └── Field Medic (Medic)
 
 CORE (4,000 Valor)
 ├── Iron Will (HPPlus)
 ├── Second Wind (StaminaPlus)
-└── Dexterity (ReloadPlus)
+└── Quick Hands (ReloadPlus)
 
 ELITE (6,000 Valor)
-└── Adrenaline (RateBoost)
+└── Rapid Fire (RateBoost)
 ```
 
 ---

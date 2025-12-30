@@ -8,7 +8,7 @@ Sistem mata uang dan kemajuan pemain.
 
 | Currency | Type | Source | Usage | Handler |
 |:---------|:-----|:-------|:------|:--------|
-| **Survival Coins** | Permanen | Wave Clear & Damage | Skin/Item permanen, Gacha | `CoinsModule.luau` |
+| **Survival Coins** | Permanen | Wave Clear & Damage | Skin/Item permanen, Gacha | `SurvivalCoinsModule.luau` |
 | **Valor** | Sesi | In-game kills/objectives | In-game shops | `ValorModule.luau` |
 | **AP (Achievement Points)** | Permanen | Achievements | AP Shop items | `StatsModule.luau` |
 | **MP (Mission Points)** | Permanen | Missions | MP Shop items | `MissionPointsModule.luau` |
@@ -20,14 +20,7 @@ Sistem mata uang dan kemajuan pemain.
 ### Formula
 **Base Ratio:** 20 Damage = 1 Coin
 
-| Difficulty | Multiplier |
-|:-----------|:-----------|
-| Easy | 1.0x |
-| Normal | 1.2x |
-| Hard | 1.5x |
-| Expert | 2.0x |
-| Hell | 2.5x |
-| Crazy | 3.0x |
+> **NOTE:** Tidak ada multiplier terpisah per difficulty. Coins otomatis scaling dengan HP zombie (lebih banyak HP = lebih banyak damage = lebih banyak coins).
 
 ### Usage
 - **Gacha** - Roll for weapon skins
@@ -95,14 +88,7 @@ Earned by completing daily/weekly missions. Tracked by `MissionPointsModule.luau
 
 **Base Ratio:** 5 Damage = 1 XP
 
-| Difficulty | Multiplier |
-|:-----------|:-----------|
-| Easy | 1.0x |
-| Normal | 1.2x |
-| Hard | 1.5x |
-| Expert | 2.0x |
-| Hell | 2.2x |
-| Crazy | 2.5x |
+> **NOTE:** Tidak ada multiplier terpisah per difficulty. XP otomatis scaling dengan HP zombie (lebih banyak HP = lebih banyak damage = lebih banyak XP).
 
 ---
 

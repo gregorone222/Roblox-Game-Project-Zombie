@@ -493,7 +493,7 @@ costValue.TextXAlignment = Enum.TextXAlignment.Left
 costValue.Parent = actionBar
 
 local costSuffix = Instance.new("TextLabel")
-costSuffix.Text = "BP"
+costSuffix.Text = "Valor"
 costSuffix.TextColor3 = Color3.fromRGB(217, 119, 6)
 costSuffix.TextSize = 14
 costSuffix.Font = Enum.Font.GothamBold
@@ -711,9 +711,9 @@ local function fetchBalance()
 	local leaderstats = player:FindFirstChild("leaderstats")
 	local coins = 0
 
-	-- First check "Points" (BP usually implies Battle Points or similar)
+	-- First check "Points" (Valor is the session currency)
 	if leaderstats then
-		local pt = leaderstats:FindFirstChild("Points") or leaderstats:FindFirstChild("BP") or leaderstats:FindFirstChild("Coins")
+		local pt = leaderstats:FindFirstChild("Points") or leaderstats:FindFirstChild("Valor") or leaderstats:FindFirstChild("Coins")
 		if pt then coins = pt.Value end
 	end
 

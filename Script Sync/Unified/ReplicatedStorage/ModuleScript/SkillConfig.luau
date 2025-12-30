@@ -45,7 +45,7 @@ local SkillConfig = {
 	},
 	GreedGash = {
 		Name = "Greed Gash",
-		Description = "Memberikan peluang untuk mendapatkan bonus BP setiap kali berhasil membunuh zombie.",
+		Description = "Memberikan peluang untuk mendapatkan bonus Valor setiap kali berhasil membunuh zombie.",
 		MaxLevel = 5,
 		ChancePerLevel = 3, -- Peluang dalam persen (3% per level)
 		BonusAmount = 50
