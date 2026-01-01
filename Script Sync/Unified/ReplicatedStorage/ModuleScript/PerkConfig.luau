@@ -6,13 +6,13 @@ local PerkConfig = {}
 
 PerkConfig.Perks = {
 	HPPlus = {
-		DisplayName = "Iron Will",
-		Description = "Strong will increases Max Health by 30%.",
+		DisplayName = "Thick Skin",
+		Description = "Tough survivor skin increases Max Health by 30%.",
 		Icon = "❤️"
 	},
 	StaminaPlus = {
-		DisplayName = "Second Wind",
-		Description = "Second wind increases Max Stamina by 30%.",
+		DisplayName = "Runner's High",
+		Description = "Adrenaline boost increases Max Stamina by 30%.",
 		Icon = "🏃"
 	},
 	ReloadPlus = {
@@ -21,8 +21,8 @@ PerkConfig.Perks = {
 		Icon = "✋"
 	},
 	RevivePlus = {
-		DisplayName = "Battle Bond",
-		Description = "Strong bond speeds up Ally Revive by 50%.",
+		DisplayName = "Helping Hand",
+		Description = "Caring nature speeds up Ally Revive by 50%.",
 		Icon = "🤝"
 	},
 	RateBoost = {
@@ -31,8 +31,8 @@ PerkConfig.Perks = {
 		Icon = "🔥"
 	},
 	Medic = {
-		DisplayName = "Field Medic",
-		Description = "First aid grants 30% HP upon revive.",
+		DisplayName = "Revival Expert",
+		Description = "Medical expertise grants 30% HP upon revive.",
 		Icon = "💚"
 	},
 }

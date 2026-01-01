@@ -72,14 +72,14 @@ Valor adalah mata uang utama dalam game yang didapat dari:
 **Objek:** Perk Machine (model khusus dengan tampilan stylized/cartoon)  
 **Trigger:** Proximity Prompt "E"
 
-| Perk | Display Name | Cost | Effect |
-|:-----|:-------------|:-----|:-------|
-| RevivePlus | Battle Bond | 2,000 | Revive ally 50% faster |
-| Medic | Field Medic | 2,000 | +30% HP saat revive |
-| HPPlus | Iron Will | 4,000 | Max HP +30% (130 HP) |
-| StaminaPlus | Second Wind | 4,000 | Max Stamina +30% |
-| ReloadPlus | Quick Hands | 4,000 | Reload 30% faster |
-| RateBoost | Rapid Fire | 6,000 | Fire Rate +30% |
+| Perk | Cost | Effect |
+|:-----|:-----|:-------|
+| Helping Hand | 2,000 | Revive ally 50% faster |
+| Revival Expert | 2,000 | +30% HP saat revive |
+| Thick Skin | 4,000 | Max HP +30% (130 HP) |
+| Runner's High | 4,000 | Max Stamina +30% |
+| Quick Hands | 4,000 | Reload 30% faster |
+| Rapid Fire | 6,000 | Fire Rate +30% |
 
 **Rules:**
 - Perks **PERMANEN** untuk seluruh sesi game
@@ -92,16 +92,16 @@ Valor adalah mata uang utama dalam game yang didapat dari:
 **Tier Structure:**
 ```
 UTILITY (2,000 Valor)
-├── Battle Bond (RevivePlus)
-└── Field Medic (Medic)
+├── Helping Hand
+└── Revival Expert
 
 CORE (4,000 Valor)
-├── Iron Will (HPPlus)
-├── Second Wind (StaminaPlus)
-└── Quick Hands (ReloadPlus)
+├── Thick Skin
+├── Runner's High
+└── Quick Hands
 
 ELITE (6,000 Valor)
-└── Rapid Fire (RateBoost)
+└── Rapid Fire
 ```
 
 ---

@@ -56,7 +56,21 @@ function ValorSystem.RemovePlayer(player)
 end
 
 function ValorSystem.AddPoints(player, amount)
-	if not playerPoints[player] then return false end
+	-- Auto-initialize if player not set up yet (fallback safety)
+	if not playerPoints[player] then
+		-- Initialize in background to not block hit detection
+		playerPoints[player] = 0 -- Set immediately to prevent re-entry
+		task.spawn(function()
+			print("[ValorModule] Auto-initializing player:", player.Name)
+			ValorSystem.SetupPlayer(player)
+		end)
+	end
+	
+	-- Still nil after setup attempt? Something is wrong
+	if not playerPoints[player] then 
+		warn("[ValorModule] Failed to initialize player: " .. tostring(player.Name))
+		return false 
+	end
 
 	-- Jika ini adalah pengurangan (pembelian), periksa apakah poin cukup
 	if amount < 0 then

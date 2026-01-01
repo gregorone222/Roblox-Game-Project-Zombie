@@ -46,14 +46,14 @@ Melee weapons adalah senjata permanen di slot 1 yang tidak bisa diganti selama g
 
 Holographic Data Chips yang memberikan upgrade permanen.
 
-| ID | Display Name | Effect |
-|:---|:-------------|:-------|
-| **HP Plus** | Iron Will ❤️ | Max Health +30% |
-| **Stamina Plus** | Second Wind 🏃 | Max Stamina +30% |
-| **Reload Plus** | Quick Hands ✋ | Reload speed +30% |
-| **RateBoost** | Rapid Fire 🔥 | Fire Rate +30% |
-| **Revive Plus** | Battle Bond 🤝 | Revive 50% faster |
-| **Medic** | Field Medic 💚 | Revived allies get 30% HP |
+| Perk | Effect |
+|:-----|:-------|
+| Thick Skin ❤️ | Max Health +30% |
+| Runner's High 🏃 | Max Stamina +30% |
+| Quick Hands ✋ | Reload speed +30% |
+| Rapid Fire 🔥 | Fire Rate +30% |
+| Helping Hand 🤝 | Revive 50% faster |
+| Revival Expert 💚 | Revived allies get 30% HP |
 
 ---
 

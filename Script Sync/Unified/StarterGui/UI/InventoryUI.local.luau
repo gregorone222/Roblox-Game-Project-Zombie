@@ -24,24 +24,44 @@ local ModelPreviewModule = require(ModuleScriptReplicated:WaitForChild("ModelPre
 local RemoteFunctions = ReplicatedStorage:WaitForChild("RemoteFunctions", 10)
 local inventoryRemote = RemoteFunctions and RemoteFunctions:WaitForChild("GetInventoryData", 5)
 
--- --- THEME CONSTANTS ---
+-- --- THEME CONSTANTS (Matching UI Master Guide - Makeshift Survivor Camp) ---
 local THEME = {
 	Colors = {
-		Background = Color3.fromRGB(15, 12, 10),
-		Panel = Color3.fromRGB(28, 24, 20),
-		PanelGlass = Color3.fromRGB(35, 30, 25),
-		AccentMain = Color3.fromRGB(255, 140, 0),      -- AMBER
-		AccentSec = Color3.fromRGB(160, 40, 30),       -- RUST
-		TextHigh = Color3.fromRGB(230, 220, 200),
-		TextMid = Color3.fromRGB(150, 140, 120),
-		TextLow = Color3.fromRGB(80, 70, 60),
-		Success = Color3.fromRGB(100, 180, 80),
-		Error = Color3.fromRGB(200, 60, 60)
+		-- Core Colors
+		Background = Color3.fromRGB(20, 16, 12),      -- Warm dark brown
+		Panel = Color3.fromRGB(35, 28, 22),           -- Warm brown panel
+		PanelGlass = Color3.fromRGB(45, 38, 30),      -- Lighter warm brown
+		
+		-- Accent Colors
+		AccentMain = Color3.fromRGB(218, 165, 32),    -- Golden (Sunset Orange)
+		AccentSec = Color3.fromRGB(139, 90, 43),      -- Forest Brown
+		AccentHighlight = Color3.fromRGB(255, 200, 80), -- Bright Yellow
+		
+		-- Text Colors
+		TextHigh = Color3.fromRGB(255, 248, 230),     -- Warm white
+		TextMid = Color3.fromRGB(180, 160, 130),      -- Muted gold
+		TextLow = Color3.fromRGB(100, 85, 65),        -- Dark warm
+		
+		-- Status Colors
+		Success = Color3.fromRGB(46, 204, 113),       -- Green #2ecc71
+		Error = Color3.fromRGB(231, 76, 60),          -- Red #e74c3c
+		Warning = Color3.fromRGB(241, 196, 15),       -- Yellow #f1c40f
+		
+		-- Rarity Colors (from UI Master Guide)
+		Common = Color3.fromRGB(180, 180, 180),       -- Grey #b4b4b4
+		Uncommon = Color3.fromRGB(0, 200, 0),         -- Green #00c800
+		Rare = Color3.fromRGB(0, 150, 255),           -- Blue #0096ff
+		Epic = Color3.fromRGB(150, 0, 200),           -- Purple #9600c8
+		Legendary = Color3.fromRGB(255, 200, 0)       -- Gold #ffc800
 	},
 	Fonts = {
-		Header = Enum.Font.Michroma,
-		Body = Enum.Font.Oswald,
+		Header = Enum.Font.GothamBold,                -- Per UI Master Guide
+		Body = Enum.Font.GothamMedium,
 		Mono = Enum.Font.Code
+	},
+	Sizes = {
+		CornerRadius = UDim.new(0, 8),                -- 8-12px per guide
+		BorderThickness = 2
 	}
 }
 
@@ -70,9 +90,21 @@ end
 
 -- --- STATE ---
 local State = {
+	CurrentTab = "Weapons", -- Main tab: Weapons, Skills, Achievements, FieldKit
 	SelectedCategory = "All",
 	SelectedWeapon = nil,
-	CurrentPreview = nil
+	CurrentPreview = nil,
+	SelectedSkill = nil,
+	SelectedAchievement = nil,
+	SelectedFieldKit = nil
+}
+
+-- Main Tabs Configuration
+local MAIN_TABS = {
+	{Id = "Weapons", Label = "WEAPONS", Icon = "🔫", Order = 1},
+	{Id = "Skills", Label = "SKILLS", Icon = "⚡", Order = 2},
+	{Id = "Achievements", Label = "ACHIEVE", Icon = "🏆", Order = 3},
+	{Id = "FieldKit", Label = "F. KIT", Icon = "🎒", Order = 4}
 }
 
 -- --- UI CONSTRUCTION ---
@@ -89,53 +121,82 @@ local mainContainer = create("CanvasGroup", {
 	-- Rule: Use Scale.
 	Size = UDim2.fromScale(0.85, 0.8), Position = UDim2.fromScale(0.5, 0.5),
 	AnchorPoint = Vector2.new(0.5, 0.5), BackgroundColor3 = THEME.Colors.Background,
-	BackgroundTransparency = 0.05, GroupTransparency = 1, Visible = false
+	BackgroundTransparency = 0.02, GroupTransparency = 1, Visible = false
 })
-addCorner(mainContainer, 8)
-addStroke(mainContainer, THEME.Colors.AccentSec)
+addCorner(mainContainer, 12)
+addStroke(mainContainer, THEME.Colors.AccentMain)
 
 -- Top Bar / Header
 local topBar = create("Frame", {
-	Parent = mainContainer, Size = UDim2.fromScale(1, 0.12), -- Scale-based height
-	BackgroundColor3 = THEME.Colors.Panel
+	Parent = mainContainer, Size = UDim2.fromScale(1, 0.1),
+	BackgroundColor3 = THEME.Colors.Panel, BorderSizePixel = 0
 })
+addCorner(topBar, 12)
+-- Golden accent line at bottom of header
 create("Frame", {
-	Parent = topBar, Size = UDim2.new(1, 0, 0, 4), -- Hazard stripe (small detail allowed offset)
+	Parent = topBar, Size = UDim2.new(0.98, 0, 0, 3), Position = UDim2.new(0.01, 0, 1, -3),
 	BackgroundColor3 = THEME.Colors.AccentMain, BorderSizePixel = 0
 })
 
-create("TextLabel", {
-	Parent = topBar, Text = "SURVIVAL CACHE // RESTRICTED",
-	Size = UDim2.fromScale(0.6, 1), Position = UDim2.fromScale(0.02, 0),
+local headerLabel = create("TextLabel", {
+	Parent = topBar, Text = "📦 SURVIVAL CACHE",
+	Size = UDim2.fromScale(0.5, 0.8), Position = UDim2.fromScale(0.03, 0.1),
 	BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left,
 	Font = THEME.Fonts.Header, TextScaled = true, TextColor3 = THEME.Colors.AccentMain
 })
 -- Constraints for text to not look huge
-create("UITextSizeConstraint", {Parent = topBar:FindFirstChild("TextLabel"), MaxTextSize = 28})
+create("UITextSizeConstraint", {Parent = headerLabel, MaxTextSize = 32})
 
 local closeBtn = create("TextButton", {
-	Parent = topBar, Size = UDim2.fromScale(0.08, 0.6), Position = UDim2.fromScale(0.98, 0.5),
-	AnchorPoint = Vector2.new(1, 0.5), BackgroundColor3 = THEME.Colors.Error, Text = "X",
-	Font = THEME.Fonts.Header, TextColor3 = Color3.new(0,0,0), TextScaled = true
+	Parent = topBar, Size = UDim2.fromScale(0.06, 0.6), Position = UDim2.fromScale(0.97, 0.5),
+	AnchorPoint = Vector2.new(1, 0.5), BackgroundColor3 = THEME.Colors.Error, Text = "✕",
+	Font = THEME.Fonts.Header, TextColor3 = THEME.Colors.TextHigh, TextScaled = true
 })
-create("UIAspectRatioConstraint", {Parent = closeBtn, AspectRatio = 1}) -- Keep Keypad square
-addCorner(closeBtn, 4)
+create("UIAspectRatioConstraint", {Parent = closeBtn, AspectRatio = 1})
+addCorner(closeBtn, 6)
 
 -- --- LAYOUT ---
--- 1. Sidebar (Categories)
+-- 1. Sidebar (Main Tabs + Sub-Categories)
 local sideBar = create("Frame", {
 	Parent = mainContainer, Size = UDim2.fromScale(0.2, 0.88), Position = UDim2.fromScale(0, 0.12),
 	BackgroundColor3 = THEME.Colors.Panel, BackgroundTransparency = 0.5
 })
+
+-- Main Tab Buttons (Top of Sidebar)
+local mainTabContainer = create("Frame", {
+	Parent = sideBar, Size = UDim2.fromScale(1, 0.35), Position = UDim2.fromScale(0, 0),
+	BackgroundTransparency = 1
+})
+create("UIListLayout", {Parent = mainTabContainer, Padding = UDim.new(0.02, 0), SortOrder = Enum.SortOrder.LayoutOrder})
+create("UIPadding", {Parent = mainTabContainer, PaddingTop = UDim.new(0.02, 0), PaddingLeft = UDim.new(0.05, 0), PaddingRight = UDim.new(0.05, 0)})
+
+-- Divider Line
+local divider = create("Frame", {
+	Parent = sideBar, Size = UDim2.fromScale(0.9, 0.003), Position = UDim2.fromScale(0.05, 0.36),
+	BackgroundColor3 = THEME.Colors.AccentMain, BorderSizePixel = 0
+})
+
+-- Sub-Category List (Bottom of Sidebar)
 local sideList = create("ScrollingFrame", {
-	Parent = sideBar, Size = UDim2.fromScale(0.9, 0.95), Position = UDim2.fromScale(0.05, 0.025),
+	Parent = sideBar, Size = UDim2.fromScale(0.9, 0.6), Position = UDim2.fromScale(0.05, 0.38),
 	BackgroundTransparency = 1, ScrollBarThickness = 4, ScrollBarImageColor3 = THEME.Colors.AccentSec
 })
 create("UIListLayout", {Parent = sideList, Padding = UDim.new(0.02, 0), SortOrder = Enum.SortOrder.LayoutOrder})
 
--- 2. Grid Area (Weapons)
+-- 2. Content Area Container (holds all tab content)
+local contentArea = create("Frame", {
+	Parent = mainContainer, Size = UDim2.fromScale(0.8, 0.88), Position = UDim2.fromScale(0.2, 0.12),
+	BackgroundTransparency = 1
+})
+
+-- 2a. Weapons Content (Grid + Detail)
+local weaponsContent = create("Frame", {
+	Name = "WeaponsContent", Parent = contentArea, Size = UDim2.fromScale(1, 1),
+	BackgroundTransparency = 1, Visible = true
+})
+
 local gridArea = create("Frame", {
-	Parent = mainContainer, Size = UDim2.fromScale(0.5, 0.88), Position = UDim2.fromScale(0.2, 0.12),
+	Parent = weaponsContent, Size = UDim2.fromScale(0.625, 1), Position = UDim2.fromScale(0, 0),
 	BackgroundColor3 = THEME.Colors.Background, BackgroundTransparency = 1
 })
 create("UIPadding", {
@@ -151,16 +212,166 @@ local gridLayout = create("UIGridLayout", {
 	CellPadding = UDim2.fromScale(0.03, 0.02)
 })
 
--- 3. Detail Area (Preview)
 local detailArea = create("Frame", {
-	Parent = mainContainer, Size = UDim2.fromScale(0.3, 0.88), Position = UDim2.fromScale(0.7, 0.12),
+	Parent = weaponsContent, Size = UDim2.fromScale(0.375, 1), Position = UDim2.fromScale(0.625, 0),
 	BackgroundColor3 = THEME.Colors.PanelGlass, BackgroundTransparency = 0.1
 })
 create("UIStroke", {Parent = detailArea, Color = THEME.Colors.AccentSec, Thickness = 2, Transparency = 0.5})
 
+-- 2b. Skills Content
+local skillsContent = create("Frame", {
+	Name = "SkillsContent", Parent = contentArea, Size = UDim2.fromScale(1, 1),
+	BackgroundTransparency = 1, Visible = false
+})
+local skillsScroll = create("ScrollingFrame", {
+	Parent = skillsContent, Size = UDim2.fromScale(0.65, 0.95), Position = UDim2.fromScale(0.02, 0.02),
+	BackgroundTransparency = 1, ScrollBarThickness = 6, ScrollBarImageColor3 = THEME.Colors.AccentMain
+})
+create("UIListLayout", {Parent = skillsScroll, Padding = UDim.new(0.01, 0), SortOrder = Enum.SortOrder.LayoutOrder})
+
+local skillDetailArea = create("Frame", {
+	Parent = skillsContent, Size = UDim2.fromScale(0.3, 0.95), Position = UDim2.fromScale(0.68, 0.02),
+	BackgroundColor3 = THEME.Colors.PanelGlass, BackgroundTransparency = 0.1
+})
+addCorner(skillDetailArea, 4)
+create("UIStroke", {Parent = skillDetailArea, Color = THEME.Colors.AccentSec, Thickness = 2, Transparency = 0.5})
+
+-- 2c. Achievements Content
+local achievementsContent = create("Frame", {
+	Name = "AchievementsContent", Parent = contentArea, Size = UDim2.fromScale(1, 1),
+	BackgroundTransparency = 1, Visible = false
+})
+local achievementsScroll = create("ScrollingFrame", {
+	Parent = achievementsContent, Size = UDim2.fromScale(0.98, 0.95), Position = UDim2.fromScale(0.01, 0.02),
+	BackgroundTransparency = 1, ScrollBarThickness = 6, ScrollBarImageColor3 = THEME.Colors.AccentMain
+})
+create("UIListLayout", {Parent = achievementsScroll, Padding = UDim.new(0.01, 0), SortOrder = Enum.SortOrder.LayoutOrder})
+
+-- 2d. Field Kit Content
+local fieldKitContent = create("Frame", {
+	Name = "FieldKitContent", Parent = contentArea, Size = UDim2.fromScale(1, 1),
+	BackgroundTransparency = 1, Visible = false
+})
+local fieldKitGrid = create("ScrollingFrame", {
+	Parent = fieldKitContent, Size = UDim2.fromScale(0.65, 0.95), Position = UDim2.fromScale(0.02, 0.02),
+	BackgroundTransparency = 1, ScrollBarThickness = 6, ScrollBarImageColor3 = THEME.Colors.AccentMain
+})
+create("UIGridLayout", {Parent = fieldKitGrid, CellSize = UDim2.fromScale(0.3, 0.3), CellPadding = UDim2.fromScale(0.02, 0.02)})
+
+local fieldKitDetailArea = create("Frame", {
+	Parent = fieldKitContent, Size = UDim2.fromScale(0.3, 0.95), Position = UDim2.fromScale(0.68, 0.02),
+	BackgroundColor3 = THEME.Colors.PanelGlass, BackgroundTransparency = 0.1
+})
+addCorner(fieldKitDetailArea, 4)
+create("UIStroke", {Parent = fieldKitDetailArea, Color = THEME.Colors.AccentSec, Thickness = 2, Transparency = 0.5})
+
+-- Content Reference Map
+local ContentPanels = {
+	Weapons = weaponsContent,
+	Skills = skillsContent,
+	Achievements = achievementsContent,
+	FieldKit = fieldKitContent
+}
+
 -- --- COMPONENT BUILDERS ---
 
-local function createCategoryBtn(name, order)
+-- Forward declarations
+local SetupCategories
+local createCategoryBtn
+
+local mainTabButtons = {} -- Store references to main tab buttons
+
+local function createMainTabBtn(tabData)
+	local btn = create("TextButton", {
+		Name = tabData.Id, Parent = mainTabContainer, Size = UDim2.fromScale(1, 0.22),
+		BackgroundColor3 = THEME.Colors.Background, AutoButtonColor = false,
+		Text = "", LayoutOrder = tabData.Order
+	})
+	addCorner(btn, 4)
+	
+	local iconLabel = create("TextLabel", {
+		Parent = btn, Text = tabData.Icon, Size = UDim2.fromScale(0.25, 0.8),
+		Position = UDim2.fromScale(0.05, 0.1), BackgroundTransparency = 1,
+		TextScaled = true
+	})
+	
+	local textLabel = create("TextLabel", {
+		Parent = btn, Text = tabData.Label, Size = UDim2.fromScale(0.65, 0.8),
+		Position = UDim2.fromScale(0.3, 0.1), BackgroundTransparency = 1,
+		Font = THEME.Fonts.Body, TextScaled = true, TextColor3 = THEME.Colors.TextMid,
+		TextXAlignment = Enum.TextXAlignment.Left
+	})
+	create("UITextSizeConstraint", {Parent = textLabel, MaxTextSize = 14})
+	
+	local marker = create("Frame", {
+		Name = "Marker", Parent = btn, Size = UDim2.fromScale(0.02, 0.8),
+		Position = UDim2.fromScale(0, 0.1), BackgroundColor3 = THEME.Colors.AccentMain,
+		Visible = false
+	})
+	addCorner(marker, 2)
+	
+	mainTabButtons[tabData.Id] = {Button = btn, Text = textLabel, Marker = marker}
+	return btn
+end
+
+-- Sub-category configurations per main tab
+local SUB_CATEGORIES = {
+	Weapons = {"All", "Rifle", "SMG", "Shotgun", "Sniper", "Melee"},
+	Skills = {"Combat", "Survival", "Utility"},
+	Achievements = {"All", "Combat", "Survival", "Daily"},
+	FieldKit = {"All", "Owned"}
+}
+
+local function SwitchTab(tabId)
+	State.CurrentTab = tabId
+	
+	-- Hide all content panels
+	for id, panel in pairs(ContentPanels) do
+		panel.Visible = (id == tabId)
+	end
+	
+	-- Update main tab button visuals
+	for id, refs in pairs(mainTabButtons) do
+		local isActive = (id == tabId)
+		refs.Marker.Visible = isActive
+		TweenService:Create(refs.Button, TweenInfo.new(0.2), {
+			BackgroundColor3 = isActive and THEME.Colors.Panel or THEME.Colors.Background
+		}):Play()
+		TweenService:Create(refs.Text, TweenInfo.new(0.2), {
+			TextColor3 = isActive and THEME.Colors.AccentMain or THEME.Colors.TextMid
+		}):Play()
+	end
+	
+	-- Clear and populate sub-categories based on tab
+	for _, c in ipairs(sideList:GetChildren()) do
+		if c:IsA("TextButton") then c:Destroy() end
+	end
+	
+	local cats = SUB_CATEGORIES[tabId] or {}
+	if tabId == "Weapons" then
+		SetupCategories() -- Use existing weapon category setup
+	else
+		for i, catName in ipairs(cats) do
+			local btn, lbl, mark = createCategoryBtn(catName, i)
+			-- Basic click handler for sub-categories (placeholder for now)
+			btn.MouseButton1Click:Connect(function()
+				-- Update visual
+				for _, b in ipairs(sideList:GetChildren()) do
+					if b:IsA("TextButton") then
+						TweenService:Create(b, TweenInfo.new(0.2), {BackgroundColor3 = THEME.Colors.Background}):Play()
+						TweenService:Create(b.TextLabel, TweenInfo.new(0.2), {TextColor3 = THEME.Colors.TextMid}):Play()
+						b.Mark.Visible = false
+					end
+				end
+				TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = THEME.Colors.Panel}):Play()
+				TweenService:Create(lbl, TweenInfo.new(0.2), {TextColor3 = THEME.Colors.AccentMain}):Play()
+				mark.Visible = true
+			end)
+		end
+	end
+end
+
+createCategoryBtn = function(name, order)
 	local btn = create("TextButton", {
 		Name = name, Parent = sideList, Size = UDim2.fromScale(1, 0.08), -- Scale Size
 		BackgroundColor3 = THEME.Colors.Background, AutoButtonColor = false,
@@ -308,7 +519,7 @@ local function PopulateGrid()
 	end
 end
 
-local function SetupCategories()
+SetupCategories = function()
 	local cats = {"All", "Rifle", "SMG", "Shotgun", "Sniper", "Melee"}
 	for i, c in ipairs(cats) do
 		local btn, lbl, mark = createCategoryBtn(c, i)
@@ -377,5 +588,16 @@ DetailRefs.EquipBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
-SetupCategories()
--- print removed
+-- Initialize Main Tabs
+local function SetupMainTabs()
+	for _, tabData in ipairs(MAIN_TABS) do
+		local btn = createMainTabBtn(tabData)
+		btn.MouseButton1Click:Connect(function()
+			SwitchTab(tabData.Id)
+		end)
+	end
+	-- Set initial active tab
+	SwitchTab("Weapons")
+end
+
+SetupMainTabs()

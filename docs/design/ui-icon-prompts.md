@@ -44,14 +44,14 @@ Hand-painted stylized 3D art style like mobile RPG games, Clash Royale, or Super
 
 ## 📋 Perk Icons Checklist
 
-| Status | Perk | Display Name | Symbol (Object) |
-|:------:|:-----|:-------------|:----------------|
-| ✅ | HP Plus | Iron Will | Armored Heart Badge |
-| ⏳ | Stamina Plus | Second Wind | Military Boots |
-| ⏳ | Reload Plus | Dexterity | Ammo Magazine |
-| ⏳ | RateBoost | Adrenaline | Flame/Fire Symbol |
-| ⏳ | Revive Plus | Humanity | Handshake Badge |
-| ✅ | Medic | Field Medic | First Aid Kit |
+| Status | Perk | Symbol (Object) |
+|:------:|:-----|:----------------|
+| ✅ | Thick Skin | Armored Heart Badge |
+| ⏳ | Runner's High | Military Boots |
+| ⏳ | Quick Hands | Ammo Magazine |
+| ⏳ | Rapid Fire | Flame/Fire Symbol |
+| ⏳ | Helping Hand | Handshake Badge |
+| ✅ | Revival Expert | First Aid Kit |
 
 ---
 

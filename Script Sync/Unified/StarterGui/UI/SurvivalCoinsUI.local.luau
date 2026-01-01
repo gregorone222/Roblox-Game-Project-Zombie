@@ -22,6 +22,20 @@ if playerGui:FindFirstChild("SurvivalCoinsUI") then
 end
 
 -- ======================================================
+-- CONFIGURATION - Warm "Cozy Apocalypse" Theme
+-- ======================================================
+local COLORS = {
+	Background = Color3.fromRGB(25, 18, 12), -- Warm dark brown
+	Border = Color3.fromRGB(218, 165, 32), -- Golden
+	IconBg = Color3.fromRGB(45, 32, 20), -- Dark warm brown
+	TextLabel = Color3.fromRGB(180, 160, 130), -- Muted gold
+	TextValue = Color3.fromRGB(255, 223, 128), -- Bright gold
+	Highlight = Color3.fromRGB(255, 200, 80) -- Gold highlight
+}
+
+local ICON_ASSET_ID = "rbxassetid://89004651637769" -- Survival Coin icon
+
+-- ======================================================
 -- PEMBUATAN UI
 -- ======================================================
 
@@ -31,50 +45,109 @@ screenGui.Parent = playerGui
 screenGui.IgnoreGuiInset = true
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
--- Container utama di pojok kanan atas dengan desain baru
+-- Main Card Container
 local container = Instance.new("Frame")
 container.Name = "Container"
 container.AnchorPoint = Vector2.new(0, 0)
-container.Position = UDim2.new(0.524, 0, 0.007, 0)
-container.Size = UDim2.new(0.15, 0, 0.1, 0)
-container.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-container.BackgroundTransparency = 0.1 -- Sedikit lebih transparan
-container.BorderSizePixel = 0 -- Hapus border lama
+container.Position = UDim2.new(0.5, 10, 0, 10)
+container.Size = UDim2.new(0, 220, 0, 55)
+container.BackgroundColor3 = COLORS.Background
+container.BackgroundTransparency = 0.15
+container.BorderSizePixel = 0
 container.Parent = screenGui
 
-local padding = Instance.new("UIPadding")
-padding.PaddingTop = UDim.new(0.01, 0)
-padding.PaddingLeft = UDim.new(0.01, 0)
-padding.PaddingBottom = UDim.new(0.01, 0)
-padding.PaddingRight = UDim.new(0.01, 0)
-padding.Parent = container
-
 local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 10) -- Sudut lebih bulat
+corner.CornerRadius = UDim.new(0, 12)
 corner.Parent = container
 
--- Tambahkan stroke modern
 local stroke = Instance.new("UIStroke")
-stroke.Color = Color3.fromRGB(150, 100, 180) -- Warna stroke ungu muda
-stroke.Thickness = 2
-stroke.Transparency = 0.5
+stroke.Color = COLORS.Border
+stroke.Thickness = 1.5
+stroke.Transparency = 0.6
 stroke.Parent = container
 
--- Label untuk menampilkan jumlah koin dengan font dan posisi baru
+-- Icon Container (Circle)
+local iconContainer = Instance.new("Frame")
+iconContainer.Name = "IconContainer"
+iconContainer.BackgroundColor3 = COLORS.IconBg
+iconContainer.BackgroundTransparency = 0.3
+iconContainer.Size = UDim2.new(0, 40, 0, 40)
+iconContainer.Position = UDim2.new(0, 8, 0.5, 0)
+iconContainer.AnchorPoint = Vector2.new(0, 0.5)
+iconContainer.Parent = container
+
+local iconCorner = Instance.new("UICorner")
+iconCorner.CornerRadius = UDim.new(1, 0)
+iconCorner.Parent = iconContainer
+
+local iconStroke = Instance.new("UIStroke")
+iconStroke.Color = COLORS.Border
+iconStroke.Transparency = 0.5
+iconStroke.Thickness = 1.5
+iconStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+iconStroke.Parent = iconContainer
+
+-- Icon Image (Using Asset ID)
+local iconImage = Instance.new("ImageLabel")
+iconImage.Name = "Icon"
+iconImage.Size = UDim2.new(0.8, 0, 0.8, 0)
+iconImage.Position = UDim2.new(0.5, 0, 0.5, 0)
+iconImage.AnchorPoint = Vector2.new(0.5, 0.5)
+iconImage.BackgroundTransparency = 1
+iconImage.Image = ICON_ASSET_ID
+iconImage.ScaleType = Enum.ScaleType.Fit
+iconImage.Parent = iconContainer
+
+-- Content Frame
+local contentFrame = Instance.new("Frame")
+contentFrame.Name = "Content"
+contentFrame.BackgroundTransparency = 1
+contentFrame.Size = UDim2.new(1, -58, 1, -8)
+contentFrame.Position = UDim2.new(0, 55, 0, 4)
+contentFrame.Parent = container
+
+local listLayout = Instance.new("UIListLayout")
+listLayout.FillDirection = Enum.FillDirection.Vertical
+listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+listLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+listLayout.Padding = UDim.new(0, -2)
+listLayout.Parent = contentFrame
+
+-- Label "SURVIVAL COINS"
+local labelText = Instance.new("TextLabel")
+labelText.Name = "Label"
+labelText.BackgroundTransparency = 1
+labelText.Size = UDim2.new(1, 0, 0, 12)
+labelText.Text = "SURVIVAL COINS"
+labelText.TextColor3 = COLORS.TextLabel
+labelText.TextXAlignment = Enum.TextXAlignment.Left
+labelText.Font = Enum.Font.GothamBold
+labelText.TextSize = 10
+labelText.LayoutOrder = 1
+labelText.Parent = contentFrame
+
+-- Value Number
 local coinsLabel = Instance.new("TextLabel")
 coinsLabel.Name = "CoinsLabel"
-coinsLabel.Size = UDim2.new(1, 0, 1, 0)
-coinsLabel.Position = UDim2.new(0, 0, 0, 0) 
-coinsLabel.Text = "💰 Survival Coins: ..."
-coinsLabel.TextColor3 = Color3.fromRGB(255, 255, 255) -- Warna merah muda terang
-coinsLabel.Font = Enum.Font.GothamMedium -- Font lebih modern
-coinsLabel.TextSize = 18 -- Ukuran teks spesifik
-coinsLabel.TextScaled = true -- Matikan penskalaan otomatis
-coinsLabel.TextXAlignment = Enum.TextXAlignment.Center -- Rata kiri
-coinsLabel.TextYAlignment = Enum.TextYAlignment.Center -- Tengah vertikal
 coinsLabel.BackgroundTransparency = 1
+coinsLabel.Size = UDim2.new(1, 0, 0, 28)
+coinsLabel.Text = "..."
+coinsLabel.TextColor3 = COLORS.TextValue
+coinsLabel.TextXAlignment = Enum.TextXAlignment.Left
+coinsLabel.Font = Enum.Font.GothamBold
+coinsLabel.TextSize = 26
+coinsLabel.LayoutOrder = 2
 coinsLabel.ZIndex = 2
-coinsLabel.Parent = container
+coinsLabel.Parent = contentFrame
+
+-- Gradient for value text
+local valueGradient = Instance.new("UIGradient")
+valueGradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 223, 128)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(218, 165, 32))
+})
+valueGradient.Rotation = 90
+valueGradient.Parent = coinsLabel
 
 -- ======================================================
 -- LOGIKA UI
@@ -107,21 +180,32 @@ local function updateCoinsUI(newCoins)
 
 	-- Update teks label setiap frame selama tween berjalan
 	local connection
+	-- Format number with dots for thousands
+	local function formatNumber(n)
+		local formatted = tostring(n)
+		while true do
+			local k
+			formatted, k = string.gsub(formatted, "^(-?%d+)(%d%d%d)", '%1.%2')
+			if (k==0) then break end
+		end
+		return formatted
+	end
+
 	connection = tweenValue:GetPropertyChangedSignal("Value"):Connect(function()
-		coinsLabel.Text = string.format("Survival Coins: %d", math.floor(tweenValue.Value + 0.5))
+		coinsLabel.Text = formatNumber(math.floor(tweenValue.Value + 0.5))
 	end)
 
 	-- Setelah tween selesai
 	countTween.Completed:Connect(function()
 		if connection then connection:Disconnect() end
-		coinsLabel.Text = string.format("💰Survival Coins: %d", newCoins) -- Pastikan nilai akhir benar
+		coinsLabel.Text = formatNumber(newCoins) -- Pastikan nilai akhir benar
 		currentCoins = newCoins -- Update nilai saat ini
 		tweenValue:Destroy() -- Hapus NumberValue sementara
 	end)
 
 	-- Animasi highlight singkat saat koin bertambah
 	if diff > 0 then
-		local highlightTween = TweenService:Create(container, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, 0, true), {BackgroundColor3 = Color3.fromRGB(75, 60, 80)})
+		local highlightTween = TweenService:Create(container, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, 0, true), {BackgroundColor3 = COLORS.Highlight})
 		highlightTween:Play()
 		-- Efek suara (opsional)
 		-- local sound = Instance.new("Sound", container)

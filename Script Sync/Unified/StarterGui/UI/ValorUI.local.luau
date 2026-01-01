@@ -50,6 +50,8 @@ local COLORS = {
 	Loss = Color3.fromRGB(248, 113, 113) -- Red-400
 }
 
+local VALOR_ICON_ASSET_ID = "rbxassetid://94386323640684" -- Valor icon
+
 -- --- UI CREATION ---
 
 -- Main Card Container
@@ -96,16 +98,16 @@ iconStroke.Thickness = 1.5
 iconStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 iconStroke.Parent = iconContainer
 
--- Icon (Unicode Shield/Valor)
-local iconLabel = Instance.new("TextLabel")
-iconLabel.Name = "Icon"
-iconLabel.Size = UDim2.new(1, 0, 1, 0)
-iconLabel.BackgroundTransparency = 1
-iconLabel.Text = "🛡️" -- Unicode Shield for Valor
-iconLabel.TextColor3 = Color3.fromRGB(252, 165, 165) -- Light Red
-iconLabel.TextSize = 24
-iconLabel.Font = Enum.Font.Gotham
-iconLabel.Parent = iconContainer
+-- Icon Image (Using Asset ID instead of emoji)
+local iconImage = Instance.new("ImageLabel")
+iconImage.Name = "Icon"
+iconImage.Size = UDim2.new(0.75, 0, 0.75, 0)
+iconImage.Position = UDim2.new(0.5, 0, 0.5, 0)
+iconImage.AnchorPoint = Vector2.new(0.5, 0.5)
+iconImage.BackgroundTransparency = 1
+iconImage.Image = VALOR_ICON_ASSET_ID
+iconImage.ScaleType = Enum.ScaleType.Fit
+iconImage.Parent = iconContainer
 
 -- Content Layout (Text)
 local contentFrame = Instance.new("Frame")
@@ -183,7 +185,7 @@ local function updateLayout()
 
 		iconContainer.Size = UDim2.new(0, 35, 0, 35)
 		iconContainer.Position = UDim2.new(0, 8, 0.5, 0)
-		iconLabel.TextSize = 18
+		iconImage.Size = UDim2.new(0.7, 0, 0.7, 0)
 
 		contentFrame.Position = UDim2.new(0, 50, 0, 5)
 		contentFrame.Size = UDim2.new(1, -50, 1, -10)
@@ -197,7 +199,7 @@ local function updateLayout()
 
 		iconContainer.Size = UDim2.new(0, 45, 0, 45)
 		iconContainer.Position = UDim2.new(0, 12, 0.5, 0)
-		iconLabel.TextSize = 24
+		iconImage.Size = UDim2.new(0.75, 0, 0.75, 0)
 
 		contentFrame.Position = UDim2.new(0, 65, 0, 5)
 		contentFrame.Size = UDim2.new(1, -65, 1, -10)
@@ -340,15 +342,29 @@ local function animateTo(newValue)
 	end)
 end
 
--- Event Listener
+-- Event Listener for Valor updates
 ValorUpdate.OnClientEvent:Connect(function(points)
-	animateTo(points)
-end)
-
--- Initial Hide/Show Logic
-card.Visible = false
-ValorUpdate.OnClientEvent:Connect(function()
+	-- Show card if hidden (only after game has started)
 	if not card.Visible then
 		card.Visible = true
 	end
+	animateTo(points)
 end)
+
+-- Game Start Detection: Listen for WaveUpdateEvent to show UI
+-- This ensures UI only appears when the game actually starts
+local WaveUpdateEvent = RemoteEvents:FindFirstChild("WaveUpdateEvent")
+if WaveUpdateEvent then
+	WaveUpdateEvent.OnClientEvent:Connect(function(waveNumber)
+		if not card.Visible then
+			card.Visible = true
+			-- Initialize to 0 if no Valor update received yet
+			if valueText.Text == "0" then
+				animateTo(0)
+			end
+		end
+	end)
+end
+
+-- Start hidden - UI only appears when game starts (wave 1)
+card.Visible = false

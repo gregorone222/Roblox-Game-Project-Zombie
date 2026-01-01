@@ -178,10 +178,10 @@ local uiPropertyConnections = {} -- Store property change connections for clean 
 local blinkTweens = {} -- Store blink tweens to cancel them properly
 
 -- List of Lobby UIs to hide during cinematic
+-- Note: Popup UIs (like DailyRewardUI) are excluded because they're created on-demand
 local LOBBY_UIS = {
-	"CoinsUI", "MissionPointsUI", "AchievementPointsUI",
-	"ProfileUI", "DailyRewardUI", "InventoryUI",
-	"MissionUI", "DailyRewardHUD" -- Removed "LobbyRoomUI" (controlled by ProximityPrompt only)
+	"SurvivalCoinsUI", "UTCClockUI", "MissionPointsUI", "AchievementPointsUI",
+	"ProfileUI", "DailyRewardHUD", "InventoryUI", "MissionUI"
 }
 
 -- Helper: Find ScreenGui by name (handles case where LocalScript has same name)

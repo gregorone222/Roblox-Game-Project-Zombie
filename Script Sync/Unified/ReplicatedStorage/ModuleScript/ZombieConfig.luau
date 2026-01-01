@@ -41,7 +41,7 @@ ZombieConfig.Types = {
 		MinWave = 6 -- Ditambahkan: mulai muncul di wave 6
 	},
 	Tank = {
-		MaxHealth = 10000,
+		MaxHealth = 5000,
 		WalkSpeed = 6,
 		AttackDamage = 15,
 		AttackCooldown = 2.5,
