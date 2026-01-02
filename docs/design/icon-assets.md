@@ -1,64 +1,40 @@
 # Icon Asset Library
 
 This document tracks all icon assets currently used in the project, serving as a central reference for implementation and design consistency.
+**Only assets present in the `Assets/Icon` folder are listed here.**
 
 ## 💰 Currency & Points
-| Name | Asset ID | Found In (Scripts) |
-|:-----|:---------|:-------------------|
-| **Survival Coin** | `rbxassetid://89004651637769` | `SurvivalCoinsUI.local.luau` |
-| **Achievement Point (AP)** | `rbxassetid://90037473351637` | `AchievementPointsUI.local.luau`, `APShopUI.local.luau` |
-| **Mission Point (MP)** | `rbxassetid://126182178056637` | `MissionPointsUI.local.luau`, `MPShopUI.local.luau` |
-| **Valor** | `rbxassetid://94386323640684` | `ValorUI.local.luau` |
+| Name | Asset ID | Filename |
+|:-----|:---------|:---------|
+| **Survival Coin** | `rbxassetid://89004651637769` | `Survivor Coins.png` |
+| **Achievement Point (AP)** | `rbxassetid://90037473351637` | `Achievement Point.png` |
+| **Mission Point (MP)** | `rbxassetid://126182178056637` | `Mission Point.png` |
+| **Valor** | `rbxassetid://94386323640684` | `Valor.png` |
 
 ## ⚙️ Settings & UI Controls
-| Name | Asset ID | Found In (Scripts) |
-|:-----|:---------|:-------------------|
-| **Gear** | `rbxassetid://119533506980251` | `GameSettingsUI.local.luau` |
-| **Close (X)** | `rbxassetid://7743878857` | `GameSettingsUI.local.luau` |
-| **Checkmark** | `rbxassetid://7733658504` | `GameSettingsUI.local.luau` |
-| **Keyboard** | `rbxassetid://125439200583530` | `GameSettingsUI.local.luau` |
-| **Gamepad** | `rbxassetid://119001399043601` | `GameSettingsUI.local.luau` |
-| **Speaker** | `rbxassetid://100652180505963` | `GameSettingsUI.local.luau` |
-| **Layout/HUD** | `rbxassetid://130190996633377` | `GameSettingsUI.local.luau` |
-| **Fire Button** | `rbxassetid://130160602597512` | `GameSettingsUI.local.luau` |
-| **Double Tap** | `rbxassetid://113293314787010` | `GameSettingsUI.local.luau` |
-
-## 🏥 Gameplay & Status
-| Name | Asset ID | Found In (Scripts) |
-|:-----|:---------|:-------------------|
-| **Heart** | `rbxassetid://10151249576` | `KnockUI.local.luau`, `GlobalKnockNotificationUI.local.luau` |
-| **Skull (Main)** | `rbxassetid://9176098815` | `KnockUI.local.luau` |
-| **Skull (Alt)** | `rbxassetid://10151247863` | `GlobalKnockNotificationUI.local.luau` |
-| **Run/Stamina** | `rbxassetid://13460867865` | `StatusHUD.local.luau` |
-| **Click** | `rbxassetid://4612377485` | `RandomWeaponShopUI.local.luau` |
-| **Tick** | `rbxassetid://4612375233` | `RandomWeaponShopUI.local.luau` |
-| **Win** | `rbxassetid://5153734233` | `RandomWeaponShopUI.local.luau` |
+| Name | Asset ID | Filename |
+|:-----|:---------|:---------|
+| **Gear** | `rbxassetid://119533506980251` | `GameSetting Button.png` |
+| **Gamepad** | `rbxassetid://119001399043601` | `Icon Gameplay.png` |
+| **Speaker** | `rbxassetid://100652180505963` | `Icon Sound.png` |
+| **Layout/HUD** | `rbxassetid://130190996633377` | `Icon Interface-HUD.png` |
 
 ## 🎁 Gacha & Perks
-| Name | Asset ID | Found In (Scripts) |
-|:-----|:---------|:-------------------|
-| **Starting Funds** | `rbxassetid://115097892301473` | `GachaUI.local.luau` |
-| **Ammo Cache** | `rbxassetid://133597625207661` | `GachaUI.local.luau` |
-| **Body Armor** | `rbxassetid://118302588106310` | `GachaUI.local.luau` |
-| **Mystery Loadout** | `rbxassetid://117164757148539` | `GachaUI.local.luau` |
-| **Commander** | `rbxassetid://78698774904955` | `GachaUI.local.luau` |
+| Name | Asset ID | Filename |
+|:-----|:---------|:---------|
+| **Starting Funds** | `rbxassetid://115097892301473` | `Starting Funds.png` |
+| **Ammo Cache** | `rbxassetid://133597625207661` | `Ammo Stockpile.png` |
+| **Body Armor** | `rbxassetid://118302588106310` | `Body Armor.png` |
+| **Mystery Loadout** | `rbxassetid://117164757148539` | `Mystery Loadout.png` |
+| **Commander** | `rbxassetid://78698774904955` | `Commander's Authority.png` |
 
-## 🎨 Textures & Effects
-| Name | Asset ID | Found In (Scripts) |
-|:-----|:---------|:-------------------|
-| **Vignette** | `rbxassetid://4576475446` | `DamageFlashUI.local.luau`, `StartUI.local.luau`, `GameOverUI.local.luau`, `KnockUI.local.luau` |
-| **Soft Vignette** | `rbxassetid://13547204142` | `DamageFlashUI.local.luau` |
-| **Noise** | `rbxassetid://13449340960` | `StartUI.local.luau`, `ProfileUI.local.luau` |
-| **Grid Pattern** | `rbxassetid://2736224329` | `StatusHUD.local.luau`, `StartUI.local.luau` |
-| **Tile Pattern** | `rbxassetid://4800392095` | `GameOverUI.local.luau` |
-| **Wire Mesh** | `rbxassetid://6522339596` | `PerkShopUI.local.luau` |
-| **Soft Glow** | `rbxassetid://6008289213` | `TacticalBoostShopUI.local.luau`, `GameSettingsUI.local.luau` |
-| **Gradient Reflection** | `rbxassetid://13475253246` | `ProfileUI.local.luau` |
-| **Shadow** | `rbxassetid://1316045217` | `MissionUI.local.luau` |
-| **Paper/Grain** | `rbxassetid://6008328723` | `ProfileUI.local.luau`, `MissionUI.local.luau` |
+## 🎨 Effects & Visuals
+| Name | Asset ID | Filename |
+|:-----|:---------|:---------|
+| **Bullet Hole** | `rbxassetid://114211185739271` | `BulletHole.png` |
+| **Cloud** | `rbxassetid://137228730972720` | `Cloud.png` |
+| **Star** | `rbxassetid://133346747446843` | `Star.png` |
+| **Muzzle Flash** | `rbxassetid://133346747446843` | `Muzzle Flash.png` |
+| **Tracer** | `rbxassetid://130004939944902` | `Tracer.png` |
 
-## 📝 Placeholder / Generic
-| Name | Asset ID | Found In (Scripts) |
-|:-----|:---------|:-------------------|
-| **Lock** | `rbxassetid://10748331644` | `AchievementUI.local.luau` |
-| **Unlocked/Tick** | `rbxassetid://10748332233` | `AchievementUI.local.luau` |
+> Note: Some effect IDs are shared or approximate based on script usage.

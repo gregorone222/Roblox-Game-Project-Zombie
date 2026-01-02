@@ -50,11 +50,8 @@ local THEME = {
 
 local SETTINGS_ICONS = {
 	Gameplay = "rbxassetid://119001399043601", -- Gamepad Icon
-	Controls = "rbxassetid://125439200583530", -- Keyboard Icon
 	Audio = "rbxassetid://100652180505963", -- Speaker Icon
 	HUD = "rbxassetid://130190996633377", -- Layer/Layout Icon
-	Close = "rbxassetid://7743878857", -- X Icon
-	Check = "rbxassetid://7733658504", -- Checkmark
 	Gear = "rbxassetid://119533506980251" -- Gear
 }
 
@@ -413,12 +410,12 @@ local titleTxt = Instance.new("TextLabel", titleArea)
 titleTxt.Text = "SETTINGS"; titleTxt.Font = THEME.Fonts.Display; titleTxt.TextScaled = true; titleTxt.TextColor3 = THEME.Colors.Accent; titleTxt.BackgroundTransparency = 1; titleTxt.Size = UDim2.fromScale(1, 0.6); titleTxt.Position = UDim2.fromScale(0, 0.2); titleTxt.TextXAlignment = Enum.TextXAlignment.Left
 Instance.new("UITextSizeConstraint", titleTxt).MaxTextSize = 28
 
-local closeBtn = Instance.new("ImageButton", header)
-closeBtn.Size = UDim2.fromScale(0.05, 0.5); closeBtn.Position = UDim2.fromScale(0.94, 0.25); closeBtn.BackgroundColor3 = THEME.Colors.Panel; closeBtn.Image = SETTINGS_ICONS.Close; closeBtn.ImageColor3 = THEME.Colors.TextDim
+local closeBtn = Instance.new("TextButton", header)
+closeBtn.Size = UDim2.fromScale(0.05, 0.5); closeBtn.Position = UDim2.fromScale(0.94, 0.25); closeBtn.BackgroundColor3 = THEME.Colors.Panel; closeBtn.Text = "X"; closeBtn.TextColor3 = THEME.Colors.TextDim; closeBtn.Font = THEME.Fonts.Display; closeBtn.TextScaled = true
 Instance.new("UIAspectRatioConstraint", closeBtn).AspectRatio = 1
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 8)
-closeBtn.MouseEnter:Connect(function() closeBtn.BackgroundColor3 = THEME.Colors.Danger; closeBtn.ImageColor3 = THEME.Colors.TextMain end)
-closeBtn.MouseLeave:Connect(function() closeBtn.BackgroundColor3 = THEME.Colors.Panel; closeBtn.ImageColor3 = THEME.Colors.TextDim end)
+closeBtn.MouseEnter:Connect(function() closeBtn.BackgroundColor3 = THEME.Colors.Danger; closeBtn.TextColor3 = THEME.Colors.TextMain end)
+closeBtn.MouseLeave:Connect(function() closeBtn.BackgroundColor3 = THEME.Colors.Panel; closeBtn.TextColor3 = THEME.Colors.TextDim end)
 
 -- Sidebar
 local sidebar = Instance.new("Frame", mainPanel)
@@ -617,7 +614,7 @@ local function defineTabs()
 
 	addTab("Gameplay", "Gameplay", SETTINGS_ICONS.Gameplay)
 	if UserInputService.TouchEnabled then
-		addTab("Controls", "Controls", SETTINGS_ICONS.Controls)
+		addTab("Controls", "Controls", "")
 	end
 	addTab("Audio", "Audio", SETTINGS_ICONS.Audio)
 	addTab("HUD", "Interface / HUD", SETTINGS_ICONS.HUD)
