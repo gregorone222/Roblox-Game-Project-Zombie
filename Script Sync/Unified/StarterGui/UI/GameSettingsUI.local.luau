@@ -85,38 +85,39 @@ local screenGui = Instance.new("ScreenGui", playerGui); screenGui.Name = "GameSe
 local screenGui2 = Instance.new("ScreenGui", playerGui); screenGui2.Name = "GameSettingsUI2"; screenGui2.ResetOnSpawn = false; screenGui2.IgnoreGuiInset = false; screenGui2.DisplayOrder = 100; screenGui2.ScreenInsets= Enum.ScreenInsets.TopbarSafeInsets
 
 
--- Open Button (Gear) - Changed to TextButton for guaranteed visibility
+-- Open Button (Gear) - Using Scale for responsive sizing
 local gearBtn = Instance.new("TextButton", screenGui2)
 gearBtn.Name = "GameSettingsButton"
 gearBtn.AnchorPoint = Vector2.new(0.0, 0.5)
-gearBtn.Size = UDim2.new(0, 120, 0, 40)
-gearBtn.Position = UDim2.new(0, 0, 0.5, 0) -- Center Top
+gearBtn.Size = UDim2.fromScale(0.08, 0.05) -- Scale-based
+gearBtn.Position = UDim2.fromScale(0.01, 0.5)
 gearBtn.BackgroundColor3 = THEME.Colors.Panel
 gearBtn.BackgroundTransparency = 0.2
-gearBtn.Text = "? SETTINGS"
+gearBtn.Text = "⚙ SETTINGS"
 gearBtn.Font = THEME.Fonts.Display
 gearBtn.TextColor3 = THEME.Colors.TextMain
-gearBtn.TextSize = 14
+gearBtn.TextScaled = true
 gearBtn.ZIndex = 100
 Instance.new("UICorner", gearBtn).CornerRadius = UDim.new(0, 8)
 Instance.new("UIStroke", gearBtn).Color = THEME.Colors.Border
+Instance.new("UITextSizeConstraint", gearBtn).MaxTextSize = 16
 
--- Main Panel
+-- Main Panel - Using Scale for responsive sizing
 local mainPanel = Instance.new("Frame", screenGui)
 mainPanel.Name = "MainPanel"
-mainPanel.Size = UDim2.new(0, 900, 0, 600)
+mainPanel.Size = UDim2.fromScale(0.85, 0.8) -- Scale-based (85% width, 80% height)
 mainPanel.Visible = false
 mainPanel.AnchorPoint = Vector2.new(0.5, 0.5)
-mainPanel.Position = UDim2.new(0.5, 0, 0.5, 0)
+mainPanel.Position = UDim2.fromScale(0.5, 0.5)
 mainPanel.BackgroundColor3 = THEME.Colors.Background
-mainPanel.BackgroundTransparency = 0.05 -- Glass effect
+mainPanel.BackgroundTransparency = 0.02
 mainPanel.BorderSizePixel = 0
-Instance.new("UICorner", mainPanel).CornerRadius = UDim.new(0, 16)
+Instance.new("UICorner", mainPanel).CornerRadius = UDim.new(0, 12)
 
 local panelStroke = Instance.new("UIStroke", mainPanel)
-panelStroke.Color = Color3.new(1,1,1)
-panelStroke.Transparency = 0.9
-panelStroke.Thickness = 1
+panelStroke.Color = THEME.Colors.Accent
+panelStroke.Transparency = 0.5
+panelStroke.Thickness = 2
 
 -- ============================================================================
 -- 4. HELPER FUNCTIONS
@@ -207,9 +208,10 @@ local function createTabButton(parent, id, text, iconId, isActive)
 	label.AutomaticSize = Enum.AutomaticSize.X
 	label.BackgroundTransparency = 1
 	label.Font = THEME.Fonts.Body
-	label.TextSize = 16
+	label.TextScaled = true
 	label.Text = text
 	label.TextColor3 = isActive and THEME.Colors.TextMain or THEME.Colors.TextDim
+	Instance.new("UITextSizeConstraint", label).MaxTextSize = 16
 
 	-- Hover Effect
 	btn.MouseEnter:Connect(function()
@@ -246,24 +248,26 @@ local function createToggle(parent, title, desc, isOn, callback)
 	textContainer.BackgroundTransparency = 1
 
 	local titleLbl = Instance.new("TextLabel", textContainer)
-	titleLbl.Size = UDim2.new(1, 0, 0, 20)
-	titleLbl.Position = UDim2.new(0, 0, 0, 14)
+	titleLbl.Size = UDim2.new(1, 0, 0.4, 0)
+	titleLbl.Position = UDim2.fromScale(0, 0.15)
 	titleLbl.BackgroundTransparency = 1
 	titleLbl.Font = THEME.Fonts.Display
-	titleLbl.TextSize = 16
+	titleLbl.TextScaled = true
 	titleLbl.TextColor3 = THEME.Colors.TextMain
 	titleLbl.TextXAlignment = Enum.TextXAlignment.Left
 	titleLbl.Text = title
+	Instance.new("UITextSizeConstraint", titleLbl).MaxTextSize = 18
 
 	local descLbl = Instance.new("TextLabel", textContainer)
-	descLbl.Size = UDim2.new(1, 0, 0, 16)
-	descLbl.Position = UDim2.new(0, 0, 0, 38)
+	descLbl.Size = UDim2.new(1, 0, 0.3, 0)
+	descLbl.Position = UDim2.fromScale(0, 0.55)
 	descLbl.BackgroundTransparency = 1
 	descLbl.Font = THEME.Fonts.Body
-	descLbl.TextSize = 14
+	descLbl.TextScaled = true
 	descLbl.TextColor3 = THEME.Colors.TextDim
 	descLbl.TextXAlignment = Enum.TextXAlignment.Left
 	descLbl.Text = desc
+	Instance.new("UITextSizeConstraint", descLbl).MaxTextSize = 14
 
 	-- Toggle Switch
 	local switchBtn = Instance.new("TextButton", container)
@@ -319,20 +323,22 @@ local function createSlider(parent, title, iconId, value, callback)
 	titleLbl.Position = UDim2.new(0, 24, 0, 0)
 	titleLbl.BackgroundTransparency = 1
 	titleLbl.Font = THEME.Fonts.Display
-	titleLbl.TextSize = 16
+	titleLbl.TextScaled = true
 	titleLbl.TextColor3 = THEME.Colors.TextMain
 	titleLbl.TextXAlignment = Enum.TextXAlignment.Left
 	titleLbl.Text = title
+	Instance.new("UITextSizeConstraint", titleLbl).MaxTextSize = 16
 
 	local valLbl = Instance.new("TextLabel", topBar)
 	valLbl.Size = UDim2.new(0.2, 0, 1, 0)
 	valLbl.Position = UDim2.new(0.8, 0, 0, 0)
 	valLbl.BackgroundTransparency = 1
 	valLbl.Font = THEME.Fonts.Mono
-	valLbl.TextSize = 16
+	valLbl.TextScaled = true
 	valLbl.TextColor3 = THEME.Colors.Accent
 	valLbl.TextXAlignment = Enum.TextXAlignment.Right
 	valLbl.Text = math.floor(value * 100) .. "%"
+	Instance.new("UITextSizeConstraint", valLbl).MaxTextSize = 16
 
 	local sliderTrack = Instance.new("TextButton", container) -- Button for easy input
 	sliderTrack.Text = ""
@@ -396,32 +402,36 @@ end
 -- ============================================================================
 -- Header
 local header = Instance.new("Frame", mainPanel)
-header.Size = UDim2.new(1, 0, 0, 70)
-header.BackgroundColor3 = THEME.Colors.Background
-header.BackgroundTransparency = 0.5
+header.Size = UDim2.fromScale(1, 0.1)
+header.BackgroundColor3 = THEME.Colors.Panel
+header.BackgroundTransparency = 0.3
 header.BorderSizePixel = 0
-Instance.new("UICorner", header).CornerRadius = UDim.new(0, 16) -- Top corners mainly
-local headerLine = Instance.new("Frame", header); headerLine.Size = UDim2.new(1, 0, 0, 1); headerLine.Position = UDim2.new(0, 0, 1, -1); headerLine.BackgroundColor3 = THEME.Colors.Border; headerLine.BorderSizePixel = 0
+Instance.new("UICorner", header).CornerRadius = UDim.new(0, 12)
+local headerLine = Instance.new("Frame", header); headerLine.Size = UDim2.new(0.98, 0, 0, 2); headerLine.Position = UDim2.new(0.01, 0, 1, -2); headerLine.BackgroundColor3 = THEME.Colors.Accent; headerLine.BorderSizePixel = 0
 
 local titleArea = Instance.new("Frame", header)
-titleArea.Size = UDim2.new(0, 300, 1, 0); titleArea.BackgroundTransparency = 1; titleArea.Position = UDim2.new(0, 24, 0, 0)
-local icon = Instance.new("ImageLabel", titleArea); icon.Size = UDim2.new(0, 28, 0, 28); icon.Position = UDim2.new(0, 0, 0.5, -14); icon.Image = SETTINGS_ICONS.Gear; icon.ImageColor3 = THEME.Colors.Accent; icon.BackgroundTransparency = 1
-local titleTxt = Instance.new("TextLabel", titleArea); titleTxt.Text = "PENGATURAN"; titleTxt.Font = THEME.Fonts.Display; titleTxt.TextSize = 24; titleTxt.TextColor3 = THEME.Colors.TextMain; titleTxt.BackgroundTransparency = 1; titleTxt.Size = UDim2.new(0, 200, 1, 0); titleTxt.Position = UDim2.new(0, 40, 0, 0); titleTxt.TextXAlignment = Enum.TextXAlignment.Left
+titleArea.Size = UDim2.fromScale(0.4, 1); titleArea.BackgroundTransparency = 1; titleArea.Position = UDim2.fromScale(0.02, 0)
+local icon = Instance.new("ImageLabel", titleArea); icon.Size = UDim2.fromScale(0.1, 0.5); icon.Position = UDim2.fromScale(0, 0.25); icon.Image = SETTINGS_ICONS.Gear; icon.ImageColor3 = THEME.Colors.Accent; icon.BackgroundTransparency = 1
+Instance.new("UIAspectRatioConstraint", icon).AspectRatio = 1
+local titleTxt = Instance.new("TextLabel", titleArea)
+titleTxt.Text = "⚙ PENGATURAN"; titleTxt.Font = THEME.Fonts.Display; titleTxt.TextScaled = true; titleTxt.TextColor3 = THEME.Colors.Accent; titleTxt.BackgroundTransparency = 1; titleTxt.Size = UDim2.fromScale(0.85, 0.6); titleTxt.Position = UDim2.fromScale(0.12, 0.2); titleTxt.TextXAlignment = Enum.TextXAlignment.Left
+Instance.new("UITextSizeConstraint", titleTxt).MaxTextSize = 28
 
 local closeBtn = Instance.new("ImageButton", header)
-closeBtn.Size = UDim2.new(0, 32, 0, 32); closeBtn.Position = UDim2.new(1, -56, 0.5, -16); closeBtn.BackgroundColor3 = THEME.Colors.Panel; closeBtn.Image = SETTINGS_ICONS.Close; closeBtn.ImageColor3 = THEME.Colors.TextDim
+closeBtn.Size = UDim2.fromScale(0.05, 0.5); closeBtn.Position = UDim2.fromScale(0.94, 0.25); closeBtn.BackgroundColor3 = THEME.Colors.Panel; closeBtn.Image = SETTINGS_ICONS.Close; closeBtn.ImageColor3 = THEME.Colors.TextDim
+Instance.new("UIAspectRatioConstraint", closeBtn).AspectRatio = 1
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 8)
 closeBtn.MouseEnter:Connect(function() closeBtn.BackgroundColor3 = THEME.Colors.Danger; closeBtn.ImageColor3 = THEME.Colors.TextMain end)
 closeBtn.MouseLeave:Connect(function() closeBtn.BackgroundColor3 = THEME.Colors.Panel; closeBtn.ImageColor3 = THEME.Colors.TextDim end)
 
 -- Sidebar
 local sidebar = Instance.new("Frame", mainPanel)
-sidebar.Size = UDim2.new(0, 250, 1, -150) -- Height accounts for Header + Footer
-sidebar.Position = UDim2.new(0, 0, 0, 70)
-sidebar.BackgroundColor3 = THEME.Colors.Background
-sidebar.BackgroundTransparency = 0.8
+sidebar.Size = UDim2.fromScale(0.25, 0.78) -- Scale-based
+sidebar.Position = UDim2.fromScale(0, 0.1)
+sidebar.BackgroundColor3 = THEME.Colors.Panel
+sidebar.BackgroundTransparency = 0.5
 sidebar.BorderSizePixel = 0
-local sidebarBorder = Instance.new("Frame", sidebar); sidebarBorder.Size = UDim2.new(0, 1, 1, 0); sidebarBorder.Position = UDim2.new(1, -1, 0, 0); sidebarBorder.BackgroundColor3 = THEME.Colors.Border; sidebarBorder.BorderSizePixel = 0
+local sidebarBorder = Instance.new("Frame", sidebar); sidebarBorder.Size = UDim2.new(0, 2, 1, 0); sidebarBorder.Position = UDim2.new(1, -2, 0, 0); sidebarBorder.BackgroundColor3 = THEME.Colors.Accent; sidebarBorder.BorderSizePixel = 0
 
 local sidebarList = Instance.new("Frame", sidebar)
 sidebarList.Size = UDim2.new(1, -32, 1, -32)
@@ -431,22 +441,22 @@ local sbLayout = Instance.new("UIListLayout", sidebarList); sbLayout.Padding = U
 
 -- Content Area
 local contentArea = Instance.new("ScrollingFrame", mainPanel)
-contentArea.Size = UDim2.new(1, -250, 1, -150)
-contentArea.Position = UDim2.new(0, 250, 0, 70)
+contentArea.Size = UDim2.fromScale(0.75, 0.78) -- Scale-based
+contentArea.Position = UDim2.fromScale(0.25, 0.1)
 contentArea.BackgroundTransparency = 1
 contentArea.BorderSizePixel = 0
 contentArea.ScrollBarThickness = 4
-contentArea.ScrollBarImageColor3 = THEME.Colors.Border
+contentArea.ScrollBarImageColor3 = THEME.Colors.Accent
 
 -- Footer
 local footer = Instance.new("Frame", mainPanel)
-footer.Size = UDim2.new(1, 0, 0, 80)
-footer.Position = UDim2.new(0, 0, 1, -80)
-footer.BackgroundColor3 = THEME.Colors.Background
-footer.BackgroundTransparency = 0.2
+footer.Size = UDim2.fromScale(1, 0.12) -- Scale-based
+footer.Position = UDim2.fromScale(0, 0.88)
+footer.BackgroundColor3 = THEME.Colors.Panel
+footer.BackgroundTransparency = 0.3
 footer.BorderSizePixel = 0
-Instance.new("UICorner", footer).CornerRadius = UDim.new(0, 16) -- Bottom corners mainly
-local footerLine = Instance.new("Frame", footer); footerLine.Size = UDim2.new(1, 0, 0, 1); footerLine.BackgroundColor3 = THEME.Colors.Border; footerLine.BorderSizePixel = 0
+Instance.new("UICorner", footer).CornerRadius = UDim.new(0, 12)
+local footerLine = Instance.new("Frame", footer); footerLine.Size = UDim2.new(0.98, 0, 0, 2); footerLine.Position = UDim2.new(0.01, 0, 0, 0); footerLine.BackgroundColor3 = THEME.Colors.Accent; footerLine.BorderSizePixel = 0
 
 local footerBtns = Instance.new("Frame", footer)
 footerBtns.Size = UDim2.new(1, -48, 1, 0); footerBtns.Position = UDim2.new(0, 24, 0, 0); footerBtns.BackgroundTransparency = 1
@@ -454,14 +464,15 @@ local fLayout = Instance.new("UIListLayout", footerBtns); fLayout.FillDirection 
 
 local function createFooterBtn(text, isPrimary, callback)
 	local btn = Instance.new("TextButton", footerBtns)
-	btn.Size = UDim2.new(0, 120, 0, 40)
+	btn.Size = UDim2.fromScale(0.15, 0.6) -- Scale-based
 	btn.BackgroundColor3 = isPrimary and THEME.Colors.Success or Color3.new(0,0,0)
 	btn.BackgroundTransparency = isPrimary and 0 or 1
 	btn.Text = text
 	btn.Font = THEME.Fonts.Display
 	btn.TextColor3 = isPrimary and THEME.Colors.TextMain or THEME.Colors.TextDim
-	btn.TextSize = 14
+	btn.TextScaled = true
 	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+	Instance.new("UITextSizeConstraint", btn).MaxTextSize = 16
 	if not isPrimary then
 		local s = Instance.new("UIStroke", btn); s.Color = THEME.Colors.Border; s.Thickness = 1
 	end
