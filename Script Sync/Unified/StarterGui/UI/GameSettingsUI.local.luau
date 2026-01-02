@@ -85,11 +85,11 @@ local screenGui = Instance.new("ScreenGui", playerGui); screenGui.Name = "GameSe
 local screenGui2 = Instance.new("ScreenGui", playerGui); screenGui2.Name = "GameSettingsUI2"; screenGui2.ResetOnSpawn = false; screenGui2.IgnoreGuiInset = false; screenGui2.DisplayOrder = 100; screenGui2.ScreenInsets= Enum.ScreenInsets.TopbarSafeInsets
 
 
--- Open Button (Gear) - Using Scale for responsive sizing
+-- Open Button (Gear) - Fixed Size
 local gearBtn = Instance.new("ImageButton", screenGui2)
 gearBtn.Name = "GameSettingsButton"
 gearBtn.AnchorPoint = Vector2.new(0.0, 0.5)
-gearBtn.Size = UDim2.fromScale(0.06, 0.1) -- Scale-based (approx 1:1 visually)
+gearBtn.Size = UDim2.new(0, 50, 0, 50) -- Fixed larger size
 gearBtn.Position = UDim2.fromScale(0.01, 0.5)
 gearBtn.BackgroundColor3 = THEME.Colors.Panel
 gearBtn.BackgroundTransparency = 0.2
@@ -98,7 +98,6 @@ gearBtn.ImageColor3 = THEME.Colors.TextMain
 gearBtn.ZIndex = 100
 Instance.new("UICorner", gearBtn).CornerRadius = UDim.new(0, 8)
 Instance.new("UIStroke", gearBtn).Color = THEME.Colors.Border
-Instance.new("UIAspectRatioConstraint", gearBtn).AspectRatio = 1
 
 -- Main Panel - Using Scale for responsive sizing
 local mainPanel = Instance.new("Frame", screenGui)
@@ -408,11 +407,10 @@ Instance.new("UICorner", header).CornerRadius = UDim.new(0, 12)
 local headerLine = Instance.new("Frame", header); headerLine.Size = UDim2.new(0.98, 0, 0, 2); headerLine.Position = UDim2.new(0.01, 0, 1, -2); headerLine.BackgroundColor3 = THEME.Colors.Accent; headerLine.BorderSizePixel = 0
 
 local titleArea = Instance.new("Frame", header)
-titleArea.Size = UDim2.fromScale(0.4, 1); titleArea.BackgroundTransparency = 1; titleArea.Position = UDim2.fromScale(0.02, 0)
-local icon = Instance.new("ImageLabel", titleArea); icon.Size = UDim2.fromScale(0.1, 0.5); icon.Position = UDim2.fromScale(0, 0.25); icon.Image = SETTINGS_ICONS.Gear; icon.ImageColor3 = THEME.Colors.Accent; icon.BackgroundTransparency = 1
-Instance.new("UIAspectRatioConstraint", icon).AspectRatio = 1
+titleArea.Size = UDim2.fromScale(0.6, 1); titleArea.BackgroundTransparency = 1; titleArea.Position = UDim2.fromScale(0.05, 0)
+
 local titleTxt = Instance.new("TextLabel", titleArea)
-titleTxt.Text = "⚙ PENGATURAN"; titleTxt.Font = THEME.Fonts.Display; titleTxt.TextScaled = true; titleTxt.TextColor3 = THEME.Colors.Accent; titleTxt.BackgroundTransparency = 1; titleTxt.Size = UDim2.fromScale(0.85, 0.6); titleTxt.Position = UDim2.fromScale(0.12, 0.2); titleTxt.TextXAlignment = Enum.TextXAlignment.Left
+titleTxt.Text = "PENGATURAN"; titleTxt.Font = THEME.Fonts.Display; titleTxt.TextScaled = true; titleTxt.TextColor3 = THEME.Colors.Accent; titleTxt.BackgroundTransparency = 1; titleTxt.Size = UDim2.fromScale(1, 0.6); titleTxt.Position = UDim2.fromScale(0, 0.2); titleTxt.TextXAlignment = Enum.TextXAlignment.Left
 Instance.new("UITextSizeConstraint", titleTxt).MaxTextSize = 28
 
 local closeBtn = Instance.new("ImageButton", header)
