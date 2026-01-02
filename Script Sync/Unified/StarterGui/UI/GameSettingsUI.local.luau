@@ -22,24 +22,24 @@ local LoadSettingsEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitFor
 local BindableEvents = ReplicatedStorage:WaitForChild("BindableEvents")
 
 -- ============================================================================
--- 1. CONSTANTS & THEME
+-- 1. CONSTANTS & THEME (Matching UI Master Guide - Cozy Apocalypse)
 -- ============================================================================
 local THEME = {
 	Colors = {
-		Background = Color3.fromHex("#0f172a"), -- Slate-900
-		Panel = Color3.fromHex("#1e293b"), -- Slate-800
-		Accent = Color3.fromHex("#0891b2"), -- Cyan-600
-		AccentHover = Color3.fromHex("#06b6d4"), -- Cyan-500
-		TextMain = Color3.fromHex("#ffffff"),
-		TextDim = Color3.fromHex("#94a3b8"), -- Slate-400
-		Border = Color3.fromHex("#334155"), -- Slate-700
-		Success = Color3.fromHex("#16a34a"), -- Green-600
-		Danger = Color3.fromHex("#dc2626"), -- Red-600
+		Background = Color3.fromRGB(20, 16, 12),      -- Warm dark brown
+		Panel = Color3.fromRGB(35, 28, 22),           -- Warm brown panel
+		Accent = Color3.fromRGB(218, 165, 32),        -- Golden (Sunset Orange)
+		AccentHover = Color3.fromRGB(255, 200, 80),   -- Bright Yellow
+		TextMain = Color3.fromRGB(255, 248, 230),     -- Warm white
+		TextDim = Color3.fromRGB(180, 160, 130),      -- Muted gold
+		Border = Color3.fromRGB(100, 85, 65),         -- Dark warm border
+		Success = Color3.fromRGB(46, 204, 113),       -- Green #2ecc71
+		Danger = Color3.fromRGB(231, 76, 60),         -- Red #e74c3c
 		Overlay = Color3.new(0, 0, 0)
 	},
 	Fonts = {
-		Display = Enum.Font.GothamBold, -- Proxima/Gotham for Headers
-		Body = Enum.Font.Gotham,
+		Display = Enum.Font.GothamBold,
+		Body = Enum.Font.GothamMedium,
 		Mono = Enum.Font.Code
 	},
 	Sizes = {
