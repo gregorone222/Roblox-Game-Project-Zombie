@@ -220,7 +220,7 @@ Dunia yang hancur namun indah. Alam mengambil alih, tapi survivor menciptakan ke
 
 ### Style Keywords
 - **Stylized** - Not realistic
-- **Cartoon** - Exaggerated proportions (Fortnite/Overwatch)
+- **Cartoon** - Exaggerated proportions (Fortnite Style)
 - **Vibrant** - Warm colors, fun & heroic
 
 ---
@@ -228,7 +228,7 @@ Dunia yang hancur namun indah. Alam mengambil alih, tapi survivor menciptakan ke
 # 🏠 ENVIRONMENT ART GUIDE
 
 ## Art Style Requirements
-- **Reference**: Fortnite Save the World, Overwatch 2
+- **Reference**: Fortnite (Character & Furniture), Overwatch 2 (VFX Only)
 - **Render**: Stylized polished 3D with soft gradients
 - **Proportions**: Slight chunky/exaggerated
 
@@ -242,12 +242,12 @@ Lighting: Studio/dramatic warm lighting
 ## Asset Rules
 1. **Furniture = Furniture SAJA** (tanpa batu, sarang laba-laba)
 2. **Environment = Terpisah** (bisa di-compose di game)
-3. **Style Konsisten** (Fortnite polished 3D)
+3. **Style Konsisten** (Fortnite polished 3D - Chunky & Vibrant)
 
 ## Prompt Template
 ```
 [Nama furniture] game asset, [kondisi rusak], post-apocalyptic 
-abandoned aesthetic. Fortnite Overwatch polished 3D style, warm 
+abandoned aesthetic. Fortnite 3D style, game ready asset, warm 
 sunset orange brown tones. Isometric 3/4 view, black background.
 ```
 
@@ -285,7 +285,7 @@ sunset orange brown tones. Isometric 3/4 view, black background.
 
 ## Quality Checklist
 - [ ] Palet warna proyek
-- [ ] Style Fortnite/Overwatch
+- [ ] Style Fortnite (Chunky, Vibrant)
 - [ ] Estetika weathered/makeshift
 - [ ] Background bersih (hitam/transparan)
 - [ ] Tidak ada VFX di gambar statis

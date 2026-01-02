@@ -128,22 +128,22 @@ Master list semua UI yang dibutuhkan untuk game.
 ## Visual Theme
 | Aspect | Guideline |
 |:-------|:----------|
-| **Theme** | Makeshift Survivor Camp (Stylized Post-Apocalypse) |
+| **Theme** | Clash Royale Style (Glossy, 3D, Punchy) |
 | **Primary Colors** | Warm Brown, Forest Green, Sunset Orange |
 | **Accent Colors** | Bright Yellow, Soft Cyan |
 | **Alert Colors** | Soft Red, Orange |
-| **Shape Language** | Rounded Corners (8-12px) |
+| **Shape Language** | Rounded Corners, Beveled Edges (3D look) |
 
 ## Color Palette
 | Element | Color | Hex |
 |:--------|:------|:----|
-| Primary | Blue | #3498db |
+| Primary | Blue (Glossy) | #3498db |
 | Secondary | Dark Blue | #2980b9 |
-| Accent | Yellow | #f1c40f |
-| Danger | Red | #e74c3c |
-| Success | Green | #2ecc71 |
-| Background | Dark Grey | #2c3e50 |
-| Text | White | #ffffff |
+| Accent | Gold/Yellow | #f1c40f |
+| Danger | Red (Glossy) | #e74c3c |
+| Success | Green (Glossy) | #2ecc71 |
+| Background | Dark Grey/Blue | #2c3e50 |
+| Text | White (Outlined) | #ffffff |
 
 ## Rarity Colors
 | Rarity | Color | Hex |
@@ -157,7 +157,7 @@ Master list semua UI yang dibutuhkan untuk game.
 ## Typography
 | Usage | Font | Size |
 |:------|:-----|:-----|
-| Header | Luckiest Guy / FredokaOne | 24-32 |
+| Header | Supercell-Magic / LilitaOne | 24-32 |
 | Body | GothamMedium / SemiBold | 14-20 |
 | Button | GothamMedium | 18-24 |
 | Small | Gotham | 10-12 |
@@ -199,8 +199,8 @@ Master list semua UI yang dibutuhkan untuk game.
 ## Animation Guidelines
 - Fade in/out: 0.2-0.3s
 - Slide transitions: 0.3-0.5s
-- Pop/bounce: 0.15s
-- Use TweenService, TextScaled
+- Pop/bounce: 0.15s (Spring Physics emphasized)
+- Interaction: 3D depression on press
 
 ## Technical Rules
 - Use `Scale` not `Offset` for positioning

@@ -4,9 +4,11 @@
 Target audiens utama adalah pemain berusia <13 tahun, dengan visual yang ramah anak, vibran, dan penuh aksi.
 
 ## 🎨 Art Direction & Vision
-- **Style:** Stylized, Cartoon, Vibrant (Fortnite/Overwatch Style)
+- **Style:** Stylized, Cartoon, Vibrant
 - **Tone:** Fun, Arcade, Heroic (Bukan Horror/Grime)
-- **Visuals:** Warna cerah (Neon/Pastel), UI Rounded
+- **Visuals:**
+  - **3D Assets:** Fortnite Style (Chunky, Vibrant, Expressive)
+  - **UI:** Clash Royale Style (Glossy, 3D, Punchy)
 
 ## ❤️ Core Philosophy
 **"Memory over Addiction"** - Menciptakan pengalaman Co-op yang hangat dan bermakna.
