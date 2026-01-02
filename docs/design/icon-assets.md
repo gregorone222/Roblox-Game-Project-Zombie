@@ -13,7 +13,7 @@ This document tracks all icon assets currently used in the project, serving as a
 ## ⚙️ Settings & UI Controls
 | Name | Asset ID | Found In (Scripts) |
 |:-----|:---------|:-------------------|
-| **Gear** | `rbxassetid://128019335135588` | `GameSettingsUI.local.luau` |
+| **Gear** | `rbxassetid://119533506980251` | `GameSettingsUI.local.luau` |
 | **Close (X)** | `rbxassetid://7743878857` | `GameSettingsUI.local.luau` |
 | **Checkmark** | `rbxassetid://7733658504` | `GameSettingsUI.local.luau` |
 | **Keyboard** | `rbxassetid://125439200583530` | `GameSettingsUI.local.luau` |

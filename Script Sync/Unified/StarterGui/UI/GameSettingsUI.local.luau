@@ -55,7 +55,7 @@ local SETTINGS_ICONS = {
 	HUD = "rbxassetid://128958363484246", -- Layer/Layout Icon
 	Close = "rbxassetid://7743878857", -- X Icon
 	Check = "rbxassetid://7733658504", -- Checkmark
-	Gear = "rbxassetid://128019335135588" -- Gear
+	Gear = "rbxassetid://119533506980251" -- Gear
 }
 
 local TARGET_BUTTON_NAMES = {
@@ -86,21 +86,19 @@ local screenGui2 = Instance.new("ScreenGui", playerGui); screenGui2.Name = "Game
 
 
 -- Open Button (Gear) - Using Scale for responsive sizing
-local gearBtn = Instance.new("TextButton", screenGui2)
+local gearBtn = Instance.new("ImageButton", screenGui2)
 gearBtn.Name = "GameSettingsButton"
 gearBtn.AnchorPoint = Vector2.new(0.0, 0.5)
-gearBtn.Size = UDim2.fromScale(0.08, 0.05) -- Scale-based
+gearBtn.Size = UDim2.fromScale(0.06, 0.1) -- Scale-based (approx 1:1 visually)
 gearBtn.Position = UDim2.fromScale(0.01, 0.5)
 gearBtn.BackgroundColor3 = THEME.Colors.Panel
 gearBtn.BackgroundTransparency = 0.2
-gearBtn.Text = "⚙ SETTINGS"
-gearBtn.Font = THEME.Fonts.Display
-gearBtn.TextColor3 = THEME.Colors.TextMain
-gearBtn.TextScaled = true
+gearBtn.Image = SETTINGS_ICONS.Gear
+gearBtn.ImageColor3 = THEME.Colors.TextMain
 gearBtn.ZIndex = 100
 Instance.new("UICorner", gearBtn).CornerRadius = UDim.new(0, 8)
 Instance.new("UIStroke", gearBtn).Color = THEME.Colors.Border
-Instance.new("UITextSizeConstraint", gearBtn).MaxTextSize = 16
+Instance.new("UIAspectRatioConstraint", gearBtn).AspectRatio = 1
 
 -- Main Panel - Using Scale for responsive sizing
 local mainPanel = Instance.new("Frame", screenGui)
