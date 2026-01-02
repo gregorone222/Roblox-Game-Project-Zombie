@@ -5,9 +5,11 @@ if game.PlaceId ~= LOBBY_PLACE_ID then return end
 -- MissionPointsUI.lua (LocalScript)
 -- Path: StarterGui/MissionPointsUI.lua
 -- Script Place: Lobby
+-- Theme: Cozy Apocalypse
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -18,64 +20,124 @@ if playerGui:FindFirstChild("MissionPointsUI") then
 end
 
 -- ======================================================
+-- THEME CONSTANTS (Matching UI Master Guide)
+-- ======================================================
+local THEME = {
+	Colors = {
+		Background = Color3.fromRGB(20, 16, 12),
+		Panel = Color3.fromRGB(35, 28, 22),
+		AccentMain = Color3.fromRGB(218, 165, 32),
+		AccentSecondary = Color3.fromRGB(139, 90, 43),
+		TextHigh = Color3.fromRGB(255, 248, 230),
+		TextMid = Color3.fromRGB(180, 160, 130),
+	},
+	Fonts = {
+		Header = Enum.Font.GothamBold,
+		Body = Enum.Font.GothamMedium,
+	}
+}
+
+local ASSETS = {
+	MissionPointIcon = "rbxassetid://126182178056637"
+}
+
+-- ======================================================
+-- HELPER FUNCTIONS
+-- ======================================================
+local function create(instanceType, properties)
+	local inst = Instance.new(instanceType)
+	for prop, value in pairs(properties) do
+		inst[prop] = value
+	end
+	return inst
+end
+
+-- ======================================================
 -- PEMBUATAN UI
 -- ======================================================
+local screenGui = create("ScreenGui", {
+	Name = "MissionPointsUI", Parent = playerGui,
+	ResetOnSpawn = false, IgnoreGuiInset = true
+})
 
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "MissionPointsUI"
-screenGui.ResetOnSpawn = false
-screenGui.IgnoreGuiInset = true
-screenGui.Parent = playerGui
+-- Main Container
+local container = create("Frame", {
+	Name = "MPContainer", Parent = screenGui,
+	Size = UDim2.fromScale(0.12, 0.045),
+	Position = UDim2.fromScale(0.74, 0.01),
+	BackgroundColor3 = THEME.Colors.Panel,
+	BackgroundTransparency = 0.2
+})
+create("UICorner", {Parent = container, CornerRadius = UDim.new(0.3, 0)})
+create("UIStroke", {Parent = container, Color = THEME.Colors.AccentSecondary, Thickness = 2, Transparency = 0.5})
 
-local pointsLabel = Instance.new("TextLabel")
-pointsLabel.Name = "MissionPointsLabel"
-pointsLabel.Size = UDim2.new(0.15, 0, 0.1, 0)
-pointsLabel.Position = UDim2.new(0.684, 0, 0.007, 0) -- Di pojok kanan atas
-pointsLabel.BackgroundColor3 = Color3.fromRGB(45, 48, 59)
-pointsLabel.BackgroundTransparency = 0.3
-pointsLabel.Font = Enum.Font.SourceSansBold
-pointsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-pointsLabel.TextSize = 18
-pointsLabel.Text = "MP: ..."
-pointsLabel.TextScaled = true
-pointsLabel.TextXAlignment = Enum.TextXAlignment.Center
-pointsLabel.TextYAlignment = Enum.TextYAlignment.Center
-pointsLabel.Parent = screenGui
+-- Icon Container
+local iconContainer = create("Frame", {
+	Parent = container,
+	Size = UDim2.fromScale(0.25, 0.8),
+	Position = UDim2.fromScale(0.02, 0.1),
+	BackgroundColor3 = THEME.Colors.AccentSecondary,
+	BackgroundTransparency = 0.7
+})
+create("UICorner", {Parent = iconContainer, CornerRadius = UDim.new(0.3, 0)})
+create("UIAspectRatioConstraint", {Parent = iconContainer, AspectRatio = 1})
 
-local labelCorner = Instance.new("UICorner", pointsLabel)
-labelCorner.CornerRadius = UDim.new(0.15, 0)
+-- Icon Image
+local iconImage = create("ImageLabel", {
+	Parent = iconContainer,
+	Size = UDim2.fromScale(0.8, 0.8),
+	Position = UDim2.fromScale(0.1, 0.1),
+	BackgroundTransparency = 1,
+	Image = ASSETS.MissionPointIcon,
+	ScaleType = Enum.ScaleType.Fit
+})
+
+-- Points Label
+local pointsLabel = create("TextLabel", {
+	Name = "PointsLabel", Parent = container,
+	Size = UDim2.fromScale(0.65, 0.8),
+	Position = UDim2.fromScale(0.32, 0.1),
+	BackgroundTransparency = 1,
+	Font = THEME.Fonts.Header,
+	TextColor3 = THEME.Colors.TextHigh,
+	TextScaled = true,
+	Text = "...",
+	TextXAlignment = Enum.TextXAlignment.Right
+})
+create("UITextSizeConstraint", {Parent = pointsLabel, MaxTextSize = 24, MinTextSize = 10})
+create("UIPadding", {Parent = pointsLabel, PaddingRight = UDim.new(0.05, 0)})
 
 -- ======================================================
 -- LOGIKA UI
 -- ======================================================
-
 local getInitialMissionPoints = ReplicatedStorage:WaitForChild("GetInitialMissionPoints")
 local missionPointsChanged = ReplicatedStorage:WaitForChild("MissionPointsChanged")
 
--- Fungsi untuk memperbarui teks label
-local function updatePointsLabel(points)
-	pointsLabel.Text = string.format("MP: %d", points)
+local function animateUpdate()
+	local originalColor = pointsLabel.TextColor3
+	pointsLabel.TextColor3 = THEME.Colors.AccentMain
+	TweenService:Create(pointsLabel, TweenInfo.new(0.5), {TextColor3 = originalColor}):Play()
 end
 
--- Memuat poin awal saat skrip dimulai
+local function updatePointsLabel(points)
+	pointsLabel.Text = tostring(points)
+	animateUpdate()
+end
+
 local function loadInitialPoints()
 	local success, initialPoints = pcall(function()
 		return getInitialMissionPoints:InvokeServer()
 	end)
 	if success then
-		updatePointsLabel(initialPoints)
+		pointsLabel.Text = tostring(initialPoints)
 	else
-		warn("Gagal mendapatkan Mission Points awal: ", initialPoints)
-		pointsLabel.Text = "MP: Error"
+		warn("Gagal mendapatkan Mission Points awal:", initialPoints)
+		pointsLabel.Text = "?"
 	end
 end
 
--- Mendengarkan perubahan poin dari server
 missionPointsChanged.OnClientEvent:Connect(function(newPoints)
 	updatePointsLabel(newPoints)
 end)
 
--- Inisialisasi
 loadInitialPoints()
-
-print("Skrip UI Mission Points berhasil dimuat.")
