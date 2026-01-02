@@ -17,9 +17,9 @@ This document tracks all icon assets currently used in the project, serving as a
 | **Close (X)** | `rbxassetid://7743878857` | `GameSettingsUI.local.luau` |
 | **Checkmark** | `rbxassetid://7733658504` | `GameSettingsUI.local.luau` |
 | **Keyboard** | `rbxassetid://125439200583530` | `GameSettingsUI.local.luau` |
-| **Gamepad** | `rbxassetid://101433749620162` | `GameSettingsUI.local.luau` |
-| **Speaker** | `rbxassetid://132503771043130` | `GameSettingsUI.local.luau` |
-| **Layout/HUD** | `rbxassetid://128958363484246` | `GameSettingsUI.local.luau` |
+| **Gamepad** | `rbxassetid://119001399043601` | `GameSettingsUI.local.luau` |
+| **Speaker** | `rbxassetid://100652180505963` | `GameSettingsUI.local.luau` |
+| **Layout/HUD** | `rbxassetid://130190996633377` | `GameSettingsUI.local.luau` |
 | **Fire Button** | `rbxassetid://130160602597512` | `GameSettingsUI.local.luau` |
 | **Double Tap** | `rbxassetid://113293314787010` | `GameSettingsUI.local.luau` |
 

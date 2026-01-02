@@ -17,22 +17,22 @@ local function CreateAdminUI()
 	-- Ini akan memperbaiki bug di mana Level dan XP tidak dapat dimuat/disimpan
 	local categoryStructure = {
 		Stats = {
-			["Informasi Pemain"] = {
+			["Player Info"] = {
 				{ Name = "Level", Path = "leveling" },
 				{ Name = "XP", Path = "leveling" },
 				{ Name = "SkillPoints", Path = "stats" }
 			},
-			["Catatan Pertarungan"] = {
+			["Combat Records"] = {
 				{ Name = "TotalKills", Path = "stats" },
 				{ Name = "TotalKnocks", Path = "stats" },
 				{ Name = "TotalRevives", Path = "stats" }
 			},
-			["Ekonomi"] = {
+			["Economy"] = {
 				{ Name = "TotalSurvivalCoins", Path = "stats" }
 			},
 		},
 		Inventory = {
-			["Ekonomi & Gacha"] = {
+			["Economy & Gacha"] = {
 				{ Name = "Coins", Path = "inventory" },
 				{ Name = "PityCount", Path = "inventory" }
 			},
@@ -40,7 +40,7 @@ local function CreateAdminUI()
 				{ Name = "Owned", Path = "inventory" },
 				{ Name = "Active", Path = "inventory" }
 			},
-			["Kosmetik"] = {
+			["Cosmetics"] = {
 				{ Name = "Skins", Path = "inventory" }
 			}
 		}
@@ -124,7 +124,7 @@ local function CreateAdminUI()
 	local userIdBox = Instance.new("TextBox")
 	userIdBox.Name = "UserIdBox"
 	userIdBox.Size = UDim2.new(1, -110, 1, 0)
-	userIdBox.PlaceholderText = "Masukkan UserID Target..."
+	userIdBox.PlaceholderText = "Enter Target UserID..."
 	userIdBox.BackgroundColor3 = Color3.fromRGB(25, 27, 30)
 	userIdBox.TextColor3 = Color3.new(1, 1, 1)
 	userIdBox.Parent = userInputFrame
@@ -408,7 +408,7 @@ local function CreateAdminUI()
 	deleteDataButton.BackgroundColor3 = Color3.fromRGB(180, 70, 70)
 
 	-- Player List Button
-	local playerListButton = createButton("PlayerListButton", "Daftar Pemain", mainFrame, UDim2.new(1, 0, 0, 35))
+	local playerListButton = createButton("PlayerListButton", "Player List", mainFrame, UDim2.new(1, 0, 0, 35))
 	playerListButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
 	playerListButton.LayoutOrder = 6
 
@@ -416,7 +416,7 @@ local function CreateAdminUI()
 	local statusLabel = Instance.new("TextLabel")
 	statusLabel.Name = "StatusLabel"
 	statusLabel.Size = UDim2.new(1, 0, 0, 40)
-	statusLabel.Text = "Status: Idle | Tekan 'P' untuk Buka/Tutup"
+	statusLabel.Text = "Status: Idle | Press 'P' to Open/Close"
 	statusLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
 	statusLabel.BackgroundTransparency = 1
 	statusLabel.TextWrapped = true
@@ -455,7 +455,7 @@ local function CreateAdminUI()
 
 	local playerListTitle = Instance.new("TextLabel")
 	playerListTitle.Size = UDim2.new(1, 0, 0, 25)
-	playerListTitle.Text = "Pemain Online"
+	playerListTitle.Text = "Online Players"
 	playerListTitle.Font = Enum.Font.SourceSansBold
 	playerListTitle.TextColor3 = Color3.new(1, 1, 1)
 	playerListTitle.BackgroundTransparency = 1
@@ -471,7 +471,7 @@ local function CreateAdminUI()
 	playerListScrollLayout.Padding = UDim.new(0, 5)
 	playerListScrollLayout.Parent = playerListScroll
 
-	local closePlayerListButton = createButton("ClosePlayerListButton", "Tutup", playerListFrame, UDim2.new(1, 0, 0, 30))
+	local closePlayerListButton = createButton("ClosePlayerListButton", "Close", playerListFrame, UDim2.new(1, 0, 0, 30))
 	closePlayerListButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
 
 	-- Data Display UI (Now obsolete, but kept for pop-up structure)
@@ -502,10 +502,10 @@ local function CreateAdminUI()
 	confirmButtonsLayout.Padding = UDim.new(0, 10)
 	confirmButtonsLayout.Parent = confirmButtonsFrame
 
-	local confirmYesButton = createButton("ConfirmYesButton", "Ya", confirmButtonsFrame, UDim2.new(0.5, -5, 1, 0))
+	local confirmYesButton = createButton("ConfirmYesButton", "Yes", confirmButtonsFrame, UDim2.new(0.5, -5, 1, 0))
 	confirmYesButton.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
 
-	local confirmNoButton = createButton("ConfirmNoButton", "Tidak", confirmButtonsFrame, UDim2.new(0.5, -5, 1, 0))
+	local confirmNoButton = createButton("ConfirmNoButton", "No", confirmButtonsFrame, UDim2.new(0.5, -5, 1, 0))
 	confirmNoButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
 
 	-- UI Logic
@@ -534,7 +534,7 @@ local function CreateAdminUI()
 			playerButton.MouseButton1Click:Connect(function()
 				userIdBox.Text = tostring(p.UserId)
 				playerListFrame.Visible = false
-				statusLabel.Text = "Status: UserID " .. p.UserId .. " dipilih."
+				statusLabel.Text = "Status: UserID " .. p.UserId .. " selected."
 			end)
 		end
 	end
@@ -549,10 +549,9 @@ local function CreateAdminUI()
 
 	-- Main Buttons Logic
 	getDataButton.MouseButton1Click:Connect(function()
-		local targetUserId = tonumber(userIdBox.Text)
-		if not targetUserId then statusLabel.Text = "Status: UserID tidak valid."; return end
+		if not targetUserId then statusLabel.Text = "Status: Invalid UserID."; return end
 
-		statusLabel.Text = "Status: Meminta data..."
+		statusLabel.Text = "Status: Requesting data..."
 		-- Clear old dynamic UI from both pages
 		for _, page in pairs({statsPage, inventoryPage}) do
 			for _, child in ipairs(page:GetChildren()) do
@@ -573,19 +572,19 @@ local function CreateAdminUI()
 			buildDynamicUI(statsPage, "Stats", data, "")
 			buildDynamicUI(inventoryPage, "Inventory", data, "")
 
-			statusLabel.Text = "Status: Data berhasil dimuat untuk UserID " .. targetUserId
+			statusLabel.Text = "Status: Data loaded successfully for UserID " .. targetUserId
 		else
 			currentData = nil
-			statusLabel.Text = "Status: Gagal memuat data. Pesan: " .. (message or "Tidak ada data.")
+			statusLabel.Text = "Status: Failed to load data. Message: " .. (message or "No data.")
 		end
 	end)
 
 	local function triggerConfirmation(action, id, data)
 		pendingAction, pendingTargetId, pendingData = action, id, data
 		if action == "set" then
-			confirmationLabel.Text = "Apakah Anda yakin ingin mengubah data untuk UserID " .. id .. "?"
+			confirmationLabel.Text = "Are you sure you want to modify data for UserID " .. id .. "?"
 		elseif action == "delete" then
-			confirmationLabel.Text = "PERINGATAN: Aksi ini akan menghapus data secara permanen. Apakah Anda yakin ingin menghapus data untuk UserID " .. id .. "?"
+			confirmationLabel.Text = "WARNING: This action will permanently delete data. Are you sure you want to delete data for UserID " .. id .. "?"
 		end
 		confirmationFrame.Visible = true
 	end
@@ -625,7 +624,7 @@ local function CreateAdminUI()
 						if dataType == "number" then
 							value = tonumber(textValue)
 							if value == nil then
-								statusLabel.Text = "Status: Input tidak valid untuk " .. key .. ". Harap masukkan angka."
+								statusLabel.Text = "Status: Invalid input for " .. key .. ". Please enter a number."
 								return nil 
 							end
 						elseif dataType == "boolean" then
@@ -648,13 +647,13 @@ local function CreateAdminUI()
 
 	setDataButton.MouseButton1Click:Connect(function()
 		if not currentData then
-			statusLabel.Text = "Status: Dapatkan data pemain terlebih dahulu."
+			statusLabel.Text = "Status: Get player data first."
 			return
 		end
 
 		local targetUserId = tonumber(userIdBox.Text)
 		if not targetUserId then
-			statusLabel.Text = "Status: UserID tidak valid."
+			statusLabel.Text = "Status: Invalid UserID."
 			return
 		end
 
@@ -670,7 +669,7 @@ local function CreateAdminUI()
 
 	deleteDataButton.MouseButton1Click:Connect(function()
 		local targetUserId = tonumber(userIdBox.Text)
-		if not targetUserId then statusLabel.Text = "Status: UserID tidak valid."; return end
+		if not targetUserId then statusLabel.Text = "Status: Invalid UserID."; return end
 		triggerConfirmation("delete", targetUserId)
 	end)
 
@@ -682,10 +681,10 @@ local function CreateAdminUI()
 	confirmYesButton.MouseButton1Click:Connect(function()
 		if pendingAction == "set" then
 			updateDataEvent:FireServer(pendingTargetId, pendingData)
-			statusLabel.Text = "Status: Permintaan perubahan data dikirim."
+			statusLabel.Text = "Status: Modify request sent."
 		elseif pendingAction == "delete" then
 			deleteDataEvent:FireServer(pendingTargetId)
-			statusLabel.Text = "Status: Permintaan hapus data dikirim."
+			statusLabel.Text = "Status: Delete request sent."
 			-- Clear UI after deletion from both pages
 			for _, page in pairs({statsPage, inventoryPage}) do
 				for _, child in ipairs(page:GetChildren()) do
@@ -701,7 +700,7 @@ local function CreateAdminUI()
 
 	confirmNoButton.MouseButton1Click:Connect(function()
 		resetConfirmationState()
-		statusLabel.Text = "Status: Aksi dibatalkan."
+		statusLabel.Text = "Status: Action cancelled."
 	end)
 end
 

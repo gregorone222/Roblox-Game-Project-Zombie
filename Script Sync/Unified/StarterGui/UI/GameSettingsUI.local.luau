@@ -49,10 +49,10 @@ local THEME = {
 }
 
 local SETTINGS_ICONS = {
-	Gameplay = "rbxassetid://101433749620162", -- Gamepad Icon
+	Gameplay = "rbxassetid://119001399043601", -- Gamepad Icon
 	Controls = "rbxassetid://125439200583530", -- Keyboard Icon
-	Audio = "rbxassetid://132503771043130", -- Speaker Icon
-	HUD = "rbxassetid://128958363484246", -- Layer/Layout Icon
+	Audio = "rbxassetid://100652180505963", -- Speaker Icon
+	HUD = "rbxassetid://130190996633377", -- Layer/Layout Icon
 	Close = "rbxassetid://7743878857", -- X Icon
 	Check = "rbxassetid://7733658504", -- Checkmark
 	Gear = "rbxassetid://119533506980251" -- Gear
@@ -410,7 +410,7 @@ local titleArea = Instance.new("Frame", header)
 titleArea.Size = UDim2.fromScale(0.6, 1); titleArea.BackgroundTransparency = 1; titleArea.Position = UDim2.fromScale(0.05, 0)
 
 local titleTxt = Instance.new("TextLabel", titleArea)
-titleTxt.Text = "PENGATURAN"; titleTxt.Font = THEME.Fonts.Display; titleTxt.TextScaled = true; titleTxt.TextColor3 = THEME.Colors.Accent; titleTxt.BackgroundTransparency = 1; titleTxt.Size = UDim2.fromScale(1, 0.6); titleTxt.Position = UDim2.fromScale(0, 0.2); titleTxt.TextXAlignment = Enum.TextXAlignment.Left
+titleTxt.Text = "SETTINGS"; titleTxt.Font = THEME.Fonts.Display; titleTxt.TextScaled = true; titleTxt.TextColor3 = THEME.Colors.Accent; titleTxt.BackgroundTransparency = 1; titleTxt.Size = UDim2.fromScale(1, 0.6); titleTxt.Position = UDim2.fromScale(0, 0.2); titleTxt.TextXAlignment = Enum.TextXAlignment.Left
 Instance.new("UITextSizeConstraint", titleTxt).MaxTextSize = 28
 
 local closeBtn = Instance.new("ImageButton", header)
@@ -560,8 +560,8 @@ local function defineTabs()
 			end)
 		end
 
-		createModeBtn("Dedicated Button", "rbxassetid://130160602597512", "Tombol tembak khusus", "FireButton")
-		createModeBtn("Double Tap", "rbxassetid://113293314787010", "Ketuk layar 2x", "DoubleTap")
+		createModeBtn("Dedicated Button", "rbxassetid://130160602597512", "Dedicated fire button", "FireButton")
+		createModeBtn("Double Tap", "rbxassetid://113293314787010", "Double tap screen to fire", "DoubleTap")
 	end
 
 	-- 3. Audio
@@ -589,7 +589,7 @@ local function defineTabs()
 
 		local icon = Instance.new("ImageLabel", card); icon.Image = SETTINGS_ICONS.HUD; icon.Size = UDim2.new(0, 64, 0, 64); icon.AnchorPoint = Vector2.new(0.5, 0); icon.Position = UDim2.new(0.5, 0, 0, 20); icon.BackgroundTransparency = 1; icon.ImageColor3 = THEME.Colors.Accent
 		local title = Instance.new("TextLabel", card); title.Text = "Custom HUD Layout"; title.Font = THEME.Fonts.Display; title.TextSize = 20; title.TextColor3 = THEME.Colors.TextMain; title.Size = UDim2.new(1, 0, 0, 30); title.Position = UDim2.new(0, 0, 0, 90); title.BackgroundTransparency = 1
-		local desc = Instance.new("TextLabel", card); desc.Text = "Ubah posisi dan ukuran tombol kontrol, health bar, dan elemen lainnya."; desc.Font = THEME.Fonts.Body; desc.TextSize = 14; desc.TextColor3 = THEME.Colors.TextDim; desc.Size = UDim2.new(0.8, 0, 0, 40); desc.Position = UDim2.new(0.1, 0, 0, 120); desc.BackgroundTransparency = 1; desc.TextWrapped = true
+		local desc = Instance.new("TextLabel", card); desc.Text = "Customize the position and size of control buttons, health bar, and other HUD elements."; desc.Font = THEME.Fonts.Body; desc.TextSize = 14; desc.TextColor3 = THEME.Colors.TextDim; desc.Size = UDim2.new(0.8, 0, 0, 40); desc.Position = UDim2.new(0.1, 0, 0, 120); desc.BackgroundTransparency = 1; desc.TextWrapped = true
 
 		local btn = Instance.new("TextButton", card)
 		btn.Text = "EDIT LAYOUT"
@@ -623,12 +623,12 @@ local function defineTabs()
 	addTab("HUD", "Interface / HUD", SETTINGS_ICONS.HUD)
 end
 
-createFooterBtn("BATAL", false, function() 
+createFooterBtn("CANCEL", false, function() 
 	applySettings(currentSettings) -- Revert
 	setSettingsMode(false)
 end)
 
-createFooterBtn("SIMPAN", true, function()
+createFooterBtn("SAVE", true, function()
 	currentSettings = deepCopy(temporarySettings)
 	UpdateSettingsEvent:FireServer(currentSettings)
 	applySettings(currentSettings)
@@ -698,7 +698,7 @@ createLeBtn("RESET", THEME.Colors.Danger, function()
 	end
 end)
 
-createLeBtn("BATAL", THEME.Colors.Border, function()
+createLeBtn("CANCEL", THEME.Colors.Border, function()
 	for name, element in pairs(hudElements) do
 		if temporarySettings.hud[name] then
 			element.Position = temporarySettings.hud[name].pos
@@ -709,7 +709,7 @@ createLeBtn("BATAL", THEME.Colors.Border, function()
 	setSettingsMode(true, false) -- Kembali ke menu, jangan simpan perubahan layout ke temp
 end)
 
-createLeBtn("SIMPAN", THEME.Colors.Success, function()
+createLeBtn("SAVE", THEME.Colors.Success, function()
 	for name, element in pairs(hudElements) do
 		temporarySettings.hud[name] = { pos = element.Position, size = element.Size }
 	end
