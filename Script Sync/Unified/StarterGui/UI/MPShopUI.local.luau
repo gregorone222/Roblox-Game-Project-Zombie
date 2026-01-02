@@ -95,10 +95,13 @@ local FONTS = {
 
 local UNICODE_ICONS = {
 	Close = "X",
-	MP = "🎯", -- Target for Mission Points
 	Shop = "🛒",
 	Lock = "🔒",
 	Gun = "🔫"
+}
+
+local ASSETS = {
+	MissionPointIcon = "rbxassetid://126182178056637"
 }
 
 local mpShopUI = {}
@@ -518,13 +521,13 @@ function mpShopUI:Create()
 		Parent = pointsBadge
 	})
 
-	create("TextLabel", {
-		Text = UNICODE_ICONS.MP,
-		Size = UDim2.new(0, 30, 1, 0),
-		Position = UDim2.new(1, -30, 0, 0),
-		TextColor3 = COLORS.ACCENT_GOLD,
-		TextSize = 20,
+	create("ImageLabel", {
+		Name = "MPIcon",
+		Size = UDim2.new(0, 24, 0, 24),
+		Position = UDim2.new(1, -28, 0.5, -12),
 		BackgroundTransparency = 1,
+		Image = ASSETS.MissionPointIcon,
+		ScaleType = Enum.ScaleType.Fit,
 		Parent = pointsBadge
 	})
 

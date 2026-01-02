@@ -93,10 +93,13 @@ local FONTS = {
 
 local UNICODE_ICONS = {
 	Close = "X",
-	AP = "★", -- Star for Achievement
 	Shop = "🎖️",
 	Lock = "🔒",
 	Gun = "🔫"
+}
+
+local ASSETS = {
+	AchievementPointIcon = "rbxassetid://90037473351637"
 }
 
 local apShopUI = {}
@@ -524,13 +527,13 @@ function apShopUI:Create()
 		Parent = pointsBadge
 	})
 
-	create("TextLabel", {
-		Text = "★",
-		Size = UDim2.new(0, 30, 1, 0),
-		Position = UDim2.new(1, -30, 0, 0),
-		TextColor3 = COLORS.ACCENT_GOLD,
-		TextSize = 20,
+	create("ImageLabel", {
+		Name = "APIcon",
+		Size = UDim2.new(0, 24, 0, 24),
+		Position = UDim2.new(1, -28, 0.5, -12),
 		BackgroundTransparency = 1,
+		Image = ASSETS.AchievementPointIcon,
+		ScaleType = Enum.ScaleType.Fit,
 		Parent = pointsBadge
 	})
 
