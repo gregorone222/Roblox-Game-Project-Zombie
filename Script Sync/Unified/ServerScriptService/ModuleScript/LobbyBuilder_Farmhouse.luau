@@ -762,7 +762,18 @@ function LobbyBuilder.Build()
 	createPart("GazeboRoof", Vector3.new(17, 0.5, 12), CFrame.new(0, GROUND_LEVEL + 9, 80), gazebo, COLORS.WoodDark, Enum.Material.Slate)
 
 	-- Command table with paper map
-	createPart("CommandTable", Vector3.new(8, 2.5, 5), CFrame.new(0, GROUND_LEVEL + 1.8, 78), gazebo, COLORS.WoodLight, Enum.Material.Wood)
+	local commandTable = createPart("CommandTable", Vector3.new(8, 2.5, 5), CFrame.new(0, GROUND_LEVEL + 1.8, 78), gazebo, COLORS.WoodLight, Enum.Material.Wood)
+	
+	-- Mission Briefing ProximityPrompt (for LobbyRoomUI)
+	local missionPrompt = Instance.new("ProximityPrompt")
+	missionPrompt.Name = "MissionBriefingPrompt"
+	missionPrompt.ObjectText = "Mission Briefing"
+	missionPrompt.ActionText = "View Assignments"
+	missionPrompt.HoldDuration = 0
+	missionPrompt.RequiresLineOfSight = false
+	missionPrompt.MaxActivationDistance = 8
+	missionPrompt.Parent = commandTable
+	
 	createPart("PaperMap", Vector3.new(6, 0.1, 4), CFrame.new(0, GROUND_LEVEL + 3.2, 78), gazebo, Color3.fromRGB(220, 200, 170), Enum.Material.SmoothPlastic)
 
 	-- Old Radio
