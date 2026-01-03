@@ -67,6 +67,10 @@ RequestAmmoSync.Name = "RequestAmmoSync"
 -- Anti-spam tembak: catat waktu tembak terakhir per-player per-senjata
 local lastFireTime = {}
 
+-- Weapon Switch Cooldown (server-side - prevents exploit bypass)
+local WEAPON_SWITCH_COOLDOWN = 1.0 -- 1 second cooldown between weapon switches
+local lastSwitchTime = {}
+
 local playerAmmo = {}
 local playerReserveAmmo = {}
 
@@ -712,6 +716,18 @@ game.Players.PlayerAdded:Connect(function(player)
 		end
 		char.ChildAdded:Connect(function(child)
 			if child:IsA("Tool") then
+				-- Server-side weapon switch cooldown validation
+				local now = tick()
+				if lastSwitchTime[player] and (now - lastSwitchTime[player]) < WEAPON_SWITCH_COOLDOWN then
+					-- Too fast! Unequip the tool
+					local humanoid = char:FindFirstChildOfClass("Humanoid")
+					if humanoid then
+						humanoid:UnequipTools()
+					end
+					return
+				end
+				lastSwitchTime[player] = now
+				
 				task.wait(0.1) -- Beri waktu agar replikasi equip selesai di client
 				print("DEBUG: Tool equipped, syncing ammo for " .. child.Name)
 				setupToolAmmoForPlayer(player, child)
@@ -738,4 +754,5 @@ game.Players.PlayerRemoving:Connect(function(plr)
 	playerAmmo[plr] = nil
 	playerReserveAmmo[plr] = nil
 	lastFireTime[plr] = nil
+	lastSwitchTime[plr] = nil
 end)

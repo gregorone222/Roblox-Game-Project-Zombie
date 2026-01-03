@@ -67,7 +67,7 @@ end
 
 local function getAttackCooldown()
 	if not meleeStats then return 1 end
-	return meleeStats.AttackSpeed or 0.8
+	return meleeStats.AttackSpeed or 1.0 -- Default 1 second cooldown
 end
 
 local function isAttackCooldownReady()

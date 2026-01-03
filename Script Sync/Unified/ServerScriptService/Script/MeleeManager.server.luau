@@ -74,11 +74,11 @@ MeleeAttackEvent.OnServerEvent:Connect(function(player, tool, attackDirection)
 	local weaponData = WeaponModule.Weapons[tool.Name]
 	if not weaponData then return end
 	
-	-- Anti-spam check
+	-- Anti-spam check (server-side cooldown validation)
 	local now = tick()
-	local attackSpeed = weaponData.AttackSpeed or 0.8
-	if lastAttackTime[player] and (now - lastAttackTime[player]) < attackSpeed * 0.8 then
-		return -- Too fast, ignore
+	local attackCooldown = weaponData.AttackSpeed or 1.0 -- Default 1 second cooldown
+	if lastAttackTime[player] and (now - lastAttackTime[player]) < attackCooldown then
+		return -- Still on cooldown, ignore attack
 	end
 	lastAttackTime[player] = now
 	

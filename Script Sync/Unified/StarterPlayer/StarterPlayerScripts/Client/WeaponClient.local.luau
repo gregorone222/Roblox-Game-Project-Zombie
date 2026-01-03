@@ -98,6 +98,18 @@ local connections = {}
 -- SNIPER_SET for mobile controls
 local SNIPER_SET = { ["L115A1"]=true, ["DSR"]=true, ["Barrett-M82"]=true }
 
+-- Weapon Switch Cooldown (prevents rapid switching)
+local WEAPON_SWITCH_COOLDOWN = 1.0 -- 1 second cooldown between weapon switches
+local nextSwitchTime = 0
+
+local function isWeaponSwitchReady()
+	return tick() >= nextSwitchTime
+end
+
+local function markWeaponSwitched()
+	nextSwitchTime = tick() + WEAPON_SWITCH_COOLDOWN
+end
+
 -- Audio suppression functions
 local function suppressGunshotSoundsTemporarily()
 	suppressGunshotSounds = true
@@ -286,7 +298,18 @@ local function markJustFired()
 end
 
 local function setupWeapon(tool)
+	-- Check weapon switch cooldown
+	if not isWeaponSwitchReady() then
+		-- Still on cooldown, reject this equip
+		local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+		if humanoid then
+			humanoid:UnequipTools()
+		end
+		return
+	end
+	
 	cleanupWeapon() -- Clean up previous weapon first
+	markWeaponSwitched() -- Mark switch time
 
 	currentWeapon = tool
 	weaponName = tool.Name
