@@ -739,13 +739,7 @@ createUI = function()
 		Enabled = false
 	})
 
-	-- Background Dim
-	create("Frame", {
-		Size = UDim2.new(1, 0, 1, 0),
-		BackgroundColor3 = Color3.new(0, 0, 0),
-		BackgroundTransparency = 0.4,
-		Parent = ui.screen
-	})
+	-- NO dark overlay per rules.md - BlurEffect only
 
 	-- Main Panel
 	local mainPanel = create("Frame", {

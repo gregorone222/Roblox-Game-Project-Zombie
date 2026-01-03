@@ -449,13 +449,7 @@ function mpShopUI:Create()
 	local camera = workspace.CurrentCamera
 	state.blurEffect = create("BlurEffect", {Parent = camera, Size = 15, Enabled = false})
 
-	-- Background Dim
-	local dim = create("Frame", {
-		Size = UDim2.new(1, 0, 1, 0),
-		BackgroundColor3 = Color3.new(0,0,0),
-		BackgroundTransparency = 0.5,
-		Parent = screenGui
-	})
+	-- NO dark overlay per rules.md - BlurEffect only
 
 	-- Main Case
 	local mainCase = create("Frame", {

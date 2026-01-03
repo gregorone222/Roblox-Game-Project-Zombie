@@ -455,13 +455,7 @@ function apShopUI:Create()
 		state.blurEffect = create("BlurEffect", {Name = "APShopBlur", Parent = camera, Size = 15, Enabled = false})
 	end
 
-	-- Background Dim
-	local dim = create("Frame", {
-		Size = UDim2.new(1, 0, 1, 0),
-		BackgroundColor3 = Color3.new(0,0,0),
-		BackgroundTransparency = 0.5,
-		Parent = screenGui
-	})
+	-- NO dark overlay per rules.md - BlurEffect only
 
 	-- Main Case
 	local mainCase = create("Frame", {

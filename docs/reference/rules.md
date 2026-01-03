@@ -14,7 +14,7 @@ Aturan baku pengembangan untuk menjaga kualitas kode dan konsistensi.
 | **Anchor Point** | Gunakan `0.5, 0.5` untuk elemen tengah |
 | **Text Scaling** | Gunakan `TextScaled` + `UITextSizeConstraint` |
 | **Mobile Support** | Cek `TouchEnabled`, perbesar tombol (min 15% padding) |
-| **Immersive Menus** | Terapkan `BlurEffect` saat menu full-screen |
+| **Immersive Menus** | Gunakan `BlurEffect` saja, **TANPA** dark overlay Frame |
 | **IgnoreGuiInset** | Set `false` agar tidak tertutup TopBar |
 
 ---
