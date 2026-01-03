@@ -828,7 +828,7 @@ createUI = function()
 		Parent = rollArea
 	})
 
-	local function createRollButton(name, text, cost, posX)
+	local function createRollButton(name, text, cost, posX, iconId)
 		local btn = create("TextButton", {
 			Name = name,
 			Size = UDim2.new(0.3, -10, 0.8, 0),
@@ -840,12 +840,27 @@ createUI = function()
 		addCorner(btn, 8)
 		addStroke(btn, COLORS.BG_ROOT, 2)
 
+		-- Icon
+		if iconId then
+			create("ImageLabel", {
+				Name = "Icon",
+				Image = iconId,
+				Size = UDim2.new(0.6, 0, 0.6, 0),
+				Position = UDim2.new(0.5, 0, 0.05, 0),
+				AnchorPoint = Vector2.new(0.5, 0),
+				BackgroundTransparency = 1,
+				ScaleType = Enum.ScaleType.Fit,
+				Parent = btn
+			})
+		end
+
 		create("TextLabel", {
 			Name = "Label",
 			Text = text,
-			Size = UDim2.new(1, 0, 0.5, 0),
+			Size = UDim2.new(1, 0, 0.25, 0),
+			Position = UDim2.new(0, 0, 0.65, 0), -- Moved down
 			Font = FONTS.Header,
-			TextSize = 18,
+			TextSize = 14, -- Slightly smaller
 			TextColor3 = COLORS.BG_ROOT,
 			BackgroundTransparency = 1,
 			Parent = btn
@@ -854,10 +869,10 @@ createUI = function()
 		if cost then
 			create("TextLabel", {
 				Text = formatNumber(cost) .. " 🪙",
-				Size = UDim2.new(1, 0, 0.4, 0),
-				Position = UDim2.new(0, 0, 0.55, 0),
+				Size = UDim2.new(1, 0, 0.2, 0),
+				Position = UDim2.new(0, 0, 0.82, 0),
 				Font = FONTS.Mono,
-				TextSize = 13,
+				TextSize = 12,
 				TextColor3 = COLORS.BG_HEADER,
 				BackgroundTransparency = 1,
 				Parent = btn
@@ -865,8 +880,8 @@ createUI = function()
 		else
 			create("TextLabel", {
 				Text = "Daily Free",
-				Size = UDim2.new(1, 0, 0.4, 0),
-				Position = UDim2.new(0, 0, 0.55, 0),
+				Size = UDim2.new(1, 0, 0.2, 0),
+				Position = UDim2.new(0, 0, 0.82, 0),
 				Font = FONTS.Mono,
 				TextSize = 11,
 				TextColor3 = COLORS.BG_HEADER,
@@ -878,9 +893,9 @@ createUI = function()
 		return btn
 	end
 
-	ui.rollButton1 = createRollButton("Roll1", "ROLL x1", state.gachaConfig.costs.roll1, 0)
-	ui.rollButton10 = createRollButton("Roll10", "ROLL x10", state.gachaConfig.costs.roll10, 0.33)
-	ui.freeRollButton = createRollButton("FreeRoll", "FREE ROLL", nil, 0.66)
+	ui.rollButton1 = createRollButton("Roll1", "ROLL x1", state.gachaConfig.costs.roll1, 0, "rbxassetid://132531780703465")
+	ui.rollButton10 = createRollButton("Roll10", "ROLL x10", state.gachaConfig.costs.roll10, 0.33, "rbxassetid://76836446183603")
+	ui.freeRollButton = createRollButton("FreeRoll", "FREE ROLL", nil, 0.66, "rbxassetid://132092333277896")
 	ui.freeRollButton.BackgroundColor3 = COLORS.ACCENT_SUCCESS
 
 	ui.rollButton1.MouseButton1Click:Connect(function() handleRoll("single") end)
@@ -1046,53 +1061,63 @@ end
 initializeGachaData()
 
 local function setupPrompt()
-	print("[GachaUI] setupPrompt() starting...")
-	local lobbyEnv = Workspace:WaitForChild("LobbyEnvironment", 15)
-	if not lobbyEnv then 
-		warn("[GachaUI] LobbyEnvironment not found!")
-		return 
-	end
+	print("[GachaUI] setupPrompt() starting... Waiting for LobbyEnvironment...")
+	
+	-- Infinite wait for LobbyEnvironment (it's essential)
+	local lobbyEnv = Workspace:WaitForChild("LobbyEnvironment")
 	print("[GachaUI] Found LobbyEnvironment")
 
-	local gachaMachine = lobbyEnv:WaitForChild("Gacha", 15)
-	if gachaMachine then
-		print("[GachaUI] Found Gacha machine: " .. gachaMachine:GetFullName())
+	-- Retry logic for Gacha machine
+	local gachaMachine = nil
+	while not gachaMachine do
+		gachaMachine = lobbyEnv:FindFirstChild("Gacha")
+		if not gachaMachine then
+			-- Helper for StreamingEnabled or delayed spawn
+			gachaMachine = lobbyEnv:WaitForChild("Gacha", 5)
+		end
 		
-		-- Wait for ProximityPrompt with retry logic
-		local prompt = nil
-		local retries = 0
-		local maxRetries = 10
-		
-		while not prompt and retries < maxRetries do
-			prompt = gachaMachine:FindFirstChildWhichIsA("ProximityPrompt", true)
-			if not prompt then
-				retries = retries + 1
+		if not gachaMachine then
+			print("[GachaUI] Waiting for Gacha machine...")
+			task.wait(1)
+		end
+	end
+	
+	print("[GachaUI] Found Gacha machine: " .. gachaMachine:GetFullName())
+	
+	-- Wait for ProximityPrompt with retry logic
+	local prompt = nil
+	local retries = 0
+	local maxRetries = 100 -- Increased retries
+	
+	while not prompt and retries < maxRetries do
+		prompt = gachaMachine:FindFirstChildWhichIsA("ProximityPrompt", true)
+		if not prompt then
+			retries = retries + 1
+			if retries % 5 == 0 then
 				print("[GachaUI] Waiting for ProximityPrompt... attempt " .. retries)
-				task.wait(0.5)
 			end
+			task.wait(0.5)
 		end
-		
-		if prompt then
-			print("[GachaUI] Found ProximityPrompt: " .. prompt:GetFullName())
-			prompt.Triggered:Connect(function(playerWhoTriggered)
-				print("[GachaUI] Prompt triggered by: " .. playerWhoTriggered.Name)
-				if ui.screen and ui.screen.Enabled then
-					toggleGachaUI(false)
-				else
-					toggleGachaUI(true)
-				end
-			end)
-			print("[GachaUI] Connected to prompt successfully!")
-		else
-			warn("[GachaUI] ProximityPrompt not found after " .. maxRetries .. " retries!")
-			-- Debug: list all descendants
-			print("[GachaUI] Gacha machine descendants:")
-			for _, desc in ipairs(gachaMachine:GetDescendants()) do
-				print("  - " .. desc.ClassName .. ": " .. desc.Name)
+	end
+	
+	if prompt then
+		print("[GachaUI] Found ProximityPrompt: " .. prompt:GetFullName())
+		prompt.Triggered:Connect(function(playerWhoTriggered)
+			print("[GachaUI] Prompt triggered by: " .. playerWhoTriggered.Name)
+			if ui.screen and ui.screen.Enabled then
+				toggleGachaUI(false)
+			else
+				toggleGachaUI(true)
 			end
-		end
+		end)
+		print("[GachaUI] Connected to prompt successfully!")
 	else
-		warn("[GachaUI] Gacha machine not found!")
+		warn("[GachaUI] ProximityPrompt not found after " .. maxRetries .. " retries!")
+		-- Debug: list all descendants
+		print("[GachaUI] Gacha machine descendants:")
+		for _, desc in ipairs(gachaMachine:GetDescendants()) do
+			print("  - " .. desc.ClassName .. ": " .. desc.Name)
+		end
 	end
 end
 

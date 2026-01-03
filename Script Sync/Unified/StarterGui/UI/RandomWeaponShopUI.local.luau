@@ -269,20 +269,30 @@ local function closeReplaceUI(wasCancelled)
 end
 
 -- Creates a row in the comparison clipboard
-local function createComparisonRow(parent, iconText, labelText, order)
+local function createComparisonRow(parent, iconAssetOrText, labelText, order)
 	local frame = Instance.new("Frame")
 	frame.Size = UDim2.new(1, 0, 0, 40)
 	frame.LayoutOrder = order
 	frame.BackgroundTransparency = 1
 	frame.Parent = parent
 
-	-- Icon
-	local icon = Instance.new("TextLabel", frame)
-	icon.Text = iconText
-	icon.Size = UDim2.new(0, 30, 1, 0)
-	icon.BackgroundTransparency = 1
-	icon.TextSize = 20
-	icon.Parent = frame
+	-- Icon (Image or Text)
+	if string.find(iconAssetOrText, "rbxassetid") then
+		local icon = Instance.new("ImageLabel", frame)
+		icon.Image = iconAssetOrText
+		icon.Size = UDim2.new(0, 30, 0, 30)
+		icon.Position = UDim2.new(0, 0, 0.5, -15)
+		icon.BackgroundTransparency = 1
+		icon.ScaleType = Enum.ScaleType.Fit
+		icon.Parent = frame
+	else
+		local icon = Instance.new("TextLabel", frame)
+		icon.Text = iconAssetOrText
+		icon.Size = UDim2.new(0, 30, 1, 0)
+		icon.BackgroundTransparency = 1
+		icon.TextSize = 20
+		icon.Parent = frame
+	end
 
 	-- Stat Name
 	local lbl = Instance.new("TextLabel", frame)
@@ -529,9 +539,9 @@ local function showReplaceUI()
 	layout.Padding = UDim.new(0, 5)
 	layout.VerticalAlignment = Enum.VerticalAlignment.Center
 
-	local rowDmgNew, rowDmgArrow, rowDmgOld = createComparisonRow(statListObj, "👊", "DAMAGE", 1)
+	local rowDmgNew, rowDmgArrow, rowDmgOld = createComparisonRow(statListObj, "rbxassetid://114679059018574", "DAMAGE", 1)
 	local rowRpmNew, rowRpmArrow, rowRpmOld = createComparisonRow(statListObj, "🔥", "FIRE RATE", 2)
-	local rowMagNew, rowMagArrow, rowMagOld = createComparisonRow(statListObj, "🔋", "AMMO", 3)
+	local rowMagNew, rowMagArrow, rowMagOld = createComparisonRow(statListObj, "rbxassetid://125205650332019", "AMMO", 3)
 
 
 	-- COLUMN 3: INVENTORY (Right)
