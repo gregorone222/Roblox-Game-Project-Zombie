@@ -13,6 +13,10 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+
+local ModuleScriptReplicated = ReplicatedStorage:WaitForChild("ModuleScript")
+local WeaponModule = require(ModuleScriptReplicated:WaitForChild("WeaponModule"))
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -36,8 +40,8 @@ local FieldKitConfig = {
 
 -- Gacha Rewards Pool (for display)
 local RewardsPool = {
-	{ Type = "Coins", Name = "100-500 Credits", Rarity = "Common", Chance = "60%", Desc = "In-game currency for purchases" },
-	{ Type = "Coins", Name = "500-1000 Credits", Rarity = "Uncommon", Chance = "20%", Desc = "Bonus currency for your account" },
+	{ Type = "Coins", Name = "100-500 Survival Coins", Icon = "rbxassetid://89004651637769", Rarity = "Common", Chance = "60%", Desc = "In-game currency for purchases" },
+	{ Type = "Coins", Name = "500-1000 Survival Coins", Icon = "rbxassetid://89004651637769", Rarity = "Uncommon", Chance = "20%", Desc = "Bonus currency for your account" },
 	{ Type = "FieldKit", Name = "Starting Funds", Key = "StarterPoints", Rarity = "Common", Chance = "8%" },
 	{ Type = "FieldKit", Name = "Ammo Stockpile", Key = "AmmoCache", Rarity = "Uncommon", Chance = "5%" },
 	{ Type = "FieldKit", Name = "Body Armor", Key = "StartingShield", Rarity = "Rare", Chance = "3%" },
@@ -131,7 +135,101 @@ local function getRarityColor(rarity)
 	return COLORS.RARITY_COMMON
 end
 
--- ================== ROLL HANDLERS ==================
+
+
+-- ================== VIEWPORT HELPER ==================
+
+local function updateViewportModel(weaponName)
+	if not ui.viewportFrame then return end
+	
+	local worldModel = ui.viewportFrame:FindFirstChild("WorldModel")
+	if not worldModel then return end
+	
+	-- Clear existing models
+	for _, c in pairs(worldModel:GetChildren()) do c:Destroy() end
+	
+	local weaponData = WeaponModule.Weapons[weaponName]
+	if not weaponData then return end
+	
+	-- Find default skin or first available skin
+	local meshId, texId = "", ""
+	if weaponData.Skins then
+		if weaponData.Skins["Default Skin"] then
+			meshId = weaponData.Skins["Default Skin"].MeshId
+			texId = weaponData.Skins["Default Skin"].TextureId
+		else
+			for _, s in pairs(weaponData.Skins) do
+				meshId = s.MeshId
+				texId = s.TextureId
+				break
+			end
+		end
+	end
+	
+	if meshId == "" then return end
+	
+	local part = Instance.new("Part")
+	part.Name = "WeaponModel"
+	part.Size = Vector3.new(1, 1, 1)
+	part.Anchored = true
+	part.CanCollide = false
+	part.Transparency = 1
+	part.Parent = worldModel
+	
+	local mesh = Instance.new("SpecialMesh")
+	mesh.MeshType = Enum.MeshType.FileMesh
+	mesh.MeshId = meshId
+	mesh.TextureId = texId
+	mesh.Scale = Vector3.new(1.5, 1.5, 1.5)
+	mesh.Parent = part
+	
+	part.Position = Vector3.new(0, 0, 0)
+end
+
+local function createInteractiveViewport(parent)
+	local vp = create("ViewportFrame", {
+		Name = "WeaponPreview",
+		Size = UDim2.new(1, 0, 1, 0),
+		BackgroundTransparency = 1,
+		Parent = parent
+	})
+	
+	local worldModel = Instance.new("WorldModel", vp)
+	local camera = Instance.new("Camera", vp)
+	vp.CurrentCamera = camera
+	
+	-- Camera State
+	local camDist = 5
+	local minDist = 3
+	local maxDist = 8
+	local angle = 0
+	
+	camera.CFrame = CFrame.new(Vector3.new(0, 2, camDist), Vector3.new(0, 0, 0))
+	
+	-- Auto Rotate
+	RunService.RenderStepped:Connect(function(dt)
+		if not vp.Visible or not vp:IsDescendantOf(playerGui) then return end
+		
+		angle = angle + dt * 0.8 -- Rotation speed
+		
+		-- Orbit camera
+		local x = math.sin(angle) * camDist
+		local z = math.cos(angle) * camDist
+		
+		-- Look at center slightly tilted down
+		camera.CFrame = CFrame.new(Vector3.new(x, 1.5, z), Vector3.new(0, 0, 0))
+	end)
+	
+	-- Zoom Control
+	vp.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseWheel then
+			camDist = math.clamp(camDist - input.Position.Z, minDist, maxDist)
+		end
+	end)
+	
+	ui.viewportFrame = vp
+	return vp
+end
 
 local function handleRoll(rollType)
 	if state.isRolling then return end
@@ -332,8 +430,8 @@ local function populateWeaponList()
 	end
 	
 	-- Get weapons from WeaponModule
-	local ModuleScriptReplicated = ReplicatedStorage:FindFirstChild("ModuleScript")
-	local WeaponModule = ModuleScriptReplicated and require(ModuleScriptReplicated:WaitForChild("WeaponModule", 5))
+	-- WeaponModule is now required at top of script
+	
 	
 	state.weaponsList = {}
 	if WeaponModule and WeaponModule.Weapons then
@@ -392,6 +490,11 @@ local function populateWeaponList()
 	if ui.selectedWeaponLabel and state.selectedWeapon then
 		ui.selectedWeaponLabel.Text = "Rolling for: " .. state.selectedWeapon
 	end
+	
+	-- Update Viewport
+	if state.selectedWeapon then
+		updateViewportModel(state.selectedWeapon)
+	end
 end
 
 -- ================== POPULATE REWARDS LIST ==================
@@ -435,34 +538,25 @@ local function populateRewardsList()
 		addStroke(iconFrame, color, 2)
 		
 		local iconText = "🪙"
+		local iconAsset = reward.Icon
+		
 		if reward.Type == "FieldKit" then
 			local fk = nil
 			if reward.Key then fk = FieldKitConfig[reward.Key] end
-			if fk and fk.Icon then
-				create("ImageLabel", {
-					Size = UDim2.new(0.75, 0, 0.75, 0),
-					Position = UDim2.new(0.125, 0, 0.125, 0),
-					BackgroundTransparency = 1,
-					Image = fk.Icon,
-					Parent = iconFrame
-				})
-			else
-				iconText = "📦"
-				create("TextLabel", {
-					Size = UDim2.new(1, 0, 1, 0),
-					BackgroundTransparency = 1,
-					Text = iconText,
-					TextSize = 26,
-					Parent = iconFrame
-				})
-			end
+			if fk and fk.Icon then iconAsset = fk.Icon end
+			iconText = "📦"
 		elseif reward.Type == "Skin" then
 			iconText = "🎨"
-			create("TextLabel", {
-				Size = UDim2.new(1, 0, 1, 0),
+		end
+		
+		if iconAsset then
+			create("ImageLabel", {
+				Size = UDim2.new(0.75, 0, 0.75, 0),
+				Position = UDim2.new(0.5, 0, 0.5, 0),
+				AnchorPoint = Vector2.new(0.5, 0.5),
 				BackgroundTransparency = 1,
-				Text = iconText,
-				TextSize = 26,
+				Image = iconAsset,
+				ScaleType = Enum.ScaleType.Fit,
 				Parent = iconFrame
 			})
 		else
@@ -789,36 +883,31 @@ createUI = function()
 	addCorner(gachaDisplay, 8)
 	addStroke(gachaDisplay, COLORS.ACCENT_GOLD, 2)
 
-	create("TextLabel", {
-		Text = "🎰",
-		Size = UDim2.new(1, 0, 0.45, 0),
-		Position = UDim2.new(0, 0, 0.05, 0),
-		TextSize = 60,
-		BackgroundTransparency = 1,
-		Parent = gachaDisplay
-	})
+	-- Interactive 3D Viewport
+	createInteractiveViewport(gachaDisplay)
 
 	ui.selectedWeaponLabel = create("TextLabel", {
 		Text = "Select a weapon to roll for skins",
-		Size = UDim2.new(1, 0, 0.2, 0),
-		Position = UDim2.new(0, 0, 0.5, 0),
+		Size = UDim2.new(1, 0, 0.15, 0),
+		Position = UDim2.new(0, 0, 0.85, 0),
 		Font = FONTS.Header,
-		TextSize = 16,
+		TextSize = 14,
 		TextColor3 = COLORS.ACCENT_GOLD,
-		BackgroundTransparency = 1,
+		BackgroundTransparency = 0.5,
+		BackgroundColor3 = COLORS.BG_ROOT, -- Legibility backing
+		BorderSizePixel = 0,
+		ZIndex = 5,
 		Parent = gachaDisplay
 	})
-
-	create("TextLabel", {
-		Text = "Win Field Kits, Credits, or Skins!",
-		Size = UDim2.new(1, 0, 0.18, 0),
-		Position = UDim2.new(0, 0, 0.72, 0),
-		Font = FONTS.Body,
-		TextSize = 12,
-		TextColor3 = COLORS.TEXT_DIM,
-		BackgroundTransparency = 1,
-		Parent = gachaDisplay
-	})
+	
+	-- Initial Viewport Update
+	if state.selectedWeapon then
+		spawn(function()
+			-- Small delay to ensure Viewport is ready
+			task.wait()
+			updateViewportModel(state.selectedWeapon)
+		end)
+	end
 
 	-- Buttons Area
 	local btnArea = create("Frame", {
@@ -873,7 +962,7 @@ createUI = function()
 				Position = UDim2.new(0, 0, 0.82, 0),
 				Font = FONTS.Mono,
 				TextSize = 12,
-				TextColor3 = COLORS.BG_HEADER,
+				TextColor3 = COLORS.TEXT_MAIN, -- Was BG_HEADER (Dark)
 				BackgroundTransparency = 1,
 				Parent = btn
 			})
@@ -883,8 +972,8 @@ createUI = function()
 				Size = UDim2.new(1, 0, 0.2, 0),
 				Position = UDim2.new(0, 0, 0.82, 0),
 				Font = FONTS.Mono,
-				TextSize = 11,
-				TextColor3 = COLORS.BG_HEADER,
+				TextSize = 12, -- Slightly larger
+				TextColor3 = COLORS.TEXT_MAIN, -- Was BG_HEADER
 				BackgroundTransparency = 1,
 				Parent = btn
 			})
