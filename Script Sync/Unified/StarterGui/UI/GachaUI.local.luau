@@ -724,37 +724,7 @@ createUI = function()
 		Parent = header
 	})
 
-	-- Coins Badge
-	local coinsBadge = create("Frame", {
-		Size = UDim2.new(0, 150, 0, 35),
-		Position = UDim2.new(1, -170, 0.5, 0),
-		AnchorPoint = Vector2.new(0, 0.5),
-		BackgroundColor3 = COLORS.BG_ROOT,
-		Parent = header
-	})
-	addCorner(coinsBadge, 18)
-	addStroke(coinsBadge, COLORS.ACCENT_GOLD, 1)
 
-	ui.coinsLabel = create("TextLabel", {
-		Text = "0",
-		Size = UDim2.new(1, -35, 1, 0),
-		Position = UDim2.new(0, 8, 0, 0),
-		Font = FONTS.Mono,
-		TextSize = 16,
-		TextColor3 = COLORS.TEXT_MAIN,
-		TextXAlignment = Enum.TextXAlignment.Right,
-		BackgroundTransparency = 1,
-		Parent = coinsBadge
-	})
-
-	create("TextLabel", {
-		Text = "🪙",
-		Size = UDim2.new(0, 25, 1, 0),
-		Position = UDim2.new(1, -25, 0, 0),
-		TextSize = 18,
-		BackgroundTransparency = 1,
-		Parent = coinsBadge
-	})
 
 	-- Close Button
 	local closeBtn = create("TextButton", {
