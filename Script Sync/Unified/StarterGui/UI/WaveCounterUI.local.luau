@@ -5,6 +5,7 @@ if game.PlaceId ~= ACT1_PLACE_ID then return end
 -- WaveCounterUI.lua (LocalScript)
 -- Path: StarterGui/WaveCounterUI.lua
 -- Script Place: ACT 1: Village
+-- Theme: Apocalypse Survival (Matched to HUDs)
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
@@ -21,211 +22,207 @@ local WaveCountdownEvent = RemoteEvents:WaitForChild("WaveCountdownEvent")
 -- Note: GameConfig is server-side, so we use defaults here or rely on events
 local ZOMBIES_PER_PLAYER_DEFAULT = 5
 
--- --- CONFIGURATION & CONSTANTS (HAZARD MONITOR THEME) ---
-local COLORS = {
-	BG_METAL = Color3.fromRGB(25, 25, 30), -- Dark Metal
-	ACCENT_HAZARD = Color3.fromRGB(255, 180, 0), -- Warning Yellow/Orange
-	ACCENT_TOXIC = Color3.fromRGB(100, 255, 50), -- Toxic Green
-	ACCENT_CRITICAL = Color3.fromRGB(255, 40, 40), -- Critical Red
-	TEXT_DARK = Color3.fromRGB(10, 10, 10),
-	TEXT_LIGHT = Color3.fromRGB(240, 240, 240),
-	BAR_FILL = Color3.fromRGB(200, 30, 30), -- Deep Red for Infection
+-- --- CONFIGURATION & CONSTANTS ---
+local THEME = {
+	Colors = {
+		Background = Color3.fromRGB(20, 16, 12),      -- Warm dark brown
+		Panel      = Color3.fromRGB(35, 28, 22),      -- Warm brown panel
+		Border     = Color3.fromRGB(139, 90, 43),     -- Forest Brown
+		Accent     = Color3.fromRGB(218, 165, 32),    -- Golden
+		
+		TextMain   = Color3.fromRGB(255, 248, 230),   -- Warm white
+		TextDim    = Color3.fromRGB(180, 160, 130),   -- Muted gold
+		
+		PulsingRed = Color3.fromRGB(200, 60, 60),     -- Deep Red (Combat)
+		SafeGreen  = Color3.fromRGB(46, 204, 113),    -- Green (Safe)
+		SafeAmber  = Color3.fromRGB(241, 196, 15),    -- Amber (Safe Warning)
+		
+		BarFill    = Color3.fromRGB(231, 76, 60),     -- Red Bar
+	},
+	Fonts = {
+		Header = Enum.Font.GothamBold,
+		Body   = Enum.Font.GothamMedium,
+		Digital = Enum.Font.Code,
+	}
 }
 
-local FONTS = {
-	TECH = Enum.Font.Sarpanch, -- Scavenged Tech look
-	HORROR = Enum.Font.Creepster, -- The horror element
-	DIGITAL = Enum.Font.Code, -- Countdown timer
-}
+-- --- HELPER FUNCTIONS ---
+local function create(className, props)
+	local inst = Instance.new(className)
+	for k, v in pairs(props) do inst[k] = v end
+	return inst
+end
+
+local function addCorner(parent, radius)
+	create("UICorner", {Parent = parent, CornerRadius = UDim.new(0, radius or 8)})
+end
+
+local function addStroke(parent, color, thickness)
+	create("UIStroke", {
+		Parent = parent, Color = color or THEME.Colors.Border,
+		Thickness = thickness or 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+		Transparency = 0
+	})
+end
 
 -- --- UI CREATION ---
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "WaveCounterUI"
-screenGui.IgnoreGuiInset = true
-screenGui.ResetOnSpawn = true
-screenGui.Parent = playerGui
+local screenGui = create("ScreenGui", {
+	Name = "WaveCounterUI",
+	IgnoreGuiInset = true, ResetOnSpawn = true, Parent = playerGui
+})
 
--- 1. Main Container (Asymmetrical "Field Monitor")
-local container = Instance.new("Frame")
-container.Name = "Container"
-container.Size = UDim2.new(0, 350, 0, 80)
-container.Position = UDim2.new(0.5, 0, 0.02, 0)
-container.AnchorPoint = Vector2.new(0.5, 0)
-container.BackgroundTransparency = 1
-container.Visible = false
-container.Parent = screenGui
+-- 1. Main Container (Top Center)
+local container = create("Frame", {
+	Name = "Container",
+	Size = UDim2.new(0, 320, 0, 70),
+	Position = UDim2.new(0.5, 0, 0.02, 0),
+	AnchorPoint = Vector2.new(0.5, 0),
+	BackgroundTransparency = 1,
+	Visible = false,
+	Parent = screenGui
+})
 
--- 1a. Wave Badge (Left Side - Hexagon/Blocky)
-local waveBadge = Instance.new("Frame")
-waveBadge.Name = "WaveBadge"
-waveBadge.Size = UDim2.new(0, 80, 0, 80)
-waveBadge.Position = UDim2.new(0, 0, 0, 0)
-waveBadge.BackgroundColor3 = COLORS.BG_METAL
-waveBadge.BorderSizePixel = 0
-waveBadge.ZIndex = 2
-waveBadge.Parent = container
+-- 1a. Wave Badge (Left - Square)
+local waveBadge = create("Frame", {
+	Name = "WaveBadge",
+	Size = UDim2.new(0, 70, 0, 70),
+	BackgroundColor3 = THEME.Colors.Background,
+	BackgroundTransparency = 0.2,
+	Parent = container
+})
+addCorner(waveBadge, 12)
+addStroke(waveBadge, THEME.Colors.Accent, 2)
 
-local badgeStroke = Instance.new("UIStroke")
-badgeStroke.Color = COLORS.ACCENT_HAZARD
-badgeStroke.Thickness = 3
-badgeStroke.Parent = waveBadge
+local waveTitle = create("TextLabel", {
+	Parent = waveBadge,
+	Text = "WAVE",
+	Font = THEME.Fonts.Body,
+	TextSize = 10,
+	TextColor3 = THEME.Colors.Accent,
+	Size = UDim2.new(1, 0, 0, 20),
+	Position = UDim2.new(0, 0, 0, 8),
+	BackgroundTransparency = 1
+})
 
-local badgeCorner = Instance.new("UICorner")
-badgeCorner.CornerRadius = UDim.new(0.2, 0) -- Slightly rounded square
-badgeCorner.Parent = waveBadge
+local waveNumber = create("TextLabel", {
+	Parent = waveBadge,
+	Text = "1",
+	Font = THEME.Fonts.Header,
+	TextSize = 36,
+	TextColor3 = THEME.Colors.TextMain,
+	Size = UDim2.new(1, 0, 1, -20),
+	Position = UDim2.new(0, 0, 0, 15),
+	BackgroundTransparency = 1
+})
 
-local waveTitle = Instance.new("TextLabel")
-waveTitle.Name = "Title"
-waveTitle.Text = "WAVE"
-waveTitle.Font = FONTS.TECH
-waveTitle.TextSize = 14
-waveTitle.TextColor3 = COLORS.ACCENT_HAZARD
-waveTitle.Size = UDim2.new(1, 0, 0, 20)
-waveTitle.Position = UDim2.new(0, 0, 0, 5)
-waveTitle.BackgroundTransparency = 1
-waveTitle.ZIndex = 3
-waveTitle.Parent = waveBadge
+-- 1b. Status Panel (Right - Extended)
+local statusPanel = create("Frame", {
+	Name = "StatusPanel",
+	Size = UDim2.new(1, -60, 0, 40),
+	Position = UDim2.new(0, 60, 0, 15), -- Overlap nicely
+	BackgroundColor3 = THEME.Colors.Panel,
+	BackgroundTransparency = 0.3,
+	ZIndex = -1, -- Behind badge
+	Parent = container
+})
+addCorner(statusPanel, 8)
+addStroke(statusPanel, THEME.Colors.Border, 2)
 
-local waveNumber = Instance.new("TextLabel")
-waveNumber.Name = "Number"
-waveNumber.Text = "1"
-waveNumber.Font = FONTS.HORROR
-waveNumber.TextSize = 52
-waveNumber.TextColor3 = COLORS.TEXT_LIGHT
-waveNumber.Size = UDim2.new(1, 0, 1, -15)
-waveNumber.Position = UDim2.new(0, 0, 0, 15)
-waveNumber.BackgroundTransparency = 1
-waveNumber.ZIndex = 3
-waveNumber.Parent = waveBadge
+-- 2. Combat Content (Infection Density)
+local combatContent = create("Frame", {
+	Name = "CombatContent", Size = UDim2.fromScale(1,1), BackgroundTransparency = 1, Parent = statusPanel
+})
 
--- 1b. Status Bar Container (Extending Right)
-local statusPanel = Instance.new("Frame")
-statusPanel.Name = "StatusPanel"
-statusPanel.Size = UDim2.new(1, -70, 0, 50) -- Overlap slightly
-statusPanel.Position = UDim2.new(0, 70, 0, 15)
-statusPanel.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-statusPanel.BackgroundTransparency = 0.2
-statusPanel.BorderSizePixel = 0
-statusPanel.ZIndex = 1
-statusPanel.Parent = container
+local infLabel = create("TextLabel", {
+	Parent = combatContent,
+	Text = "THREAT LEVEL",
+	Font = THEME.Fonts.Body,
+	TextSize = 10,
+	TextColor3 = THEME.Colors.TextDim,
+	Size = UDim2.new(0, 100, 1, 0),
+	Position = UDim2.new(0, 20, 0, 0),
+	TextXAlignment = Enum.TextXAlignment.Left,
+	BackgroundTransparency = 1
+})
 
-local statusCorner = Instance.new("UICorner")
-statusCorner.CornerRadius = UDim.new(0, 8)
-statusCorner.Parent = statusPanel
+-- Bar
+local barContainer = create("Frame", {
+	Parent = combatContent,
+	Size = UDim2.new(0.4, 0, 0.15, 0),
+	Position = UDim2.new(0.4, 0, 0.42, 0),
+	BackgroundColor3 = Color3.new(0,0,0),
+	BackgroundTransparency = 0.5
+})
+addCorner(barContainer, 2)
 
-local statusStroke = Instance.new("UIStroke")
-statusStroke.Color = Color3.fromRGB(60, 60, 60)
-statusStroke.Thickness = 2
-statusStroke.Parent = statusPanel
+local barFill = create("Frame", {
+	Parent = barContainer,
+	Size = UDim2.fromScale(0, 1),
+	BackgroundColor3 = THEME.Colors.PulsingRed
+})
+addCorner(barFill, 2)
 
--- Hazard Stripes (Top Decoration)
-local hazardStrip = Instance.new("Frame")
-hazardStrip.Name = "HazardStrip"
-hazardStrip.Size = UDim2.new(1, -10, 0, 4)
-hazardStrip.Position = UDim2.new(0, 5, 0, 0)
-hazardStrip.BackgroundColor3 = COLORS.ACCENT_HAZARD
-hazardStrip.BorderSizePixel = 0
-hazardStrip.Parent = statusPanel
-
--- 2. Combat Content
-local combatContent = Instance.new("Frame")
-combatContent.Name = "CombatContent"
-combatContent.Size = UDim2.new(1, 0, 1, 0)
-combatContent.BackgroundTransparency = 1
-combatContent.Parent = statusPanel
-
--- Label "INFECTION DENSITY"
-local infLabel = Instance.new("TextLabel")
-infLabel.Text = "INFECTION DENSITY"
-infLabel.Font = FONTS.TECH
-infLabel.TextSize = 12
-infLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-infLabel.Size = UDim2.new(1, -20, 0, 20)
-infLabel.Position = UDim2.new(0, 15, 0, 8)
-infLabel.TextXAlignment = Enum.TextXAlignment.Left
-infLabel.BackgroundTransparency = 1
-infLabel.Parent = combatContent
-
--- The Bar
-local barContainer = Instance.new("Frame")
-barContainer.Name = "BarContainer"
-barContainer.Size = UDim2.new(1, -30, 0, 10)
-barContainer.Position = UDim2.new(0, 15, 0, 30)
-barContainer.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-barContainer.BorderSizePixel = 0
-barContainer.Parent = combatContent
-
-local barFill = Instance.new("Frame")
-barFill.Name = "Fill"
-barFill.Size = UDim2.new(1, 0, 1, 0)
-barFill.BackgroundColor3 = COLORS.BAR_FILL
-barFill.BorderSizePixel = 0
-barFill.Parent = barContainer
-
--- Percentage
-local pctLabel = Instance.new("TextLabel")
-pctLabel.Name = "Percent"
-pctLabel.Text = "100%"
-pctLabel.Font = FONTS.DIGITAL
-pctLabel.TextSize = 14
-pctLabel.TextColor3 = COLORS.ACCENT_CRITICAL
-pctLabel.Size = UDim2.new(0, 50, 0, 20)
-pctLabel.Position = UDim2.new(1, -55, 0, 8)
-pctLabel.TextXAlignment = Enum.TextXAlignment.Right
-pctLabel.BackgroundTransparency = 1
-pctLabel.Parent = combatContent
+local pctLabel = create("TextLabel", {
+	Parent = combatContent,
+	Text = "100%",
+	Font = THEME.Fonts.Digital,
+	TextSize = 14,
+	TextColor3 = THEME.Colors.PulsingRed,
+	Size = UDim2.new(0, 40, 1, 0),
+	Position = UDim2.new(0.82, 0, 0, 0),
+	TextXAlignment = Enum.TextXAlignment.Right,
+	BackgroundTransparency = 1
+})
 
 
 -- 3. Intermission Content (Safe Zone)
-local safeContent = Instance.new("Frame")
-safeContent.Name = "SafeContent"
-safeContent.Size = UDim2.new(1, 0, 1, 0)
-safeContent.BackgroundTransparency = 1
-safeContent.Visible = false
-safeContent.Parent = statusPanel
+local safeContent = create("Frame", {
+	Name = "SafeContent", Size = UDim2.fromScale(1,1), BackgroundTransparency = 1, Visible = false, Parent = statusPanel
+})
 
--- "SAFE ZONE" Label
-local safeLabel = Instance.new("TextLabel")
-safeLabel.Text = "/// SAFE ZONE ///"
-safeLabel.Font = FONTS.TECH
-safeLabel.TextSize = 16
-safeLabel.TextColor3 = COLORS.ACCENT_TOXIC
-safeLabel.Size = UDim2.new(0.6, 0, 1, 0)
-safeLabel.Position = UDim2.new(0, 15, 0, 0)
-safeLabel.TextXAlignment = Enum.TextXAlignment.Left
-safeLabel.BackgroundTransparency = 1
-safeLabel.Parent = safeContent
+local safeLabel = create("TextLabel", {
+	Parent = safeContent,
+	Text = "SECURED",
+	Font = THEME.Fonts.Header,
+	TextSize = 14,
+	TextColor3 = THEME.Colors.SafeGreen,
+	Size = UDim2.new(0.6, 0, 1, 0),
+	Position = UDim2.new(0, 20, 0, 0),
+	TextXAlignment = Enum.TextXAlignment.Left,
+	BackgroundTransparency = 1
+})
 
--- Timer (Digital Style)
-local safeTimer = Instance.new("TextLabel")
-safeTimer.Text = "00:10"
-safeTimer.Font = FONTS.DIGITAL
-safeTimer.TextSize = 28
-safeTimer.TextColor3 = COLORS.TEXT_LIGHT
-safeTimer.Size = UDim2.new(0.4, 0, 1, 0)
-safeTimer.Position = UDim2.new(0.6, -10, 0, 0)
-safeTimer.TextXAlignment = Enum.TextXAlignment.Right
-safeTimer.BackgroundTransparency = 1
-safeTimer.Parent = safeContent
+local safeTimer = create("TextLabel", {
+	Parent = safeContent,
+	Text = "00:10",
+	Font = THEME.Fonts.Digital,
+	TextSize = 20,
+	TextColor3 = THEME.Colors.TextMain,
+	Size = UDim2.new(0.3, 0, 1, 0),
+	Position = UDim2.new(0.65, 0, 0, 0),
+	TextXAlignment = Enum.TextXAlignment.Right,
+	BackgroundTransparency = 1
+})
 
 
 -- 4. Splash Text (Center Screen)
-local splashContainer = Instance.new("Frame")
-splashContainer.Size = UDim2.new(1, 0, 0, 100)
-splashContainer.Position = UDim2.new(0, 0, 0.35, 0)
-splashContainer.BackgroundTransparency = 1
-splashContainer.Visible = false
-splashContainer.Parent = screenGui
+local splashContainer = create("Frame", {
+	Size = UDim2.new(1, 0, 0, 100),
+	Position = UDim2.new(0, 0, 0.35, 0),
+	BackgroundTransparency = 1, Visible = false, Parent = screenGui
+})
 
-local splashText = Instance.new("TextLabel")
-splashText.Text = "WAVE CLEARED"
-splashText.Font = FONTS.TECH
-splashText.TextSize = 42
-splashText.TextColor3 = COLORS.ACCENT_HAZARD
-splashText.Size = UDim2.new(1, 0, 1, 0)
-splashText.BackgroundTransparency = 1
-splashText.TextStrokeTransparency = 0.5
-splashText.Parent = splashContainer
+local splashText = create("TextLabel", {
+	Parent = splashContainer,
+	Text = "WAVE CLEARED",
+	Font = THEME.Fonts.Header,
+	TextSize = 42,
+	TextColor3 = THEME.Colors.Accent,
+	Size = UDim2.fromScale(1, 1),
+	BackgroundTransparency = 1,
+	TextStrokeTransparency = 0.5,
+	TextStrokeColor3 = Color3.new(0,0,0)
+})
 
 -- --- LOGIC ---
 
@@ -235,12 +232,6 @@ local currentZombies = 0
 local activePlayersCount = 1
 local isIntermission = false
 
-local function animatePulse(guiObject, color)
-	local t = TweenService:Create(guiObject, TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {TextColor3 = color})
-	t:Play()
-	return t
-end
-
 local function triggerSplash(text, color)
 	splashContainer.Visible = true
 	splashText.Text = text
@@ -249,9 +240,9 @@ local function triggerSplash(text, color)
 	splashText.TextSize = 20
 
 	-- Zoom In + Fade In
-	local t1 = TweenService:Create(splashText, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+	local t1 = TweenService:Create(splashText, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 		TextTransparency = 0,
-		TextSize = 52
+		TextSize = 48
 	})
 	t1:Play()
 	t1.Completed:Wait()
@@ -261,7 +252,7 @@ local function triggerSplash(text, color)
 	-- Fade Out
 	local t2 = TweenService:Create(splashText, TweenInfo.new(0.5), {
 		TextTransparency = 1,
-		TextSize = 60
+		TextSize = 56
 	})
 	t2:Play()
 	t2.Completed:Connect(function()
@@ -282,29 +273,30 @@ WaveUpdateEvent.OnClientEvent:Connect(function(wave, activePlayers)
 
 	-- Update Badge
 	waveNumber.Text = tostring(wave)
-	badgeStroke.Color = COLORS.ACCENT_CRITICAL -- Red for combat
-	waveTitle.TextColor3 = COLORS.ACCENT_CRITICAL
+	
+	-- Colors: Combat Mode
+	create("UIStroke", {Parent = waveBadge, Color = THEME.Colors.PulsingRed}) -- Force update stroke
+	waveBadge.UIStroke.Color = THEME.Colors.PulsingRed
+	waveTitle.TextColor3 = THEME.Colors.PulsingRed
 
-	-- Update Status Panel
-	statusStroke.Color = COLORS.ACCENT_CRITICAL
-	hazardStrip.BackgroundColor3 = COLORS.ACCENT_CRITICAL
+	statusPanel.UIStroke.Color = THEME.Colors.Border
 
 	-- Reset Bar
 	barFill.Size = UDim2.new(0, 0, 1, 0)
 	pctLabel.Text = "0%"
 
-	-- Logic Stats
+	-- Stats Logic
 	local multiplier = ZOMBIES_PER_PLAYER_DEFAULT
 	totalZombies = wave * multiplier * activePlayersCount
 	if totalZombies < 1 then totalZombies = 1 end
 
-	-- Animate Badge Shake
-	local origin = UDim2.new(0, 0, 0, 0)
+	-- Shake
+	local origin = UDim2.new(0.5, 0, 0.02, 0)
 	for i = 1, 6 do
-		waveBadge.Position = origin + UDim2.new(0, math.random(-3,3), 0, math.random(-3,3))
+		container.Position = origin + UDim2.new(0, math.random(-3,3), 0, math.random(-3,3))
 		task.wait(0.04)
 	end
-	waveBadge.Position = origin
+	container.Position = origin
 end)
 
 -- Wave Countdown
@@ -312,30 +304,25 @@ WaveCountdownEvent.OnClientEvent:Connect(function(seconds)
 	if seconds > 0 then
 		if not isIntermission then
 			isIntermission = true
-
-			-- Switch UI Mode
 			combatContent.Visible = false
 			safeContent.Visible = true
 
 			-- Visuals: Safe Mode
-			badgeStroke.Color = COLORS.ACCENT_TOXIC
-			waveTitle.TextColor3 = COLORS.ACCENT_TOXIC
-			statusStroke.Color = COLORS.ACCENT_TOXIC
-			hazardStrip.BackgroundColor3 = COLORS.ACCENT_TOXIC
+			waveBadge.UIStroke.Color = THEME.Colors.SafeGreen
+			waveTitle.TextColor3 = THEME.Colors.SafeGreen
+			statusPanel.UIStroke.Color = THEME.Colors.SafeGreen
 
-			triggerSplash("AREA SECURED", COLORS.ACCENT_TOXIC)
+			triggerSplash("AREA SECURED", THEME.Colors.SafeGreen)
 		end
 
 		container.Visible = true
 		safeTimer.Text = string.format("00:%02d", seconds)
 
-		-- Red alert if low time
-		if seconds <= 3 then
-			safeTimer.TextColor3 = COLORS.ACCENT_CRITICAL
+		if seconds <= 5 then
+			safeTimer.TextColor3 = THEME.Colors.SafeAmber
 		else
-			safeTimer.TextColor3 = COLORS.TEXT_LIGHT
+			safeTimer.TextColor3 = THEME.Colors.TextMain
 		end
-
 	else
 		isIntermission = false
 		safeContent.Visible = false
@@ -361,6 +348,7 @@ RunService.Heartbeat:Connect(function(dt)
 			end
 		end
 		currentZombies = count
+		-- Cap max to known total if count exceeds (e.g. spawns happen mid wave)
 		if currentZombies > totalZombies then totalZombies = currentZombies end
 
 		local pct = 0
@@ -374,11 +362,11 @@ RunService.Heartbeat:Connect(function(dt)
 
 		-- Color Logic
 		if pct < 0.2 then
-			barFill.BackgroundColor3 = COLORS.ACCENT_HAZARD
-			pctLabel.TextColor3 = COLORS.ACCENT_HAZARD
+			barFill.BackgroundColor3 = THEME.Colors.SafeAmber
+			pctLabel.TextColor3 = THEME.Colors.SafeAmber
 		else
-			barFill.BackgroundColor3 = COLORS.BAR_FILL
-			pctLabel.TextColor3 = COLORS.ACCENT_CRITICAL
+			barFill.BackgroundColor3 = THEME.Colors.PulsingRed
+			pctLabel.TextColor3 = THEME.Colors.PulsingRed
 		end
 	end
 end)
