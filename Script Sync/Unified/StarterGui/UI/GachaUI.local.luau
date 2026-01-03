@@ -59,30 +59,79 @@ local RewardsPool = {
 	{ Type = "Skin", Name = "Weapon Skin", Rarity = "Legendary", Chance = "1%", Desc = "Exclusive cosmetic for selected weapon" },
 }
 
--- ================== THEME CONSTANTS ==================
+-- ================== VIEWPORT CONFIG (Adjust zoom settings here) ==================
+local VIEWPORT_CONFIG = {
+	-- Camera Distance Settings
+	DEFAULT_ZOOM = 4,      -- Starting camera distance (closer = lower value)
+	MIN_ZOOM = 1.5,        -- Maximum zoom in (closest to model)
+	MAX_ZOOM = 10,          -- Maximum zoom out (farthest from model)
+	
+	-- Camera Height
+	CAMERA_HEIGHT = 1,     -- Height of camera orbit (adjust if model too high/low)
+	
+	-- Rotation Speed
+	ROTATION_SPEED = 0.8,  -- Auto-rotation speed (higher = faster)
+	
+	-- Mouse Wheel Sensitivity  
+	SCROLL_SENSITIVITY = 0.5,  -- How much zoom per scroll tick
+}
+
+-- ================== THEME CONSTANTS (Fortnite/Clash Royale Style) ==================
 local COLORS = {
-	BG_ROOT = Color3.fromRGB(20, 20, 20),
-	BG_PANEL = Color3.fromRGB(35, 35, 40),
-	BG_HEADER = Color3.fromRGB(45, 45, 50),
+	-- Background Gradient (Deep Purple → Blue)
+	BG_ROOT = Color3.fromRGB(15, 8, 35),
+	BG_PANEL = Color3.fromRGB(25, 18, 55),
+	BG_HEADER = Color3.fromRGB(35, 25, 75),
 	
-	TEXT_MAIN = Color3.fromRGB(240, 240, 230),
-	TEXT_DIM = Color3.fromRGB(160, 160, 165),
+	-- Vibrant Text
+	TEXT_MAIN = Color3.fromRGB(255, 255, 255),
+	TEXT_DIM = Color3.fromRGB(180, 170, 220),
 	
-	ACCENT_GOLD = Color3.fromRGB(218, 165, 32),
-	ACCENT_SUCCESS = Color3.fromRGB(100, 200, 100),
-	ACCENT_FAIL = Color3.fromRGB(200, 80, 80),
+	-- Primary Accents (Cyan/Gold)
+	ACCENT_GOLD = Color3.fromRGB(255, 200, 50),
+	ACCENT_CYAN = Color3.fromRGB(0, 212, 255),
+	ACCENT_SUCCESS = Color3.fromRGB(50, 255, 100),
+	ACCENT_FAIL = Color3.fromRGB(255, 80, 100),
 	
-	RARITY_COMMON = Color3.fromRGB(180, 180, 180),
-	RARITY_UNCOMMON = Color3.fromRGB(100, 200, 100),
-	RARITY_RARE = Color3.fromRGB(100, 150, 255),
-	RARITY_EPIC = Color3.fromRGB(200, 80, 255),
-	RARITY_LEGENDARY = Color3.fromRGB(255, 215, 0),
+	-- Vibrant Rarity Colors
+	RARITY_COMMON = Color3.fromRGB(200, 200, 220),
+	RARITY_UNCOMMON = Color3.fromRGB(50, 255, 100),
+	RARITY_RARE = Color3.fromRGB(80, 180, 255),
+	RARITY_EPIC = Color3.fromRGB(255, 50, 255),
+	RARITY_LEGENDARY = Color3.fromRGB(255, 200, 50),
+	
+	-- Glow Colors
+	GLOW_CYAN = Color3.fromRGB(0, 180, 255),
+	GLOW_GOLD = Color3.fromRGB(255, 180, 0),
+	GLOW_PURPLE = Color3.fromRGB(180, 0, 255),
 }
 
 local FONTS = {
-	Header = Enum.Font.SpecialElite,
-	Body = Enum.Font.GothamMedium,
+	Header = Enum.Font.FredokaOne,  -- Punchy, fun
+	Body = Enum.Font.GothamBold,
 	Mono = Enum.Font.Code
+}
+
+-- Gradients for UI elements
+local GRADIENTS = {
+	Background = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(15, 8, 35)),
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(30, 20, 60)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 40, 80))
+	}),
+	ButtonPrimary = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 180, 255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 220, 255))
+	}),
+	ButtonGold = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 160, 0)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 220, 50))
+	}),
+	Header = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(100, 50, 200)),
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(50, 100, 200)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 150, 255))
+	})
 }
 
 -- ================== STATE ==================
@@ -118,18 +167,58 @@ end
 
 local function addCorner(parent, radius)
 	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, radius or 8)
+	corner.CornerRadius = UDim.new(0, radius or 12)
 	corner.Parent = parent
 	return corner
 end
 
 local function addStroke(parent, color, thickness)
 	local stroke = Instance.new("UIStroke")
-	stroke.Color = color or COLORS.TEXT_DIM
-	stroke.Thickness = thickness or 1
+	stroke.Color = color or COLORS.ACCENT_CYAN
+	stroke.Thickness = thickness or 2
 	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 	stroke.Parent = parent
 	return stroke
+end
+
+local function addGradient(parent, colorSequence, rotation)
+	local gradient = Instance.new("UIGradient")
+	gradient.Color = colorSequence
+	gradient.Rotation = rotation or 90
+	gradient.Parent = parent
+	return gradient
+end
+
+local function addGlow(parent, color, size)
+	local glow = create("ImageLabel", {
+		Name = "Glow",
+		Size = UDim2.new(1, size or 20, 1, size or 20),
+		Position = UDim2.new(0.5, 0, 0.5, 0),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		BackgroundTransparency = 1,
+		Image = "rbxassetid://5028857084", -- Radial glow
+		ImageColor3 = color or COLORS.GLOW_CYAN,
+		ImageTransparency = 0.5,
+		ZIndex = -1,
+		Parent = parent
+	})
+	return glow
+end
+
+local function animatePopIn(element, duration)
+	element.Size = UDim2.new(0, 0, 0, 0)
+	local targetSize = element:GetAttribute("TargetSize") or UDim2.new(1, 0, 1, 0)
+	TweenService:Create(element, TweenInfo.new(duration or 0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Size = targetSize
+	}):Play()
+end
+
+local function animatePulseGlow(glowElement)
+	local pulse = TweenService:Create(glowElement, TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+		ImageTransparency = 0.3
+	})
+	pulse:Play()
+	return pulse
 end
 
 local function formatNumber(n)
@@ -142,6 +231,14 @@ local function getRarityColor(rarity)
 	if rarity == "Rare" then return COLORS.RARITY_RARE end
 	if rarity == "Uncommon" then return COLORS.RARITY_UNCOMMON end
 	return COLORS.RARITY_COMMON
+end
+
+local function getRarityGlowIntensity(rarity)
+	if rarity == "Legendary" then return 40 end
+	if rarity == "Epic" then return 30 end
+	if rarity == "Rare" then return 20 end
+	if rarity == "Uncommon" then return 15 end
+	return 10
 end
 
 
@@ -182,7 +279,8 @@ local function updateViewportModel(weaponName)
 	part.Size = Vector3.new(1, 1, 1)
 	part.Anchored = true
 	part.CanCollide = false
-	part.Transparency = 1
+	part.Transparency = 0 -- Part needs to be visible for SpecialMesh
+	part.Color = Color3.new(0.5, 0.5, 0.5) -- Default color if no texture
 	part.Parent = worldModel
 	
 	local mesh = Instance.new("SpecialMesh")
@@ -198,41 +296,184 @@ end
 local function createInteractiveViewport(parent)
 	local vp = create("ViewportFrame", {
 		Name = "WeaponPreview",
-		Size = UDim2.new(1, 0, 1, 0),
+		Size = UDim2.new(1, 0, 0.78, 0),
+		Position = UDim2.new(0, 0, 0, 0),
 		BackgroundTransparency = 1,
+		ZIndex = 10,
 		Parent = parent
 	})
+	
+	-- Add ambient light for visibility
+	local ambient = Instance.new("Atmosphere")
+	-- Viewport doesn't support Atmosphere, use a white background part instead
 	
 	local worldModel = Instance.new("WorldModel", vp)
 	local camera = Instance.new("Camera", vp)
 	vp.CurrentCamera = camera
 	
-	-- Camera State
-	local camDist = 5
-	local minDist = 3
-	local maxDist = 8
+	-- Better lighting - add a light source part
+	local lightPart = Instance.new("Part")
+	lightPart.Size = Vector3.new(0.1, 0.1, 0.1)
+	lightPart.Transparency = 1
+	lightPart.Anchored = true
+	lightPart.CanCollide = false
+	lightPart.Position = Vector3.new(3, 3, 3)
+	lightPart.Parent = worldModel
+	
+	local pointLight = Instance.new("PointLight")
+	pointLight.Brightness = 2
+	pointLight.Range = 20
+	pointLight.Color = Color3.new(1, 1, 1)
+	pointLight.Parent = lightPart
+	
+	-- Camera State (using VIEWPORT_CONFIG)
+	local camDist = VIEWPORT_CONFIG.DEFAULT_ZOOM
+	local minDist = VIEWPORT_CONFIG.MIN_ZOOM
+	local maxDist = VIEWPORT_CONFIG.MAX_ZOOM
+	local camHeight = VIEWPORT_CONFIG.CAMERA_HEIGHT
 	local angle = 0
 	
-	camera.CFrame = CFrame.new(Vector3.new(0, 2, camDist), Vector3.new(0, 0, 0))
+	camera.CFrame = CFrame.new(Vector3.new(0, camHeight, camDist), Vector3.new(0, 0, 0))
+	
+	-- ========== ZOOM SLIDER ==========
+	local sliderContainer = create("Frame", {
+		Name = "ZoomSlider",
+		Size = UDim2.new(0.9, 0, 0.06, 0),
+		Position = UDim2.new(0.05, 0, 0.80, 0),
+		BackgroundTransparency = 1,
+		ZIndex = 15,
+		Parent = parent
+	})
+	
+	-- Slider Label
+	create("TextLabel", {
+		Text = "🔍",
+		Size = UDim2.new(0.08, 0, 1, 0),
+		Position = UDim2.new(0, 0, 0, 0),
+		Font = FONTS.Body,
+		TextSize = 16,
+		TextColor3 = COLORS.TEXT_DIM,
+		BackgroundTransparency = 1,
+		Parent = sliderContainer
+	})
+	
+	-- Slider Track
+	local sliderTrack = create("TextButton", {
+		Name = "Track",
+		Size = UDim2.new(0.84, 0, 0.4, 0),
+		Position = UDim2.new(0.08, 0, 0.3, 0),
+		BackgroundColor3 = COLORS.BG_HEADER,
+		Text = "",
+		AutoButtonColor = false,
+		ZIndex = 15,
+		Parent = sliderContainer
+	})
+	addCorner(sliderTrack, 6)
+	
+	-- Slider Fill
+	local sliderFill = create("Frame", {
+		Name = "Fill",
+		Size = UDim2.new(0.5, 0, 1, 0),
+		BackgroundColor3 = COLORS.ACCENT_CYAN,
+		ZIndex = 16,
+		Parent = sliderTrack
+	})
+	addCorner(sliderFill, 6)
+	addGradient(sliderFill, GRADIENTS.ButtonPrimary, 0)
+	
+	-- Slider Thumb
+	local sliderThumb = create("Frame", {
+		Name = "Thumb",
+		Size = UDim2.new(0, 16, 0, 16),
+		Position = UDim2.new(0.5, -8, 0.5, -8),
+		BackgroundColor3 = COLORS.ACCENT_GOLD,
+		ZIndex = 17,
+		Parent = sliderTrack
+	})
+	addCorner(sliderThumb, 8)
+	addStroke(sliderThumb, COLORS.TEXT_MAIN, 2)
+	
+	-- Zoom In/Out Labels
+	create("TextLabel", {
+		Text = "−",
+		Size = UDim2.new(0.04, 0, 1, 0),
+		Position = UDim2.new(0.92, 0, 0, 0),
+		Font = FONTS.Header,
+		TextSize = 20,
+		TextColor3 = COLORS.TEXT_DIM,
+		BackgroundTransparency = 1,
+		Parent = sliderContainer
+	})
+	create("TextLabel", {
+		Text = "+",
+		Size = UDim2.new(0.04, 0, 1, 0),
+		Position = UDim2.new(0.96, 0, 0, 0),
+		Font = FONTS.Header,
+		TextSize = 18,
+		TextColor3 = COLORS.TEXT_DIM,
+		BackgroundTransparency = 1,
+		Parent = sliderContainer
+	})
+	
+	-- Function to update slider visual
+	local function updateSliderVisual()
+		local normalized = 1 - ((camDist - minDist) / (maxDist - minDist))
+		sliderFill.Size = UDim2.new(normalized, 0, 1, 0)
+		sliderThumb.Position = UDim2.new(normalized, -8, 0.5, -8)
+	end
+	updateSliderVisual()
+	
+	-- Slider Drag Logic
+	local dragging = false
+	
+	local function updateFromInput(input)
+		local trackPos = sliderTrack.AbsolutePosition.X
+		local trackSize = sliderTrack.AbsoluteSize.X
+		local relativeX = math.clamp((input.Position.X - trackPos) / trackSize, 0, 1)
+		
+		-- Inverted: left = zoom out (far), right = zoom in (close)
+		camDist = maxDist - (relativeX * (maxDist - minDist))
+		updateSliderVisual()
+	end
+	
+	sliderTrack.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			updateFromInput(input)
+		end
+	end)
+	
+	UserInputService.InputChanged:Connect(function(input)
+		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+			updateFromInput(input)
+		end
+	end)
+	
+	UserInputService.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = false
+		end
+	end)
 	
 	-- Auto Rotate
 	RunService.RenderStepped:Connect(function(dt)
 		if not vp.Visible or not vp:IsDescendantOf(playerGui) then return end
 		
-		angle = angle + dt * 0.8 -- Rotation speed
+		angle = angle + dt * VIEWPORT_CONFIG.ROTATION_SPEED
 		
 		-- Orbit camera
 		local x = math.sin(angle) * camDist
 		local z = math.cos(angle) * camDist
 		
-		-- Look at center slightly tilted down
-		camera.CFrame = CFrame.new(Vector3.new(x, 1.5, z), Vector3.new(0, 0, 0))
+		-- Look at center
+		camera.CFrame = CFrame.new(Vector3.new(x, camHeight, z), Vector3.new(0, 0, 0))
 	end)
 	
-	-- Zoom Control
+	-- Mouse Wheel Zoom Control (also updates slider)
 	vp.InputChanged:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseWheel then
-			camDist = math.clamp(camDist - input.Position.Z, minDist, maxDist)
+			camDist = math.clamp(camDist - input.Position.Z * VIEWPORT_CONFIG.SCROLL_SENSITIVITY, minDist, maxDist)
+			updateSliderVisual()
 		end
 	end)
 	
@@ -747,45 +988,72 @@ createUI = function()
 
 	-- NO dark overlay per rules.md - BlurEffect only
 
-	-- Main Panel
+	-- Main Panel with Gradient Background
 	local mainPanel = create("Frame", {
 		Name = "MainPanel",
-		Size = UDim2.new(0, 700, 0, 550),
+		Size = UDim2.new(0.85, 0, 0.85, 0),
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.new(0.5, 0, 0.5, 0),
 		BackgroundColor3 = COLORS.BG_ROOT,
 		BorderSizePixel = 0,
 		Parent = ui.screen
 	})
-	addCorner(mainPanel, 8)
-	addStroke(mainPanel, COLORS.BG_HEADER, 4)
-
-	-- Header
-	local header = create("Frame", {
-		Size = UDim2.new(1, 0, 0, 55),
-		BackgroundColor3 = COLORS.BG_HEADER,
+	addCorner(mainPanel, 16)
+	addStroke(mainPanel, COLORS.ACCENT_CYAN, 3)
+	addGradient(mainPanel, GRADIENTS.Background, 180)
+	
+	-- Outer Glow for Main Panel
+	local panelGlow = create("ImageLabel", {
+		Name = "PanelGlow",
+		Size = UDim2.new(1, 40, 1, 40),
+		Position = UDim2.new(0.5, 0, 0.5, 0),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		BackgroundTransparency = 1,
+		Image = "rbxassetid://5028857084",
+		ImageColor3 = COLORS.GLOW_PURPLE,
+		ImageTransparency = 0.7,
+		ZIndex = -1,
 		Parent = mainPanel
 	})
-	addCorner(header, 8)
+
+	-- Header with Gradient
+	local header = create("Frame", {
+		Size = UDim2.new(1, 0, 0, 65),
+		BackgroundColor3 = COLORS.BG_HEADER,
+		BorderSizePixel = 0,
+		Parent = mainPanel
+	})
+	addCorner(header, 16)
+	addGradient(header, GRADIENTS.Header, 0)
+	
+	-- Rounded bottom fix
 	create("Frame", {
-		Size = UDim2.new(1, 0, 0, 10),
-		Position = UDim2.new(0, 0, 1, -10),
+		Size = UDim2.new(1, 0, 0, 20),
+		Position = UDim2.new(0, 0, 1, -20),
 		BackgroundColor3 = COLORS.BG_HEADER,
 		BorderSizePixel = 0,
 		Parent = header
 	})
+	addGradient(header:GetChildren()[#header:GetChildren()], GRADIENTS.Header, 0)
 
-	create("TextLabel", {
-		Text = "🎰 SUPPLY DROP",
-		Size = UDim2.new(0.4, 0, 1, 0),
-		Position = UDim2.new(0, 20, 0, 0),
+	-- Title with Glow Effect
+	local titleLabel = create("TextLabel", {
+		Text = "⚡ SUPPLY DROP ⚡",
+		Size = UDim2.new(0.6, 0, 1, 0),
+		Position = UDim2.new(0, 25, 0, 0),
 		Font = FONTS.Header,
-		TextSize = 22,
+		TextSize = 28,
 		TextColor3 = COLORS.ACCENT_GOLD,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		BackgroundTransparency = 1,
 		Parent = header
 	})
+	
+	-- Title Stroke for 3D effect
+	local titleStroke = Instance.new("UIStroke")
+	titleStroke.Color = Color3.fromRGB(80, 40, 0)
+	titleStroke.Thickness = 2
+	titleStroke.Parent = titleLabel
 
 
 
@@ -953,22 +1221,27 @@ createUI = function()
 	local function createRollButton(name, text, cost, posX, iconId)
 		local btn = create("TextButton", {
 			Name = name,
-			Size = UDim2.new(0.3, -10, 0.8, 0),
-			Position = UDim2.new(posX, 5, 0.1, 0),
-			BackgroundColor3 = COLORS.ACCENT_GOLD,
+			Size = UDim2.new(0.3, -10, 0.85, 0),
+			Position = UDim2.new(posX, 5, 0.075, 0),
+			BackgroundColor3 = COLORS.ACCENT_CYAN,
 			Text = "",
 			Parent = btnArea
 		})
-		addCorner(btn, 8)
-		addStroke(btn, COLORS.BG_ROOT, 2)
+		addCorner(btn, 12)
+		addStroke(btn, Color3.fromRGB(255, 255, 255), 2)
+		addGradient(btn, GRADIENTS.ButtonPrimary, 90)
+		
+		-- Glow behind button
+		local btnGlow = addGlow(btn, COLORS.GLOW_CYAN, 15)
+		btnGlow.ImageTransparency = 0.7
 
 		-- Icon
 		if iconId then
 			create("ImageLabel", {
 				Name = "Icon",
 				Image = iconId,
-				Size = UDim2.new(0.6, 0, 0.6, 0),
-				Position = UDim2.new(0.5, 0, 0.05, 0),
+				Size = UDim2.new(0.5, 0, 0.45, 0),
+				Position = UDim2.new(0.5, 0, 0.08, 0),
 				AnchorPoint = Vector2.new(0.5, 0),
 				BackgroundTransparency = 1,
 				ScaleType = Enum.ScaleType.Fit,
@@ -976,49 +1249,81 @@ createUI = function()
 			})
 		end
 
-		create("TextLabel", {
+		local label = create("TextLabel", {
 			Name = "Label",
 			Text = text,
-			Size = UDim2.new(1, 0, 0.25, 0),
-			Position = UDim2.new(0, 0, 0.65, 0), -- Moved down
+			Size = UDim2.new(1, 0, 0.22, 0),
+			Position = UDim2.new(0, 0, 0.55, 0),
 			Font = FONTS.Header,
-			TextSize = 14, -- Slightly smaller
-			TextColor3 = COLORS.BG_ROOT,
+			TextSize = 16,
+			TextScaled = true,
+			TextColor3 = COLORS.TEXT_MAIN,
 			BackgroundTransparency = 1,
 			Parent = btn
 		})
+		
+		-- Text stroke for pop
+		local labelStroke = Instance.new("UIStroke")
+		labelStroke.Color = Color3.fromRGB(0, 80, 120)
+		labelStroke.Thickness = 1.5
+		labelStroke.Parent = label
 
 		if cost then
-			create("TextLabel", {
-				Text = formatNumber(cost) .. " 🪙",
-				Size = UDim2.new(1, 0, 0.2, 0),
-				Position = UDim2.new(0, 0, 0.82, 0),
-				Font = FONTS.Mono,
-				TextSize = 12,
-				TextColor3 = COLORS.TEXT_MAIN, -- Was BG_HEADER (Dark)
+			local costLabel = create("TextLabel", {
+				Text = "💎 " .. formatNumber(cost),
+				Size = UDim2.new(1, 0, 0.18, 0),
+				Position = UDim2.new(0, 0, 0.78, 0),
+				Font = FONTS.Body,
+				TextSize = 14,
+				TextColor3 = COLORS.ACCENT_GOLD,
 				BackgroundTransparency = 1,
 				Parent = btn
 			})
 		else
-			create("TextLabel", {
-				Text = "Daily Free",
-				Size = UDim2.new(1, 0, 0.2, 0),
-				Position = UDim2.new(0, 0, 0.82, 0),
-				Font = FONTS.Mono,
-				TextSize = 12, -- Slightly larger
-				TextColor3 = COLORS.TEXT_MAIN, -- Was BG_HEADER
+			local freeLabel = create("TextLabel", {
+				Text = "🎁 DAILY FREE!",
+				Size = UDim2.new(1, 0, 0.18, 0),
+				Position = UDim2.new(0, 0, 0.78, 0),
+				Font = FONTS.Body,
+				TextSize = 14,
+				TextColor3 = COLORS.ACCENT_GOLD,
 				BackgroundTransparency = 1,
 				Parent = btn
 			})
 		end
+		
+		-- Hover Animation
+		btn.MouseEnter:Connect(function()
+			TweenService:Create(btn, TweenInfo.new(0.15, Enum.EasingStyle.Back), {
+				Size = UDim2.new(0.32, -10, 0.9, 0)
+			}):Play()
+			TweenService:Create(btnGlow, TweenInfo.new(0.15), {ImageTransparency = 0.4}):Play()
+		end)
+		btn.MouseLeave:Connect(function()
+			TweenService:Create(btn, TweenInfo.new(0.15, Enum.EasingStyle.Quad), {
+				Size = UDim2.new(0.3, -10, 0.85, 0)
+			}):Play()
+			TweenService:Create(btnGlow, TweenInfo.new(0.15), {ImageTransparency = 0.7}):Play()
+		end)
 
 		return btn
 	end
 
 	ui.rollButton1 = createRollButton("Roll1", "ROLL x1", state.gachaConfig.costs.roll1, 0, "rbxassetid://132531780703465")
 	ui.rollButton10 = createRollButton("Roll10", "ROLL x10", state.gachaConfig.costs.roll10, 0.33, "rbxassetid://76836446183603")
-	ui.freeRollButton = createRollButton("FreeRoll", "FREE ROLL", nil, 0.66, "rbxassetid://132092333277896")
+	ui.freeRollButton = createRollButton("FreeRoll", "FREE!", nil, 0.66, "rbxassetid://132092333277896")
+	
+	-- Override free roll button with green gradient
+	for _, child in pairs(ui.freeRollButton:GetChildren()) do
+		if child:IsA("UIGradient") then child:Destroy() end
+	end
 	ui.freeRollButton.BackgroundColor3 = COLORS.ACCENT_SUCCESS
+	addGradient(ui.freeRollButton, ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 200, 80)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(50, 255, 120))
+	}), 90)
+	local freeGlow = ui.freeRollButton:FindFirstChild("Glow")
+	if freeGlow then freeGlow.ImageColor3 = COLORS.ACCENT_SUCCESS end
 
 	ui.rollButton1.MouseButton1Click:Connect(function() handleRoll("single") end)
 	ui.rollButton10.MouseButton1Click:Connect(function() handleRoll("multi") end)
