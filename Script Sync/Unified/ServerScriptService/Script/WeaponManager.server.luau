@@ -61,6 +61,9 @@ PlayGunshotSoundEvent.Name = "PlayGunshotSoundEvent"
 local PlayLocalGunshotSoundEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):FindFirstChild("PlayLocalGunshotSoundEvent") or Instance.new("RemoteEvent", ReplicatedStorage:WaitForChild("RemoteEvents"))
 PlayLocalGunshotSoundEvent.Name = "PlayLocalGunshotSoundEvent"
 
+local RequestAmmoSync = ReplicatedStorage:WaitForChild("RemoteEvents"):FindFirstChild("RequestAmmoSync") or Instance.new("RemoteEvent", ReplicatedStorage:WaitForChild("RemoteEvents"))
+RequestAmmoSync.Name = "RequestAmmoSync"
+
 -- Anti-spam tembak: catat waktu tembak terakhir per-player per-senjata
 local lastFireTime = {}
 
@@ -690,6 +693,12 @@ ReloadEvent.OnServerEvent:Connect(function(player, tool)
 	local finalReserve = (playerReserveAmmo[player] and playerReserveAmmo[player][id]) or reserveAmmo
 
 	AmmoUpdateEvent:FireClient(player, weaponName, finalAmmo, finalReserve, true, false)
+end)
+
+RequestAmmoSync.OnServerEvent:Connect(function(player, tool)
+	if tool and tool:IsA("Tool") then
+		setupToolAmmoForPlayer(player, tool)
+	end
 end)
 
 game.Players.PlayerAdded:Connect(function(player)
