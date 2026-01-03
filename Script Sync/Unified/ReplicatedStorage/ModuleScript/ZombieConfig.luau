@@ -47,7 +47,7 @@ ZombieConfig.Types = {
 		AttackCooldown = 2.5,
 		Chance = 0.90,
 		AttackRange = 5, -- Ditambahkan
-		MinWave = 1, -- Ditambahkan: mulai muncul di wave 9
+		MinWave = 9, -- Ditambahkan: mulai muncul di wave 9
 		WalkAnimation = "rbxassetid://119252114768657",
 		AttackAnimations = {
 			"rbxassetid://90804907609507",
