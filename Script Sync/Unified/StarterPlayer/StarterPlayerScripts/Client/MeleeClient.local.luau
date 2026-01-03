@@ -225,6 +225,9 @@ local function performAttack()
 	isAttacking = true
 	markJustAttacked()
 
+	-- Capture attack direction now (before async animation)
+	local attackDirection = camera.CFrame.LookVector
+
 	-- Stop hold animation before attack
 	if currentHoldTrack and currentHoldTrack.IsPlaying then
 		currentHoldTrack:Stop(0.1)
@@ -235,6 +238,15 @@ local function performAttack()
 		currentAttackTrack.Looped = false -- Force non-looped
 		currentAttackTrack:Stop(0) -- Stop any previous play
 		currentAttackTrack:Play(0.1)
+		
+		-- Listen for "Damage" animation event to trigger server hit
+		-- This ensures damage happens at the exact moment of visual impact
+		currentAttackTrack:GetMarkerReachedSignal("Damage"):Once(function(param)
+			-- param = "Hit" as set in animation editor
+			if currentMelee and meleeStats then
+				MeleeAttackEvent:FireServer(currentMelee, attackDirection)
+			end
+		end)
 	end
 
 	-- Play viewmodel attack animation
@@ -247,26 +259,38 @@ local function performAttack()
 		AudioManager.playSound(meleeStats.Sounds.Swing, currentMelee)
 	end
 
-	-- Send attack to server (server will handle damage, hitbox, and stamina deduction)
-	local attackDirection = camera.CFrame.LookVector
-	MeleeAttackEvent:FireServer(currentMelee, attackDirection)
-
-	-- Wait for attack animation to finish using Stopped event or timeout
+	-- Wait for attack animation to finish naturally
 	task.spawn(function()
-		local attackDuration = getAttackCooldown() * 0.7 -- Animation is 70% of cooldown
-		
 		local track = currentAttackTrack -- Capture reference
+		
 		if track then
-			-- Wait for animation to stop or timeout
+			-- Get the actual animation length from the track
+			local animLength = track.Length
+			if animLength <= 0 then
+				animLength = 1.0 -- Fallback to 1 second if length unknown
+			end
+			
+			-- Wait for animation to naturally stop (using Stopped event)
+			local animFinished = false
+			local stopConnection
+			stopConnection = track.Stopped:Connect(function()
+				animFinished = true
+				if stopConnection then stopConnection:Disconnect() end
+			end)
+			
+			-- Also set a timeout in case animation doesn't fire Stopped
 			local startTime = tick()
-			while track and track.IsPlaying and (tick() - startTime) < attackDuration do
+			while not animFinished and (tick() - startTime) < animLength + 0.5 do
 				task.wait(0.05)
 			end
-			if track then
-				pcall(function() track:Stop(0.1) end)
+			
+			-- Don't force stop - let animation finish naturally
+			-- Only cleanup connection if still active
+			if stopConnection and stopConnection.Connected then
+				stopConnection:Disconnect()
 			end
 		else
-			task.wait(attackDuration)
+			task.wait(1.0) -- Fallback wait
 		end
 
 		isAttacking = false

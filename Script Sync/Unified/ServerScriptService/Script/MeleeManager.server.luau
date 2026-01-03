@@ -74,12 +74,17 @@ MeleeAttackEvent.OnServerEvent:Connect(function(player, tool, attackDirection)
 	local weaponData = WeaponModule.Weapons[tool.Name]
 	if not weaponData then return end
 	
-	-- Anti-spam check (server-side cooldown validation)
+	-- Anti-spam: Only block during attack animation (no cooldown - stamina handles rate limiting)
 	local now = tick()
-	local attackCooldown = weaponData.AttackSpeed or 1.0 -- Default 1 second cooldown
-	if lastAttackTime[player] and (now - lastAttackTime[player]) < attackCooldown then
-		return -- Still on cooldown, ignore attack
+	local attackAnimationTime = weaponData.AttackAnimationTime or 1.0 -- Animation duration
+	
+	-- Check if still in attack animation
+	local lastAttack = lastAttackTime[player] or 0
+	if lastAttack > 0 and (now - lastAttack) < attackAnimationTime then
+		return -- Still in attack animation, ignore
 	end
+	
+	-- Mark attack start time
 	lastAttackTime[player] = now
 	
 	-- ═══════════════════════════════════════════════════════════════
