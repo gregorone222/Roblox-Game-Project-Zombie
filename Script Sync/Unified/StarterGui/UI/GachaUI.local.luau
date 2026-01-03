@@ -31,17 +31,20 @@ local SurvivalCoinsUpdateEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):
 
 -- ================== REWARD CONFIG ==================
 local FieldKitConfig = {
-	StarterPoints = { Name = "Starting Funds", Icon = "rbxassetid://115097892301473", Rarity = "Common", Description = "Start with 1,500 bonus Valor" },
-	AmmoCache = { Name = "Ammo Stockpile", Icon = "rbxassetid://133597625207661", Rarity = "Uncommon", Description = "Begin with extra ammo reserves" },
-	StartingShield = { Name = "Body Armor", Icon = "rbxassetid://118302588106310", Rarity = "Rare", Description = "Start with protective armor" },
-	LegionsLegacy = { Name = "Mystery Loadout", Icon = "rbxassetid://117164757148539", Rarity = "Epic", Description = "Random legendary weapon loadout" },
-	CommanderBuff = { Name = "Commander's Authority", Icon = "rbxassetid://78698774904955", Rarity = "Legendary", Description = "All team members get stat buff" },
+	StarterPoints = { Name = "Starting Funds", Icon = "rbxassetid://115097892301473", Rarity = "Common", Description = "+1,500 Valor at the start of the game" },
+	AmmoCache = { Name = "Ammo Stockpile", Icon = "rbxassetid://133597625207661", Rarity = "Uncommon", Description = "+50% max ammo at the start of the game" },
+	StartingShield = { Name = "Body Armor", Icon = "rbxassetid://118302588106310", Rarity = "Rare", Description = "50% bonus shield at the start" },
+	LegionsLegacy = { Name = "Mystery Loadout", Icon = "rbxassetid://117164757148539", Rarity = "Epic", Description = "Replaces M1911 with a random weapon" },
+	CommanderBuff = { Name = "Commander's Authority", Icon = "rbxassetid://78698774904955", Rarity = "Legendary", Description = "All allies gain +10% damage for the entire game" },
 }
 
 -- Gacha Rewards Pool (for display)
 local RewardsPool = {
 	{ Type = "Coins", Name = "100-500 Survival Coins", Icon = "rbxassetid://89004651637769", Rarity = "Common", Chance = "60%", Desc = "In-game currency for purchases" },
 	{ Type = "Coins", Name = "500-1000 Survival Coins", Icon = "rbxassetid://89004651637769", Rarity = "Uncommon", Chance = "20%", Desc = "Bonus currency for your account" },
+	{ Type = "Coins", Name = "1000-2500 Survival Coins", Icon = "rbxassetid://89004651637769", Rarity = "Rare", Chance = "5%", Desc = "High value currency" },
+	{ Type = "Coins", Name = "2500-5000 Survival Coins", Icon = "rbxassetid://89004651637769", Rarity = "Epic", Chance = "2%", Desc = "Large sum of currency" },
+	{ Type = "Coins", Name = "5000-10000 Survival Coins", Icon = "rbxassetid://89004651637769", Rarity = "Legendary", Chance = "1%", Desc = "Massive wealth" },
 	{ Type = "FieldKit", Name = "Starting Funds", Key = "StarterPoints", Rarity = "Common", Chance = "8%" },
 	{ Type = "FieldKit", Name = "Ammo Stockpile", Key = "AmmoCache", Rarity = "Uncommon", Chance = "5%" },
 	{ Type = "FieldKit", Name = "Body Armor", Key = "StartingShield", Rarity = "Rare", Chance = "3%" },
@@ -1048,7 +1051,7 @@ createUI = function()
 		CanvasSize = UDim2.new(0, 0, 0, 0),
 		Parent = ui.rewardsPanel
 	})
-	create("UIListLayout", { Padding = UDim.new(0, 8), Parent = ui.rewardsList })
+	create("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = ui.rewardsList })
 
 	-- ========== OVERLAYS ==========
 	ui.overlay = create("Frame", {
