@@ -503,129 +503,189 @@ local function populateRewardsList()
 	if not ui.rewardsList then return end
 	
 	for _, c in ipairs(ui.rewardsList:GetChildren()) do
-		if c:IsA("Frame") then c:Destroy() end
+		if c:IsA("Frame") or c:IsA("TextLabel") then c:Destroy() end
 	end
+	
+	-- Group by Rarity
+	local order = { "Common", "Uncommon", "Rare", "Epic", "Legendary" }
+	local groups = {}
+	for _, r in ipairs(order) do groups[r] = {} end
 	
 	for _, reward in ipairs(RewardsPool) do
-		local color = getRarityColor(reward.Rarity)
-		
-		-- Get description
-		local description = reward.Desc or ""
-		if reward.Type == "FieldKit" and reward.Key then
-			local fkData = FieldKitConfig[reward.Key]
-			if fkData then
-				description = fkData.Description or ""
-			end
+		local r = reward.Rarity
+		if groups[r] then
+			table.insert(groups[r], reward)
 		end
-		
-		local card = create("Frame", {
-			Size = UDim2.new(1, -10, 0, 75),
-			BackgroundColor3 = COLORS.BG_PANEL,
-			Parent = ui.rewardsList
-		})
-		addCorner(card, 6)
-		addStroke(card, color, 1)
-		
-		-- Icon or type indicator
-		local iconFrame = create("Frame", {
-			Size = UDim2.new(0, 55, 0, 55),
-			Position = UDim2.new(0, 8, 0.5, 0),
-			AnchorPoint = Vector2.new(0, 0.5),
-			BackgroundColor3 = COLORS.BG_ROOT,
-			Parent = card
-		})
-		addCorner(iconFrame, 27)
-		addStroke(iconFrame, color, 2)
-		
-		local iconText = "🪙"
-		local iconAsset = reward.Icon
-		
-		if reward.Type == "FieldKit" then
-			local fk = nil
-			if reward.Key then fk = FieldKitConfig[reward.Key] end
-			if fk and fk.Icon then iconAsset = fk.Icon end
-			iconText = "📦"
-		elseif reward.Type == "Skin" then
-			iconText = "🎨"
-		end
-		
-		if iconAsset then
-			create("ImageLabel", {
-				Size = UDim2.new(0.75, 0, 0.75, 0),
-				Position = UDim2.new(0.5, 0, 0.5, 0),
-				AnchorPoint = Vector2.new(0.5, 0.5),
-				BackgroundTransparency = 1,
-				Image = iconAsset,
-				ScaleType = Enum.ScaleType.Fit,
-				Parent = iconFrame
-			})
-		else
-			create("TextLabel", {
-				Size = UDim2.new(1, 0, 1, 0),
-				BackgroundTransparency = 1,
-				Text = iconText,
-				TextSize = 26,
-				Parent = iconFrame
-			})
-		end
-		
-		-- Name
-		create("TextLabel", {
-			Text = reward.Name:upper(),
-			Size = UDim2.new(0.5, 0, 0, 20),
-			Position = UDim2.new(0, 72, 0, 8),
-			Font = FONTS.Header,
-			TextSize = 13,
-			TextColor3 = COLORS.TEXT_MAIN,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			BackgroundTransparency = 1,
-			Parent = card
-		})
-		
-		-- Rarity
-		create("TextLabel", {
-			Text = reward.Rarity:upper(),
-			Size = UDim2.new(0.2, 0, 0, 14),
-			Position = UDim2.new(0, 72, 0, 28),
-			Font = FONTS.Mono,
-			TextSize = 10,
-			TextColor3 = color,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			BackgroundTransparency = 1,
-			Parent = card
-		})
-		
-		-- Description
-		if description ~= "" then
-			create("TextLabel", {
-				Text = description,
-				Size = UDim2.new(0.55, 0, 0, 22),
-				Position = UDim2.new(0, 72, 0, 45),
-				Font = FONTS.Body,
-				TextSize = 10,
-				TextColor3 = COLORS.TEXT_DIM,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				TextWrapped = true,
-				BackgroundTransparency = 1,
-				Parent = card
-			})
-		end
-		
-		-- Chance
-		create("TextLabel", {
-			Text = reward.Chance,
-			Size = UDim2.new(0.15, -5, 1, 0),
-			Position = UDim2.new(0.85, 0, 0, 0),
-			Font = FONTS.Mono,
-			TextSize = 15,
-			TextColor3 = color,
-			TextXAlignment = Enum.TextXAlignment.Right,
-			BackgroundTransparency = 1,
-			Parent = card
-		})
 	end
 	
-	ui.rewardsList.CanvasSize = UDim2.new(0, 0, 0, #RewardsPool * 83)
+	local itemCount = 0
+	local currentLayoutOrder = 0
+	local groupCount = 0
+	
+	for _, rarity in ipairs(order) do
+		local list = groups[rarity]
+		if #list > 0 then
+			groupCount = groupCount + 1
+			itemCount = itemCount + #list
+			
+			local color = getRarityColor(rarity)
+			
+			-- Section Header
+			currentLayoutOrder = currentLayoutOrder + 1
+			local header = create("Frame", {
+				Name = "Header_"..rarity,
+				Size = UDim2.new(1, -10, 0, 35),
+				BackgroundTransparency = 1,
+				LayoutOrder = currentLayoutOrder,
+				Parent = ui.rewardsList
+			})
+			
+			-- Colored Bar
+			create("Frame", {
+				Size = UDim2.new(0, 4, 0.6, 0),
+				Position = UDim2.new(0, 0, 0.2, 0),
+				BackgroundColor3 = color,
+				BorderSizePixel = 0,
+				Parent = header
+			})
+			
+			create("TextLabel", {
+				Text = rarity:upper() .. " QUALITY",
+				Size = UDim2.new(1, -20, 1, 0),
+				Position = UDim2.new(0, 15, 0, 0),
+				Font = FONTS.Header,
+				TextSize = 14,
+				TextColor3 = color,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				BackgroundTransparency = 1,
+				Parent = header
+			})
+			
+			-- Items
+			for _, reward in ipairs(list) do
+				currentLayoutOrder = currentLayoutOrder + 1
+				-- Get description
+				local description = reward.Desc or ""
+				if reward.Type == "FieldKit" and reward.Key then
+					local fkData = FieldKitConfig[reward.Key]
+					if fkData then
+						description = fkData.Description or ""
+					end
+				end
+				
+				local card = create("Frame", {
+					Name = "Card_"..reward.Name,
+					Size = UDim2.new(1, -10, 0, 75),
+					BackgroundColor3 = COLORS.BG_PANEL,
+					LayoutOrder = currentLayoutOrder,
+					Parent = ui.rewardsList
+				})
+				addCorner(card, 6)
+				addStroke(card, color, 1)
+				
+				-- Icon or type indicator
+				local iconFrame = create("Frame", {
+					Size = UDim2.new(0, 55, 0, 55),
+					Position = UDim2.new(0, 8, 0.5, 0),
+					AnchorPoint = Vector2.new(0, 0.5),
+					BackgroundColor3 = COLORS.BG_ROOT,
+					Parent = card
+				})
+				addCorner(iconFrame, 27)
+				addStroke(iconFrame, color, 2)
+				
+				local iconText = "🪙"
+				local iconAsset = reward.Icon
+				
+				if reward.Type == "FieldKit" then
+					local fk = nil
+					if reward.Key then fk = FieldKitConfig[reward.Key] end
+					if fk and fk.Icon then iconAsset = fk.Icon end
+					iconText = "📦"
+				elseif reward.Type == "Skin" then
+					iconText = "🎨"
+				end
+				
+				if iconAsset then
+					create("ImageLabel", {
+						Size = UDim2.new(0.75, 0, 0.75, 0),
+						Position = UDim2.new(0.5, 0, 0.5, 0),
+						AnchorPoint = Vector2.new(0.5, 0.5),
+						BackgroundTransparency = 1,
+						Image = iconAsset,
+						ScaleType = Enum.ScaleType.Fit,
+						Parent = iconFrame
+					})
+				else
+					create("TextLabel", {
+						Size = UDim2.new(1, 0, 1, 0),
+						BackgroundTransparency = 1,
+						Text = iconText,
+						TextSize = 26,
+						Parent = iconFrame
+					})
+				end
+				
+				-- Name
+				create("TextLabel", {
+					Text = reward.Name:upper(),
+					Size = UDim2.new(0.5, 0, 0, 20),
+					Position = UDim2.new(0, 72, 0, 8),
+					Font = FONTS.Header,
+					TextSize = 13,
+					TextColor3 = COLORS.TEXT_MAIN,
+					TextXAlignment = Enum.TextXAlignment.Left,
+					BackgroundTransparency = 1,
+					Parent = card
+				})
+				
+				-- Rarity Label (Optional since grouped, but keeps card info)
+				create("TextLabel", {
+					Text = reward.Rarity:upper(),
+					Size = UDim2.new(0.2, 0, 0, 14),
+					Position = UDim2.new(0, 72, 0, 28),
+					Font = FONTS.Mono,
+					TextSize = 10,
+					TextColor3 = color,
+					TextXAlignment = Enum.TextXAlignment.Left,
+					BackgroundTransparency = 1,
+					Parent = card
+				})
+				
+				-- Description
+				if description ~= "" then
+					create("TextLabel", {
+						Text = description,
+						Size = UDim2.new(0.55, 0, 0, 22),
+						Position = UDim2.new(0, 72, 0, 45),
+						Font = FONTS.Body,
+						TextSize = 10,
+						TextColor3 = COLORS.TEXT_DIM,
+						TextXAlignment = Enum.TextXAlignment.Left,
+						TextWrapped = true,
+						BackgroundTransparency = 1,
+						Parent = card
+					})
+				end
+				
+				-- Chance
+				create("TextLabel", {
+					Text = reward.Chance,
+					Size = UDim2.new(0.15, -5, 1, 0),
+					Position = UDim2.new(0.85, 0, 0, 0),
+					Font = FONTS.Mono,
+					TextSize = 15,
+					TextColor3 = color,
+					TextXAlignment = Enum.TextXAlignment.Right,
+					BackgroundTransparency = 1,
+					Parent = card
+				})
+			end
+		end
+	end
+	
+	-- Calculate size: (items * 83) + (groups * 35) + padding
+	ui.rewardsList.CanvasSize = UDim2.new(0, 0, 0, (itemCount * 83) + (groupCount * 40))
 end
 
 -- ================== TAB SWITCHING ==================
