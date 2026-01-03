@@ -5,12 +5,7 @@ if game.PlaceId ~= ACT1_PLACE_ID then return end
 -- StatusHUD.lua (LocalScript)
 -- Path: StarterGui/StatusHUD.lua
 -- Script Place: ACT 1: Village
-
---[[
-    STATUS HUD - TACTICAL SURVIVAL THEME
-    A rugged, military-grade interface.
-    Features: Modular layout, stencil fonts, and functional data displays.
-]]
+-- Theme: Apocalypse Survival (Matched to Inventory & AmmoUI)
 
 local Players            = game:GetService("Players")
 local TweenService       = game:GetService("TweenService")
@@ -46,28 +41,26 @@ StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health, false)
 -- === THEME CONFIGURATION ===
 local THEME = {
 	Colors = {
-		HealthGood   = Color3.fromRGB(110, 200, 110), -- Muted Green
-		HealthLow    = Color3.fromRGB(220, 180, 50),  -- Warning Yellow
-		HealthCrit   = Color3.fromRGB(200, 60, 60),   -- Alert Red
-		Shield       = Color3.fromRGB(60, 140, 220),  -- Tactical Blue
-		Stamina      = Color3.fromRGB(220, 160, 60),  -- Orange
-		BgSolid      = Color3.fromRGB(30, 35, 35),    -- Gunmetal
-		BgDark       = Color3.fromRGB(15, 20, 20),    -- Dark Grey
-		Border       = Color3.fromRGB(180, 185, 180), -- Steel
-		TextMain     = Color3.fromRGB(240, 240, 240), -- White
-		TextDim      = Color3.fromRGB(150, 160, 160), -- Grey text
+		Background = Color3.fromRGB(20, 16, 12),      -- Warm dark brown
+		Panel      = Color3.fromRGB(35, 28, 22),      -- Warm brown panel
+		Border     = Color3.fromRGB(139, 90, 43),     -- Forest Brown
+		
+		Health     = Color3.fromRGB(200, 60, 60),     -- Deep Red
+		Shield     = Color3.fromRGB(60, 160, 220),    -- Blue (Warmer cyan if possible, but keep distinct)
+		Stamina    = Color3.fromRGB(255, 200, 80),    -- Bright Amber
+		Accent     = Color3.fromRGB(218, 165, 32),    -- Golden
+
+		TextMain   = Color3.fromRGB(255, 248, 230),   -- Warm white
+		TextDim    = Color3.fromRGB(180, 160, 130),   -- Muted gold
 	},
 	Fonts = {
-		Stencil = Enum.Font.Sarpanch,    -- Military Stencil
-		Data    = Enum.Font.RobotoMono,  -- Monospace Data
-	},
-	Layout = {
-		Desktop = UDim2.new(0, 40, 1, -40),
-		Mobile  = UDim2.new(0, 20, 0, 20),
+		Header = Enum.Font.GothamBold,
+		Body   = Enum.Font.GothamMedium,
 	},
 	Anim = {
 		Spring = TweenInfo.new(0.4, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out),
 		Linear = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		Pulse  = TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
 	}
 }
 
@@ -90,199 +83,195 @@ local SPRINT_SPEED_BONUS   = 6
 
 -- === UI CONSTRUCTION ===
 local hudScreen = Instance.new("ScreenGui")
-hudScreen.Name = "StatusHUD_Tactical"
+hudScreen.Name = "StatusHUD_Survival"
 hudScreen.IgnoreGuiInset = true
 hudScreen.ResetOnSpawn = false
 hudScreen.Parent = playerGui
-
-local mainFrame = Instance.new("Frame")
-mainFrame.Name = "MainUnit"
-mainFrame.Size = UDim2.new(0, 320, 0, 90)
-mainFrame.BackgroundTransparency = 1
-mainFrame.Parent = hudScreen
 
 local function isMobile()
 	return UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 end
 
+-- Helper Functions
+local function create(className, props)
+	local inst = Instance.new(className)
+	for k, v in pairs(props) do inst[k] = v end
+	return inst
+end
+
+local function addCorner(parent, r)
+	create("UICorner", {Parent = parent, CornerRadius = UDim.new(0, r or 8)})
+end
+
+local function addStroke(parent, color, thickness)
+	create("UIStroke", {
+		Parent = parent, Color = color or THEME.Colors.Accent,
+		Thickness = thickness or 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	})
+end
+
+-- Main Container
+local mainFrame = create("Frame", {
+	Name = "MainFrame",
+	BackgroundColor3 = THEME.Colors.Background,
+	BackgroundTransparency = 0.2,
+	Parent = hudScreen
+})
+addCorner(mainFrame, 12)
+addStroke(mainFrame, THEME.Colors.Border, 2)
+
 if isMobile() then
-	mainFrame.Size = UDim2.new(0, 240, 0, 70)
-	mainFrame.Position = THEME.Layout.Mobile
+	mainFrame.Size = UDim2.new(0, 220, 0, 80)
+	mainFrame.Position = UDim2.new(0, 20, 0, 20) -- Top-left
 	mainFrame.AnchorPoint = Vector2.new(0, 0)
 else
-	mainFrame.Position = THEME.Layout.Desktop
+	mainFrame.Size = UDim2.new(0, 300, 0, 90)
+	mainFrame.Position = UDim2.new(0, 30, 1, -30) -- Bottom-left
 	mainFrame.AnchorPoint = Vector2.new(0, 1)
 end
 
--- === COMPONENT CREATION ===
+-- Inner Gradient for depth
+local grad = create("UIGradient", {
+	Parent = mainFrame,
+	Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.new(1,1,1)),
+		ColorSequenceKeypoint.new(1, Color3.new(0.8, 0.8, 0.8))
+	}),
+	Rotation = 90
+})
 
--- 1. Main Backplate (The Device)
-local plate = Instance.new("Frame")
-plate.Name = "Plate"
-plate.Size = UDim2.new(1, 0, 1, 0)
-plate.BackgroundColor3 = THEME.Colors.BgDark
-plate.BackgroundTransparency = 0.2
-plate.BorderSizePixel = 0
-plate.Parent = mainFrame
+-- == HEALTH SECTION ==
+local hpLabel = create("TextLabel", {
+	Parent = mainFrame,
+	Text = "VITALS",
+	Size = UDim2.new(0.3, 0, 0.25, 0),
+	Position = UDim2.new(0.05, 0, 0.05, 0),
+	BackgroundTransparency = 1,
+	TextColor3 = THEME.Colors.Accent,
+	Font = THEME.Fonts.Header,
+	TextSize = 14,
+	TextXAlignment = Enum.TextXAlignment.Left
+})
 
-local plateCorner = Instance.new("UICorner")
-plateCorner.CornerRadius = UDim.new(0, 4)
-plateCorner.Parent = plate
+local hpVal = create("TextLabel", {
+	Parent = mainFrame,
+	Text = "100",
+	Size = UDim2.new(0.3, 0, 0.35, 0),
+	Position = UDim2.new(0.95, 0, 0.05, 0),
+	AnchorPoint = Vector2.new(1, 0),
+	BackgroundTransparency = 1,
+	TextColor3 = THEME.Colors.TextMain,
+	Font = THEME.Fonts.Header,
+	TextSize = 24,
+	TextXAlignment = Enum.TextXAlignment.Right
+})
 
-local plateStroke = Instance.new("UIStroke")
-plateStroke.Thickness = 2
-plateStroke.Color = THEME.Colors.BgSolid
-plateStroke.Parent = plate
+local hpBarBg = create("Frame", {
+	Parent = mainFrame,
+	Name = "HP_BG",
+	Size = UDim2.new(0.9, 0, 0.15, 0),
+	Position = UDim2.new(0.05, 0, 0.4, 0),
+	BackgroundColor3 = Color3.new(0,0,0),
+	BackgroundTransparency = 0.5
+})
+addCorner(hpBarBg, 4)
 
--- Decorative "Bolts" or "Status Lights"
-local function createBolt(x, y)
-	local b = Instance.new("Frame")
-	b.Size = UDim2.new(0, 4, 0, 4)
-	b.Position = UDim2.new(x, 0, y, 0)
-	b.AnchorPoint = Vector2.new(0.5, 0.5)
-	b.BackgroundColor3 = THEME.Colors.Border
-	b.BorderSizePixel = 0
-	b.Parent = plate
-	Instance.new("UICorner", b).CornerRadius = UDim.new(1,0)
-end
-createBolt(0.03, 0.1); createBolt(0.97, 0.1); createBolt(0.03, 0.9); createBolt(0.97, 0.9)
+local hpFill = create("Frame", {
+	Parent = hpBarBg,
+	Name = "HP_Fill",
+	Size = UDim2.fromScale(1, 1),
+	BackgroundColor3 = THEME.Colors.Health
+})
+addCorner(hpFill, 4)
 
--- 2. Health Module
-local hpLabel = Instance.new("TextLabel")
-hpLabel.Text = "VITALS"
-hpLabel.Size = UDim2.new(0.2, 0, 0, 15)
-hpLabel.Position = UDim2.new(0.08, 0, 0.1, 0)
-hpLabel.BackgroundTransparency = 1
-hpLabel.TextColor3 = THEME.Colors.TextDim
-hpLabel.Font = THEME.Fonts.Stencil
-hpLabel.TextSize = 14
-hpLabel.TextXAlignment = Enum.TextXAlignment.Left
-hpLabel.Parent = plate
+-- Shield Overlay (Thin line on top of HP Fill)
+local shieldBar = create("Frame", {
+	Parent = hpBarBg,
+	Name = "Shield",
+	Size = UDim2.new(0, 0, 0.3, 0), -- 30% height of HP bar
+	Position = UDim2.new(0, 0, 0, 0), -- Top aligned
+	BackgroundColor3 = THEME.Colors.Shield,
+	ZIndex = 5
+})
+addCorner(shieldBar, 2)
 
-local hpVal = Instance.new("TextLabel")
-hpVal.Name = "HP_Val"
-hpVal.Text = "100%"
-hpVal.Size = UDim2.new(0.2, 0, 0, 20)
-hpVal.Position = UDim2.new(0.88, 0, 0.1, 0)
-hpVal.AnchorPoint = Vector2.new(1, 0)
-hpVal.BackgroundTransparency = 1
-hpVal.TextColor3 = THEME.Colors.HealthGood
-hpVal.Font = THEME.Fonts.Data
-hpVal.TextSize = 18
-hpVal.TextXAlignment = Enum.TextXAlignment.Right
-hpVal.Parent = plate
+-- == STAMINA SECTION ==
+local stamBarBg = create("Frame", {
+	Parent = mainFrame,
+	Name = "Stam_BG",
+	Size = UDim2.new(0.9, 0, 0.08, 0),
+	Position = UDim2.new(0.05, 0, 0.65, 0),
+	BackgroundColor3 = Color3.new(0,0,0),
+	BackgroundTransparency = 0.5
+})
+addCorner(stamBarBg, 2)
 
--- The Bar Container
-local hpContainer = Instance.new("Frame")
-hpContainer.Size = UDim2.new(0.84, 0, 0, 16)
-hpContainer.Position = UDim2.new(0.08, 0, 0.35, 0)
-hpContainer.BackgroundColor3 = Color3.new(0,0,0)
-hpContainer.BorderSizePixel = 0
-hpContainer.Parent = plate
+local stamFill = create("Frame", {
+	Parent = stamBarBg,
+	Name = "Stam_Fill",
+	Size = UDim2.fromScale(1, 1),
+	BackgroundColor3 = THEME.Colors.Stamina
+})
+addCorner(stamFill, 2)
 
--- The Grid Overlay for the bar
-local hpGrid = Instance.new("ImageLabel")
-hpGrid.Size = UDim2.fromScale(1,1)
-hpGrid.BackgroundTransparency = 1
-hpGrid.Image = "rbxassetid://2736224329" -- Generic grid texture
-hpGrid.ImageColor3 = Color3.new(0,0,0)
-hpGrid.ImageTransparency = 0.7
-hpGrid.ScaleType = Enum.ScaleType.Tile
-hpGrid.TileSize = UDim2.new(0, 10, 0, 16)
-hpGrid.ZIndex = 3
-hpGrid.Parent = hpContainer
+local stamIcon = create("TextLabel", {
+	Parent = mainFrame,
+	Text = "⚡",
+	Size = UDim2.new(0.1, 0, 0.2, 0),
+	Position = UDim2.new(0.05, 0, 0.75, 0),
+	BackgroundTransparency = 1,
+	TextColor3 = THEME.Colors.Stamina,
+	TextScaled = true,
+	TextXAlignment = Enum.TextXAlignment.Left
+})
 
--- The Fill
-local hpFill = Instance.new("Frame")
-hpFill.Name = "HP_Fill"
-hpFill.Size = UDim2.fromScale(1,1)
-hpFill.BackgroundColor3 = THEME.Colors.HealthGood
-hpFill.BorderSizePixel = 0
-hpFill.ZIndex = 2
-hpFill.Parent = hpContainer
+local stamVal = create("TextLabel", {
+	Parent = mainFrame,
+	Name = "StamVal",
+	Text = "RUN",
+	Size = UDim2.new(0.2, 0, 0.2, 0),
+	Position = UDim2.new(0.15, 0, 0.75, 0),
+	BackgroundTransparency = 1,
+	TextColor3 = THEME.Colors.TextDim,
+	Font = THEME.Fonts.Body,
+	TextSize = 12,
+	TextXAlignment = Enum.TextXAlignment.Left
+})
 
--- Shield Overlay (Thin line on top of HP)
-local shieldBar = Instance.new("Frame")
-shieldBar.Name = "Shield"
-shieldBar.Size = UDim2.new(0, 0, 0, 4)
-shieldBar.Position = UDim2.new(0.08, 0, 0.3, 0) -- Sit on top of HP container
-shieldBar.BackgroundColor3 = THEME.Colors.Shield
-shieldBar.BorderSizePixel = 0
-shieldBar.ZIndex = 4
-shieldBar.Parent = plate
-
--- 3. Stamina Module
-local stamLabel = Instance.new("TextLabel")
-stamLabel.Text = "STAMINA"
-stamLabel.Size = UDim2.new(0.2, 0, 0, 15)
-stamLabel.Position = UDim2.new(0.08, 0, 0.6, 0)
-stamLabel.BackgroundTransparency = 1
-stamLabel.TextColor3 = THEME.Colors.TextDim
-stamLabel.Font = THEME.Fonts.Stencil
-stamLabel.TextSize = 12
-stamLabel.TextXAlignment = Enum.TextXAlignment.Left
-stamLabel.Parent = plate
-
-local stamContainer = Instance.new("Frame")
-stamContainer.Size = UDim2.new(0.84, 0, 0, 8)
-stamContainer.Position = UDim2.new(0.08, 0, 0.8, 0)
-stamContainer.BackgroundColor3 = Color3.new(0,0,0)
-stamContainer.BorderSizePixel = 0
-stamContainer.Parent = plate
-
-local stamFill = Instance.new("Frame")
-stamFill.Name = "Stam_Fill"
-stamFill.Size = UDim2.fromScale(1,1)
-stamFill.BackgroundColor3 = THEME.Colors.Stamina
-stamFill.BorderSizePixel = 0
-stamFill.Parent = stamContainer
-
--- === MOBILE BUTTON (Tactical Toggle) ===
+-- === MOBILE BUTTON ===
 local mobileBtn = nil
 if isMobile() then
-	local btnFrame = Instance.new("Frame")
-	btnFrame.Size = UDim2.new(0, 60, 0, 60)
-	btnFrame.Position = UDim2.new(0.8, 0, 0.45, 0)
-	btnFrame.BackgroundColor3 = THEME.Colors.BgSolid
-	btnFrame.BackgroundTransparency = 0.2
-	btnFrame.BorderSizePixel = 0
-	btnFrame.Parent = hudScreen
+	local btnFrame = create("Frame", {
+		Parent = hudScreen,
+		Size = UDim2.new(0, 64, 0, 64),
+		Position = UDim2.new(0.85, 0, 0.6, 0), -- Right side thumb area
+		AnchorPoint = Vector2.new(1, 0.5),
+		BackgroundColor3 = THEME.Colors.Panel,
+		BackgroundTransparency = 0.2
+	})
+	addCorner(btnFrame, 32) -- Circle
+	local mStroke = create("UIStroke", {
+		Parent = btnFrame, Thickness = 3, Color = THEME.Colors.Border,
+		ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	})
 
-	local btnCorner = Instance.new("UICorner"); btnCorner.CornerRadius = UDim.new(1,0); btnCorner.Parent = btnFrame
-	local btnStroke = Instance.new("UIStroke"); btnStroke.Thickness = 2; btnStroke.Color = THEME.Colors.Border; btnStroke.Parent = btnFrame
+	local icon = create("TextLabel", {
+		Parent = btnFrame, Text = "🏃", Size = UDim2.fromScale(0.6, 0.6),
+		Position = UDim2.fromScale(0.2, 0.2), BackgroundTransparency = 1,
+		TextScaled = true
+	})
 
-	local icon = Instance.new("ImageLabel")
-	icon.Size = UDim2.new(0.6, 0, 0.6, 0)
-	icon.AnchorPoint = Vector2.new(0.5, 0.5)
-	icon.Position = UDim2.new(0.5, 0, 0.5, 0)
-	icon.BackgroundTransparency = 1
-	icon.Image = "rbxassetid://13460867865" -- Run icon
-	icon.ImageColor3 = THEME.Colors.TextMain
-	icon.Parent = btnFrame
+	local button = create("TextButton", {
+		Parent = btnFrame, Size = UDim2.fromScale(1,1),
+		BackgroundTransparency = 1, Text = ""
+	})
 
-	local button = Instance.new("TextButton")
-	button.Size = UDim2.fromScale(1,1)
-	button.BackgroundTransparency = 1
-	button.Text = ""
-	button.Parent = btnFrame
-
-	mobileBtn = {Frame = btnFrame, Icon = icon, Stroke = btnStroke}
+	mobileBtn = {Frame = btnFrame, Icon = icon, Stroke = mStroke}
 end
 
--- === VIGNETTE (Warning Light) ===
-local vignette = Instance.new("Frame")
-vignette.Size = UDim2.fromScale(1,1)
-vignette.BackgroundTransparency = 1
-vignette.Parent = hudScreen
 
-local vStroke = Instance.new("UIStroke")
-vStroke.Thickness = 0
-vStroke.Color = THEME.Colors.HealthCrit
-vStroke.Transparency = 1
-vStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-vStroke.Parent = vignette
-
--- === ANIMATIONS ===
+-- === ANIMATIONS & UPDATES ===
+local pulseTween = nil
 
 local function updateHealthVis()
 	local pct = math.clamp(currentHealth / maxHealth, 0, 1)
@@ -290,34 +279,37 @@ local function updateHealthVis()
 	-- Tween Bar
 	TweenService:Create(hpFill, THEME.Anim.Linear, {Size = UDim2.new(pct, 0, 1, 0)}):Play()
 
-	-- Color Logic
-	local targetCol = THEME.Colors.HealthGood
-	if pct < 0.3 then targetCol = THEME.Colors.HealthCrit
-	elseif pct < 0.6 then targetCol = THEME.Colors.HealthLow end
-
-	TweenService:Create(hpFill, THEME.Anim.Linear, {BackgroundColor3 = targetCol}):Play()
-	TweenService:Create(hpVal, THEME.Anim.Linear, {TextColor3 = targetCol}):Play()
-
-	-- Text Update
+	-- Text Update & Color
 	if localPlayer.Character and localPlayer.Character:FindFirstChild("Knocked") then
-		hpVal.Text = "ERR"
+		hpVal.Text = "DOWN"
+		hpVal.TextColor3 = THEME.Colors.Health
 	else
-		hpVal.Text = string.format("%d%%", math.floor(currentHealth))
+		hpVal.Text = string.format("%d", math.floor(currentHealth))
+		hpVal.TextColor3 = THEME.Colors.TextMain
 	end
 
-	-- Warning Flash
+	-- Critical Health Pulse
 	if pct < 0.3 then
-		-- Flash border
-		vStroke.Thickness = 50
-		TweenService:Create(vStroke, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, -1, true), {Transparency = 0.5}):Play()
+		if not pulseTween then
+			local stroke = mainFrame:FindFirstChild("UIStroke")
+			if stroke then
+				pulseTween = TweenService:Create(stroke, THEME.Anim.Pulse, {Color = THEME.Colors.Health})
+				pulseTween:Play()
+			end
+		end
 	else
-		TweenService:Create(vStroke, THEME.Anim.Linear, {Transparency = 1}):Play()
+		if pulseTween then
+			pulseTween:Cancel()
+			pulseTween = nil
+			local stroke = mainFrame:FindFirstChild("UIStroke")
+			if stroke then stroke.Color = THEME.Colors.Border end
+		end
 	end
 end
 
 local function updateShieldVis()
 	local pct = math.clamp(currentShield / maxHealth, 0, 1)
-	TweenService:Create(shieldBar, THEME.Anim.Linear, {Size = UDim2.new(0.84 * pct, 0, 0, 4)}):Play()
+	TweenService:Create(shieldBar, THEME.Anim.Linear, {Size = UDim2.new(pct, 0, 0.3, 0)}):Play()
 end
 
 local function updateStaminaVis()
@@ -326,16 +318,16 @@ local function updateStaminaVis()
 
 	if mobileBtn then
 		if isSprinting then
-			TweenService:Create(mobileBtn.Stroke, THEME.Anim.Linear, {Color = THEME.Colors.Stamina}):Play()
-			mobileBtn.Icon.ImageColor3 = THEME.Colors.Stamina
+			mobileBtn.Stroke.Color = THEME.Colors.Stamina
+			mobileBtn.Frame.BackgroundColor3 = THEME.Colors.Accent
 		else
-			TweenService:Create(mobileBtn.Stroke, THEME.Anim.Linear, {Color = THEME.Colors.Border}):Play()
-			mobileBtn.Icon.ImageColor3 = THEME.Colors.TextMain
+			mobileBtn.Stroke.Color = THEME.Colors.Border
+			mobileBtn.Frame.BackgroundColor3 = THEME.Colors.Panel
 		end
 	end
 end
 
--- === LOGIC (SPRINT & INPUT) ===
+-- === LOGIC (SPRINT & INPUT) - COPIED FROM OLD SCRIPT ===
 
 local function isToolAiming()
 	local character = localPlayer.Character
@@ -401,7 +393,7 @@ if mobileBtn then
 	mobileBtn.Frame.TextButton.MouseButton1Click:Connect(toggleSprint)
 end
 
--- === INIT ===
+-- === INIT & LOOP ===
 local lastSprintStop = 0
 
 local function onCharacterAdded(char)
@@ -484,9 +476,7 @@ RunService.RenderStepped:Connect(function(dt)
 		end
 	end
 
-	-- Restore Logic: Client Attribute for other scripts
 	localPlayer.Character:SetAttribute("ClientStamina", currentStamina)
-
 	updateStaminaVis()
 end)
 
