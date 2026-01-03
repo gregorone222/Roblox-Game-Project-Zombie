@@ -12,10 +12,38 @@ Aturan baku pengembangan untuk menjaga kualitas kode dan konsistensi.
 | Rule | Description |
 |:-----|:------------|
 | **Anchor Point** | Gunakan `0.5, 0.5` untuk elemen tengah |
-| **Text Scaling** | Gunakan `TextScaled` + `UITextSizeConstraint` |
+| **Text Scaling** | Gunakan `TextScaled` + `UITextSizeConstraint` (lihat tabel bawah) |
+| **Max UI Size** | Maksimal `0.9` Scale untuk lebar (X) dan tinggi (Y) |
 | **Mobile Support** | Cek `TouchEnabled`, perbesar tombol (min 15% padding) |
 | **Immersive Menus** | Gunakan `BlurEffect` saja, **TANPA** dark overlay Frame |
-| **IgnoreGuiInset** | Set `false` agar tidak tertutup TopBar |
+
+### UITextSizeConstraint Guidelines
+
+| Device | MinTextSize | MaxTextSize |
+|:-------|:-----------:|:-----------:|
+| **Mobile** | 12 | 20 |
+| **Desktop** | 20 | 32 |
+
+```lua
+-- Contoh implementasi adaptif
+local IS_MOBILE = UserInputService.TouchEnabled
+local TEXT_MIN = IS_MOBILE and 12 or 20
+local TEXT_MAX = IS_MOBILE and 20 or 32
+create("UITextSizeConstraint", {Parent = label, MinTextSize = TEXT_MIN, MaxTextSize = TEXT_MAX})
+```
+| **IgnoreGuiInset** | Set `false` agar UI tidak melewati TopBar inset |
+
+### Currency Display Rules
+
+> [!IMPORTANT]
+> Semua currency **WAJIB** ditampilkan di area **TopBar inset** (bagian atas layar).
+
+| Rule | Description |
+|:-----|:------------|
+| **Currency Position** | Semua currency HUD (Coins, MP, AP, dll) di **TopBar inset** |
+| **Open UI** | Semua UI terbuka: `IgnoreGuiInset = false`, tidak overlap TopBar |
+| **No Currency in UI** | **DILARANG** menampilkan currency di dalam UI terbuka |
+| **Visibility** | Karena UI tidak melewati TopBar, currency selalu terlihat saat UI terbuka |
 
 ---
 

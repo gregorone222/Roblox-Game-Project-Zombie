@@ -64,6 +64,11 @@ local THEME = {
 	}
 }
 
+-- Adaptive Text Sizing (Mobile: 12-20, Desktop: 20-32)
+local IS_MOBILE = UserInputService.TouchEnabled
+local TEXT_MIN = IS_MOBILE and 12 or 20
+local TEXT_MAX = IS_MOBILE and 20 or 32
+
 -- === STATE ===
 local currentHealth = 100
 local maxHealth = 100

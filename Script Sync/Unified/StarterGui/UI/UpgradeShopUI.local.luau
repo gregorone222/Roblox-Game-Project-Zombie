@@ -68,6 +68,11 @@ local FONTS = {
 	Bold = Enum.Font.GothamBold,
 }
 
+-- Adaptive Text Sizing (Mobile: 12-20, Desktop: 20-32)
+local IS_MOBILE = UserInputService.TouchEnabled
+local TEXT_MIN = IS_MOBILE and 12 or 20
+local TEXT_MAX = IS_MOBILE and 20 or 32
+
 -- Background overlay
 local overlay = Instance.new("Frame")
 overlay.Size = UDim2.new(1, 0, 1, 0)

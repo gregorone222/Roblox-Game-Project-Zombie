@@ -48,6 +48,11 @@ local THEME = {
 	}
 }
 
+-- Adaptive Text Sizing (Mobile: 12-20, Desktop: 20-32)
+local IS_MOBILE = UserInputService.TouchEnabled
+local TEXT_MIN = IS_MOBILE and 12 or 20
+local TEXT_MAX = IS_MOBILE and 20 or 32
+
 local SETTINGS_ICONS = {
 	Gameplay = "rbxassetid://119001399043601", -- Gamepad Icon
 	Audio = "rbxassetid://100652180505963", -- Speaker Icon

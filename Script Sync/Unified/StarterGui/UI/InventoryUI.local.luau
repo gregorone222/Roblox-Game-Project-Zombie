@@ -68,6 +68,10 @@ local THEME = {
 -- Check Mobile
 local IS_MOBILE = UserInputService.TouchEnabled
 
+-- Adaptive Text Sizing (Mobile: 12-20, Desktop: 20-32)
+local TEXT_MIN = IS_MOBILE and 12 or 20
+local TEXT_MAX = IS_MOBILE and 20 or 32
+
 -- --- HELPER UTILS ---
 local function create(className, props)
 	local inst = Instance.new(className)
@@ -90,21 +94,17 @@ end
 
 -- --- STATE ---
 local State = {
-	CurrentTab = "Weapons", -- Main tab: Weapons, Skills, Achievements, FieldKit
+	CurrentTab = "Weapons", -- Main tab: Weapons, FieldKit
 	SelectedCategory = "All",
 	SelectedWeapon = nil,
 	CurrentPreview = nil,
-	SelectedSkill = nil,
-	SelectedAchievement = nil,
 	SelectedFieldKit = nil
 }
 
--- Main Tabs Configuration
+-- Main Tabs Configuration (Skills/Achievements are in ProfileUI)
 local MAIN_TABS = {
 	{Id = "Weapons", Label = "WEAPONS", Icon = "🔫", Order = 1},
-	{Id = "Skills", Label = "SKILLS", Icon = "⚡", Order = 2},
-	{Id = "Achievements", Label = "ACHIEVE", Icon = "🏆", Order = 3},
-	{Id = "FieldKit", Label = "F. KIT", Icon = "🎒", Order = 4}
+	{Id = "FieldKit", Label = "F. KIT", Icon = "🎒", Order = 2}
 }
 
 -- --- UI CONSTRUCTION ---
@@ -218,36 +218,7 @@ local detailArea = create("Frame", {
 })
 create("UIStroke", {Parent = detailArea, Color = THEME.Colors.AccentSec, Thickness = 2, Transparency = 0.5})
 
--- 2b. Skills Content
-local skillsContent = create("Frame", {
-	Name = "SkillsContent", Parent = contentArea, Size = UDim2.fromScale(1, 1),
-	BackgroundTransparency = 1, Visible = false
-})
-local skillsScroll = create("ScrollingFrame", {
-	Parent = skillsContent, Size = UDim2.fromScale(0.65, 0.95), Position = UDim2.fromScale(0.02, 0.02),
-	BackgroundTransparency = 1, ScrollBarThickness = 6, ScrollBarImageColor3 = THEME.Colors.AccentMain
-})
-create("UIListLayout", {Parent = skillsScroll, Padding = UDim.new(0.01, 0), SortOrder = Enum.SortOrder.LayoutOrder})
-
-local skillDetailArea = create("Frame", {
-	Parent = skillsContent, Size = UDim2.fromScale(0.3, 0.95), Position = UDim2.fromScale(0.68, 0.02),
-	BackgroundColor3 = THEME.Colors.PanelGlass, BackgroundTransparency = 0.1
-})
-addCorner(skillDetailArea, 4)
-create("UIStroke", {Parent = skillDetailArea, Color = THEME.Colors.AccentSec, Thickness = 2, Transparency = 0.5})
-
--- 2c. Achievements Content
-local achievementsContent = create("Frame", {
-	Name = "AchievementsContent", Parent = contentArea, Size = UDim2.fromScale(1, 1),
-	BackgroundTransparency = 1, Visible = false
-})
-local achievementsScroll = create("ScrollingFrame", {
-	Parent = achievementsContent, Size = UDim2.fromScale(0.98, 0.95), Position = UDim2.fromScale(0.01, 0.02),
-	BackgroundTransparency = 1, ScrollBarThickness = 6, ScrollBarImageColor3 = THEME.Colors.AccentMain
-})
-create("UIListLayout", {Parent = achievementsScroll, Padding = UDim.new(0.01, 0), SortOrder = Enum.SortOrder.LayoutOrder})
-
--- 2d. Field Kit Content
+-- 2b. Field Kit Content (Skills and Achievements moved to ProfileUI)
 local fieldKitContent = create("Frame", {
 	Name = "FieldKitContent", Parent = contentArea, Size = UDim2.fromScale(1, 1),
 	BackgroundTransparency = 1, Visible = false
@@ -268,8 +239,6 @@ create("UIStroke", {Parent = fieldKitDetailArea, Color = THEME.Colors.AccentSec,
 -- Content Reference Map
 local ContentPanels = {
 	Weapons = weaponsContent,
-	Skills = skillsContent,
-	Achievements = achievementsContent,
 	FieldKit = fieldKitContent
 }
 
@@ -314,11 +283,9 @@ local function createMainTabBtn(tabData)
 	return btn
 end
 
--- Sub-category configurations per main tab
+-- Sub-category configurations per main tab (Skills/Achievements in ProfileUI)
 local SUB_CATEGORIES = {
 	Weapons = {"All", "Rifle", "SMG", "Shotgun", "Sniper", "Melee"},
-	Skills = {"Combat", "Survival", "Utility"},
-	Achievements = {"All", "Combat", "Survival", "Daily"},
 	FieldKit = {"All", "Owned"}
 }
 

@@ -14,6 +14,12 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+-- Adaptive Text Sizing (Mobile: 12-20, Desktop: 20-32)
+local IS_MOBILE = UserInputService.TouchEnabled
+local TEXT_MIN = IS_MOBILE and 12 or 20
+local TEXT_MAX = IS_MOBILE and 20 or 32
 
 local ModuleScriptReplicated = ReplicatedStorage:WaitForChild("ModuleScript")
 local WeaponModule = require(ModuleScriptReplicated:WaitForChild("WeaponModule"))

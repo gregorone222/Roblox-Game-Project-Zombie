@@ -34,6 +34,10 @@ local perksPart = workspace:WaitForChild("Perks", 10)
 
 local isMobile = UserInputService.TouchEnabled
 
+-- Adaptive Text Sizing (Mobile: 12-20, Desktop: 20-32)
+local TEXT_MIN = isMobile and 12 or 20
+local TEXT_MAX = isMobile and 20 or 32
+
 -- State for CoreGui
 local originalCoreGuiStates = {}
 local hasStoredCoreGuiStates = false

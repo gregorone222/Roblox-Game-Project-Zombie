@@ -70,10 +70,15 @@ local THEME = {
 }
 
 -- Adaptive Sizing (Mobile Check)
-if UserInputService.TouchEnabled and not UserInputService.MouseEnabled then
+local IS_MOBILE = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
+if IS_MOBILE then
     -- On mobile, use 95% width, but limit height to 85% to allow room for Tabs on top
     THEME.Sizes.MainFrame = UDim2.new(0.95, 0, 0.85, 0)
 end
+
+-- Adaptive Text Sizing (Mobile: 12-20, Desktop: 20-32)
+local TEXT_MIN = IS_MOBILE and 12 or 20
+local TEXT_MAX = IS_MOBILE and 20 or 32
 
 -- Fallback for specific fonts if not available
 local function getFont(type)
@@ -173,7 +178,7 @@ local function createButton(parent, text, size, pos, color, callback)
     create("UIPadding", {Parent = textLabel, PaddingTop = UDim.new(0.12, 0), PaddingBottom = UDim.new(0.12, 0), PaddingLeft = UDim.new(0.08, 0), PaddingRight = UDim.new(0.08, 0)})
 
 	-- Constraint text size
-	create("UITextSizeConstraint", {Parent = textLabel, MaxTextSize = 22})
+	create("UITextSizeConstraint", {Parent = textLabel, MinTextSize = TEXT_MIN, MaxTextSize = TEXT_MAX})
 
 	create("UICorner", {Parent = btn, CornerRadius = UDim.new(0, 6)})
 
@@ -318,7 +323,7 @@ local function createOpsPanel(parent)
 		Text = "MISSION PARAMETERS", Font = getFont("Header"), TextScaled = true, TextColor3 = THEME.Colors.TextMain,
 		LayoutOrder = 2
 	})
-	create("UITextSizeConstraint", {Parent = header, MaxTextSize = 24})
+	create("UITextSizeConstraint", {Parent = header, MinTextSize = TEXT_MIN, MaxTextSize = TEXT_MAX})
 
 	-- Scroll Container (Middle)
 	local scrollContainer = create("ScrollingFrame", {
@@ -352,7 +357,7 @@ local function createOpsPanel(parent)
 			Font = getFont("Label"), TextScaled = true, TextColor3 = THEME.Colors.TextDim,
 			TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
 		})
-		create("UITextSizeConstraint", {Parent = lbl, MaxTextSize = 14})
+		create("UITextSizeConstraint", {Parent = lbl, MinTextSize = TEXT_MIN, MaxTextSize = TEXT_MAX})
 
 		local btnContainer = create("Frame", {
 			Parent = container, Size = UDim2.new(1, 0, 0.6, 0), Position = UDim2.new(0, 0, 0.4, 0), BackgroundTransparency = 1
@@ -380,7 +385,7 @@ local function createOpsPanel(parent)
 			create("UICorner", {Parent = btn, CornerRadius = UDim.new(0.2, 0)})
             create("UIPadding", {Parent = btn, PaddingTop = UDim.new(0.1, 0), PaddingBottom = UDim.new(0.1, 0), PaddingLeft = UDim.new(0.05, 0), PaddingRight = UDim.new(0.05, 0)})
 			-- TextButton native text logic fix
-			create("UITextSizeConstraint", {Parent = btn, MaxTextSize = 12})
+			create("UITextSizeConstraint", {Parent = btn, MinTextSize = TEXT_MIN, MaxTextSize = TEXT_MAX})
             
             -- Stamp Box Border (Only Visible when selected)
             local border = create("UIStroke", {
@@ -419,7 +424,7 @@ local function createOpsPanel(parent)
 			Font = getFont("Label"), TextScaled = true, TextColor3 = THEME.Colors.TextDim,
 			TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
 		})
-		create("UITextSizeConstraint", {Parent = lbl, MaxTextSize = 14})
+		create("UITextSizeConstraint", {Parent = lbl, MinTextSize = TEXT_MIN, MaxTextSize = TEXT_MAX})
 
 		local textBox = create("TextBox", {
 			Parent = container, Size = UDim2.new(1, 0, 0.5, 0), Position = UDim2.new(0, 0, 0.5, 0),
@@ -428,7 +433,7 @@ local function createOpsPanel(parent)
 			PlaceholderColor3 = THEME.Colors.TextDim
 		})
 		create("UICorner", {Parent = textBox, CornerRadius = UDim.new(0.2, 0)})
-		create("UITextSizeConstraint", {Parent = textBox, MaxTextSize = 14})
+		create("UITextSizeConstraint", {Parent = textBox, MinTextSize = TEXT_MIN, MaxTextSize = TEXT_MAX})
 
 		textBox.FocusLost:Connect(function()
 			state.settings[key] = textBox.Text
@@ -481,7 +486,7 @@ local function createOpsPanel(parent)
 		Text = "DISTRESS SIGNALS (PUBLIC LOBBIES)",
 		Font = getFont("Header"), TextScaled = true, TextColor3 = THEME.Colors.TextMain, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
 	})
-	create("UITextSizeConstraint", {Parent = listHeader, MaxTextSize = 18})
+	create("UITextSizeConstraint", {Parent = listHeader, MinTextSize = TEXT_MIN, MaxTextSize = TEXT_MAX})
 
 	-- Private Room Input Area (New Addition)
 	local privateFrame = create("Frame", {
@@ -502,7 +507,7 @@ local function createOpsPanel(parent)
         Parent = privateInput, Color = THEME.Colors.BorderDark, Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     })
 
-	create("UITextSizeConstraint", {Parent = privateInput, MaxTextSize = 14})
+	create("UITextSizeConstraint", {Parent = privateInput, MinTextSize = TEXT_MIN, MaxTextSize = TEXT_MAX})
 
 	local joinPrivateBtn = createButton(privateFrame, "JOIN", UDim2.new(0.25, 0, 1, 0), UDim2.new(0.75, 0, 0, 0), THEME.Colors.FolderDark, function()
 		if privateInput.Text ~= "" then
@@ -547,14 +552,14 @@ local function createOpsPanel(parent)
 		Name = "RoomTitle", Parent = headerFrame, Size = UDim2.new(0.9, 0, 1, 0), Position = UDim2.new(0.05, 0, 0, 0),
 		Text = "ROOM NAME", Font = getFont("Header"), TextScaled = true, TextColor3 = THEME.Colors.TextMain, BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Center
 	})
-	create("UITextSizeConstraint", {Parent = roomTitle, MaxTextSize = 24})
+	create("UITextSizeConstraint", {Parent = roomTitle, MinTextSize = TEXT_MIN, MaxTextSize = TEXT_MAX})
 
 	-- Details
 	local roomDetails = create("TextLabel", {
 		Name = "RoomDetails", Parent = infoCard, Size = UDim2.new(0.9, 0, 0.4, 0), Position = UDim2.new(0.05, 0, 0.20, 0),
 		Text = "Mode: Story\nDiff: Easy", Font = getFont("Body"), TextScaled = true, TextColor3 = THEME.Colors.TextDim, BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top
 	})
-	create("UITextSizeConstraint", {Parent = roomDetails, MaxTextSize = 18})
+	create("UITextSizeConstraint", {Parent = roomDetails, MinTextSize = TEXT_MIN, MaxTextSize = TEXT_MAX})
 
 	-- Leave Button
 	createButton(infoCard, "LEAVE SQUAD", UDim2.new(0.9, 0, 0.12, 0), UDim2.new(0.05, 0, 0.85, 0), THEME.Colors.AccentRed, function()
@@ -576,7 +581,7 @@ local function createOpsPanel(parent)
 		Parent = rosterHeaderBg, Size = UDim2.new(1, 0, 1, 0), Text = "PERSONNEL ROSTER",
 		Font = getFont("Label"), TextScaled = true, TextColor3 = THEME.Colors.TextMain, BackgroundTransparency = 1
 	})
-	create("UITextSizeConstraint", {Parent = rosterHeader, MaxTextSize = 18})
+	create("UITextSizeConstraint", {Parent = rosterHeader, MinTextSize = TEXT_MIN, MaxTextSize = TEXT_MAX})
 
 	local rosterGrid = create("ScrollingFrame", {
 		Name = "RosterGrid", Parent = rosterArea, Size = UDim2.new(1, 0, 0.72, 0), Position = UDim2.new(0, 0, 0.12, 0),
@@ -608,7 +613,7 @@ local function createOpsPanel(parent)
 		Text = "ESTABLISHING UPLINK...", Font = getFont("Header"), TextScaled = true,
 		TextColor3 = THEME.Colors.AccentGreen, BackgroundTransparency = 1
 	})
-	create("UITextSizeConstraint", {Parent = mmHeader, MaxTextSize = 24})
+	create("UITextSizeConstraint", {Parent = mmHeader, MinTextSize = TEXT_MIN, MaxTextSize = TEXT_MAX})
 
 	-- Blinking Text Effect
 	task.spawn(function()
@@ -629,14 +634,14 @@ local function createOpsPanel(parent)
         Text = "DESTINATION: VILLAGE", Font = getFont("Label"), TextScaled = true, TextColor3 = THEME.Colors.TextMain,
         TextXAlignment = Enum.TextXAlignment.Center, BackgroundTransparency = 1
     })
-    create("UITextSizeConstraint", {Parent = destLabel, MaxTextSize = 18})
+    create("UITextSizeConstraint", {Parent = destLabel, MinTextSize = TEXT_MIN, MaxTextSize = TEXT_MAX})
 
     local threatLabel = create("TextLabel", {
         Name = "ThreatLabel", Parent = infoContainer, Size = UDim2.new(1, 0, 0.4, 0), Position = UDim2.new(0, 0, 0.5, 0),
         Text = "THREAT LEVEL: NORMAL", Font = getFont("Label"), TextScaled = true, TextColor3 = THEME.Colors.AccentRed,
         TextXAlignment = Enum.TextXAlignment.Center, BackgroundTransparency = 1
     })
-    create("UITextSizeConstraint", {Parent = threatLabel, MaxTextSize = 18})
+    create("UITextSizeConstraint", {Parent = threatLabel, MinTextSize = TEXT_MIN, MaxTextSize = TEXT_MAX})
 
 
 	local slotsContainer = create("Frame", {
@@ -720,7 +725,7 @@ function startMatchmaking()
             Font = getFont("Body"), TextScaled = true, TextColor3 = THEME.Colors.TextMain, BackgroundTransparency = 1,
 			Name = "NameLabel"
         })
-        create("UITextSizeConstraint", {Parent = nameLbl, MaxTextSize = 14})
+        create("UITextSizeConstraint", {Parent = nameLbl, MinTextSize = TEXT_MIN, MaxTextSize = TEXT_MAX})
 		
 		-- Status Text
 		local statusLbl = create("TextLabel", {
@@ -923,14 +928,14 @@ local function createIntelPanel(parent)
 		Text = "SECTOR: VILLAGE [GROUND ZERO]", Font = getFont("Header"), TextScaled = true,
 		TextColor3 = THEME.Colors.TextMain, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
 	})
-	create("UITextSizeConstraint", {Parent = sectorLbl, MaxTextSize = 18})
+	create("UITextSizeConstraint", {Parent = sectorLbl, MinTextSize = TEXT_MIN, MaxTextSize = TEXT_MAX})
 
 	local hazardLbl = create("TextLabel", {
 		Parent = mapContainer, Size = UDim2.new(0.9, 0, 0.15, 0), Position = UDim2.new(0.05, 0, 0.8, 0),
 		Text = "HAZARD: EXTREME RADIATION\nSTATUS: ACTIVE HOSTILES\nENTRY: PERMITTED", Font = getFont("Body"), TextScaled = true,
 		TextColor3 = THEME.Colors.AccentRed, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
 	})
-	create("UITextSizeConstraint", {Parent = hazardLbl, MaxTextSize = 14})
+	create("UITextSizeConstraint", {Parent = hazardLbl, MinTextSize = TEXT_MIN, MaxTextSize = TEXT_MAX})
 
 	-- Right Side: Dossier / Objectives
 	local dossier = create("Frame", {
@@ -952,7 +957,7 @@ local function createIntelPanel(parent)
 		Parent = headerFrame, Size = UDim2.new(0.9, 0, 1, 0), Position = UDim2.new(0.05, 0, 0, 0),
 		Text = "ACT 1: Village", Font = getFont("Header"), TextScaled = true, TextColor3 = THEME.Colors.TextMain, BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left
 	})
-	create("UITextSizeConstraint", {Parent = actTitle, MaxTextSize = 24})
+	create("UITextSizeConstraint", {Parent = actTitle, MinTextSize = TEXT_MIN, MaxTextSize = TEXT_MAX})
 
 	-- Description
 	local descLbl = create("TextLabel", {
@@ -961,7 +966,7 @@ local function createIntelPanel(parent)
 		Font = getFont("Body"), TextScaled = true, TextColor3 = THEME.Colors.TextMain, TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, BackgroundTransparency = 1,
 		TextYAlignment = Enum.TextYAlignment.Top
 	})
-	create("UITextSizeConstraint", {Parent = descLbl, MaxTextSize = 16})
+	create("UITextSizeConstraint", {Parent = descLbl, MinTextSize = TEXT_MIN, MaxTextSize = TEXT_MAX})
 
 	-- Divider
 	create("Frame", {
@@ -975,7 +980,7 @@ local function createIntelPanel(parent)
 		Text = "PRIMARY OBJECTIVES", Font = getFont("Label"), TextScaled = true, TextColor3 = THEME.Colors.TextDim,
 		TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
 	})
-	create("UITextSizeConstraint", {Parent = objHeader, MaxTextSize = 14})
+	create("UITextSizeConstraint", {Parent = objHeader, MinTextSize = TEXT_MIN, MaxTextSize = TEXT_MAX})
 
 	-- Objectives List
 	local objList = create("Frame", {
@@ -989,7 +994,7 @@ local function createIntelPanel(parent)
 		TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top,
 		BackgroundTransparency = 1
 	})
-	create("UITextSizeConstraint", {Parent = objLbl, MaxTextSize = 16})
+	create("UITextSizeConstraint", {Parent = objLbl, MinTextSize = TEXT_MIN, MaxTextSize = TEXT_MAX})
 end
 
 -- ================== MAIN UI STRUCTURE ==================
@@ -1056,7 +1061,7 @@ local function createGUI()
 		Parent = mainFrame, Size = UDim2.new(0.05, 0, 0.08, 0), Position = UDim2.new(0.98, 0, 0.01, 0), AnchorPoint = Vector2.new(1, 0),
 		BackgroundTransparency = 1, Text = "X", Font = getFont("Label"), TextScaled = true, TextColor3 = THEME.Colors.TextMain
 	})
-	create("UITextSizeConstraint", {Parent = closeBtn, MaxTextSize = 24})
+	create("UITextSizeConstraint", {Parent = closeBtn, MinTextSize = TEXT_MIN, MaxTextSize = TEXT_MAX})
 
 	closeBtn.MouseButton1Click:Connect(function()
 		state.isUIOpen = false
@@ -1098,7 +1103,7 @@ function updateRoomList(roomsData)
 			Text = room.roomName, Font = getFont("Label"), TextScaled = true, TextColor3 = THEME.Colors.TextMain,
 			TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
 		})
-		create("UITextSizeConstraint", {Parent = title, MaxTextSize = 16})
+		create("UITextSizeConstraint", {Parent = title, MinTextSize = TEXT_MIN, MaxTextSize = TEXT_MAX})
 
 		local details = create("TextLabel", {
 			Parent = card, Size = UDim2.new(0.9, 0, 0.3, 0), Position = UDim2.new(0.05, 0, 0.5, 0),
@@ -1106,7 +1111,7 @@ function updateRoomList(roomsData)
 			Font = getFont("Body"), TextScaled = true, TextColor3 = THEME.Colors.TextDim,
 			TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1
 		})
-		create("UITextSizeConstraint", {Parent = details, MaxTextSize = 14})
+		create("UITextSizeConstraint", {Parent = details, MinTextSize = TEXT_MIN, MaxTextSize = TEXT_MAX})
 
 		local count = create("TextLabel", {
 			Parent = card, Size = UDim2.new(0.3, 0, 0.3, 0), Position = UDim2.new(0.65, 0, 0.4, 0),
@@ -1114,7 +1119,7 @@ function updateRoomList(roomsData)
 			Font = getFont("Header"), TextScaled = true, TextColor3 = THEME.Colors.TextMain,
 			TextXAlignment = Enum.TextXAlignment.Right, BackgroundTransparency = 1
 		})
-		create("UITextSizeConstraint", {Parent = count, MaxTextSize = 20})
+		create("UITextSizeConstraint", {Parent = count, MinTextSize = TEXT_MIN, MaxTextSize = TEXT_MAX})
 
 		card.MouseButton1Click:Connect(function()
 			lobbyRemote:FireServer("joinRoom", {roomId = room.roomId})
@@ -1187,7 +1192,7 @@ function updateLobbyView(roomData)
 				BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Center, Rotation = -2
 			})
 			codeLbl.Text = "ACCESS KEY: " .. roomData.roomCode
-			create("UITextSizeConstraint", {Parent = codeLbl, MaxTextSize = 18})
+			create("UITextSizeConstraint", {Parent = codeLbl, MinTextSize = TEXT_MIN, MaxTextSize = TEXT_MAX})
 		else
 			local existing = infoCard:FindFirstChild("RoomCodeLbl")
 			if existing then existing:Destroy() end
@@ -1354,3 +1359,4 @@ ProximityPromptService.PromptTriggered:Connect(function(prompt, triggeredBy)
 end)
 
 print("LobbyRoomUI (Modern Tactical Dossier) Initialized.")
+

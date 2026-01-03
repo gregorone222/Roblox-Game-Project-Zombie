@@ -9,6 +9,13 @@ if game.PlaceId ~= LOBBY_PLACE_ID then return end
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+
+-- Adaptive Text Sizing (Mobile: 12-20, Desktop: 20-32)
+local IS_MOBILE = UserInputService.TouchEnabled
+local TEXT_MIN = IS_MOBILE and 12 or 20
+local TEXT_MAX = IS_MOBILE and 20 or 32
+
 local player = Players.LocalPlayer
 if not player then
 	return -- Jangan jalankan skrip jika LocalPlayer tidak ada (misalnya, di sisi server)

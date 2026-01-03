@@ -69,6 +69,11 @@ local SOUNDS = {
 	CLICK = "rbxassetid://4612377485", -- Added generic click
 }
 
+-- Adaptive Text Sizing (Mobile: 12-20, Desktop: 20-32)
+local IS_MOBILE = UserInputService.TouchEnabled
+local TEXT_MIN = IS_MOBILE and 12 or 20
+local TEXT_MAX = IS_MOBILE and 20 or 32
+
 -- Create Main ScreenGui
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "RandomWeaponShopUI"

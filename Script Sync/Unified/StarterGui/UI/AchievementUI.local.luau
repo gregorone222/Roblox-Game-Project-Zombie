@@ -49,6 +49,11 @@ local state = {
 	blurEffect = nil
 }
 
+-- Adaptive Text Sizing (Mobile: 12-20, Desktop: 20-32)
+local IS_MOBILE = UserInputService.TouchEnabled
+local TEXT_MIN = IS_MOBILE and 12 or 20
+local TEXT_MAX = IS_MOBILE and 20 or 32
+
 -- ================== HELPERS ==================
 local function create(className, props)
 	local inst = Instance.new(className)

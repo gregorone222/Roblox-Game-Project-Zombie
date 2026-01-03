@@ -56,6 +56,10 @@ local THEME = {
 local isMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
 local currentMainSize = isMobile and THEME.Sizes.MainFrameMobile or THEME.Sizes.MainFramePC
 
+-- Adaptive Text Sizing (Mobile: 12-20, Desktop: 20-32)
+local TEXT_MIN = isMobile and 12 or 20
+local TEXT_MAX = isMobile and 20 or 32
+
 --================================================================================--
 --[[ UI ENGINE (Moved up to prevent forward reference error) ]]--
 --================================================================================--
