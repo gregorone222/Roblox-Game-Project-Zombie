@@ -27,7 +27,7 @@ pcall(PhysicsService.RegisterCollisionGroup, PhysicsService, CollisionUtil.PROJE
 
 -- Define collision relationships
 local groups = {
-	{Name = CollisionUtil.PLAYER_GROUP, CollidesWith = {"Default", CollisionUtil.WALL_GROUP, CollisionUtil.ZOMBIE_GROUP}},
+	{Name = CollisionUtil.PLAYER_GROUP, CollidesWith = {"Default", CollisionUtil.WALL_GROUP, CollisionUtil.ZOMBIE_GROUP, CollisionUtil.PLAYER_GROUP}}, -- Added PLAYER_GROUP for player-to-player collision
 	{Name = CollisionUtil.ZOMBIE_GROUP, CollidesWith = {"Default", CollisionUtil.PLAYER_GROUP, CollisionUtil.ZOMBIE_GROUP}},
 	{Name = CollisionUtil.WALL_GROUP, CollidesWith = {"Default", CollisionUtil.PLAYER_GROUP}},
 	{Name = CollisionUtil.PROJECTILE_GROUP, CollidesWith = {"Default", CollisionUtil.PLAYER_GROUP, CollisionUtil.ZOMBIE_GROUP}}
@@ -77,6 +77,13 @@ end
 -- Assign Player Characters
 local function onCharacterAdded(character)
 	CollisionUtil.SetGroupRecursive(character, CollisionUtil.PLAYER_GROUP)
+	
+	-- Disable default climbing
+	local humanoid = character:WaitForChild("Humanoid", 5)
+	if humanoid then
+		humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing, false)
+	end
+	
 	print("Character '" .. character.Name .. "' has been assigned to the '" .. CollisionUtil.PLAYER_GROUP .. "' collision group.")
 end
 
