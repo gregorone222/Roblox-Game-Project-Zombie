@@ -212,32 +212,37 @@ function HybridViewmodel:createViewmodel()
 		self.viewmodelMuzzle = self.weaponClone:FindFirstChild("Muzzle")
 	end
 
-	-- 6. Get Humanoid or AnimationController for animations
-	-- R15 rigs have Humanoid, use that for animations
+	-- 6. Setup animations with ISOLATED AnimationController
+	-- IMPORTANT: Destroy Humanoid to prevent animation sync with character
+	-- Humanoid can cause animation bleeding between character and viewmodel
 	local humanoid = self.viewmodel:FindFirstChildOfClass("Humanoid")
 	if humanoid then
-		-- Use Humanoid's Animator for R15 rig
-		self.animController = humanoid
-		local animator = humanoid:FindFirstChildOfClass("Animator")
-		if not animator then
-			animator = Instance.new("Animator")
-			animator.Parent = humanoid
+		-- We only need the humanoid for motor6D rigging, not for animations
+		-- Disable all humanoid physics/states first
+		humanoid:SetStateEnabled(Enum.HumanoidStateType.Running, false)
+		humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
+		humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false)
+		humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics, false)
+		-- Remove any existing animator from humanoid to prevent sync
+		local existingAnimator = humanoid:FindFirstChildOfClass("Animator")
+		if existingAnimator then
+			existingAnimator:Destroy()
 		end
-		self.animator = animator
-	else
-		-- Fallback to AnimationController for custom rigs
-		self.animController = self.viewmodel:FindFirstChildOfClass("AnimationController")
-		if not self.animController then
-			self.animController = Instance.new("AnimationController")
-			self.animController.Parent = self.viewmodel
-		end
-		local animator = self.animController:FindFirstChildOfClass("Animator")
-		if not animator then
-			animator = Instance.new("Animator")
-			animator.Parent = self.animController
-		end
-		self.animator = animator
 	end
+	
+	-- Use separate AnimationController for ISOLATED animation playback
+	-- This ensures viewmodel animations don't sync with character animations
+	self.animController = self.viewmodel:FindFirstChildOfClass("AnimationController")
+	if not self.animController then
+		self.animController = Instance.new("AnimationController")
+		self.animController.Parent = self.viewmodel
+	end
+	local animator = self.animController:FindFirstChildOfClass("Animator")
+	if not animator then
+		animator = Instance.new("Animator")
+		animator.Parent = self.animController
+	end
+	self.animator = animator
 
 	-- Initial position
 	self:updateViewmodel(0)
@@ -465,10 +470,20 @@ function HybridViewmodel:playAnimation(animId, loop, priority)
 end
 
 function HybridViewmodel:stopAnimation(fadeTime)
+	-- Stop current tracked animation
 	if self.currentTrack and self.currentTrack.IsPlaying then
 		self.currentTrack:Stop(fadeTime or 0.1)
 	end
 	self.currentTrack = nil
+	
+	-- ALSO stop ALL playing animation tracks on viewmodel animator
+	-- This prevents animation bleeding from character or other sources
+	if self.animator then
+		local playingTracks = self.animator:GetPlayingAnimationTracks()
+		for _, track in ipairs(playingTracks) do
+			track:Stop(fadeTime or 0.1)
+		end
+	end
 end
 
 return HybridViewmodel

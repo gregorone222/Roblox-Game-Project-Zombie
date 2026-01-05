@@ -1426,13 +1426,22 @@ WeaponModule.Weapons = {
 		},
 		Animations = {
 			Hold = {
-				Id = "rbxassetid://138935160413870",
-				Position = Vector3.new(0.2, -1.5, -0.3),
+				Id = "rbxassetid://138935160413870"
+			},
+			Attack = {
+				Id = "rbxassetid://102809461040910"
+			}
+		},
+		-- Separate viewmodel animations with per-animation offset
+		ViewmodelAnimations = {
+			Hold = {
+				Id = "rbxassetid://100930804933596",
+				Position = Vector3.new(-0.50, -1.5, -0.40),
 				Rotation = Vector3.new(0, 0, 0)
 			},
 			Attack = {
-				Id = "rbxassetid://102809461040910",
-				Position = Vector3.new(0.2, -1.5, -0.3),
+				Id = "rbxassetid://126130679317293",
+				Position = Vector3.new(-0.50, -1.5, -0.40),
 				Rotation = Vector3.new(0, 0, 0)
 			}
 		},
@@ -1468,13 +1477,22 @@ WeaponModule.Weapons = {
 		},
 		Animations = {
 			Hold = {
-				Id = "rbxassetid://112614643724193",
-				Position = Vector3.new(0.2, -1.5, -0.3),
+				Id = "rbxassetid://112614643724193"
+			},
+			Attack = {
+				Id = "rbxassetid://90802294449535"
+			}
+		},
+		-- Separate viewmodel animations with per-animation offset
+		ViewmodelAnimations = {
+			Hold = {
+				Id = "rbxassetid://111292944631443",
+				Position = Vector3.new(-0.25, -1.30, -0.15),  -- Adjust as needed
 				Rotation = Vector3.new(0, 0, 0)
 			},
 			Attack = {
-				Id = "rbxassetid://90802294449535",
-				Position = Vector3.new(0.2, -1.5, -0.3),
+				Id = "rbxassetid://131932947611987",
+				Position = Vector3.new(-0.25, -1.30, -0.15),  -- Adjust as needed
 				Rotation = Vector3.new(0, 0, 0)
 			}
 		},
@@ -1510,13 +1528,22 @@ WeaponModule.Weapons = {
 		},
 		Animations = {
 			Hold = {
-				Id = "rbxassetid://82232796218764",
-				Position = Vector3.new(0.2, -1.5, -0.3),
+				Id = "rbxassetid://82232796218764"
+			},
+			Attack = {
+				Id = "rbxassetid://90990293014339"
+			}
+		},
+		-- Separate viewmodel animations with per-animation offset
+		ViewmodelAnimations = {
+			Hold = {
+				Id = "rbxassetid://73930721093107",
+				Position = Vector3.new(-0.50, -1.50, -0.36),
 				Rotation = Vector3.new(0, 0, 0)
 			},
 			Attack = {
-				Id = "rbxassetid://90990293014339",
-				Position = Vector3.new(0.2, -1.5, -0.3),
+				Id = "rbxassetid://116077052110865",
+				Position = Vector3.new(-0.50, -1.50, -0.36),
 				Rotation = Vector3.new(0, 0, 0)
 			}
 		},
